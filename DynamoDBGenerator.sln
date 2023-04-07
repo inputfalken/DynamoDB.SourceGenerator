@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamoDBGenerator", "DynamoDBGenerator\DynamoDBGenerator.csproj", "{648B1DF4-9684-4422-95F5-74BB89862E4D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleApp", "SampleApp\SampleApp.csproj", "{834A7F6C-3C82-427F-9BFB-9686672A5BDE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{648B1DF4-9684-4422-95F5-74BB89862E4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{648B1DF4-9684-4422-95F5-74BB89862E4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{648B1DF4-9684-4422-95F5-74BB89862E4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{648B1DF4-9684-4422-95F5-74BB89862E4D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{834A7F6C-3C82-427F-9BFB-9686672A5BDE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{834A7F6C-3C82-427F-9BFB-9686672A5BDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{834A7F6C-3C82-427F-9BFB-9686672A5BDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{834A7F6C-3C82-427F-9BFB-9686672A5BDE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
