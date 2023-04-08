@@ -12,16 +12,16 @@
 
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.0" PrivateAssets="all"/>
-        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all"/>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>
         <!-- we need to add a reference normally but with PrivateAssets="all" property because it's going to be used only in analysing stage-->
-        <ProjectReference Include="..\DynamoDBGenerator\DynamoDBGenerator.csproj" PrivateAssets="all" OutputItemType="Analyzer"/>
+        <ProjectReference Include="..\DynamoDBGenerator\DynamoDBGenerator.csproj" PrivateAssets="all" OutputItemType="Analyzer" />
 
         <!-- We need to add *.dll here so all dlls would be packed inside NuGet package as our DependencyB.dll is not a NuGet package -->
-        <None Include="$(OutputPath)\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
+        <None Include="$(OutputPath)\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     </ItemGroup>
     <PropertyGroup>
         <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
@@ -32,7 +32,7 @@
             <!-- our local project will not generate path variable so we need to find it from it's own build output-->
             <!-- I used $(OutputPath) variable because the dependecy has the exact TFM and configuration as the generator 
                  you might need to add configuration manually -->
-            <TargetPathWithTargetPlatformMoniker Include="..\DynamoDBExtensions\$(OutputPath)\*.dll" IncludeRuntimeDependency="false"/>
+            <TargetPathWithTargetPlatformMoniker Include="..\DynamoDBExtensions\$(OutputPath)\*.dll" IncludeRuntimeDependency="false" />
         </ItemGroup>
     </Target>
 </Project>

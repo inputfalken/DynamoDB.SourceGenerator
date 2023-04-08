@@ -1,20 +1,31 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+using Amazon.DynamoDBv2.Model;
+
 namespace SampleApp;
 
 internal static class Program
 {
     public static void Main()
     {
-        var entity = new PersonEntity()
+        var personEntity = new PersonEntity()
         {
-            Id = "Abc"
+            Id = "Robin",
+            Friends = new List<PersonEntity>(){},
+            CreatedAtDate = DateOnly.FromDateTime(DateTime.Now),
+            UpdatedAt = DateTime.Now
         };
 
-        foreach (var buildAttributeValue in entity.BuildAttributeValues())
+
+        new PutItemRequest()
         {
-            Console.WriteLine(buildAttributeValue);
-        }
+            Item = personEntity.BuildAttributeValues(),
+            ExpressionAttributeValues = new Dictionary<string, AttributeValue>()
+            {
+                {PersonEntity.AttributeValueKeys.Name, new AttributeValue(){S = "A"}}
+            }
+        };
+
 
     }
 }
