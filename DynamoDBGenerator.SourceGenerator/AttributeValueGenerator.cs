@@ -3,9 +3,7 @@ using System.Collections.Immutable;
 using System.Text;
 using Amazon.DynamoDBv2.DataModel;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Text;
 
 namespace DynamoDBGenerator.SourceGenerator
@@ -39,20 +37,8 @@ namespace DynamoDBGenerator.SourceGenerator
 
                 var generateCode = GenerateCode(type);
 
-                context.AddSource($"{typeNamespace}{type.Name}.g.cs", SourceText.From(FormatCode(generateCode), Encoding.UTF8));
+                context.AddSource($"{typeNamespace}{type.Name}.g.cs", SourceText.From(generateCode, Encoding.UTF8));
             }
-        }
-
-        private static string FormatCode(string codeToFormat)
-        {
-            var syntaxTree = CSharpSyntaxTree.ParseText(codeToFormat);
-            var root = syntaxTree.GetRoot();
-            var workspace = new AdhocWorkspace();
-            var formattedRoot = Formatter.Format(root, workspace);
-
-            using var writer = new StringWriter();
-            formattedRoot.WriteTo(writer);
-            return writer.ToString();
         }
 
         private static string CreateAttributeValue(ITypeSymbol typeSymbol, string propertyName)
