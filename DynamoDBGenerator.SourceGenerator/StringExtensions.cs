@@ -1,4 +1,4 @@
-﻿namespace DynamoDBGenerator;
+﻿namespace DynamoDBGenerator.SourceGenerator;
 
 public static class StringExtensions
 {

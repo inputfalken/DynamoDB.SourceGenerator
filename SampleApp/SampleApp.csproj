@@ -8,7 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\DynamoDBGenerator\DynamoDBGenerator.csproj" OutputItemType="Analyzer" />
+        <ProjectReference Include="..\DynamoDBGenerator\DynamoDBGenerator.csproj" />
+        <ProjectReference Include="..\DynamoDBGenerator.SourceGenerator\DynamoDBGenerator.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
 </Project>

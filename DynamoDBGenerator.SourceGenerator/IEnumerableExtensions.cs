@@ -1,7 +1,6 @@
-﻿using System.Collections;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 
-namespace DynamoDBGenerator;
+namespace DynamoDBGenerator.SourceGenerator;
 
 public static class EnumerableExtensions
 {

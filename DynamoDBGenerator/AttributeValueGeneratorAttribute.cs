@@ -1,9 +1,12 @@
-﻿namespace DynamoDBGenerator;
+﻿using System;
 
-[AttributeUsage(AttributeTargets.Class)]
-public class AttributeValueGeneratorAttribute : Attribute
+namespace DynamoDBGenerator
 {
-    public AttributeValueGeneratorAttribute()
+    [AttributeUsage(AttributeTargets.Class)]
+    public class AttributeValueGeneratorAttribute : Attribute
     {
+        public AttributeValueGeneratorAttribute()
+        {
+        }
     }
 }
