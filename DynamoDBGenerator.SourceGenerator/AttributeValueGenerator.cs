@@ -37,7 +37,7 @@ namespace DynamoDBGenerator.SourceGenerator
 
                 var generateCode = GenerateCode(type);
 
-                context.AddSource($"{typeNamespace}{type.Name}.g.cs", SourceText.From(generateCode, Encoding.UTF8));
+                context.AddSource($"{typeNamespace}{nameof(AttributeValueGenerator)}.{type.Name}.g.cs", SourceText.From(generateCode, Encoding.UTF8));
             }
         }
 
@@ -59,7 +59,7 @@ namespace DynamoDBGenerator.SourceGenerator
                     {SpecialType: SpecialType.System_String} => $"S = {propertyName}",
                     {SpecialType: SpecialType.System_Boolean} => $"BOOL = {propertyName}",
                     {SpecialType: SpecialType.System_Int16 or SpecialType.System_Int32 or SpecialType.System_Int64} => $"N = {propertyName}.ToString()",
-                    {SpecialType: SpecialType.System_DateTime} => $@"S = {propertyName}.ToString(""O"")",
+                    {SpecialType: SpecialType.System_DateTime} or {Name: nameof(DateTimeOffset) or "DateOnly"} => $@"S = {propertyName}.ToString(""O"")",
                     not null when HasAttributeValueGeneratorAttribute(typeSymbol) => $"M = {propertyName}.BuildAttributeValues()",
                     INamedTypeSymbol
                     {
@@ -122,27 +122,10 @@ using System.Linq;
 {{")}
    partial class {name}
    {{
-      {BuildAttributeKeyClass(type)}
       {BuildAttributeDictionaryMethod("BuildAttributeValues", type)}
    }}
 {(nameSpace is null ? null : @"}
 ")}";
-        }
-
-        private static string BuildAttributeKeyClass(ITypeSymbol type)
-        {
-            var propertySymbols = GetDynamoDbProperties(type).ToArray();
-            var constantDeclerations = propertySymbols
-                .Select(x => @$"public const string {x.Name} = ""{x.Name}"";");
-            var str = @$"public static class AttributeValueKeys
-{{
-    {string.Join(Constants.NewLine, constantDeclerations)}
-    public static string[] Keys = new string[]{{{string.Join($",{Constants.NewLine}", propertySymbols.Select(x => x.Name))}}};
-}}";
-
-            return str;
-
-
         }
 
         private static IEnumerable<IPropertySymbol> GetDynamoDbProperties(INamespaceOrTypeSymbol type)
@@ -150,14 +133,6 @@ using System.Linq;
             return type
                 .GetPublicInstanceProperties()
                 .Where(x => x.GetAttributes().Any(y => y.AttributeClass is {Name: nameof(DynamoDBPropertyAttribute)}));
-        }
-
-        private static IPropertySymbol? TryGetHashKey(INamespaceOrTypeSymbol type)
-        {
-            return type
-                .GetPublicInstanceProperties()
-                .SingleOrDefault(x =>
-                    x.GetAttributes().Any(y => y.AttributeClass is {Name: nameof(DynamoDBHashKeyAttribute)}));
         }
 
 
@@ -194,7 +169,7 @@ using System.Linq;
             if (attributeSyntax.Parent?.Parent is not ClassDeclarationSyntax classDeclaration)
                 return null;
 
-            if (ModelExtensions.GetDeclaredSymbol(context.SemanticModel, classDeclaration) is not ITypeSymbol type)
+            if (context.SemanticModel.GetDeclaredSymbol(classDeclaration) is not ITypeSymbol type)
                 return null;
 
             return HasAttributeValueGeneratorAttribute(type) is false ? null : type;

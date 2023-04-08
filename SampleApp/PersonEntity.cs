@@ -1,13 +1,17 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
+using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator;
 
 namespace SampleApp;
 
-[AttributeValueGenerator]
+[AttributeValueGenerator, AttributeKeyGenerator]
 public partial class PersonEntity
 {
-    [DynamoDBHashKey]
+    [DynamoDBProperty]
     public string Id { get; set; }
+
+    [DynamoDBProperty]
+    public string Id2 { get; set; }
 
     [DynamoDBProperty]
     public string Name { get; set; }
@@ -25,7 +29,13 @@ public partial class PersonEntity
     public bool? IsUpdated { get; set; }
 
     [DynamoDBProperty]
-    public DateTime? CreatedAt { get; set; }
+    public DateTime? CreateAtTimeStamp { get; set; }
+
+    [DynamoDBProperty]
+    public DateOnly? CreatedAtDate { get; set; }
+
+    [DynamoDBProperty]
+    public DateTime? UpdatedAt { get; set; }
 
     [DynamoDBProperty]
     public Address Address { get; set; }
@@ -35,6 +45,7 @@ public partial class PersonEntity
 
     [DynamoDBProperty]
     public int?[] MaybeIds { get; set; }
+
     [DynamoDBProperty]
-    public IEnumerable<PersonEntity> Friends { get; set; }
+    public List<PersonEntity> Friends { get; set; }
 }
