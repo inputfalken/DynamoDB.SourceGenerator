@@ -1,8 +1,10 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamoDBGenerator", "DynamoDBGenerator\DynamoDBGenerator.csproj", "{648B1DF4-9684-4422-95F5-74BB89862E4D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamoDBGenerator.SourceGenerator", "DynamoDBGenerator.SourceGenerator\DynamoDBGenerator.SourceGenerator.csproj", "{648B1DF4-9684-4422-95F5-74BB89862E4D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleApp", "SampleApp\SampleApp.csproj", "{834A7F6C-3C82-427F-9BFB-9686672A5BDE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamoDBGenerator", "DynamoDBGenerator\DynamoDBGenerator.csproj", "{53F899A8-28AA-450F-9C62-FD478119B2B7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +20,9 @@ Global
 		{834A7F6C-3C82-427F-9BFB-9686672A5BDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{834A7F6C-3C82-427F-9BFB-9686672A5BDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{834A7F6C-3C82-427F-9BFB-9686672A5BDE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{53F899A8-28AA-450F-9C62-FD478119B2B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53F899A8-28AA-450F-9C62-FD478119B2B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53F899A8-28AA-450F-9C62-FD478119B2B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53F899A8-28AA-450F-9C62-FD478119B2B7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

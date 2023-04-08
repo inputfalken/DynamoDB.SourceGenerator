@@ -13,19 +13,13 @@ namespace SampleApp
                 Id = "Abc"
             };
 
-
-            var PersonEntityDict = new Dictionary<string, AttributeValue>(capacity: 10);
-            var ids = new string[] {"abc"};
-            if (ids != default)
-            {
-                var attributeValue = new AttributeValue
-                    {L = new List<AttributeValue>(ids.Select(x => new AttributeValue {S = x}))};
-                PersonEntityDict.Add("Ids", attributeValue);
-            }
+//            var name = PersonEntity.AttributeValueKeys.Name;
+//            entity.BuildAttributeValues();
+            //entity.BuildAttributeValues();
+        }
 //            foreach (var buildAttributeValue in entity.BuildAttributeValues())
 //            {
 //                Console.WriteLine(buildAttributeValue);
 //            }
         }
     }
-}

@@ -1,14 +1,14 @@
 ﻿using System.Collections;
 using System.Collections.Immutable;
-using System.Globalization;
+using System.Text;
 using Amazon.DynamoDBv2.DataModel;
-using Amazon.DynamoDBv2.Model;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Formatting;
+using Microsoft.CodeAnalysis.Text;
 
-namespace DynamoDBGenerator
+namespace DynamoDBGenerator.SourceGenerator
 {
     [Generator]
     public class AttributeValueGenerator : IIncrementalGenerator
@@ -39,7 +39,7 @@ namespace DynamoDBGenerator
 
                 var generateCode = GenerateCode(type);
 
-                context.AddSource($"{typeNamespace}{type.Name}.g.cs", FormatCode(generateCode));
+                context.AddSource($"{typeNamespace}{type.Name}.g.cs", SourceText.From(FormatCode(generateCode), Encoding.UTF8));
             }
         }
 
@@ -112,7 +112,7 @@ namespace DynamoDBGenerator
 public Dictionary<string, AttributeValue> {methodName}()
   {{ 
       var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: {assignments.Length});
-      {string.Join(Environment.NewLine, assignments)}
+      {string.Join(Constants.NewLine, assignments)}
 
        return {dictionaryName};
   }}";
@@ -150,8 +150,8 @@ using System.Linq;
                 .Select(x => @$"public const string {x.Name} = ""{x.Name}"";");
             var str = @$"public static class AttributeValueKeys
 {{
-    {string.Join(Environment.NewLine, constantDeclerations)}
-    public static string[] Keys = new string[]{{{string.Join($",{Environment.NewLine}", propertySymbols.Select(x => x.Name))}}};
+    {string.Join(Constants.NewLine, constantDeclerations)}
+    public static string[] Keys = new string[]{{{string.Join($",{Constants.NewLine}", propertySymbols.Select(x => x.Name))}}};
 }}";
 
             return str;
