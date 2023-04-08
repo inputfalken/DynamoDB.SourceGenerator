@@ -72,11 +72,9 @@ namespace DynamoDBGenerator
                 {
                     {SpecialType: SpecialType.System_String} => $"S = {propertyName}",
                     {SpecialType: SpecialType.System_Boolean} => $"BOOL = {propertyName}",
-                    {SpecialType: SpecialType.System_Int16 or SpecialType.System_Int32 or SpecialType.System_Int64} =>
-                        $"N = {propertyName}.ToString()",
+                    {SpecialType: SpecialType.System_Int16 or SpecialType.System_Int32 or SpecialType.System_Int64} => $"N = {propertyName}.ToString()",
                     {SpecialType: SpecialType.System_DateTime} => $@"N = {propertyName}.ToString(""O"")",
-                    not null when HasAttributeValueGeneratorAttribute(typeSymbol) =>
-                        $"M = {propertyName}.BuildAttributeValues()",
+                    not null when HasAttributeValueGeneratorAttribute(typeSymbol) => $"M = {propertyName}.BuildAttributeValues()",
                     INamedTypeSymbol
                     {
                         IsGenericType: true, TypeArguments.Length: 1
@@ -97,7 +95,6 @@ namespace DynamoDBGenerator
 
             return @$"new AttributeValue {{ {CreateAssignment(typeSymbol, propertyName)} }}";
         }
-
 
         private static string BuildAttributeDictionaryMethod(string methodName, ITypeSymbol type)
         {
@@ -139,10 +136,27 @@ using System.Linq;
 {{")}
    partial class {name}
    {{
+      {BuildAttributeKeyClass(type)}
       {BuildAttributeDictionaryMethod("BuildAttributeValues", type)}
    }}
 {(nameSpace is null ? null : @"}
 ")}";
+        }
+
+        private static string BuildAttributeKeyClass(ITypeSymbol type)
+        {
+            var propertySymbols = GetDynamoDbProperties(type).ToArray();
+            var constantDeclerations = propertySymbols
+                .Select(x => @$"public const string {x.Name} = ""{x.Name}"";");
+            var str = @$"public static class AttributeValueKeys
+{{
+    {string.Join(Environment.NewLine, constantDeclerations)}
+    public static string[] Keys = new string[]{{{string.Join($",{Environment.NewLine}", propertySymbols.Select(x => x.Name))}}};
+}}";
+
+            return str;
+
+
         }
 
         private static IEnumerable<IPropertySymbol> GetDynamoDbProperties(INamespaceOrTypeSymbol type)
