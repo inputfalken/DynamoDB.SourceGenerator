@@ -14,13 +14,3 @@ public partial class Address
     [DynamoDBProperty]
     public PostalCode PostalCode { get; set; }
 }
-
-[AttributeValueGenerator()]
-public partial class PostalCode
-{
-    [DynamoDBProperty]
-    public string ZipCode { get; set; }
-
-    [DynamoDBProperty]
-    public string Town { get; set; }
-}
