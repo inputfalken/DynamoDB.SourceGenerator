@@ -59,7 +59,7 @@ namespace DynamoDBGenerator.SourceGenerator
                     {SpecialType: SpecialType.System_String} => $"S = {propertyName}",
                     {SpecialType: SpecialType.System_Boolean} => $"BOOL = {propertyName}",
                     {SpecialType: SpecialType.System_Int16 or SpecialType.System_Int32 or SpecialType.System_Int64} => $"N = {propertyName}.ToString()",
-                    {SpecialType: SpecialType.System_DateTime} => $@"N = {propertyName}.ToString(""O"")",
+                    {SpecialType: SpecialType.System_DateTime} => $@"S = {propertyName}.ToString(""O"")",
                     not null when HasAttributeValueGeneratorAttribute(typeSymbol) => $"M = {propertyName}.BuildAttributeValues()",
                     INamedTypeSymbol
                     {
