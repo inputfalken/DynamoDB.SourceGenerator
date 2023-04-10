@@ -5,6 +5,7 @@ using Amazon.DynamoDBv2.DataModel;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
+using static Microsoft.CodeAnalysis.SpecialType;
 
 namespace DynamoDBGenerator.SourceGenerator
 {
@@ -37,7 +38,8 @@ namespace DynamoDBGenerator.SourceGenerator
 
                 var generateCode = GenerateCode(type);
 
-                context.AddSource($"{typeNamespace}{nameof(AttributeValueGenerator)}.{type.Name}.g.cs", SourceText.From(generateCode, Encoding.UTF8));
+                context.AddSource($"{typeNamespace}{nameof(AttributeValueGenerator)}.{type.Name}.g.cs",
+                    SourceText.From(generateCode, Encoding.UTF8));
             }
         }
 
@@ -56,11 +58,19 @@ namespace DynamoDBGenerator.SourceGenerator
             {
                 return typeSymbol switch
                 {
-                    {SpecialType: SpecialType.System_String} => $"S = {propertyName}",
-                    {SpecialType: SpecialType.System_Boolean} => $"BOOL = {propertyName}",
-                    {SpecialType: SpecialType.System_Int16 or SpecialType.System_Int32 or SpecialType.System_Int64} => $"N = {propertyName}.ToString()",
-                    {SpecialType: SpecialType.System_DateTime} or {Name: nameof(DateTimeOffset) or "DateOnly"} => $@"S = {propertyName}.ToString(""O"")",
-                    not null when HasAttributeValueGeneratorAttribute(typeSymbol) => $"M = {propertyName}.BuildAttributeValues()",
+                    {SpecialType: System_String} => $"S = {propertyName}",
+                    {SpecialType: System_Boolean} => $"BOOL = {propertyName}",
+                    {
+                        SpecialType: System_Int16
+                        or System_Byte
+                        or System_Int32 or System_Int64
+                        or System_SByte or System_UInt16
+                        or System_UInt32 or System_UInt64
+                    } => $"N = {propertyName}.ToString()",
+                    {SpecialType: System_DateTime} or {Name: nameof(DateTimeOffset) or "DateOnly"} =>
+                        $@"S = {propertyName}.ToString(""O"")",
+                    not null when HasAttributeValueGeneratorAttribute(typeSymbol) =>
+                        $"M = {propertyName}.BuildAttributeValues()",
                     INamedTypeSymbol
                     {
                         IsGenericType: true, TypeArguments.Length: 1

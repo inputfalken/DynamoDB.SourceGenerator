@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleApp", "SampleApp\Samp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamoDBGenerator", "DynamoDBGenerator\DynamoDBGenerator.csproj", "{53F899A8-28AA-450F-9C62-FD478119B2B7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamoDBGenerator.SourceGenerator.Tests", "DynamoDBGenerator.SourceGenerator.Tests\DynamoDBGenerator.SourceGenerator.Tests.csproj", "{D8EABA41-D014-49BD-B109-54829DB835E7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{53F899A8-28AA-450F-9C62-FD478119B2B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{53F899A8-28AA-450F-9C62-FD478119B2B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{53F899A8-28AA-450F-9C62-FD478119B2B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D8EABA41-D014-49BD-B109-54829DB835E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8EABA41-D014-49BD-B109-54829DB835E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8EABA41-D014-49BD-B109-54829DB835E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8EABA41-D014-49BD-B109-54829DB835E7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
