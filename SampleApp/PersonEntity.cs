@@ -48,4 +48,5 @@ public partial class PersonEntity
 
     [DynamoDBProperty]
     public List<PersonEntity> Friends { get; set; }
+    
 }
