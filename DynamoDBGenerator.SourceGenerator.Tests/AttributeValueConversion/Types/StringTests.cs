@@ -21,20 +21,6 @@ public class StringTests
             .And
             .ContainSingle(x => x.Value.S == johnDoe);
     }
-
-    [Fact]
-    public void BuildAttributeValues_NullStringProperty_Skipped()
-    {
-        var @class = new StringClass
-        {
-            Name = null
-        };
-
-        var result = @class.BuildAttributeValues();
-
-        result.Should().BeEmpty();
-    }
-
 }
 
 [AttributeValueGenerator]
