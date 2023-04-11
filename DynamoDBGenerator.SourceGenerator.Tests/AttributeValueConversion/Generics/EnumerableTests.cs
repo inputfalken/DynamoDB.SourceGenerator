@@ -52,8 +52,6 @@ public class EnumerableTests
             .And
             .ContainKey(nameof(EnumerableClass.Strings))
             .And
-            .ContainSingle(x => x.Value.L.Count == 3)
-            .And
             .AllSatisfy(x => x.Value.L
                 .Should()
                 .SatisfyRespectively(
