@@ -54,19 +54,32 @@ namespace DynamoDBGenerator.SourceGenerator
                     : $"L = new List<AttributeValue>({propertyName}.{linqAttributeValueSelection}";
             }
 
+            static string? ConstructSet(string propertyName, ITypeSymbol elementType)
+            {
+                if (elementType.SpecialType is System_String)
+                    return $"SS = new List<string>({propertyName})";
+
+                return IsNumeric(elementType) is false
+                    ? null
+                    : $"NS = new List<string>({propertyName}.Select(x => x.ToString()))";
+            }
+
+            static bool IsNumeric(ITypeSymbol typeSymbol)
+            {
+                return typeSymbol.SpecialType is System_Int16
+                    or System_Byte
+                    or System_Int32 or System_Int64
+                    or System_SByte or System_UInt16
+                    or System_UInt32 or System_UInt64;
+            }
+
             static string CreateAssignment(ITypeSymbol typeSymbol, string propertyName)
             {
                 return typeSymbol switch
                 {
                     {SpecialType: System_String} => $"S = {propertyName}",
                     {SpecialType: System_Boolean} => $"BOOL = {propertyName}",
-                    {
-                        SpecialType: System_Int16
-                        or System_Byte
-                        or System_Int32 or System_Int64
-                        or System_SByte or System_UInt16
-                        or System_UInt32 or System_UInt64
-                    } => $"N = {propertyName}.ToString()",
+                    not null when IsNumeric(typeSymbol) => $"N = {propertyName}.ToString()",
                     {SpecialType: System_DateTime} or {Name: nameof(DateTimeOffset) or "DateOnly"} =>
                         $@"S = {propertyName}.ToString(""O"")",
                     not null when HasAttributeValueGeneratorAttribute(typeSymbol) =>
@@ -78,6 +91,8 @@ namespace DynamoDBGenerator.SourceGenerator
                     {
                         not null when singleGenericType.Name == nameof(Nullable) =>
                             $"{CreateAssignment(singleGenericType.TypeArguments[0], $"{propertyName}.Value")}",
+                        not null when singleGenericType.AllInterfaces.Any(x => x.Name is "ISet") &&
+                                      ConstructSet(propertyName, singleGenericType.TypeArguments[0]) is { } set => set,
                         // Is IEnumerable implementation
                         not null when singleGenericType.AllInterfaces.Any(x => x.Name == nameof(IEnumerable)) =>
                             ConstructList(propertyName, singleGenericType.TypeArguments[0]),
