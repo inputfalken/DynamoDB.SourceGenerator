@@ -26,6 +26,5 @@ internal static class Program
             }
         };
 
-
     }
 }
