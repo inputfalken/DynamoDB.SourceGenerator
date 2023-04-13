@@ -153,27 +153,53 @@ namespace DynamoDBGenerator.SourceGenerator
 
         private static string BuildAttributeDictionaryMethod(string methodName, ITypeSymbol type)
         {
+            static bool IsNotGuaranteedToExist(IPropertySymbol y)
+            {
+                return y.Type.IsReferenceType || y.Type.Name == nameof(Nullable);
+            }
+
+            static string InitializeDictionary(string dictionaryName,
+                IReadOnlyCollection<IPropertySymbol> propertySymbols)
+            {
+                var valueTuple = propertySymbols.Aggregate((dynamicCount: new List<string>(), Count: 0), (x, y) =>
+                {
+                    if (IsNotGuaranteedToExist(y) is false) return (x.dynamicCount, x.Count + 1);
+                    x.dynamicCount.Add($"(({y.Name} != default) ? (1) : (0))");
+                    return (x.dynamicCount, x.Count);
+                });
+
+                const string capacityName = "capacity";
+                const string dynamicCapacityName = "dynamicCapacity";
+                return @$"
+    {(valueTuple.Count > 0 ? $"const int {capacityName} = {valueTuple.Count};" : null)}
+    {(valueTuple.dynamicCount.Count > 0 ? $"var {dynamicCapacityName} = {string.Join(" + ", valueTuple.dynamicCount)};" : null)}
+    var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: {(valueTuple.Count > 0 && valueTuple.dynamicCount.Count > 0 ? $"({capacityName} + {dynamicCapacityName})" : valueTuple.Count > 0 ? capacityName : propertySymbols.Count > 0 ? dynamicCapacityName : "0")});
+";
+            }
+
             const string dictionaryName = "attributeValues";
             const string indent = "    ";
-            var assignments = GetDynamoDbProperties(type).Select(x =>
+            var dynamoDbProperties = GetDynamoDbProperties(type).ToArray();
+
+            var assignments = dynamoDbProperties.Select(x =>
                 {
                     var add = @$"{dictionaryName}.Add(""{x.Name}"", {CreateAttributeValue(x.Type, x.Name)});";
-                    return x.Type.IsReferenceType || x.Type.Name == nameof(Nullable)
+                    return IsNotGuaranteedToExist(x)
                         ? @$"if ({x.Name} != default) {{ {add} }} "
                         : add;
                 })
-                .Select(x => $"{indent}{x}")
-                .ToArray();
+                .Select(x => $"{indent}{x}");
 
             return @$"
 public Dictionary<string, AttributeValue> {methodName}()
 {{ 
-    var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: {assignments.Length});
+{InitializeDictionary(dictionaryName, dynamoDbProperties)}
 {string.Join(Constants.NewLine, assignments)}
 
     return {dictionaryName};
 }}";
         }
+
 
         private static string GenerateCode(ITypeSymbol type)
         {
