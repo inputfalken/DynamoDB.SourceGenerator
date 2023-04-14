@@ -78,25 +78,28 @@ namespace DynamoDBGenerator.SourceGenerator
             }
         }
 
-        private static string CreateAttributeValue(ITypeSymbol typeSymbol, string propertyName)
+        private static string CreateAttributeValue(ITypeSymbol typeSymbol, string propAccess)
         {
             static string BuildList(string propertyName, ITypeSymbol elementType)
             {
                 var select = $"Select(x => {CreateAttributeValue(elementType, "x")}))";
 
-                return elementType.Name is nameof(Nullable)
-                    ? $"L = new List<AttributeValue>({propertyName}.Where(x => x.HasValue).{select}"
+                return IsNotGuaranteedToExist(elementType) 
+                    ? $"L = new List<AttributeValue>({propertyName}.Where(x => x != default).{select}"
                     : $"L = new List<AttributeValue>({propertyName}.{select}";
             }
 
-            static string? BuildSet(string propertyName, ITypeSymbol elementType)
+            static string? BuildSet(string propAccess, ITypeSymbol elementType)
             {
+                if (IsNotGuaranteedToExist(elementType)) 
+                    propAccess = $"{propAccess}.Where(x => x != default)";
+                
                 if (elementType.SpecialType is System_String)
-                    return $"SS = new List<string>({propertyName})";
+                    return $"SS = new List<string>({propAccess})";
 
                 return IsNumeric(elementType) is false
                     ? null
-                    : $"NS = new List<string>({propertyName}.Select(x => x.ToString()))";
+                    : $"NS = new List<string>({propAccess}.Select(x => x.ToString()))";
             }
 
             static bool IsNumeric(ITypeSymbol typeSymbol) => typeSymbol.SpecialType
@@ -148,32 +151,52 @@ namespace DynamoDBGenerator.SourceGenerator
                 };
             }
 
-            return @$"new AttributeValue {{ {CreateAssignment(typeSymbol, propertyName)} }}";
+            return @$"new AttributeValue {{ {CreateAssignment(typeSymbol, propAccess)} }}";
+        }
+
+        private static bool IsNotGuaranteedToExist(ITypeSymbol y)
+        {
+            return y.IsReferenceType || y.Name == nameof(Nullable);
         }
 
         private static string BuildAttributeDictionaryMethod(string methodName, ITypeSymbol type)
         {
-            static bool IsNotGuaranteedToExist(IPropertySymbol y)
+            static string InitializeDictionary(string dictionaryName, IEnumerable<IPropertySymbol> propertySymbols)
             {
-                return y.Type.IsReferenceType || y.Type.Name == nameof(Nullable);
-            }
+                var capacityAggregator = propertySymbols
+                    .Aggregate(
+                        (dynamicCount: new Queue<string>(), Count: 0),
+                        (x, y) =>
+                        {
+                            if (IsNotGuaranteedToExist(y.Type) is false) return (x.dynamicCount, x.Count + 1);
+                            x.dynamicCount.Enqueue($"(({y.Name} != default) ? (1) : (0))");
+                            return (x.dynamicCount, x.Count);
+                        }
+                    );
 
-            static string InitializeDictionary(string dictionaryName,
-                IReadOnlyCollection<IPropertySymbol> propertySymbols)
-            {
-                var valueTuple = propertySymbols.Aggregate((dynamicCount: new List<string>(), Count: 0), (x, y) =>
-                {
-                    if (IsNotGuaranteedToExist(y) is false) return (x.dynamicCount, x.Count + 1);
-                    x.dynamicCount.Add($"(({y.Name} != default) ? (1) : (0))");
-                    return (x.dynamicCount, x.Count);
-                });
+                const string capacityName = "elementCount";
+                const string dynamicCapacityName = "nonNullElementCount";
 
-                const string capacityName = "capacity";
-                const string dynamicCapacityName = "dynamicCapacity";
+                var capacityCalculation = capacityAggregator.Count > 0 && capacityAggregator.dynamicCount.Count > 0
+                    ? $"{capacityName} + {dynamicCapacityName}"
+                    : capacityAggregator.Count > 0
+                        ? capacityName
+                        : capacityAggregator.dynamicCount.Count > 0
+                            ? dynamicCapacityName
+                            : null;
+
+                var capacityVariable = capacityAggregator.Count > 0
+                    ? $"const int {capacityName} = {capacityAggregator.Count};"
+                    : null;
+                var dynamicCapacityVariable = capacityAggregator.dynamicCount.Count > 0
+                    ? $"var {dynamicCapacityName} = {string.Join(" + ", capacityAggregator.dynamicCount)};"
+                    : null;
+
+
                 return @$"
-    {(valueTuple.Count > 0 ? $"const int {capacityName} = {valueTuple.Count};" : null)}
-    {(valueTuple.dynamicCount.Count > 0 ? $"var {dynamicCapacityName} = {string.Join(" + ", valueTuple.dynamicCount)};" : null)}
-    var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: {(valueTuple.Count > 0 && valueTuple.dynamicCount.Count > 0 ? $"({capacityName} + {dynamicCapacityName})" : valueTuple.Count > 0 ? capacityName : propertySymbols.Count > 0 ? dynamicCapacityName : "0")});
+    {capacityVariable}
+    {dynamicCapacityVariable}
+    var {dictionaryName} = new Dictionary<string, AttributeValue>({capacityCalculation});
 ";
             }
 
@@ -184,7 +207,7 @@ namespace DynamoDBGenerator.SourceGenerator
             var assignments = dynamoDbProperties.Select(x =>
                 {
                     var add = @$"{dictionaryName}.Add(""{x.Name}"", {CreateAttributeValue(x.Type, x.Name)});";
-                    return IsNotGuaranteedToExist(x)
+                    return IsNotGuaranteedToExist(x.Type)
                         ? @$"if ({x.Name} != default) {{ {add} }} "
                         : add;
                 })
