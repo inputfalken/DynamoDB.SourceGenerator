@@ -78,28 +78,28 @@ namespace DynamoDBGenerator.SourceGenerator
             }
         }
 
-        private static string CreateAttributeValue(ITypeSymbol typeSymbol, string propAccess)
+        private static string CreateAttributeValue(ITypeSymbol typeSymbol, string accessPattern)
         {
-            static string BuildList(string propertyName, ITypeSymbol elementType)
+            static string BuildList(ITypeSymbol elementType, string accessPattern)
             {
                 var select = $"Select(x => {CreateAttributeValue(elementType, "x")}))";
 
                 return IsNotGuaranteedToExist(elementType)
-                    ? $"L = new List<AttributeValue>({propertyName}.Where(x => x != default).{select}"
-                    : $"L = new List<AttributeValue>({propertyName}.{select}";
+                    ? $"L = new List<AttributeValue>({accessPattern}.Where(x => x != default).{select}"
+                    : $"L = new List<AttributeValue>({accessPattern}.{select}";
             }
 
-            static string? BuildSet(string propAccess, ITypeSymbol elementType)
+            static string? BuildSet(ITypeSymbol elementType, string accessPattern)
             {
                 if (IsNotGuaranteedToExist(elementType))
-                    propAccess = $"{propAccess}.Where(x => x != default)";
+                    accessPattern = $"{accessPattern}.Where(x => x != default)";
 
                 if (elementType.SpecialType is System_String)
-                    return $"SS = new List<string>({propAccess})";
+                    return $"SS = new List<string>({accessPattern})";
 
                 return IsNumeric(elementType) is false
                     ? null
-                    : $"NS = new List<string>({propAccess}.Select(x => x.ToString()))";
+                    : $"NS = new List<string>({accessPattern}.Select(x => x.ToString()))";
             }
 
             static bool IsNumeric(ITypeSymbol typeSymbol) => typeSymbol.SpecialType
@@ -110,7 +110,7 @@ namespace DynamoDBGenerator.SourceGenerator
                 or System_Decimal or System_Double
                 or System_Single;
 
-            static string? SingleGenericTypeOrNull(ITypeSymbol genericType, string propAccess)
+            static string? SingleGenericTypeOrNull(ITypeSymbol genericType, string accessPattern)
             {
                 if (genericType is not INamedTypeSymbol type)
                     return null;
@@ -122,14 +122,14 @@ namespace DynamoDBGenerator.SourceGenerator
 
                 return type switch
                 {
-                    {Name: nameof(Nullable)} => $"{CreateAssignment(T, $"{propAccess}.Value")}",
-                    _ when type.AllInterfaces.Any(x => x.Name is "ISet") => BuildSet(propAccess, T),
-                    _ when type.AllInterfaces.Any(x => x.Name is nameof(IEnumerable)) => BuildList(propAccess, T),
+                    {Name: nameof(Nullable)} => $"{CreateAssignment(T, $"{accessPattern}.Value")}",
+                    _ when type.AllInterfaces.Any(x => x.Name is "ISet") => BuildSet(T, accessPattern),
+                    _ when type.AllInterfaces.Any(x => x.Name is nameof(IEnumerable)) => BuildList(T, accessPattern),
                     _ => null
                 };
             }
 
-            static string? DoubleGenericTypeOrNull(ITypeSymbol genericType, string propAccess)
+            static string? DoubleGenericTypeOrNull(ITypeSymbol genericType, string accessPattern)
             {
                 if (genericType is not INamedTypeSymbol type)
                     return null;
@@ -137,43 +137,47 @@ namespace DynamoDBGenerator.SourceGenerator
                 if (type is not {IsGenericType: true, TypeArguments.Length: 2})
                     return null;
 
-                if (type is {Name: "Dictionary"} && type.TypeArguments[0].SpecialType is System_String)
+                // ReSharper disable once InconsistentNaming
+                var T1 = type.TypeArguments[0];
+                // ReSharper disable once InconsistentNaming
+                var T2 = type.TypeArguments[1];
+                
+                return type switch
                 {
-                    return $@"M = {propAccess}.ToDictionary(x => x.Key, x => {CreateAttributeValue(type.TypeArguments[1], "x.Value")})";
-                }
-                if (type is {Name:"KeyValuePair"} && type.TypeArguments[0].SpecialType is System_String)
-                {
-                    return $@"M = new Dictionary<string, AttributeValue>() {{ {{""{propAccess}.Key"", {CreateAttributeValue(type.TypeArguments[1], $"{propAccess}.Value")}}} }}";
-                }
-
-                return null;
+                    _ when T1.SpecialType is not System_String => null,
+                    {Name: "Dictionary"} =>
+                        $@"M = {accessPattern}.ToDictionary(x => x.Key, x => {CreateAttributeValue(T2, "x.Value")})",
+                    {Name: "KeyValuePair"} =>
+                        $@"M = new Dictionary<string, AttributeValue>() {{ {{""{accessPattern}.Key"", {CreateAttributeValue(T2, $"{accessPattern}.Value")}}} }}",
+                    _ => null
+                };
             }
-            
 
-            static string? TimeStampOrNull(ITypeSymbol symbol, string propertyAccessor)
+
+            static string? TimeStampOrNull(ITypeSymbol symbol, string accessPattern)
             {
                 return symbol is {SpecialType: System_DateTime} or {Name: nameof(DateTimeOffset) or "DateOnly"}
-                    ? $@"S = {propertyAccessor}.ToString(""O"")"
+                    ? $@"S = {accessPattern}.ToString(""O"")"
                     : null;
             }
 
-            static string CreateAssignment(ITypeSymbol typeSymbol, string propertyAccessor)
+            static string CreateAssignment(ITypeSymbol typeSymbol, string accessPattern)
             {
                 return typeSymbol switch
                 {
-                    {SpecialType: System_String} => $"S = {propertyAccessor}",
-                    {SpecialType: System_Boolean} => $"BOOL = {propertyAccessor}",
-                    _ when IsNumeric(typeSymbol) => $"N = {propertyAccessor}.ToString()",
-                    _ when TimeStampOrNull(typeSymbol, propertyAccessor) is { } assignment => assignment,
-                    _ when IsAttributeValueGenerator(typeSymbol) => $"M = {propertyAccessor}.BuildAttributeValues()",
-                    IArrayTypeSymbol {ElementType: { } elementType} => BuildList(propertyAccessor, elementType),
-                    _ when SingleGenericTypeOrNull(typeSymbol, propertyAccessor) is { } assignment => assignment,
-                    _ when DoubleGenericTypeOrNull(typeSymbol, propertyAccessor) is { } assignment => assignment,
+                    {SpecialType: System_String} => $"S = {accessPattern}",
+                    {SpecialType: System_Boolean} => $"BOOL = {accessPattern}",
+                    _ when IsNumeric(typeSymbol) => $"N = {accessPattern}.ToString()",
+                    _ when TimeStampOrNull(typeSymbol, accessPattern) is { } assignment => assignment,
+                    _ when IsAttributeValueGenerator(typeSymbol) => $"M = {accessPattern}.BuildAttributeValues()",
+                    IArrayTypeSymbol {ElementType: { } elementType} => BuildList(elementType, accessPattern),
+                    _ when SingleGenericTypeOrNull(typeSymbol, accessPattern) is { } assignment => assignment,
+                    _ when DoubleGenericTypeOrNull(typeSymbol, accessPattern) is { } assignment => assignment,
                     _ => throw new NotSupportedException($"Could not generate AttributeValue for '{typeSymbol}'.")
                 };
             }
 
-            return @$"new AttributeValue {{ {CreateAssignment(typeSymbol, propAccess)} }}";
+            return @$"new AttributeValue {{ {CreateAssignment(typeSymbol, accessPattern)} }}";
         }
 
         private static bool IsNotGuaranteedToExist(ITypeSymbol y)
