@@ -123,7 +123,7 @@ namespace DynamoDBGenerator.SourceGenerator
                 return type switch
                 {
                     {Name: nameof(Nullable)} => $"{CreateAssignment(T, $"{accessPattern}.Value")}",
-                    _ when type.AllInterfaces.Any(x => x.Name is "ISet") => BuildSet(T, accessPattern),
+                    _ when type.Name is "ISet" || type.AllInterfaces.Any(x => x.Name is "ISet") => BuildSet(T, accessPattern),
                     _ when type.AllInterfaces.Any(x => x.Name is nameof(IEnumerable)) => BuildList(T, accessPattern),
                     _ => null
                 };
@@ -223,6 +223,11 @@ namespace DynamoDBGenerator.SourceGenerator
     {capacityVariable}
     {dynamicCapacityVariable}
     var {dictionaryName} = new Dictionary<string, AttributeValue>({capacityCalculation});
+    // Exit early if the dictionary will not be populated at all in the end.
+    if (({capacityCalculation}) is 0)
+    {{
+        return {dictionaryName};
+    }}
 ";
             }
 
@@ -280,28 +285,6 @@ using System.Linq;
                 .Where(x => x.GetAttributes().Any(y => y.AttributeClass is {Name: nameof(DynamoDBPropertyAttribute)}));
         }
 
-
-        private static bool IsAttributeValueGenerator(
-            SyntaxNode syntaxNode,
-            CancellationToken cancellationToken)
-        {
-            if (syntaxNode is not AttributeSyntax attribute)
-                return false;
-
-            var name = attribute.Name switch
-            {
-                SimpleNameSyntax ins => ins.Identifier.Text,
-                QualifiedNameSyntax qns => qns.Right.Identifier.Text,
-                _ => null
-            };
-
-            return name switch
-            {
-                nameof(AttributeValueGeneratorAttribute) => true,
-                nameof(AttributeValueGenerator) => true,
-                _ => false
-            };
-        }
 
         private static bool IsAttributeValueGenerator(ISymbol type)
         {
