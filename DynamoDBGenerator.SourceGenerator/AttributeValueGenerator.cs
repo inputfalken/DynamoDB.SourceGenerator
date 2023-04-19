@@ -123,8 +123,10 @@ namespace DynamoDBGenerator.SourceGenerator
                 return type switch
                 {
                     {Name: nameof(Nullable)} => $"{CreateAssignment(T, $"{accessPattern}.Value")}",
-                    _ when type.Name is "ISet" || type.AllInterfaces.Any(x => x.Name is "ISet") => BuildSet(T, accessPattern),
-                    _ when type.AllInterfaces.Any(x => x.Name is nameof(IEnumerable)) => BuildList(T, accessPattern),
+                    {Name: "ISet"} => BuildSet(T, accessPattern),
+                    {Name: nameof(IEnumerable)} => BuildList(T, accessPattern),
+                    _ when type.AllInterfaces.Any(x => x is {Name: "ISet"}) => BuildSet(T, accessPattern),
+                    _ when type.AllInterfaces.Any(x => x is {Name: nameof(IEnumerable)}) => BuildList(T, accessPattern),
                     _ => null
                 };
             }
