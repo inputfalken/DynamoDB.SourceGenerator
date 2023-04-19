@@ -84,16 +84,16 @@ namespace DynamoDBGenerator.SourceGenerator
             {
                 var select = $"Select(x => {CreateAttributeValue(elementType, "x")}))";
 
-                return IsNotGuaranteedToExist(elementType) 
+                return IsNotGuaranteedToExist(elementType)
                     ? $"L = new List<AttributeValue>({propertyName}.Where(x => x != default).{select}"
                     : $"L = new List<AttributeValue>({propertyName}.{select}";
             }
 
             static string? BuildSet(string propAccess, ITypeSymbol elementType)
             {
-                if (IsNotGuaranteedToExist(elementType)) 
+                if (IsNotGuaranteedToExist(elementType))
                     propAccess = $"{propAccess}.Where(x => x != default)";
-                
+
                 if (elementType.SpecialType is System_String)
                     return $"SS = new List<string>({propAccess})";
 
@@ -129,6 +129,27 @@ namespace DynamoDBGenerator.SourceGenerator
                 };
             }
 
+            static string? DoubleGenericTypeOrNull(ITypeSymbol genericType, string propAccess)
+            {
+                if (genericType is not INamedTypeSymbol type)
+                    return null;
+
+                if (type is not {IsGenericType: true, TypeArguments.Length: 2})
+                    return null;
+
+                if (type is {Name: "Dictionary"} && type.TypeArguments[0].SpecialType is System_String)
+                {
+                    return $@"M = {propAccess}.ToDictionary(x => x.Key, x => {CreateAttributeValue(type.TypeArguments[1], "x.Value")})";
+                }
+                if (type is {Name:"KeyValuePair"} && type.TypeArguments[0].SpecialType is System_String)
+                {
+                    return $@"M = new Dictionary<string, AttributeValue>() {{ {{""{propAccess}.Key"", {CreateAttributeValue(type.TypeArguments[1], $"{propAccess}.Value")}}} }}";
+                }
+
+                return null;
+            }
+            
+
             static string? TimeStampOrNull(ITypeSymbol symbol, string propertyAccessor)
             {
                 return symbol is {SpecialType: System_DateTime} or {Name: nameof(DateTimeOffset) or "DateOnly"}
@@ -147,6 +168,7 @@ namespace DynamoDBGenerator.SourceGenerator
                     _ when IsAttributeValueGenerator(typeSymbol) => $"M = {propertyAccessor}.BuildAttributeValues()",
                     IArrayTypeSymbol {ElementType: { } elementType} => BuildList(propertyAccessor, elementType),
                     _ when SingleGenericTypeOrNull(typeSymbol, propertyAccessor) is { } assignment => assignment,
+                    _ when DoubleGenericTypeOrNull(typeSymbol, propertyAccessor) is { } assignment => assignment,
                     _ => throw new NotSupportedException($"Could not generate AttributeValue for '{typeSymbol}'.")
                 };
             }
