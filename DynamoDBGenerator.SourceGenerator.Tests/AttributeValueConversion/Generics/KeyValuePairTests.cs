@@ -3,11 +3,11 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.AttributeValueConversion.Gener
 public class KeyValuePairTests
 {
     [Fact]
-    public void BuildAttributeValues_KeyValueProperty_Included()
+    public void BuildAttributeValues_KeyAndValueSet_Included()
     {
         var @class = new KeyValuePairClass()
         {
-            KeyValuePair = new KeyValuePair<string, int>("1", 2)
+            KeyValuePair = new KeyValuePair<string, int?>("1", 2)
         };
 
         var result = @class.BuildAttributeValues();
@@ -27,11 +27,41 @@ public class KeyValuePairTests
                 });
             });
     }
+
+    [Fact]
+    public void BuildAttributeValues_NullKey_Included()
+    {
+        var @class = new KeyValuePairClass()
+        {
+            KeyValuePair = new KeyValuePair<string, int?>(null, 2)
+        };
+
+        var result = @class.BuildAttributeValues();
+
+        result
+            .Should()
+            .BeEmpty();
+    }
+
+    [Fact]
+    public void BuildAttributeValues_NullValue_Included()
+    {
+        var @class = new KeyValuePairClass()
+        {
+            KeyValuePair = new KeyValuePair<string, int?>("abc", null)
+        };
+
+        var result = @class.BuildAttributeValues();
+
+        result
+            .Should()
+            .BeEmpty();
+    }
 }
 
 [AttributeValueGenerator]
 public partial class KeyValuePairClass
 {
     [DynamoDBProperty]
-    public KeyValuePair<string, int> KeyValuePair { get; set; }
+    public KeyValuePair<string, int?> KeyValuePair { get; set; }
 }
