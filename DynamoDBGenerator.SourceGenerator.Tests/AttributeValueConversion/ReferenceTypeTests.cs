@@ -19,5 +19,5 @@ public class ReferenceTypeTests
 public partial class ReferenceTypeClass
 {
     [DynamoDBProperty]
-    public string ReferenceType { get; set; }
+    public string? ReferenceType { get; set; }
 }
