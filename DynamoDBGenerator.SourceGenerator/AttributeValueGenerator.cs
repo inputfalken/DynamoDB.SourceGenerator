@@ -147,10 +147,12 @@ namespace DynamoDBGenerator.SourceGenerator
                 return type switch
                 {
                     _ when T1.SpecialType is not System_String => null,
-                    {Name: "Dictionary"} =>
+                    {Name: "Dictionary" or "IReadOnlyDictionary" or "IDictionary"} =>
                         $@"M = {accessPattern}.ToDictionary(x => x.Key, x => {CreateAttributeValue(T2, "x.Value")})",
                     {Name: "KeyValuePair"} =>
-                        $@"M = new Dictionary<string, AttributeValue>() {{ {{""{accessPattern}.Key"", {CreateAttributeValue(T2, $"{accessPattern}.Value")}}} }}",
+                        $@"M = new Dictionary<string, AttributeValue>() {{ {{{accessPattern}.Key, {CreateAttributeValue(T2, $"{accessPattern}.Value")}}} }}",
+                    _ when type.AllInterfaces.Any(x => x.Name is "IReadOnlyDictionary") => 
+                        $@"M = {accessPattern}.ToDictionary(x => x.Key, x => {CreateAttributeValue(T2, "x.Value")})",
                     _ => null
                 };
             }
