@@ -225,16 +225,15 @@ namespace DynamoDBGenerator.SourceGenerator
                     ? $"var {dynamicCapacityName} = {string.Join(" + ", capacityAggregator.dynamicCount)};"
                     : null;
 
-
+                var ifCheck = capacityVariable is not null || dynamicCapacityVariable is not null
+                    ? $"if (({capacityCalculation}) is 0) {{ return {dictionaryName}; }}"
+                    : null;
+                    
                 return @$"
     {capacityVariable}
     {dynamicCapacityVariable}
     var {dictionaryName} = new Dictionary<string, AttributeValue>({capacityCalculation});
-    // Exit early if the dictionary will not be populated at all in the end.
-    if (({capacityCalculation}) is 0)
-    {{
-        return {dictionaryName};
-    }}
+    {ifCheck} 
 ";
             }
 
