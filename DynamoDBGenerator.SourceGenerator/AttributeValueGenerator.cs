@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using System.Text;
 using Amazon.DynamoDBv2.DataModel;
+using Amazon.DynamoDBv2.Model;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
@@ -84,15 +85,15 @@ namespace DynamoDBGenerator.SourceGenerator
             {
                 var select = $"Select(x => {CreateAttributeValue(elementType, "x")}))";
 
-                return IsNotGuaranteedToExist(elementType)
-                    ? $"L = new List<AttributeValue>({accessPattern}.Where(x => x != default).{select}"
+                return NotNullEvaluation.LambdaExpression(elementType) is { } whereBody
+                    ? $"L = new List<AttributeValue>({accessPattern}.Where({whereBody}).{select}"
                     : $"L = new List<AttributeValue>({accessPattern}.{select}";
             }
 
             static string? BuildSet(ITypeSymbol elementType, string accessPattern)
             {
-                if (IsNotGuaranteedToExist(elementType))
-                    accessPattern = $"{accessPattern}.Where(x => x != default)";
+                if (NotNullEvaluation.LambdaExpression(elementType) is { } lambdaExpression)
+                    accessPattern = $"{accessPattern}.Where({lambdaExpression})";
 
                 if (elementType.SpecialType is System_String)
                     return $"SS = new List<string>({accessPattern})";
@@ -122,7 +123,6 @@ namespace DynamoDBGenerator.SourceGenerator
 
                 return type switch
                 {
-                    
                     {Name: nameof(Nullable)} => $"{CreateAssignment(T, $"{accessPattern}.Value")}",
                     {Name: "ISet"} => BuildSet(T, accessPattern),
                     {Name: nameof(IEnumerable)} => BuildList(T, accessPattern),
@@ -144,17 +144,19 @@ namespace DynamoDBGenerator.SourceGenerator
                 var T1 = type.TypeArguments[0];
                 // ReSharper disable once InconsistentNaming
                 var T2 = type.TypeArguments[1];
-                
+
                 return type switch
                 {
                     _ when T1.SpecialType is not System_String => null,
-                    {Name: "ILookup"} => $"M = {accessPattern}.ToDictionary(x => x.Key, x => new AttributeValue {{ {BuildList(T2, "x")} }})",
-                    {Name: "IGrouping"} => $@"M = new Dictionary<string, AttributeValue>{{ {{ {accessPattern}.Key, new AttributeValue {{{BuildList(T2, accessPattern)}}} }} }}",
+                    {Name: "ILookup"} =>
+                        $"M = {accessPattern}.ToDictionary(x => x.Key, x => new AttributeValue {{ {BuildList(T2, "x")} }})",
+                    {Name: "IGrouping"} =>
+                        $@"M = new Dictionary<string, AttributeValue>{{ {{ {accessPattern}.Key, new AttributeValue {{{BuildList(T2, accessPattern)}}} }} }}",
                     {Name: "Dictionary" or "IReadOnlyDictionary" or "IDictionary"} =>
                         $@"M = {accessPattern}.ToDictionary(x => x.Key, x => {CreateAttributeValue(T2, "x.Value")})",
                     {Name: "KeyValuePair"} =>
                         $@"M = new Dictionary<string, AttributeValue>() {{ {{{accessPattern}.Key, {CreateAttributeValue(T2, $"{accessPattern}.Value")} }} }}",
-                    _ when type.AllInterfaces.Any(x => x.Name is "IReadOnlyDictionary") => 
+                    _ when type.AllInterfaces.Any(x => x.Name is "IReadOnlyDictionary") =>
                         $@"M = {accessPattern}.ToDictionary(x => x.Key, x => {CreateAttributeValue(T2, "x.Value")})",
                     _ => null
                 };
@@ -187,11 +189,6 @@ namespace DynamoDBGenerator.SourceGenerator
             return @$"new AttributeValue {{ {CreateAssignment(typeSymbol, accessPattern)} }}";
         }
 
-        private static bool IsNotGuaranteedToExist(ITypeSymbol y)
-        {
-            return y.IsReferenceType || y.Name == nameof(Nullable);
-        }
-
         private static string BuildAttributeDictionaryMethod(string methodName, ITypeSymbol type)
         {
             static string InitializeDictionary(string dictionaryName, IEnumerable<IPropertySymbol> propertySymbols)
@@ -201,8 +198,9 @@ namespace DynamoDBGenerator.SourceGenerator
                         (dynamicCount: new Queue<string>(), Count: 0),
                         (x, y) =>
                         {
-                            if (IsNotGuaranteedToExist(y.Type) is false) return (x.dynamicCount, x.Count + 1);
-                            x.dynamicCount.Enqueue($"(({y.Name} != default) ? (1) : (0))");
+                            if (NotNullEvaluation.TernaryExpression(y.Type, y.Name, "1", "0") is not { } expression)
+                                return (x.dynamicCount, x.Count + 1);
+                            x.dynamicCount.Enqueue($"({expression})");
                             return (x.dynamicCount, x.Count);
                         }
                     );
@@ -228,7 +226,7 @@ namespace DynamoDBGenerator.SourceGenerator
                 var ifCheck = capacityVariable is not null || dynamicCapacityVariable is not null
                     ? $"if (({capacityCalculation}) is 0) {{ return {dictionaryName}; }}"
                     : null;
-                    
+
                 return @$"
     {capacityVariable}
     {dynamicCapacityVariable}
@@ -244,9 +242,7 @@ namespace DynamoDBGenerator.SourceGenerator
             var assignments = dynamoDbProperties.Select(x =>
                 {
                     var add = @$"{dictionaryName}.Add(""{x.Name}"", {CreateAttributeValue(x.Type, x.Name)});";
-                    return IsNotGuaranteedToExist(x.Type)
-                        ? @$"if ({x.Name} != default) {{ {add} }} "
-                        : add;
+                    return NotNullEvaluation.IfStatement(x, add);
                 })
                 .Select(x => $"{indent}{x}");
 
