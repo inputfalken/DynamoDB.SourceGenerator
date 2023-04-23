@@ -135,11 +135,9 @@ public Dictionary<string, AttributeValue> {methodName}()
         }
 
 
-        static string? TimeStampOrNull(ITypeSymbol symbol, string accessPattern)
+        static bool IsTimeRelated(ITypeSymbol symbol)
         {
-            return symbol is {SpecialType: System_DateTime} or {Name: nameof(DateTimeOffset) or "DateOnly"}
-                ? $@"S = {accessPattern}.ToString(""O"")"
-                : null;
+            return symbol is {SpecialType: System_DateTime} or {Name: nameof(DateTimeOffset) or "DateOnly"};
         }
 
         static string CreateAssignment(ITypeSymbol typeSymbol, string accessPattern)
@@ -149,9 +147,8 @@ public Dictionary<string, AttributeValue> {methodName}()
                 {SpecialType: System_String} => $"S = {accessPattern}",
                 {SpecialType: System_Boolean} => $"BOOL = {accessPattern}",
                 _ when IsNumeric(typeSymbol) => $"N = {accessPattern}.ToString()",
-                _ when TimeStampOrNull(typeSymbol, accessPattern) is { } assignment => assignment,
-                _ when IsAttributeValueGenerator(typeSymbol) =>
-                    $"M = {accessPattern}.{Constants.AttributeValueGeneratorMethodName}()",
+                _ when IsTimeRelated(typeSymbol) => $@"S = {accessPattern}.ToString(""O"")",
+                _ when IsAttributeValueGenerator(typeSymbol) => $"M = {accessPattern}.{Constants.AttributeValueGeneratorMethodName}()",
                 IArrayTypeSymbol {ElementType: { } elementType} => BuildList(elementType, accessPattern),
                 _ when SingleGenericTypeOrNull(typeSymbol, accessPattern) is { } assignment => assignment,
                 _ when DoubleGenericTypeOrNull(typeSymbol, accessPattern) is { } assignment => assignment,
