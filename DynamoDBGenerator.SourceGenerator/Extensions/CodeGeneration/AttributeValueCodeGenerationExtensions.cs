@@ -10,6 +10,8 @@ public static class AttributeValueCodeGenerationExtensions
         this IEnumerable<IPropertySymbol> propertySymbols,
         string methodName)
     {
+        const string indent = "            ";
+
         static string InitializeDictionary(string dictionaryName, IEnumerable<IPropertySymbol> propertySymbols)
         {
             var capacityCalculation = string.Join(
@@ -25,32 +27,29 @@ public static class AttributeValueCodeGenerationExtensions
 
             var ifCheck = $"if (({capacityReference}) is 0) {{ return {dictionaryName}; }}";
 
-            return @$"
-    {capacityDeclaration}
-    var {dictionaryName} = new Dictionary<string, AttributeValue>({capacityReference});
-    {ifCheck} 
+            return
+                @$"{capacityDeclaration}
+            var {dictionaryName} = new Dictionary<string, AttributeValue>({capacityReference});
+            {ifCheck}
 ";
         }
 
         const string dictionaryName = "attributeValues";
-        const string indent = "    ";
-        var dynamoDbProperties = propertySymbols.ToArray();
+        var properties = propertySymbols.ToArray();
 
-        var assignments = dynamoDbProperties.Select(x =>
-            {
-                var add = @$"{dictionaryName}.Add(""{x.Name}"", {CreateAttributeValue(x.Type, x.Name)});";
-                return x.IfStatement(add);
-            })
-            .Select(x => $"{indent}{x}");
+        var dictionaryPopulation = properties.Select(x =>
+        {
+            var add = @$"{dictionaryName}.Add(""{x.Name}"", {CreateAttributeValue(x.Type, x.Name)});";
+            return x.IfStatement(add);
+        });
 
-        return @$"
-public Dictionary<string, AttributeValue> {methodName}()
-{{ 
-{InitializeDictionary(dictionaryName, dynamoDbProperties)}
-{string.Join(Constants.NewLine, assignments)}
+        return @$"public Dictionary<string, AttributeValue> {methodName}()
+        {{ 
+            {InitializeDictionary(dictionaryName, properties)}
+            {string.Join(Constants.NewLine + indent, dictionaryPopulation)}
 
-    return {dictionaryName};
-}}";
+            return {dictionaryName};
+        }}";
     }
 
     private static string CreateAttributeValue(ITypeSymbol typeSymbol, string accessPattern)
@@ -148,7 +147,8 @@ public Dictionary<string, AttributeValue> {methodName}()
                 {SpecialType: System_Boolean} => $"BOOL = {accessPattern}",
                 _ when IsNumeric(typeSymbol) => $"N = {accessPattern}.ToString()",
                 _ when IsTimeRelated(typeSymbol) => $@"S = {accessPattern}.ToString(""O"")",
-                _ when IsAttributeValueGenerator(typeSymbol) => $"M = {accessPattern}.{Constants.AttributeValueGeneratorMethodName}()",
+                _ when IsAttributeValueGenerator(typeSymbol) =>
+                    $"M = {accessPattern}.{Constants.AttributeValueGeneratorMethodName}()",
                 IArrayTypeSymbol {ElementType: { } elementType} => BuildList(elementType, accessPattern),
                 _ when SingleGenericTypeOrNull(typeSymbol, accessPattern) is { } assignment => assignment,
                 _ when DoubleGenericTypeOrNull(typeSymbol, accessPattern) is { } assignment => assignment,
