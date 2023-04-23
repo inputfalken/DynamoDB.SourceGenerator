@@ -45,7 +45,19 @@ public class AttributeValueKeysGenerator : IIncrementalGenerator
                     if (ctx.SemanticModel.GetDeclaredSymbol(classDeclaration) is not ITypeSymbol type)
                         return null;
 
-                    return type.IsAttributeValueGenerator() is false ? null : type;
+
+                    var isAttributeValueKeysGenerator = type.GetAttributes()
+                        .Any(x => x.AttributeClass is
+                        {
+                            Name: nameof(AttributeValueKeysGeneratorAttribute),
+                            ContainingNamespace:
+                            {
+                                Name: nameof(DynamoDBGenerator),
+                                ContainingNamespace.IsGlobalNamespace: true
+                            }
+                        });
+
+                    return isAttributeValueKeysGenerator is false ? null : type;
                 }
             )
             .Where(x => x is not null)
