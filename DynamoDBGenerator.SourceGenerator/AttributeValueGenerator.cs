@@ -85,14 +85,14 @@ namespace DynamoDBGenerator.SourceGenerator
             {
                 var select = $"Select(x => {CreateAttributeValue(elementType, "x")}))";
 
-                return NotNullEvaluation.LambdaExpression(elementType) is { } whereBody
+                return elementType.LambdaExpression() is { } whereBody
                     ? $"L = new List<AttributeValue>({accessPattern}.Where({whereBody}).{select}"
                     : $"L = new List<AttributeValue>({accessPattern}.{select}";
             }
 
             static string? BuildSet(ITypeSymbol elementType, string accessPattern)
             {
-                if (NotNullEvaluation.LambdaExpression(elementType) is { } lambdaExpression)
+                if (elementType.LambdaExpression() is { } lambdaExpression)
                     accessPattern = $"{accessPattern}.Where({lambdaExpression})";
 
                 if (elementType.SpecialType is System_String)
@@ -191,44 +191,24 @@ namespace DynamoDBGenerator.SourceGenerator
         {
             static string InitializeDictionary(string dictionaryName, IEnumerable<IPropertySymbol> propertySymbols)
             {
-                var capacityAggregator = propertySymbols
-                    .Aggregate(
-                        (dynamicCount: new Queue<string>(), Count: 0),
-                        (x, y) =>
-                        {
-                            if (NotNullEvaluation.TernaryExpression(y.Type, y.Name, "1", "0") is not { } expression)
-                                return (x.dynamicCount, x.Count + 1);
-                            x.dynamicCount.Enqueue($"({expression})");
-                            return (x.dynamicCount, x.Count);
-                        }
-                    );
+                var capacityCalculation = string.Join(
+                    " + ",
+                    propertySymbols.Select(x => $"({x.TernaryExpression("1", "0")})")
+                );
 
-                const string capacityName = "elementCount";
-                const string dynamicCapacityName = "nonNullElementCount";
+                const string capacityReference = "capacity";
 
-                var capacityCalculation = capacityAggregator.Count > 0 && capacityAggregator.dynamicCount.Count > 0
-                    ? $"{capacityName} + {dynamicCapacityName}"
-                    : capacityAggregator.Count > 0
-                        ? capacityName
-                        : capacityAggregator.dynamicCount.Count > 0
-                            ? dynamicCapacityName
-                            : null;
+                var capacityDeclaration = string.IsNullOrWhiteSpace(capacityCalculation)
+                    ? null
+                    : $"var {capacityReference} = {capacityCalculation};";
 
-                var capacityVariable = capacityAggregator.Count > 0
-                    ? $"const int {capacityName} = {capacityAggregator.Count};"
-                    : null;
-                var dynamicCapacityVariable = capacityAggregator.dynamicCount.Count > 0
-                    ? $"var {dynamicCapacityName} = {string.Join(" + ", capacityAggregator.dynamicCount)};"
-                    : null;
-
-                var ifCheck = capacityVariable is not null || dynamicCapacityVariable is not null
-                    ? $"if (({capacityCalculation}) is 0) {{ return {dictionaryName}; }}"
+                var ifCheck = capacityDeclaration is not null 
+                    ? $"if (({capacityReference}) is 0) {{ return {dictionaryName}; }}"
                     : null;
 
                 return @$"
-    {capacityVariable}
-    {dynamicCapacityVariable}
-    var {dictionaryName} = new Dictionary<string, AttributeValue>({capacityCalculation});
+    {capacityDeclaration}
+    var {dictionaryName} = new Dictionary<string, AttributeValue>({capacityReference});
     {ifCheck} 
 ";
             }
@@ -240,7 +220,7 @@ namespace DynamoDBGenerator.SourceGenerator
             var assignments = dynamoDbProperties.Select(x =>
                 {
                     var add = @$"{dictionaryName}.Add(""{x.Name}"", {CreateAttributeValue(x.Type, x.Name)});";
-                    return NotNullEvaluation.IfStatement(x, add);
+                    return x.IfStatement(add);
                 })
                 .Select(x => $"{indent}{x}");
 
