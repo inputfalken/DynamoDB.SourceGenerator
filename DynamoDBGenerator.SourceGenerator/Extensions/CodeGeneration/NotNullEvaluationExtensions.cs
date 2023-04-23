@@ -1,8 +1,8 @@
 using Microsoft.CodeAnalysis;
 
-namespace DynamoDBGenerator.SourceGenerator.CodeGeneration;
+namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 
-public static class NotNullEvaluation
+public static class NotNullEvaluationExtensions
 {
     public static string TernaryExpression(this IPropertySymbol typeSymbol, string truthy, string falsy)
     {

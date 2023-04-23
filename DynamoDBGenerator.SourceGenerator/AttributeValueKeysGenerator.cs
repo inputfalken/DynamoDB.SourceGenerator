@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.Text;
 namespace DynamoDBGenerator.SourceGenerator;
 
 [Generator]
-public class AttributeValueGenerator : IIncrementalGenerator
+public class AttributeValueKeysGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -28,8 +28,8 @@ public class AttributeValueGenerator : IIncrementalGenerator
 
                     return name switch
                     {
-                        "AttributeValueGeneratorAttribute" => true,
-                        "AttributeValueGenerator" => true,
+                        "AttributeValueKeysGeneratorAttribute" => true,
+                        "AttributeValueKeysGenerator" => true,
                         _ => false
                     };
                 },
@@ -66,8 +66,9 @@ public class AttributeValueGenerator : IIncrementalGenerator
                 : $"{type.ContainingNamespace}.";
 
             var generateCode = type.CreateClassWithContent(x =>
-                x.GetDynamoDbProperties()
-                    .CreateAttributeValueDictionaryMethod(Constants.AttributeValueGeneratorMethodName)
+                // Might need some validation to verify that the keys are within DDB support.
+                x.GetDynamoDbKeys()
+                    .CreateAttributeValueDictionaryMethod(Constants.AttributeValueKeysGeneratorMethodName)
             );
 
             context.AddSource(

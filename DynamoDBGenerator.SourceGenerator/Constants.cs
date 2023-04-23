@@ -6,4 +6,5 @@ public class Constants
 ";
 
     public const string AttributeValueGeneratorMethodName = "BuildAttributeValues";
+    public const string AttributeValueKeysGeneratorMethodName = "BuildAttributeValueKeys";
 }

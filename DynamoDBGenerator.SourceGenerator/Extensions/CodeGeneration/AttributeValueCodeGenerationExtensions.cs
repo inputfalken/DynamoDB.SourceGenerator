@@ -2,9 +2,9 @@ using System.Collections;
 using Microsoft.CodeAnalysis;
 using static Microsoft.CodeAnalysis.SpecialType;
 
-namespace DynamoDBGenerator.SourceGenerator.CodeGeneration;
+namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 
-public static class AttributeValueCodeGeneration
+public static class AttributeValueCodeGenerationExtensions
 {
     public static string CreateAttributeValueDictionaryMethod(
         this IEnumerable<IPropertySymbol> propertySymbols,
