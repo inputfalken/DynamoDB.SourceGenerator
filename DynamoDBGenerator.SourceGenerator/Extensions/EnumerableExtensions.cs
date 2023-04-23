@@ -1,7 +1,7 @@
-﻿using Amazon.DynamoDBv2.DataModel;
+using Amazon.DynamoDBv2.DataModel;
 using Microsoft.CodeAnalysis;
 
-namespace DynamoDBGenerator.SourceGenerator;
+namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class EnumerableExtensions
 {

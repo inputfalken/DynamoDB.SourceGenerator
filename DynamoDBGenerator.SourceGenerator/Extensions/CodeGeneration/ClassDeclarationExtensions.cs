@@ -1,8 +1,8 @@
 using Microsoft.CodeAnalysis;
 
-namespace DynamoDBGenerator.SourceGenerator.CodeGeneration;
+namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 
-public static class ClassDeclaration
+public static class ClassDeclarationExtensions
 {
     public static string CreateClassWithContent(this ITypeSymbol type, Func<ITypeSymbol, string> classContent)
     {
