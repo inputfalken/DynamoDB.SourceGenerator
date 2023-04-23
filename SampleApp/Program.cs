@@ -10,20 +10,7 @@ internal static class Program
     {
         var personEntity = new PersonEntity()
         {
-            Id = "Robin",
-            Friends = new List<PersonEntity>(){},
-            CreatedAtDate = DateOnly.FromDateTime(DateTime.Now),
-            UpdatedAt = DateTime.Now
-        };
 
-
-        new PutItemRequest()
-        {
-            Item = personEntity.BuildAttributeValues(),
-            ExpressionAttributeValues = new Dictionary<string, AttributeValue>()
-            {
-                {PersonEntity.AttributeValueKeys.Name, new AttributeValue(){S = "A"}}
-            }
         };
 
     }
