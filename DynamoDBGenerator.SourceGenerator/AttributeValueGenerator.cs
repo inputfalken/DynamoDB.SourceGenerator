@@ -237,7 +237,7 @@ namespace DynamoDBGenerator.SourceGenerator
 
             const string dictionaryName = "attributeValues";
             const string indent = "    ";
-            var dynamoDbProperties = GetDynamoDbProperties(type).ToArray();
+            var dynamoDbProperties = type.GetDynamoDbProperties().ToArray();
 
             var assignments = dynamoDbProperties.Select(x =>
                 {
@@ -278,13 +278,6 @@ using System.Linq;
    }}
 {(nameSpace is null ? null : @"}
 ")}";
-        }
-
-        private static IEnumerable<IPropertySymbol> GetDynamoDbProperties(INamespaceOrTypeSymbol type)
-        {
-            return type
-                .GetPublicInstanceProperties()
-                .Where(x => x.GetAttributes().Any(y => y.AttributeClass is {Name: nameof(DynamoDBPropertyAttribute)}));
         }
 
 

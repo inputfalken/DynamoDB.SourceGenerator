@@ -66,7 +66,7 @@ using System.Linq;
 
         private static string BuildAttributeKeyClass(ITypeSymbol type)
         {
-            var propertySymbols = GetDynamoDbProperties(type).ToArray();
+            var propertySymbols = type.GetDynamoDbProperties().ToArray();
             var constantDeclerations = propertySymbols
                 .Select(x => @$"public const string {x.Name} = ""{x.Name}"";");
             var str = @$"public static class AttributeValueKeys
@@ -78,13 +78,6 @@ using System.Linq;
             return str;
 
 
-        }
-
-        private static IEnumerable<IPropertySymbol> GetDynamoDbProperties(INamespaceOrTypeSymbol type)
-        {
-            return type
-                .GetPublicInstanceProperties()
-                .Where(x => x.GetAttributes().Any(y => y.AttributeClass is {Name: nameof(DynamoDBPropertyAttribute)}));
         }
 
 
