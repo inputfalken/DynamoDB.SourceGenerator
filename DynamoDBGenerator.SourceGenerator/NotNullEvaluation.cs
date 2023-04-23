@@ -4,27 +4,35 @@ namespace DynamoDBGenerator.SourceGenerator;
 
 public static class NotNullEvaluation
 {
-    private const string True = "true";
-
-    public static string TernaryExpression(ITypeSymbol typeSymbol, string accessPattern, string truthy, string falsy)
+    public static string TernaryExpression(this IPropertySymbol typeSymbol, string truthy, string falsy)
     {
-        var expression = Expression(typeSymbol, accessPattern);
-        return expression is True
-            ? truthy
-            : $"{expression} ? {truthy} : {falsy}";
+        return Expression(typeSymbol.Type, typeSymbol.Name) is { } expression
+            ? $"{expression} ? {truthy} : {falsy}"
+            : truthy;
     }
 
-    public static string? LambdaExpression(ITypeSymbol typeSymbol)
+    public static string? LambdaExpression(this ITypeSymbol typeSymbol)
     {
-        var expression = Expression(typeSymbol, "x");
-
-        return expression is True ? null : $"x => {expression}";
+        return Expression(typeSymbol, "x") is { } expression 
+            ? $"x => {expression}" 
+            : null;
     }
 
-    private static string Expression(ITypeSymbol typeSymbol, string accessPattern)
+
+    public static string IfStatement(this IPropertySymbol typeSymbol, string truthy)
+    {
+        return Expression(typeSymbol.Type, typeSymbol.Name) is { } expression
+            ? $"if ({expression}) {{ {truthy} }}"
+            : truthy;
+    }
+
+    /// <summary>
+    /// If this expression returns null it means that the evaluation determined the expression to be truthy.
+    /// </summary>
+    private static string? Expression(ITypeSymbol typeSymbol, string accessPattern)
     {
         if (typeSymbol is not INamedTypeSymbol {IsGenericType: true} namedTypeSymbol)
-            return typeSymbol.IsReferenceType ? $"{accessPattern} is not null" : True;
+            return typeSymbol.IsReferenceType ? $"{accessPattern} is not null" : null;
 
         switch (namedTypeSymbol)
         {
@@ -34,7 +42,7 @@ public static class NotNullEvaluation
 
                 var expression = Expression(T, $"{accessPattern}.Value");
 
-                return expression is True
+                return expression is null
                     ? $"{accessPattern}.HasValue"
                     : $"{accessPattern}.HasValue && {expression}";
             }
@@ -47,9 +55,9 @@ public static class NotNullEvaluation
                 var valueCondition = Expression(T2, $"{accessPattern}.Value");
                 return (keyCondition, valueCondition) switch
                 {
-                    (True, True) => True,
-                    (True, _) => valueCondition,
-                    (_, True) => keyCondition,
+                    (null, null) => null,
+                    (null, _) => valueCondition,
+                    (_, null) => keyCondition,
                     (_, _) => $"{keyCondition} && {valueCondition}"
                 };
             }
@@ -62,11 +70,6 @@ public static class NotNullEvaluation
             );
 
 
-        return typeSymbol.IsReferenceType ? $"{accessPattern} is not null" : True;
-    }
-
-    public static string IfStatement(IPropertySymbol typeSymbol, string truthy)
-    {
-        return $"if ({Expression(typeSymbol.Type, typeSymbol.Name)}) {{ {truthy} }}";
+        return typeSymbol.IsReferenceType ? $"{accessPattern} is not null" : null;
     }
 }
