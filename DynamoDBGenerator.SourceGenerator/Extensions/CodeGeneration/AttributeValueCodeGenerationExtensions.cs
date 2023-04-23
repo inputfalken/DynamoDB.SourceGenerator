@@ -20,7 +20,7 @@ public static class AttributeValueCodeGenerationExtensions
             const string capacityReference = "capacity";
 
             var capacityDeclaration = string.IsNullOrWhiteSpace(capacityCalculation)
-                ? $"var {capacityReference} = 0;"
+                ? $"const int {capacityReference} = 0;"
                 : $"var {capacityReference} = {capacityCalculation};";
 
             var ifCheck = $"if (({capacityReference}) is 0) {{ return {dictionaryName}; }}";
