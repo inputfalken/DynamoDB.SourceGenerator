@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis;
 
-namespace DynamoDBGenerator.SourceGenerator;
+namespace DynamoDBGenerator.SourceGenerator.CodeGeneration;
 
 public static class NotNullEvaluation
 {
