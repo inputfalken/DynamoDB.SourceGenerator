@@ -13,8 +13,8 @@ public static class NotNullEvaluation
 
     public static string? LambdaExpression(this ITypeSymbol typeSymbol)
     {
-        return Expression(typeSymbol, "x") is { } expression 
-            ? $"x => {expression}" 
+        return Expression(typeSymbol, "x") is { } expression
+            ? $"x => {expression}"
             : null;
     }
 
@@ -48,27 +48,23 @@ public static class NotNullEvaluation
             }
             case {Name: "KeyValuePair"}:
             {
-                var T1 = namedTypeSymbol.TypeArguments[0];
-                var T2 = namedTypeSymbol.TypeArguments[1];
-
-                var keyCondition = Expression(T1, $"{accessPattern}.Key");
-                var valueCondition = Expression(T2, $"{accessPattern}.Value");
-                return (keyCondition, valueCondition) switch
-                {
-                    (null, null) => null,
-                    (null, _) => valueCondition,
-                    (_, null) => keyCondition,
-                    (_, _) => $"{keyCondition} && {valueCondition}"
-                };
+                return (
+                        keyCondition: Expression(namedTypeSymbol.TypeArguments[0], $"{accessPattern}.Key"),
+                        valueCondition: Expression(namedTypeSymbol.TypeArguments[1], $"{accessPattern}.Value")
+                    ) switch
+                    {
+                        (null, null) => null,
+                        (null, var right) => right,
+                        (var left, null) => left,
+                        var (left, right) => $"{left} && {right}"
+                    };
             }
         }
 
         if (namedTypeSymbol.IsValueType)
-
             throw new NotSupportedException(
                 $"Could not determine nullability of '{typeSymbol}' from type '{typeSymbol.OriginalDefinition}' with access pattern '{accessPattern}'."
             );
-
 
         return typeSymbol.IsReferenceType ? $"{accessPattern} is not null" : null;
     }
