@@ -3,16 +3,13 @@ using DynamoDBGenerator;
 
 namespace SampleApp;
 
-[AttributeValueGenerator, AttributeValueKeysGenerator]
+[AttributeValueKeysGenerator]
 public partial class PersonEntity
 {
     // TODO figure out why the KeyValuePair is not evaluated correctly.
     [DynamoDBProperty]
-    public IEnumerable<KeyValuePair<string, int>> Type { get; set; }
+    public IEnumerable<KeyValuePair<string, int>> Type { get; set; } = null!;
 
     [DynamoDBHashKey]
-    public string MyHashKey { get; set; }
-
-    [DynamoDBRangeKey]
-    public string MySortKey { get; set; }
+    public string MyHashKey { get; set; } = null!;
 }
