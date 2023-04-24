@@ -7,10 +7,12 @@ namespace SampleApp;
 public partial class Address
 {
     [DynamoDBHashKey]
-    public string Id { get; set; }
-    [DynamoDBProperty]
-    public string Street { get; set; }
+    public string Id { get; set; } = null!;
 
     [DynamoDBProperty]
-    public PostalCode PostalCode { get; set; }
+    public string Street { get; set; } = null!;
+
+    [DynamoDBProperty]
+
+    public PostalCode PostalCode { get; set; } = null!;
 }
