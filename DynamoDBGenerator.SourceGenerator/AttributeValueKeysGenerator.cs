@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Text;
+using Amazon.DynamoDBv2.DataModel;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 using Microsoft.CodeAnalysis;
@@ -77,14 +78,14 @@ public class AttributeValueKeysGenerator : IIncrementalGenerator
                 ? null
                 : $"{type.ContainingNamespace}.";
 
-            var generateCode = type.CreateClassWithContent(x =>
-                // Might need some validation to verify that the keys are within DDB support.
-                x.GetDynamoDbKeys()
+            var generateCode = type.CreateClassWithContent(
+                x => x.GetDynamoDbProperties()
+                    .Where(y => y is {IsRangeKey: true} or {IsHashKey: true})
                     .CreateAttributeValueDictionaryMethod(Constants.AttributeValueKeysGeneratorMethodName)
             );
 
             context.AddSource(
-                $"{typeNamespace}{nameof(AttributeValueGenerator)}.{type.Name}.g.cs",
+                $"{typeNamespace}{nameof(AttributeValueKeysGeneratorAttribute)}.{type.Name}.g.cs",
                 SourceText.From(generateCode, Encoding.UTF8)
             );
         }
