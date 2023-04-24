@@ -4,7 +4,7 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 
 public static class NotNullEvaluationExtensions
 {
-    public static string TernaryExpression(this IPropertySymbol typeSymbol, string truthy, string falsy)
+    public static string TernaryExpression(this DataMember typeSymbol, string truthy, string falsy)
     {
         return Expression(typeSymbol.Type, typeSymbol.Name) is { } expression
             ? $"{expression} ? {truthy} : {falsy}"
@@ -19,7 +19,7 @@ public static class NotNullEvaluationExtensions
     }
 
 
-    public static string IfStatement(this IPropertySymbol typeSymbol, string truthy)
+    public static string IfStatement(this DataMember typeSymbol, string truthy)
     {
         return Expression(typeSymbol.Type, typeSymbol.Name) is { } expression
             ? $"if ({expression}) {{ {truthy} }}"
