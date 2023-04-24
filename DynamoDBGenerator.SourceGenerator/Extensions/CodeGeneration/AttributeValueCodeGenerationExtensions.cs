@@ -7,12 +7,12 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 public static class AttributeValueCodeGenerationExtensions
 {
     public static string CreateAttributeValueDictionaryMethod(
-        this IEnumerable<DynamoDbProperty> propertySymbols,
+        this IEnumerable<DynamoDbDataMember> propertySymbols,
         string methodName)
     {
         const string indent = "            ";
 
-        static string InitializeDictionary(string dictionaryName, IEnumerable<IPropertySymbol> propertySymbols)
+        static string InitializeDictionary(string dictionaryName, IEnumerable<DataMember> propertySymbols)
         {
             var capacityCalculation = string.Join(
                 " + ",
@@ -37,15 +37,16 @@ public static class AttributeValueCodeGenerationExtensions
         const string dictionaryName = "attributeValues";
         var properties = propertySymbols.Where(x => x.IsIgnored is false).ToArray();
 
-        var dictionaryPopulation = properties.Select(x =>
+        var dictionaryPopulation = properties
+            .Select(x =>
         {
-            var add = @$"{dictionaryName}.Add(""{x.AttributeName}"", {CreateAttributeValue(x.Property.Type, x.Property.Name)});";
-            return x.Property.IfStatement(add);
+            var add = @$"{dictionaryName}.Add(""{x.AttributeName}"", {CreateAttributeValue(x.DataMember.Type, x.DataMember.Name)});";
+            return x.DataMember.IfStatement(add);
         });
 
         return @$"public Dictionary<string, AttributeValue> {methodName}()
         {{ 
-            {InitializeDictionary(dictionaryName, properties.Select(x => x.Property))}
+            {InitializeDictionary(dictionaryName, properties.Select(x => x.DataMember))}
             {string.Join(Constants.NewLine + indent, dictionaryPopulation)}
 
             return {dictionaryName};

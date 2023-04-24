@@ -4,19 +4,30 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class EnumerableExtensions
 {
-    public static IEnumerable<DynamoDbProperty> GetDynamoDbProperties(this INamespaceOrTypeSymbol type)
+    public static IEnumerable<DynamoDbDataMember> GetDynamoDbProperties(this INamespaceOrTypeSymbol type)
     {
         return type.GetPublicInstanceProperties()
-            .Select(x => new DynamoDbProperty(x));
+            .Select(x => new DynamoDbDataMember(x));
     }
-    private static IEnumerable<IPropertySymbol> GetPublicInstanceProperties(this INamespaceOrTypeSymbol symbol)
+
+    private static IEnumerable<DataMember> GetPublicInstanceProperties(this INamespaceOrTypeSymbol symbol)
     {
-        return symbol
+        var publicInstanceMembers = symbol
             .GetMembers()
             .Where(x => x.IsStatic is false)
-            .Where(x => x.DeclaredAccessibility == Accessibility.Public)
-            .Where(x => x is not null)
-            .Where(x => x is IPropertySymbol)
-            .Cast<IPropertySymbol>();
+            .Where(x => x.DeclaredAccessibility == Accessibility.Public);
+
+        foreach (var member in publicInstanceMembers)
+        {
+            switch (member)
+            {
+                case IPropertySymbol propertySymbol:
+                    yield return DataMember.FromProperty(in propertySymbol);
+                    break;
+                case IFieldSymbol fieldSymbol:
+                    yield return DataMember.FromField(in fieldSymbol);
+                    break;
+            }
+        }
     }
 }
