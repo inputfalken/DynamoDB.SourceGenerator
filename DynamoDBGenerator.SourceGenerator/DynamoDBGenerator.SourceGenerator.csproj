@@ -17,22 +17,21 @@
     </ItemGroup>
 
     <ItemGroup>
-        <!-- we need to add a reference normally but with PrivateAssets="all" property because it's going to be used only in analysing stage-->
+        <!-- Generator dependencies -->
         <ProjectReference Include="..\DynamoDBGenerator\DynamoDBGenerator.csproj" PrivateAssets="all" OutputItemType="Analyzer" />
-
-        <!-- We need to add *.dll here so all dlls would be packed inside NuGet package as our DependencyB.dll is not a NuGet package -->
-        <None Include="$(OutputPath)\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+        <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.102.18" GeneratePathProperty="true" PrivateAssets="all" />
     </ItemGroup>
-    <PropertyGroup>
+    
+   <PropertyGroup>
         <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
     </PropertyGroup>
+    
     <Target Name="GetDependencyTargetPaths">
         <ItemGroup>
-
-            <!-- our local project will not generate path variable so we need to find it from it's own build output-->
-            <!-- I used $(OutputPath) variable because the dependecy has the exact TFM and configuration as the generator 
-                 you might need to add configuration manually -->
-            <TargetPathWithTargetPlatformMoniker Include="..\DynamoDBExtensions\$(OutputPath)\*.dll" IncludeRuntimeDependency="false" />
+            <TargetPathWithTargetPlatformMoniker Include="$(PKGAWSSDK_DynamoDBv2)\lib\netstandard2.0\AWSSDK.DynamoDBv2.dll" IncludeRuntimeDependency="false" />
+            <!-- Pack both our DLL and the dependencies into a generated Nuget Package -->
+            <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+            <None Include="$(PKGAWSSDK_DynamoDBv2)\lib\netstandard2.0\AWSSDK.DynamoDBv2.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
         </ItemGroup>
     </Target>
 </Project>

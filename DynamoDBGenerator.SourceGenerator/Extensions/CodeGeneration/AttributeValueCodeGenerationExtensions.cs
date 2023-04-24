@@ -7,7 +7,7 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 public static class AttributeValueCodeGenerationExtensions
 {
     public static string CreateAttributeValueDictionaryMethod(
-        this IEnumerable<IPropertySymbol> propertySymbols,
+        this IEnumerable<DynamoDbProperty> propertySymbols,
         string methodName)
     {
         const string indent = "            ";
@@ -35,17 +35,17 @@ public static class AttributeValueCodeGenerationExtensions
         }
 
         const string dictionaryName = "attributeValues";
-        var properties = propertySymbols.ToArray();
+        var properties = propertySymbols.Where(x => x.IsIgnored is false).ToArray();
 
         var dictionaryPopulation = properties.Select(x =>
         {
-            var add = @$"{dictionaryName}.Add(""{x.Name}"", {CreateAttributeValue(x.Type, x.Name)});";
-            return x.IfStatement(add);
+            var add = @$"{dictionaryName}.Add(""{x.AttributeName}"", {CreateAttributeValue(x.Property.Type, x.Property.Name)});";
+            return x.Property.IfStatement(add);
         });
 
         return @$"public Dictionary<string, AttributeValue> {methodName}()
         {{ 
-            {InitializeDictionary(dictionaryName, properties)}
+            {InitializeDictionary(dictionaryName, properties.Select(x => x.Property))}
             {string.Join(Constants.NewLine + indent, dictionaryPopulation)}
 
             return {dictionaryName};
