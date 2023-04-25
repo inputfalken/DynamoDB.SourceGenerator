@@ -4,7 +4,7 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 
 public static class ClassDeclarationExtensions
 {
-    public static string CreateClassWithContent(this ITypeSymbol type, Func<ITypeSymbol, string> classContent)
+    public static string CreateNamespace(this ITypeSymbol type, string content)
     {
         var nameSpace = type.ContainingNamespace.IsGlobalNamespace
             ? null
@@ -17,11 +17,17 @@ using System.Linq;
 
 {(nameSpace is null ? null : $@"namespace {nameSpace}
 {{")}
-    partial class {type.Name}
-    {{
-        {classContent(type)}
-    }}
+    {content}
 {(nameSpace is null ? null : @"}
 ")}";
+    }
+
+    public static string CreateClass(this ITypeSymbol type, string content)
+    {
+        return @$"partial class {type.Name}
+    {{
+        {content}
+    }}
+";
     }
 }
