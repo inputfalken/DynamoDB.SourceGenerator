@@ -65,14 +65,14 @@ public class AttributeValueGenerator : IIncrementalGenerator
                 ? null
                 : $"{type.ContainingNamespace}.";
 
-            var generateCode = type.CreateClassWithContent(x =>
-                x.GetDynamoDbProperties()
-                    .CreateAttributeValueDictionaryMethod(Constants.AttributeValueGeneratorMethodName)
-            );
+            var dictionaryMethod = type.GetDynamoDbProperties()
+                .CreateAttributeValueDictionaryMethod(Constants.AttributeValueGeneratorMethodName);
+
+            var code = type.CreateNamespace(type.CreateClass(dictionaryMethod));
 
             context.AddSource(
                 $"{typeNamespace}{nameof(AttributeValueGenerator)}.{type.Name}.g.cs",
-                SourceText.From(generateCode, Encoding.UTF8)
+                SourceText.From(code, Encoding.UTF8)
             );
         }
     }

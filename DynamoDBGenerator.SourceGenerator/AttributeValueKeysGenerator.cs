@@ -78,15 +78,14 @@ public class AttributeValueKeysGenerator : IIncrementalGenerator
                 ? null
                 : $"{type.ContainingNamespace}.";
 
-            var generateCode = type.CreateClassWithContent(
-                x => x.GetDynamoDbProperties()
-                    .Where(y => y is {IsRangeKey: true} or {IsHashKey: true})
-                    .CreateAttributeValueDictionaryMethod(Constants.AttributeValueKeysGeneratorMethodName)
-            );
+            var dictionaryMethod = type.GetDynamoDbProperties()
+                .Where(y => y is {IsRangeKey: true} or {IsHashKey: true})
+                .CreateAttributeValueDictionaryMethod(Constants.AttributeValueKeysGeneratorMethodName);
+            var code = type.CreateNamespace(type.CreateClass(dictionaryMethod));
 
             context.AddSource(
                 $"{typeNamespace}{nameof(AttributeValueKeysGeneratorAttribute)}.{type.Name}.g.cs",
-                SourceText.From(generateCode, Encoding.UTF8)
+                SourceText.From(code, Encoding.UTF8)
             );
         }
     }
