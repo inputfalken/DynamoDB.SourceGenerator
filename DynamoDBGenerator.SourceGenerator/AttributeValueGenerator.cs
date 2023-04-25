@@ -68,6 +68,10 @@ public class AttributeValueGenerator : IIncrementalGenerator
             var dictionaryMethod = type.GetDynamoDbProperties()
                 .CreateAttributeValueDictionaryMethod(Constants.AttributeValueGeneratorMethodName);
 
+            // TODO In order to map nested classes & types that are not marked with AttributeValueGeneratorAttribute:
+            // * Make all dictionary methods private static with a parameter that is the type to be mapped.
+            // * Only have one instance method with AttributeValueGeneratorMethodName that will invoke the static methods.
+            // * In order to find nested classes you need to do type.GetTypeMembers().Where(x => x.TypeKind is TypeKind.Class);
             var code = type.CreateNamespace(type.CreateClass(dictionaryMethod));
 
             context.AddSource(
