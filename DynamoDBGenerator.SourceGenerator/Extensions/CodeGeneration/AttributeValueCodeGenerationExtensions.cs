@@ -8,7 +8,9 @@ public static class AttributeValueCodeGenerationExtensions
 {
     public static string CreateAttributeValueDictionaryMethod(
         this IEnumerable<DynamoDbDataMember> propertySymbols,
-        string methodName)
+        string methodName,
+        string accessModifier = Constants.AccessModifiers.Public
+        )
     {
         const string indent = "            ";
 
@@ -44,7 +46,7 @@ public static class AttributeValueCodeGenerationExtensions
             return x.DataMember.IfStatement(add);
         });
 
-        return @$"public Dictionary<string, AttributeValue> {methodName}()
+        return @$"{accessModifier} Dictionary<string, AttributeValue> {methodName}()
         {{ 
             {InitializeDictionary(dictionaryName, properties.Select(x => x.DataMember))}
             {string.Join(Constants.NewLine + indent, dictionaryPopulation)}
