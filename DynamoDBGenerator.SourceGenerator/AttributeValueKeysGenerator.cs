@@ -80,7 +80,7 @@ public class AttributeValueKeysGenerator : IIncrementalGenerator
 
             var dictionaryMethod = type.GetDynamoDbProperties()
                 .Where(y => y is {IsRangeKey: true} or {IsHashKey: true})
-                .CreateAttributeValueDictionaryMethod(Constants.AttributeValueKeysGeneratorMethodName);
+                .CreateAttributeValueDictionaryMethod(type, Constants.AttributeValueKeysGeneratorMethodName);
             var code = type.CreateNamespace(type.CreateClass(dictionaryMethod));
 
             context.AddSource(

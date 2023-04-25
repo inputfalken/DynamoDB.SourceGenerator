@@ -66,7 +66,7 @@ public class AttributeValueGenerator : IIncrementalGenerator
                 : $"{type.ContainingNamespace}.";
 
             var dictionaryMethod = type.GetDynamoDbProperties()
-                .CreateAttributeValueDictionaryMethod(Constants.AttributeValueGeneratorMethodName);
+                .CreateAttributeValueDictionaryMethod(type, Constants.AttributeValueGeneratorMethodName);
 
             // TODO In order to map nested classes & types that are not marked with AttributeValueGeneratorAttribute:
             // * Make all dictionary methods private static with a parameter that is the type to be mapped.

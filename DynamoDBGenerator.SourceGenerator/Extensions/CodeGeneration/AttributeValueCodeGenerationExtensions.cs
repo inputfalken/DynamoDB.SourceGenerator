@@ -8,17 +8,19 @@ public static class AttributeValueCodeGenerationExtensions
 {
     public static string CreateAttributeValueDictionaryMethod(
         this IEnumerable<DynamoDbDataMember> propertySymbols,
+        ITypeSymbol parent,
         string methodName,
         string accessModifier = Constants.AccessModifiers.Public
         )
     {
         const string indent = "            ";
+        var paramReference = parent.Name.FirstCharToLower();
 
-        static string InitializeDictionary(string dictionaryName, IEnumerable<DataMember> propertySymbols)
+        static string InitializeDictionary(string dictionaryName, string paramReference, IEnumerable<DataMember> propertySymbols)
         {
             var capacityCalculation = string.Join(
                 " + ",
-                propertySymbols.Select(x => $"({x.TernaryExpression("1", "0")})")
+                propertySymbols.Select(x => x.Type.TernaryExpression($"{paramReference}.{x.Name}","1", "0"))
             );
 
             const string capacityReference = "capacity";
@@ -42,13 +44,13 @@ public static class AttributeValueCodeGenerationExtensions
         var dictionaryPopulation = properties
             .Select(x =>
         {
-            var add = @$"{dictionaryName}.Add(""{x.AttributeName}"", {CreateAttributeValue(x.DataMember.Type, x.DataMember.Name)});";
-            return x.DataMember.IfStatement(add);
+            var add = @$"{dictionaryName}.Add(""{x.AttributeName}"", {CreateAttributeValue(x.DataMember.Type, $"{paramReference}.{x.DataMember.Name}")});";
+            return x.DataMember.IfStatement($"{paramReference}.{x.DataMember.Name}", add);
         });
 
-        return @$"{accessModifier} Dictionary<string, AttributeValue> {methodName}()
+        return @$"{accessModifier} static Dictionary<string, AttributeValue> {methodName}({parent.Name} {paramReference})
         {{ 
-            {InitializeDictionary(dictionaryName, properties.Select(x => x.DataMember))}
+            {InitializeDictionary(dictionaryName, paramReference, properties.Select(x => x.DataMember))}
             {string.Join(Constants.NewLine + indent, dictionaryPopulation)}
 
             return {dictionaryName};
@@ -151,7 +153,7 @@ public static class AttributeValueCodeGenerationExtensions
                 _ when IsNumeric(typeSymbol) => $"N = {accessPattern}.ToString()",
                 _ when IsTimeRelated(typeSymbol) => $@"S = {accessPattern}.ToString(""O"")",
                 _ when IsAttributeValueGenerator(typeSymbol) =>
-                    $"M = {accessPattern}.{Constants.AttributeValueGeneratorMethodName}()",
+                    $"M = {typeSymbol.Name}.{Constants.AttributeValueGeneratorMethodName}({accessPattern})",
                 IArrayTypeSymbol {ElementType: { } elementType} => BuildList(elementType, accessPattern),
                 _ when SingleGenericTypeOrNull(typeSymbol, accessPattern) is { } assignment => assignment,
                 _ when DoubleGenericTypeOrNull(typeSymbol, accessPattern) is { } assignment => assignment,

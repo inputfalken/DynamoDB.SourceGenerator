@@ -4,9 +4,9 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 
 public static class NotNullEvaluationExtensions
 {
-    public static string TernaryExpression(this DataMember typeSymbol, string truthy, string falsy)
+    public static string TernaryExpression(this ITypeSymbol typeSymbol, string accessPattern, string truthy, string falsy)
     {
-        return Expression(typeSymbol.Type, typeSymbol.Name) is { } expression
+        return Expression(typeSymbol, accessPattern) is { } expression
             ? $"{expression} ? {truthy} : {falsy}"
             : truthy;
     }
@@ -19,9 +19,9 @@ public static class NotNullEvaluationExtensions
     }
 
 
-    public static string IfStatement(this DataMember typeSymbol, string truthy)
+    public static string IfStatement(this DataMember typeSymbol,string accessPattern, string truthy)
     {
-        return Expression(typeSymbol.Type, typeSymbol.Name) is { } expression
+        return Expression(typeSymbol.Type, accessPattern) is { } expression
             ? $"if ({expression}) {{ {truthy} }}"
             : truthy;
     }
