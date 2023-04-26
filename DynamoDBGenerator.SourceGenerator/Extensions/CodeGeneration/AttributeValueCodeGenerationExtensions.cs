@@ -6,12 +6,15 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 
 public static class AttributeValueCodeGenerationExtensions
 {
-    public static string CreateAttributeValueDictionaryMethod(
-        this IEnumerable<DynamoDbDataMember> propertySymbols,
-        ITypeSymbol parent,
-        string methodName,
-        string accessModifier = Constants.AccessModifiers.Public
-    )
+    public static (
+        string dictionary,
+        IEnumerable<(AttributeValueInstance attributeValue, DynamoDbDataMember)> results
+        ) CreateAttributeValueDictionaryMethod(
+            this IEnumerable<DynamoDbDataMember> propertySymbols,
+            ITypeSymbol parent,
+            string methodName,
+            string accessModifier = Constants.AccessModifiers.Public
+        )
     {
         const string indent = "            ";
         var paramReference = parent.Name.FirstCharToLower();
@@ -40,24 +43,33 @@ public static class AttributeValueCodeGenerationExtensions
         }
 
         const string dictionaryName = "attributeValues";
-        var properties = propertySymbols.Where(x => x.IsIgnored is false).ToArray();
+        var properties = propertySymbols
+            .Where(x => x.IsIgnored is false)
+            .Select(x => (
+                    DDB: x,
+                    AttributeValue: CreateAttributeValue(x.DataMember.Type, $"{paramReference}.{x.DataMember.Name}")
+                )
+            )
+            .Select(x => (
+                    x.DDB,
+                    x.AttributeValue,
+                    DictionaryAssignment: x.DDB.DataMember.IfStatement($"{paramReference}.{x.DDB.DataMember.Name}",
+                        @$"{dictionaryName}.Add(""{x.DDB.AttributeName}"", {x.AttributeValue});")
+                )
+            )
+            .ToArray();
 
-        var dictionaryPopulation = properties
-            .Select(x =>
-            {
-                var add =
-                    @$"{dictionaryName}.Add(""{x.AttributeName}"", {CreateAttributeValue(x.DataMember.Type, $"{paramReference}.{x.DataMember.Name}")});";
-                return x.DataMember.IfStatement($"{paramReference}.{x.DataMember.Name}", add);
-            });
 
-        return
+        var dictionary =
             @$"{accessModifier} static Dictionary<string, AttributeValue> {methodName}({parent.Name} {paramReference})
         {{ 
-            {InitializeDictionary(dictionaryName, paramReference, properties.Select(x => x.DataMember))}
-            {string.Join(Constants.NewLine + indent, dictionaryPopulation)}
-
+            {InitializeDictionary(dictionaryName, paramReference, properties.Select(x => x.DDB.DataMember))}
+            {string.Join(Constants.NewLine + indent, properties.Select(x => x.DictionaryAssignment))}
             return {dictionaryName};
         }}";
+
+
+        return (dictionary, properties.Select(x => (x.AttributeValue, x.DDB)));
     }
 
     private static AttributeValueInstance CreateAttributeValue(ITypeSymbol typeSymbol, string accessPattern)
@@ -155,8 +167,6 @@ public static class AttributeValueCodeGenerationExtensions
                 {SpecialType: System_Boolean} => $"BOOL = {accessPattern}",
                 _ when IsNumeric(typeSymbol) => $"N = {accessPattern}.ToString()",
                 _ when IsTimeRelated(typeSymbol) => $@"S = {accessPattern}.ToString(""O"")",
-                _ when IsAttributeValueGenerator(typeSymbol) =>
-                    $"M = {typeSymbol.Name}.{Constants.AttributeValueGeneratorMethodName}({accessPattern})",
                 IArrayTypeSymbol {ElementType: { } elementType} => BuildList(elementType, accessPattern),
                 _ when SingleGenericTypeOrNull(typeSymbol, accessPattern) is { } assignment => assignment,
                 _ when DoubleGenericTypeOrNull(typeSymbol, accessPattern) is { } assignment => assignment,
@@ -166,7 +176,7 @@ public static class AttributeValueCodeGenerationExtensions
             if (res is null)
             {
                 return new AttributeValueInstance(
-                    $"M = {typeSymbol.Name}.{Constants.AttributeValueGeneratorMethodName}({accessPattern})",
+                    $"M = {Constants.AttributeValueGeneratorMethodName}({accessPattern})",
                     in typeSymbol,
                     AttributeValueInstance.Decision.NeedsExternalInvocation
                 );
@@ -195,5 +205,4 @@ public static class AttributeValueCodeGenerationExtensions
                 }
             });
     }
-
 }

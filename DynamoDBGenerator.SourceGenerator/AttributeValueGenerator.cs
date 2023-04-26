@@ -68,11 +68,21 @@ public class AttributeValueGenerator : IIncrementalGenerator
             var dictionaryMethod = type.GetDynamoDbProperties()
                 .CreateAttributeValueDictionaryMethod(type, Constants.AttributeValueGeneratorMethodName);
 
+            var dictionaries = dictionaryMethod.results
+                .Where(x => x.attributeValue.How == AttributeValueInstance.Decision.NeedsExternalInvocation)
+                .Select(x => x.Item2.DataMember.Type)
+                .Distinct(SymbolEqualityComparer.Default) // Is needed in order to make sure we dont create multiple dictionaries for the same type.
+                .Cast<ITypeSymbol>()
+                .Select(x => x.GetDynamoDbProperties().CreateAttributeValueDictionaryMethod(x, Constants.AttributeValueGeneratorMethodName))
+                .Prepend(dictionaryMethod)
+                .Select(x => x.dictionary);
+            
+
             // TODO In order to map nested classes & types that are not marked with AttributeValueGeneratorAttribute:
             // * Make all dictionary methods private static with a parameter that is the type to be mapped.
             // * Only have one instance method with AttributeValueGeneratorMethodName that will invoke the static methods.
             // * In order to find nested classes you need to do type.GetTypeMembers().Where(x => x.TypeKind is TypeKind.Class);
-            var code = type.CreateNamespace(type.CreateClass(dictionaryMethod));
+            var code = type.CreateNamespace(type.CreateClass(string.Join(Constants.NewLine, dictionaries)));
 
             context.AddSource(
                 $"{typeNamespace}{nameof(AttributeValueGenerator)}.{type.Name}.g.cs",
