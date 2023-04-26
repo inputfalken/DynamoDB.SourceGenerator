@@ -66,16 +66,18 @@ public class AttributeValueGenerator : IIncrementalGenerator
                 : $"{type.ContainingNamespace}.";
 
             var dictionaryMethod = type.GetDynamoDbProperties()
-                .CreateAttributeValueDictionaryMethod(type, Constants.AttributeValueGeneratorMethodName);
+                .CreateStaticAttributeValueDictionaryMethod(type, Constants.AttributeValueGeneratorMethodName);
 
             var dictionaries = dictionaryMethod.results
                 .Where(x => x.attributeValue.How == AttributeValueInstance.Decision.NeedsExternalInvocation)
                 .Select(x => x.Item2.DataMember.Type)
                 .Distinct(SymbolEqualityComparer.Default) // Is needed in order to make sure we dont create multiple dictionaries for the same type.
                 .Cast<ITypeSymbol>()
-                .Select(x => x.GetDynamoDbProperties().CreateAttributeValueDictionaryMethod(x, Constants.AttributeValueGeneratorMethodName))
+                // Might need to look at the results from `CreateStaticAttributeValueDictionaryMethod` to verify whether we support the type.
+                .Select(x => x.GetDynamoDbProperties().CreateStaticAttributeValueDictionaryMethod(x, Constants.AttributeValueGeneratorMethodName))
                 .Prepend(dictionaryMethod)
-                .Select(x => x.dictionary);
+                .Select(x => x.dictionary)
+                .Prepend(AttributeValueCodeGenerationExtensions.CreateAttributeValueDictionaryRootMethod(Constants.AttributeValueGeneratorMethodName));
             
 
             // TODO In order to map nested classes & types that are not marked with AttributeValueGeneratorAttribute:

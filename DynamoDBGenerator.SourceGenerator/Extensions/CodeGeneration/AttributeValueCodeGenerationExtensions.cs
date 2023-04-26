@@ -6,14 +6,18 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 
 public static class AttributeValueCodeGenerationExtensions
 {
+    public static string CreateAttributeValueDictionaryRootMethod(string methodName)
+    {
+        return $"public Dictionary<string, AttributeValue> {methodName}() => {methodName}(this);";
+    }
     public static (
         string dictionary,
-        IEnumerable<(AttributeValueInstance attributeValue, DynamoDbDataMember)> results
-        ) CreateAttributeValueDictionaryMethod(
+        IEnumerable<(AttributeValueInstance attributeValue, DynamoDbDataMember DDB)> results
+        ) CreateStaticAttributeValueDictionaryMethod(
             this IEnumerable<DynamoDbDataMember> propertySymbols,
             ITypeSymbol parent,
             string methodName,
-            string accessModifier = Constants.AccessModifiers.Public
+            string accessModifier = Constants.AccessModifiers.Private
         )
     {
         const string indent = "            ";
