@@ -8,7 +8,8 @@ public static class AttributeValueCodeGenerationExtensions
 {
     public static string CreateAttributeValueDictionaryRootMethod(string methodName)
     {
-        return $"public Dictionary<string, AttributeValue> {methodName}() => {methodName}(this);";
+        return $@"[MethodImpl(MethodImplOptions.AggressiveInlining)]
+public Dictionary<string, AttributeValue> {methodName}() => {methodName}(this);";
     }
     public static (
         string dictionary,
