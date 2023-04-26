@@ -11,6 +11,6 @@ public class Constants
     public static class AccessModifiers
     {
         public const string Public = "public";
-        public const string File = "file";
+        public const string Private = "private";
     }
 }

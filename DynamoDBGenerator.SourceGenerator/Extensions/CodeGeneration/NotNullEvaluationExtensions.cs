@@ -6,9 +6,11 @@ public static class NotNullEvaluationExtensions
 {
     public static string TernaryExpression(this ITypeSymbol typeSymbol, string accessPattern, string truthy, string falsy)
     {
-        return Expression(typeSymbol, accessPattern) is { } expression
+        var result = Expression(typeSymbol, accessPattern) is { } expression
             ? $"{expression} ? {truthy} : {falsy}"
             : truthy;
+
+        return $"({result})";
     }
 
     public static string? LambdaExpression(this ITypeSymbol typeSymbol)
