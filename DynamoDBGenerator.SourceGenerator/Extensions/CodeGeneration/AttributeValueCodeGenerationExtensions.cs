@@ -11,16 +11,17 @@ public static class AttributeValueCodeGenerationExtensions
         ITypeSymbol parent,
         string methodName,
         string accessModifier = Constants.AccessModifiers.Public
-        )
+    )
     {
         const string indent = "            ";
         var paramReference = parent.Name.FirstCharToLower();
 
-        static string InitializeDictionary(string dictionaryName, string paramReference, IEnumerable<DataMember> propertySymbols)
+        static string InitializeDictionary(string dictionaryName, string paramReference,
+            IEnumerable<DataMember> propertySymbols)
         {
             var capacityCalculation = string.Join(
                 " + ",
-                propertySymbols.Select(x => x.Type.TernaryExpression($"{paramReference}.{x.Name}","1", "0"))
+                propertySymbols.Select(x => x.Type.TernaryExpression($"{paramReference}.{x.Name}", "1", "0"))
             );
 
             const string capacityReference = "capacity";
@@ -43,12 +44,14 @@ public static class AttributeValueCodeGenerationExtensions
 
         var dictionaryPopulation = properties
             .Select(x =>
-        {
-            var add = @$"{dictionaryName}.Add(""{x.AttributeName}"", {CreateAttributeValue(x.DataMember.Type, $"{paramReference}.{x.DataMember.Name}")});";
-            return x.DataMember.IfStatement($"{paramReference}.{x.DataMember.Name}", add);
-        });
+            {
+                var add =
+                    @$"{dictionaryName}.Add(""{x.AttributeName}"", {CreateAttributeValue(x.DataMember.Type, $"{paramReference}.{x.DataMember.Name}")});";
+                return x.DataMember.IfStatement($"{paramReference}.{x.DataMember.Name}", add);
+            });
 
-        return @$"{accessModifier} static Dictionary<string, AttributeValue> {methodName}({parent.Name} {paramReference})
+        return
+            @$"{accessModifier} static Dictionary<string, AttributeValue> {methodName}({parent.Name} {paramReference})
         {{ 
             {InitializeDictionary(dictionaryName, paramReference, properties.Select(x => x.DataMember))}
             {string.Join(Constants.NewLine + indent, dictionaryPopulation)}
@@ -57,7 +60,7 @@ public static class AttributeValueCodeGenerationExtensions
         }}";
     }
 
-    private static string CreateAttributeValue(ITypeSymbol typeSymbol, string accessPattern)
+    private static AttributeValueInstance CreateAttributeValue(ITypeSymbol typeSymbol, string accessPattern)
     {
         static string BuildList(ITypeSymbol elementType, string accessPattern)
         {
@@ -101,7 +104,7 @@ public static class AttributeValueCodeGenerationExtensions
 
             return type switch
             {
-                {Name: nameof(Nullable)} => $"{CreateAssignment(T, $"{accessPattern}.Value")}",
+                {Name: nameof(Nullable)} => $"{CreateAssignment(T, $"{accessPattern}.Value").Assignment}",
                 {Name: "ISet"} => BuildSet(T, accessPattern),
                 {Name: nameof(IEnumerable)} => BuildList(T, accessPattern),
                 _ when type.AllInterfaces.Any(x => x is {Name: "ISet"}) => BuildSet(T, accessPattern),
@@ -144,9 +147,9 @@ public static class AttributeValueCodeGenerationExtensions
             return symbol is {SpecialType: System_DateTime} or {Name: nameof(DateTimeOffset) or "DateOnly"};
         }
 
-        static string CreateAssignment(ITypeSymbol typeSymbol, string accessPattern)
+        static AttributeValueInstance CreateAssignment(ITypeSymbol typeSymbol, string accessPattern)
         {
-            return typeSymbol switch
+            var res = typeSymbol switch
             {
                 {SpecialType: System_String} => $"S = {accessPattern}",
                 {SpecialType: System_Boolean} => $"BOOL = {accessPattern}",
@@ -157,11 +160,22 @@ public static class AttributeValueCodeGenerationExtensions
                 IArrayTypeSymbol {ElementType: { } elementType} => BuildList(elementType, accessPattern),
                 _ when SingleGenericTypeOrNull(typeSymbol, accessPattern) is { } assignment => assignment,
                 _ when DoubleGenericTypeOrNull(typeSymbol, accessPattern) is { } assignment => assignment,
-                _ => throw new NotSupportedException($"Could not generate AttributeValue for '{typeSymbol}'.")
+                _ => null
             };
+
+            if (res is null)
+            {
+                return new AttributeValueInstance(
+                    $"M = {typeSymbol.Name}.{Constants.AttributeValueGeneratorMethodName}({accessPattern})",
+                    in typeSymbol,
+                    AttributeValueInstance.Decision.NeedsExternalInvocation
+                );
+            }
+
+            return new AttributeValueInstance(in res, in typeSymbol, AttributeValueInstance.Decision.Inlined);
         }
 
-        return @$"new AttributeValue {{ {CreateAssignment(typeSymbol, accessPattern)} }}";
+        return CreateAssignment(typeSymbol, accessPattern);
     }
 
     /// <summary>
@@ -181,4 +195,5 @@ public static class AttributeValueCodeGenerationExtensions
                 }
             });
     }
+
 }
