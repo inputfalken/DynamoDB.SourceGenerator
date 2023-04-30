@@ -1,8 +1,8 @@
 using Microsoft.CodeAnalysis;
 
-namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
+namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.AttributeValue;
 
-public readonly record struct AttributeValueInstance(in string Assignment, in ITypeSymbol Type, in AttributeValueInstance.Decision How)
+public readonly record struct AttributeValueAssignment(in string Assignment, in ITypeSymbol Type, in AttributeValueAssignment.Decision How)
 {
     public string Assignment { get; } = Assignment;
     public ITypeSymbol Type { get; } = Type;

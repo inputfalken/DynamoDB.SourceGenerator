@@ -5,24 +5,6 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class EnumerableExtensions
 {
-    
-    public static IEnumerable<DynamoDbDataMember> GetTypes(this INamespaceOrTypeSymbol typeSymbol)
-    {
-        if (typeSymbol.GetDynamoDbProperties() is not {Length:>0} dataMembers)
-        {
-            yield break;
-        }
-        
-        foreach (var dynamoDbDataMember in dataMembers)
-        {
-            yield return dynamoDbDataMember;
-            foreach (var dbDataMember in GetTypes(dynamoDbDataMember.DataMember.Type))
-            {
-                yield return dbDataMember;
-            }
-        }
-        
-    }
     public static ImmutableArray<DynamoDbDataMember> GetDynamoDbProperties(this INamespaceOrTypeSymbol type)
     {
         var res = type
