@@ -88,6 +88,7 @@ public static class AttributeValueConversionCode
 
         return new MapToAttributeValueMethod(
             in dictionary,
+            in name,
             properties.Select(
                 x => new Conversion<DynamoDbDataMember, AttributeValueAssignment>(in x.DDB, in x.AttributeValue)
             )
