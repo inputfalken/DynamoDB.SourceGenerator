@@ -78,26 +78,36 @@ public Dictionary<string, AttributeValue> {methodName}() => {methodName}(this);"
 
     private static AttributeValueInstance CreateAttributeValue(ITypeSymbol typeSymbol, string accessPattern)
     {
-        static string BuildList(ITypeSymbol elementType, string accessPattern)
+        static AttributeValueInstance BuildList(ITypeSymbol elementType, string accessPattern)
         {
-            var select = $"Select(x => {CreateAttributeValue(elementType, "x")}))";
-
-            return elementType.LambdaExpression() is { } whereBody
+            var attributeValue = CreateAttributeValue(elementType, "x");
+            var select = $"Select(x => {attributeValue}))";
+            var assignment = elementType.LambdaExpression() is { } whereBody
                 ? $"L = new List<AttributeValue>({accessPattern}.Where({whereBody}).{select}"
                 : $"L = new List<AttributeValue>({accessPattern}.{select}";
+
+            return new AttributeValueInstance(in assignment, in elementType, attributeValue.How);
         }
 
-        static string? BuildSet(ITypeSymbol elementType, string accessPattern)
+        static AttributeValueInstance? BuildSet(ITypeSymbol elementType, string accessPattern)
         {
             if (elementType.LambdaExpression() is { } lambdaExpression)
                 accessPattern = $"{accessPattern}.Where({lambdaExpression})";
 
             if (elementType.SpecialType is System_String)
-                return $"SS = new List<string>({accessPattern})";
+                return new AttributeValueInstance(
+                    $"SS = new List<string>({accessPattern})",
+                    in elementType,
+                    AttributeValueInstance.Decision.Inlined
+                );
 
             return IsNumeric(elementType) is false
                 ? null
-                : $"NS = new List<string>({accessPattern}.Select(x => x.ToString()))";
+                : new AttributeValueInstance(
+                    $"NS = new List<string>({accessPattern}.Select(x => x.ToString()))",
+                    in elementType,
+                    AttributeValueInstance.Decision.Inlined
+                );
         }
 
         static bool IsNumeric(ITypeSymbol typeSymbol) => typeSymbol.SpecialType
@@ -108,7 +118,7 @@ public Dictionary<string, AttributeValue> {methodName}() => {methodName}(this);"
             or System_Decimal or System_Double
             or System_Single;
 
-        static string? SingleGenericTypeOrNull(ITypeSymbol genericType, string accessPattern)
+        static AttributeValueInstance? SingleGenericTypeOrNull(ITypeSymbol genericType, string accessPattern)
         {
             if (genericType is not INamedTypeSymbol type)
                 return null;
@@ -120,7 +130,7 @@ public Dictionary<string, AttributeValue> {methodName}() => {methodName}(this);"
 
             return type switch
             {
-                {Name: nameof(Nullable)} => $"{CreateAssignment(T, $"{accessPattern}.Value").Assignment}",
+                {Name: nameof(Nullable)} => CreateAssignment(T, $"{accessPattern}.Value"),
                 {Name: "ISet"} => BuildSet(T, accessPattern),
                 {Name: nameof(IEnumerable)} => BuildList(T, accessPattern),
                 _ when type.AllInterfaces.Any(x => x is {Name: "ISet"}) => BuildSet(T, accessPattern),
@@ -129,7 +139,7 @@ public Dictionary<string, AttributeValue> {methodName}() => {methodName}(this);"
             };
         }
 
-        static string? DoubleGenericTypeOrNull(ITypeSymbol genericType, string accessPattern)
+        static AttributeValueInstance? DoubleGenericTypeOrNull(ITypeSymbol genericType, string accessPattern)
         {
             if (genericType is not INamedTypeSymbol type)
                 return null;
@@ -142,19 +152,41 @@ public Dictionary<string, AttributeValue> {methodName}() => {methodName}(this);"
             // ReSharper disable once InconsistentNaming
             var T2 = type.TypeArguments[1];
 
-            return type switch
+            switch (type)
             {
-                _ when T1.SpecialType is not System_String => null,
-                {Name: "ILookup"} =>
-                    $"M = {accessPattern}.ToDictionary(x => x.Key, x => new AttributeValue {{ {BuildList(T2, "x")} }})",
-                {Name: "IGrouping"} =>
-                    $@"M = new Dictionary<string, AttributeValue>{{ {{ {accessPattern}.Key, new AttributeValue {{{BuildList(T2, accessPattern)}}} }} }}",
-                {Name: "Dictionary" or "IReadOnlyDictionary" or "IDictionary"} =>
-                    $@"M = {accessPattern}.ToDictionary(x => x.Key, x => {CreateAttributeValue(T2, "x.Value")})",
-                {Name: "KeyValuePair"} =>
-                    $@"M = new Dictionary<string, AttributeValue>() {{ {{{accessPattern}.Key, {CreateAttributeValue(T2, $"{accessPattern}.Value")} }} }}",
-                _ => null
-            };
+                case var _ when T1.SpecialType is not System_String:
+                    return null;
+                case {Name: "ILookup"}:
+                    var lookupValueList = BuildList(T2, "x");
+                    return new AttributeValueInstance(
+                        $"M = {accessPattern}.ToDictionary(x => x.Key, x => {lookupValueList})",
+                        in T2,
+                        lookupValueList.How
+                    );
+                case {Name: "IGrouping"}:
+                    var groupingValueList = BuildList(T2, accessPattern);
+                    return new AttributeValueInstance(
+                        $@"M = new Dictionary<string, AttributeValue>{{ {{ {accessPattern}.Key, {groupingValueList}}} }}",
+                        in T2,
+                        groupingValueList.How
+                    );
+                case {Name: "Dictionary" or "IReadOnlyDictionary" or "IDictionary"}:
+                    var dictionary = CreateAttributeValue(T2, "x.Value");
+                    return new AttributeValueInstance(
+                        $@"M = {accessPattern}.ToDictionary(x => x.Key, x => {dictionary})",
+                        in T2,
+                        dictionary.How
+                    );
+                case {Name: "KeyValuePair"}:
+                    var keyValuePair = CreateAttributeValue(T2, $"{accessPattern}.Value");
+                    return new AttributeValueInstance(
+                        $@"M = new Dictionary<string, AttributeValue>() {{ {{{accessPattern}.Key, {keyValuePair} }} }}",
+                        in T2,
+                        keyValuePair.How
+                    );
+                default:
+                    return  null;
+            }
         }
 
 
@@ -165,28 +197,39 @@ public Dictionary<string, AttributeValue> {methodName}() => {methodName}(this);"
 
         static AttributeValueInstance CreateAssignment(ITypeSymbol typeSymbol, string accessPattern)
         {
-            var res = typeSymbol switch
+            var baseTypeConversion = typeSymbol switch
             {
                 {SpecialType: System_String} => $"S = {accessPattern}",
                 {SpecialType: System_Boolean} => $"BOOL = {accessPattern}",
                 _ when IsNumeric(typeSymbol) => $"N = {accessPattern}.ToString()",
                 _ when IsTimeRelated(typeSymbol) => $@"S = {accessPattern}.ToString(""O"")",
-                IArrayTypeSymbol {ElementType: { } elementType} => BuildList(elementType, accessPattern),
-                _ when SingleGenericTypeOrNull(typeSymbol, accessPattern) is { } assignment => assignment,
-                _ when DoubleGenericTypeOrNull(typeSymbol, accessPattern) is { } assignment => assignment,
                 _ => null
             };
 
-            if (res is null)
-            {
+            if (baseTypeConversion is not null)
                 return new AttributeValueInstance(
-                    $"M = {Constants.AttributeValueGeneratorMethodName}({accessPattern})",
+                    in baseTypeConversion,
                     in typeSymbol,
-                    AttributeValueInstance.Decision.NeedsExternalInvocation
+                    AttributeValueInstance.Decision.Inlined
                 );
-            }
 
-            return new AttributeValueInstance(in res, in typeSymbol, AttributeValueInstance.Decision.Inlined);
+            AttributeValueInstance? genericConversion = typeSymbol switch
+            {
+                _ when SingleGenericTypeOrNull(typeSymbol, accessPattern) is { } assignment => assignment,
+                _ when DoubleGenericTypeOrNull(typeSymbol, accessPattern) is { } assignment => assignment,
+                IArrayTypeSymbol {ElementType: { } elementType} => BuildList(elementType, accessPattern),
+                _ => null
+            };
+
+
+            if (genericConversion is not null)
+                return genericConversion.Value;
+            
+            return new AttributeValueInstance(
+                $"M = {Constants.AttributeValueGeneratorMethodName}({accessPattern})",
+                in typeSymbol,
+                AttributeValueInstance.Decision.NeedsExternalInvocation
+            );
         }
 
         return CreateAssignment(typeSymbol, accessPattern);

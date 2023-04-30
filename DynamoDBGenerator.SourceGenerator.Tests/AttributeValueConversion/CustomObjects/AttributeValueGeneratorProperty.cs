@@ -86,7 +86,6 @@ public partial class RootClass
     public PropertyClass CustomClass { get; set; }
 }
 
-[AttributeValueGenerator]
 public partial class PropertyClass
 {
     public string PropertyId { get; set; }
