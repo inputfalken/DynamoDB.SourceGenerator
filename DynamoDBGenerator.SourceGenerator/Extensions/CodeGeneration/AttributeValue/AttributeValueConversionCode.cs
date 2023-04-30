@@ -1,7 +1,7 @@
-using DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.AttributeValue;
+using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
-namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
+namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.AttributeValue;
 
 public static class AttributeValueConversionCode
 {
@@ -27,9 +27,9 @@ public static class AttributeValueConversionCode
 
             yield return dict;
 
-            var unsupportedTypes = dict.Mappings
-                .Where(x => x.AttributeValue.How == AttributeValueAssignment.Decision.NeedsExternalInvocation)
-                .Select(x => x.AttributeValue.Type);
+            var unsupportedTypes = dict.Conversions
+                .Where(x => x.Towards.How == AttributeValueAssignment.Decision.NeedsExternalInvocation)
+                .Select(x => x.Towards.Type);
 
             foreach (var unsupportedType in unsupportedTypes)
             foreach (var dictionary in ConversionMethods(unsupportedType, typeSymbols))
@@ -106,6 +106,11 @@ public Dictionary<string, AttributeValue> {methodName}() => {methodName}(this);"
         }}";
 
 
-        return new MapToAttributeValueMethod(in dictionary, properties.Select(x => (x.AttributeValue, x.DDB)));
+        return new MapToAttributeValueMethod(
+            in dictionary,
+            properties.Select(
+                x => new Conversion<DynamoDbDataMember, AttributeValueAssignment>(in x.DDB, in x.AttributeValue)
+            )
+        );
     }
 }
