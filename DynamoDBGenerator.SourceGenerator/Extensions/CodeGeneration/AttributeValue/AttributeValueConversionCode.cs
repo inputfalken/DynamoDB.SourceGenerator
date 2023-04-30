@@ -22,8 +22,7 @@ public static class AttributeValueConversionCode
             if (typeSymbols.Add(typeSymbol) is false)
                 yield break;
 
-            var dict = typeSymbol
-                .StaticAttributeValueConversionMethod(Constants.AttributeValueGeneratorMethodName);
+            var dict = typeSymbol.StaticDictionaryMethod(Constants.AttributeValueGeneratorMethodName);
 
             yield return dict;
 
@@ -40,18 +39,13 @@ public static class AttributeValueConversionCode
     private static string RootAttributeValueConversionMethod(string methodName)
     {
         return $@"[MethodImpl(MethodImplOptions.AggressiveInlining)]
-public Dictionary<string, AttributeValue> {methodName}() => {methodName}(this);";
+        public Dictionary<string, AttributeValue> {methodName}() => {methodName}(this);";
     }
 
 
-    private static MapToAttributeValueMethod StaticAttributeValueConversionMethod(
-        this INamespaceOrTypeSymbol parent,
-        string methodName,
-        string accessModifier = Constants.AccessModifiers.Private
-    )
+    private static MapToAttributeValueMethod StaticDictionaryMethod(this INamespaceOrTypeSymbol type, string name)
     {
-        var paramReference = parent.Name
-            .FirstCharToLower();
+        var paramReference = type.Name.FirstCharToLower();
 
         static string InitializeDictionary(string dictionaryName, string paramReference,
             IEnumerable<DataMember> propertySymbols)
@@ -77,7 +71,7 @@ public Dictionary<string, AttributeValue> {methodName}() => {methodName}(this);"
         }
 
         const string dictionaryName = "attributeValues";
-        var properties = parent
+        var properties = type
             .GetDynamoDbProperties()
             .Where(x => x.IsIgnored is false)
             .Select(x => (
@@ -98,7 +92,7 @@ public Dictionary<string, AttributeValue> {methodName}() => {methodName}(this);"
 
         const string indent = "            ";
         var dictionary =
-            @$"{accessModifier} static Dictionary<string, AttributeValue> {methodName}({parent.ToDisplayString()} {paramReference})
+            @$"        private static Dictionary<string, AttributeValue> {name}({type.ToDisplayString()} {paramReference})
         {{ 
             {InitializeDictionary(dictionaryName, paramReference, properties.Select(x => x.DDB.DataMember))}
             {string.Join(Constants.NewLine + indent, properties.Select(x => x.DictionaryAssignment))}
