@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
 namespace DynamoDBGenerator.SourceGenerator.Extensions;

@@ -28,7 +28,7 @@ public static class AttributeValueConversionCode
             yield return dict;
 
             var unsupportedTypes = dict.Conversions
-                .Where(x => x.Towards.How == AttributeValueAssignment.Decision.NeedsExternalInvocation)
+                .Where(x => x.Towards.AssignedBy is AttributeValueAssignment.Decision.ExternalMethod)
                 .Select(x => x.Towards.Type);
 
             foreach (var unsupportedType in unsupportedTypes)

@@ -15,7 +15,7 @@ public static class AttributeValueConversion
                 ? $"L = new List<AttributeValue>({accessPattern}.Where({whereBody}).{select}"
                 : $"L = new List<AttributeValue>({accessPattern}.{select}";
 
-            return new AttributeValueAssignment(in assignment, in elementType, attributeValue.How);
+            return new AttributeValueAssignment(in assignment, in elementType, attributeValue.AssignedBy);
         }
 
         static AttributeValueAssignment? BuildSet(ITypeSymbol elementType, string accessPattern)
@@ -27,7 +27,7 @@ public static class AttributeValueConversion
                 return new AttributeValueAssignment(
                     $"SS = new List<string>({accessPattern})",
                     in elementType,
-                    AttributeValueAssignment.Decision.Inlined
+                    AttributeValueAssignment.Decision.Inline
                 );
 
             return IsNumeric(elementType) is false
@@ -35,7 +35,7 @@ public static class AttributeValueConversion
                 : new AttributeValueAssignment(
                     $"NS = new List<string>({accessPattern}.Select(x => x.ToString()))",
                     in elementType,
-                    AttributeValueAssignment.Decision.Inlined
+                    AttributeValueAssignment.Decision.Inline
                 );
         }
 
@@ -90,28 +90,28 @@ public static class AttributeValueConversion
                     return new AttributeValueAssignment(
                         $"M = {accessPattern}.ToDictionary(x => x.Key, x => {lookupValueList})",
                         in T2,
-                        lookupValueList.How
+                        lookupValueList.AssignedBy
                     );
                 case {Name: "IGrouping"}:
                     var groupingValueList = BuildList(T2, accessPattern);
                     return new AttributeValueAssignment(
                         $@"M = new Dictionary<string, AttributeValue>{{ {{ {accessPattern}.Key, {groupingValueList}}} }}",
                         in T2,
-                        groupingValueList.How
+                        groupingValueList.AssignedBy
                     );
                 case {Name: "Dictionary" or "IReadOnlyDictionary" or "IDictionary"}:
                     var dictionary = CreateAttributeValue(T2, "x.Value");
                     return new AttributeValueAssignment(
                         $@"M = {accessPattern}.ToDictionary(x => x.Key, x => {dictionary})",
                         in T2,
-                        dictionary.How
+                        dictionary.AssignedBy
                     );
                 case {Name: "KeyValuePair"}:
                     var keyValuePair = CreateAttributeValue(T2, $"{accessPattern}.Value");
                     return new AttributeValueAssignment(
                         $@"M = new Dictionary<string, AttributeValue>() {{ {{{accessPattern}.Key, {keyValuePair} }} }}",
                         in T2,
-                        keyValuePair.How
+                        keyValuePair.AssignedBy
                     );
                 default:
                     return null;
@@ -139,7 +139,7 @@ public static class AttributeValueConversion
                 return new AttributeValueAssignment(
                     in baseTypeConversion,
                     in typeSymbol,
-                    AttributeValueAssignment.Decision.Inlined
+                    AttributeValueAssignment.Decision.Inline
                 );
 
             AttributeValueAssignment? genericConversion = typeSymbol switch
@@ -157,7 +157,7 @@ public static class AttributeValueConversion
             return new AttributeValueAssignment(
                 $"M = {Constants.AttributeValueGeneratorMethodName}({accessPattern})",
                 in typeSymbol,
-                AttributeValueAssignment.Decision.NeedsExternalInvocation
+                AttributeValueAssignment.Decision.ExternalMethod
             );
         }
 

@@ -2,73 +2,7 @@ using Amazon.DynamoDBv2.DataModel;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using Microsoft.CodeAnalysis;
 
-namespace DynamoDBGenerator.SourceGenerator;
-
-/// <summary>
-/// Either an field or property.
-/// </summary>
-public readonly struct DataMember
-{
-    private readonly bool _isField;
-    private readonly bool _isProperty;
-
-    private DataMember(in ISymbol symbol, in string fieldName, in ITypeSymbol type)
-    {
-        Name = fieldName;
-        Type = type;
-        BaseSymbol = symbol;
-
-        _isField = symbol is IFieldSymbol;
-        _isProperty = symbol is IPropertySymbol;
-    }
-
-    public static DataMember FromField(in IFieldSymbol fieldSymbol)
-    {
-        var symbol = (ISymbol) fieldSymbol;
-        var name = fieldSymbol.Name;
-        var type = fieldSymbol.Type;
-
-        return new DataMember(in symbol, in name, in type);
-    }
-
-    public static DataMember FromProperty(in IPropertySymbol property)
-    {
-        var symbol = (ISymbol) property;
-        var name = property.Name;
-        var type = property.Type;
-
-        return new DataMember(in symbol, in name, in type);
-    }
-
-    /// <summary>
-    /// Performs matching based on the possible types that <see cref="DataMember"/> can consist of.
-    /// </summary>
-    public T Match<T>(Func<IPropertySymbol, T> propertySelector, Func<IFieldSymbol, T> fieldSelector)
-    {
-        if (_isProperty)
-            return propertySelector((IPropertySymbol) BaseSymbol);
-
-        if (_isField)
-            return fieldSelector((IFieldSymbol) BaseSymbol);
-
-        throw new Exception("Can never happen");
-    }
-
-    /// <summary>
-    /// The <see cref="ISymbol"/> which this instance is based on.
-    /// </summary>
-    public ISymbol BaseSymbol { get; }
-
-    /// <summary>
-    /// The name of the data member.
-    /// </summary>
-    public string Name { get; }
-
-    /// <summary>
-    /// The type of the data member.
-    /// </summary>
-    public ITypeSymbol Type { get; }
-}
+namespace DynamoDBGenerator.SourceGenerator.Types;
 
 /// <summary>
 ///  A DynamoDB data member that originates from either a field or property.
@@ -91,7 +25,7 @@ public readonly struct DynamoDbDataMember
     }
 
 
-    ///<inheritdoc cref="DynamoDBGenerator.SourceGenerator.DataMember"/>
+    ///<inheritdoc cref="Types.DataMember"/>
     public DataMember DataMember { get; }
 
     /// <summary>
