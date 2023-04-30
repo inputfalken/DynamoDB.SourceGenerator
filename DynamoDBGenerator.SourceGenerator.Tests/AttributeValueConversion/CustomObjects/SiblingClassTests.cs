@@ -1,14 +1,14 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.AttributeValueConversion.CustomObjects;
 
-public class AttributeValueGeneratorProperty
+public class SiblingClassTests
 {
     [Fact]
     public void BuildAttributeValues_AllFieldsSet_AllIncluded()
     {
-        var @class = new RootClass
+        var @class = new SiblingClassOne
         {
             Id = "I am the root",
-            CustomClass = new PropertyClass
+            CustomClass = new SiblingClassTwo
             {
                 PropertyId = "I am the property"
             }
@@ -19,15 +19,15 @@ public class AttributeValueGeneratorProperty
             .SatisfyRespectively(
                 x =>
                 {
-                    x.Key.Should().Be(nameof(RootClass.Id));
+                    x.Key.Should().Be(nameof(SiblingClassOne.Id));
                     x.Value.S.Should().Be("I am the root");
                 },
                 x =>
                 {
-                    x.Key.Should().Be(nameof(RootClass.CustomClass));
+                    x.Key.Should().Be(nameof(SiblingClassOne.CustomClass));
                     x.Value.M.Should().SatisfyRespectively(y =>
                     {
-                        y.Key.Should().Be(nameof(PropertyClass.PropertyId));
+                        y.Key.Should().Be(nameof(SiblingClassTwo.PropertyId));
                         y.Value.S.Should().Be("I am the property");
                     });
                 }
@@ -37,7 +37,7 @@ public class AttributeValueGeneratorProperty
     [Fact]
     public void BuildAttributeValues_CustomProperty_NotIncluded()
     {
-        var @class = new RootClass
+        var @class = new SiblingClassOne
         {
             Id = "I am the root"
         };
@@ -47,7 +47,7 @@ public class AttributeValueGeneratorProperty
             .SatisfyRespectively(
                 x =>
                 {
-                    x.Key.Should().Be(nameof(RootClass.Id));
+                    x.Key.Should().Be(nameof(SiblingClassOne.Id));
                     x.Value.S.Should().Be("I am the root");
                 }
             );
@@ -56,10 +56,10 @@ public class AttributeValueGeneratorProperty
     [Fact]
     public void BuildAttributeValues_CustomPropertyField_NotIncluded()
     {
-        var @class = new RootClass
+        var @class = new SiblingClassOne
         {
             Id = "I am the root",
-            CustomClass = new PropertyClass()
+            CustomClass = new SiblingClassTwo()
         };
 
         @class.BuildAttributeValues()
@@ -67,12 +67,12 @@ public class AttributeValueGeneratorProperty
             .SatisfyRespectively(
                 x =>
                 {
-                    x.Key.Should().Be(nameof(RootClass.Id));
+                    x.Key.Should().Be(nameof(SiblingClassOne.Id));
                     x.Value.S.Should().Be("I am the root");
                 },
                 x =>
                 {
-                    x.Key.Should().Be(nameof(RootClass.CustomClass));
+                    x.Key.Should().Be(nameof(SiblingClassOne.CustomClass));
                     x.Value.M.Should().BeEmpty();
                 }
             );
@@ -80,14 +80,13 @@ public class AttributeValueGeneratorProperty
 }
 
 [AttributeValueGenerator]
-public partial class RootClass
+public partial class SiblingClassOne
 {
     public string Id { get; set; }
-    public PropertyClass CustomClass { get; set; }
+    public SiblingClassTwo CustomClass { get; set; }
 }
 
-[AttributeValueGenerator]
-public partial class PropertyClass
+public class SiblingClassTwo
 {
     public string PropertyId { get; set; }
 }

@@ -1,3 +1,5 @@
+using Amazon.DynamoDBv2.Model;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.AttributeValueConversion.Generics;
 
 public class LookUpTests

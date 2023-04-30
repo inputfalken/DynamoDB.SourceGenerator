@@ -3,7 +3,7 @@ using DynamoDBGenerator;
 
 namespace SampleApp;
 
-[AttributeValueKeysGenerator]
+[AttributeValueGenerator]
 public partial class PersonEntity
 {
     // TODO figure out why the KeyValuePair is not evaluated correctly.
@@ -12,4 +12,11 @@ public partial class PersonEntity
 
     [DynamoDBHashKey]
     public string MyHashKey { get; set; } = null!;
+
+    public Testing DOEET { get; set; }
+    public Testing DOEET2 { get; set; }
+    public class Testing
+    {
+        
+    }
 }

@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
 namespace DynamoDBGenerator.SourceGenerator.Extensions;
@@ -6,7 +8,8 @@ public static class EnumerableExtensions
 {
     public static IEnumerable<DynamoDbDataMember> GetDynamoDbProperties(this INamespaceOrTypeSymbol type)
     {
-        return type.GetPublicInstanceProperties()
+        return type
+            .GetPublicInstanceProperties()
             .Select(x => new DynamoDbDataMember(x));
     }
 

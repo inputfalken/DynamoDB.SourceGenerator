@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
 using System.Text;
-using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
+using DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.AttributeValue;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
@@ -45,7 +45,19 @@ public class AttributeValueGenerator : IIncrementalGenerator
                     if (ctx.SemanticModel.GetDeclaredSymbol(classDeclaration) is not ITypeSymbol type)
                         return null;
 
-                    return type.IsAttributeValueGenerator() is false ? null : type;
+                    return type
+                        .GetAttributes()
+                        .Any(a => a.AttributeClass is
+                        {
+                            Name: nameof(AttributeValueGeneratorAttribute),
+                            ContainingNamespace:
+                            {
+                                Name: nameof(DynamoDBGenerator),
+                                ContainingNamespace.IsGlobalNamespace: true
+                            }
+                        }) is false
+                        ? null
+                        : type;
                 }
             )
             .Where(x => x is not null)
@@ -65,15 +77,7 @@ public class AttributeValueGenerator : IIncrementalGenerator
                 ? null
                 : $"{type.ContainingNamespace}.";
 
-            var dictionaryMethod = type.GetDynamoDbProperties()
-                .CreateAttributeValueDictionaryMethod(Constants.AttributeValueGeneratorMethodName);
-
-            // TODO In order to map nested classes & types that are not marked with AttributeValueGeneratorAttribute:
-            // * Make all dictionary methods private static with a parameter that is the type to be mapped.
-            // * Only have one instance method with AttributeValueGeneratorMethodName that will invoke the static methods.
-            // * In order to find nested classes you need to do type.GetTypeMembers().Where(x => x.TypeKind is TypeKind.Class);
-            var code = type.CreateNamespace(type.CreateClass(dictionaryMethod));
-
+            var code = type.CreateNamespace(type.CreateClass(type.CreateAttributeConversionCode()));
             context.AddSource(
                 $"{typeNamespace}{nameof(AttributeValueGenerator)}.{type.Name}.g.cs",
                 SourceText.From(code, Encoding.UTF8)
