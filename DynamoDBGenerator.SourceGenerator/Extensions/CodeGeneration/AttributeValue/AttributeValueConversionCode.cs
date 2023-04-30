@@ -1,3 +1,4 @@
+using System.Text;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
@@ -45,15 +46,56 @@ public static class AttributeValueConversionCode
 
     private static MapToAttributeValueMethod StaticDictionaryMethod(this INamespaceOrTypeSymbol type, string name)
     {
-        var paramReference = type.Name.FirstCharToLower();
+        const string paramReference = "entity";
+        const string dictionaryName = "attributeValues";
+        var properties = type
+            .GetDynamoDbProperties()
+            .Where(x => x.IsIgnored is false)
+            .Select(x => (
+                    AccessPattern: $"{paramReference}.{x.DataMember.Name}",
+                    DDB: x
+                )
+            )
+            .Select(x => (
+                x.AccessPattern,
+                x.DDB,
+                AttributeValue: AttributeValueConversion.CreateAttributeValue(
+                    x.DDB.DataMember.Type,
+                    x.AccessPattern
+                )
+            ))
+            .Select(x => (
+                    x.DDB,
+                    x.AttributeValue,
+                    DictionaryAssignment: x.DDB.DataMember.IfStatement(
+                        x.AccessPattern,
+                        @$"{dictionaryName}.Add(""{x.DDB.AttributeName}"", {x.AttributeValue});"
+                    ),
+                    CapacityTernaries: x.DDB.DataMember.Type.TernaryExpression(x.AccessPattern, "1", "0")
+                )
+            )
+            .ToArray();
 
-        static string InitializeDictionary(string dictionaryName, string paramReference,
-            IEnumerable<DataMember> propertySymbols)
+        const string indent = "            ";
+        var dictionary =
+            @$"        private static Dictionary<string, AttributeValue> {name}({type.ToDisplayString()} {paramReference})
+        {{ 
+            {InitializeDictionary(dictionaryName, properties.Select(x => x.CapacityTernaries))}
+            {string.Join(Constants.NewLine + indent, properties.Select(x => x.DictionaryAssignment))}
+            return {dictionaryName};
+        }}";
+
+
+        return new MapToAttributeValueMethod(
+            in dictionary,
+            properties.Select(
+                x => new Conversion<DynamoDbDataMember, AttributeValueAssignment>(in x.DDB, in x.AttributeValue)
+            )
+        );
+
+        static string InitializeDictionary(string dictionaryName, IEnumerable<string> capacityCalculations)
         {
-            var capacityCalculation = string.Join(
-                " + ",
-                propertySymbols.Select(x => x.Type.TernaryExpression($"{paramReference}.{x.Name}", "1", "0"))
-            );
+            var capacityCalculation = string.Join(" + ", capacityCalculations);
 
             const string capacityReference = "capacity";
 
@@ -69,42 +111,5 @@ public static class AttributeValueConversionCode
             {ifCheck}
 ";
         }
-
-        const string dictionaryName = "attributeValues";
-        var properties = type
-            .GetDynamoDbProperties()
-            .Where(x => x.IsIgnored is false)
-            .Select(x => (
-                    DDB: x,
-                    AttributeValue: AttributeValueConversion.CreateAttributeValue(x.DataMember.Type,
-                        $"{paramReference}.{x.DataMember.Name}")
-                )
-            )
-            .Select(x => (
-                    x.DDB,
-                    x.AttributeValue,
-                    DictionaryAssignment: x.DDB.DataMember.IfStatement($"{paramReference}.{x.DDB.DataMember.Name}",
-                        @$"{dictionaryName}.Add(""{x.DDB.AttributeName}"", {x.AttributeValue});")
-                )
-            )
-            .ToArray();
-
-
-        const string indent = "            ";
-        var dictionary =
-            @$"        private static Dictionary<string, AttributeValue> {name}({type.ToDisplayString()} {paramReference})
-        {{ 
-            {InitializeDictionary(dictionaryName, paramReference, properties.Select(x => x.DDB.DataMember))}
-            {string.Join(Constants.NewLine + indent, properties.Select(x => x.DictionaryAssignment))}
-            return {dictionaryName};
-        }}";
-
-
-        return new MapToAttributeValueMethod(
-            in dictionary,
-            properties.Select(
-                x => new Conversion<DynamoDbDataMember, AttributeValueAssignment>(in x.DDB, in x.AttributeValue)
-            )
-        );
     }
 }

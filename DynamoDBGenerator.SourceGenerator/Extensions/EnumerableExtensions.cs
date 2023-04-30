@@ -5,13 +5,11 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class EnumerableExtensions
 {
-    public static ImmutableArray<DynamoDbDataMember> GetDynamoDbProperties(this INamespaceOrTypeSymbol type)
+    public static IEnumerable<DynamoDbDataMember> GetDynamoDbProperties(this INamespaceOrTypeSymbol type)
     {
-        var res = type
+        return type
             .GetPublicInstanceProperties()
             .Select(x => new DynamoDbDataMember(x));
-
-        return ImmutableArray.CreateRange(res);
     }
 
     private static IEnumerable<DataMember> GetPublicInstanceProperties(this INamespaceOrTypeSymbol symbol)
