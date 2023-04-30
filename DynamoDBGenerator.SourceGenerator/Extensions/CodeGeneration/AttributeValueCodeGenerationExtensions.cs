@@ -11,18 +11,16 @@ public static class AttributeValueCodeGenerationExtensions
         return $@"[MethodImpl(MethodImplOptions.AggressiveInlining)]
 public Dictionary<string, AttributeValue> {methodName}() => {methodName}(this);";
     }
-    public static (
-        string dictionary,
-        IEnumerable<(AttributeValueInstance attributeValue, DynamoDbDataMember DDB)> results
-        ) CreateStaticAttributeValueDictionaryMethod(
-            this IEnumerable<DynamoDbDataMember> propertySymbols,
-            ITypeSymbol parent,
-            string methodName,
-            string accessModifier = Constants.AccessModifiers.Private
-        )
+
+    public static MapToAttributeValueMethod CreateStaticAttributeValueDictionaryMethod(
+        this IEnumerable<DynamoDbDataMember> propertySymbols,
+        ITypeSymbol parent,
+        string methodName,
+        string accessModifier = Constants.AccessModifiers.Private
+    )
     {
-        const string indent = "            ";
-        var paramReference = parent.Name.FirstCharToLower();
+        var paramReference = parent.Name
+            .FirstCharToLower();
 
         static string InitializeDictionary(string dictionaryName, string paramReference,
             IEnumerable<DataMember> propertySymbols)
@@ -65,8 +63,9 @@ public Dictionary<string, AttributeValue> {methodName}() => {methodName}(this);"
             .ToArray();
 
 
+        const string indent = "            ";
         var dictionary =
-            @$"{accessModifier} static Dictionary<string, AttributeValue> {methodName}({parent.Name} {paramReference})
+            @$"{accessModifier} static Dictionary<string, AttributeValue> {methodName}({parent.ToDisplayString()} {paramReference})
         {{ 
             {InitializeDictionary(dictionaryName, paramReference, properties.Select(x => x.DDB.DataMember))}
             {string.Join(Constants.NewLine + indent, properties.Select(x => x.DictionaryAssignment))}
@@ -74,7 +73,7 @@ public Dictionary<string, AttributeValue> {methodName}() => {methodName}(this);"
         }}";
 
 
-        return (dictionary, properties.Select(x => (x.AttributeValue, x.DDB)));
+        return new MapToAttributeValueMethod(in dictionary, properties.Select(x => (x.AttributeValue, x.DDB)));
     }
 
     private static AttributeValueInstance CreateAttributeValue(ITypeSymbol typeSymbol, string accessPattern)

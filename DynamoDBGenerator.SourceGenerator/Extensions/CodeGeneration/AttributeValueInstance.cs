@@ -2,18 +2,11 @@ using Microsoft.CodeAnalysis;
 
 namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 
-public readonly struct AttributeValueInstance
+public readonly record struct AttributeValueInstance(in string Assignment, in ITypeSymbol Type, in AttributeValueInstance.Decision How)
 {
-    public AttributeValueInstance(in string assignment, in ITypeSymbol type, in Decision how)
-    {
-        Assignment = assignment;
-        Type = type;
-        How = how;
-    }
-
-    public string Assignment { get; }
-    public ITypeSymbol Type { get; }
-    public Decision How { get; }
+    public string Assignment { get; } = Assignment;
+    public ITypeSymbol Type { get; } = Type;
+    public Decision How { get; } = How;
 
     public enum Decision
     {
