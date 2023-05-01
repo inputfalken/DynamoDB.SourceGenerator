@@ -148,6 +148,7 @@ public class AttributeValueConversion
         {
             {SpecialType: SpecialType.System_String} => $"S = {accessPattern}",
             {SpecialType: SpecialType.System_Boolean} => $"BOOL = {accessPattern}",
+            {SpecialType: SpecialType.System_Char} => $"S = {accessPattern}.ToString()",
             _ when IsNumeric(in typeSymbol) => $"N = {accessPattern}.ToString()",
             _ when IsTimeRelated(in typeSymbol) => $@"S = {accessPattern}.ToString(""O"")",
             _ => null
