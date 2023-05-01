@@ -8,11 +8,5 @@ internal static class Program
 {
     public static void Main()
     {
-        var personEntity = new PersonEntity()
-        {
-
-        };
-
-        personEntity.Type.
     }
 }
