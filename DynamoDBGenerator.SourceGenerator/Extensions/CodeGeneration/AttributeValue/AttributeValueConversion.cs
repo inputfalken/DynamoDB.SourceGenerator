@@ -160,7 +160,7 @@ public static class AttributeValueConversion
                 return genericConversion.Value;
 
             return new AttributeValueAssignment(
-                $"M = {Constants.AttributeValueGeneratorMethodName}({accessPattern})",
+                $"M = {Constants.DefaultAttributeValueConversionMethodName}({accessPattern})",
                 in typeSymbol,
                 AttributeValueAssignment.Decision.ExternalMethod
             );

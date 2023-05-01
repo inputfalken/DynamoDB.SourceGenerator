@@ -1,4 +1,3 @@
-using System.Text;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
@@ -6,15 +5,21 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.AttributeV
 
 public static class AttributeValueConversionCode
 {
-    public static string CreateAttributeConversionCode(this ITypeSymbol type)
+    public static string CreateAttributeConversionCode(
+        this ITypeSymbol type,
+        in AttributeValueGeneratorAttribute attribute
+    )
     {
-        var conversionMethods = ConversionMethods(type, new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default))
+        var conversionMethods = ConversionMethods(
+                type,
+                new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default)
+            )
             .Select(x => x.Code)
-            .Prepend(RootAttributeValueConversionMethod(Constants.AttributeValueGeneratorMethodName));
+            .Prepend(RootAttributeValueConversionMethod(attribute.MethodName));
 
         return string.Join(Constants.NewLine, conversionMethods);
 
-        IEnumerable<MapToAttributeValueMethod> ConversionMethods(
+        static IEnumerable<MapToAttributeValueMethod> ConversionMethods(
             ITypeSymbol typeSymbol,
             ISet<ITypeSymbol> typeSymbols
         )
@@ -23,7 +28,7 @@ public static class AttributeValueConversionCode
             if (typeSymbols.Add(typeSymbol) is false)
                 yield break;
 
-            var dict = typeSymbol.StaticDictionaryMethod(Constants.AttributeValueGeneratorMethodName);
+            var dict = typeSymbol.StaticDictionaryMethod(Constants.DefaultAttributeValueConversionMethodName);
 
             yield return dict;
 
@@ -40,7 +45,7 @@ public static class AttributeValueConversionCode
     private static string RootAttributeValueConversionMethod(string methodName)
     {
         return $@"[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Dictionary<string, AttributeValue> {methodName}() => {methodName}(this);";
+        public Dictionary<string, AttributeValue> {methodName}() => {Constants.DefaultAttributeValueConversionMethodName}(this);";
     }
 
 

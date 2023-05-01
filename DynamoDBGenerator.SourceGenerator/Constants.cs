@@ -5,12 +5,6 @@ public class Constants
     public const string NewLine = @"
 ";
 
-    public const string AttributeValueGeneratorMethodName = "BuildAttributeValues";
-    public const string AttributeValueKeysGeneratorMethodName = "BuildAttributeValueKeys";
+    public const string DefaultAttributeValueConversionMethodName = AttributeValueGeneratorAttribute.DefaultMethodName;
 
-    public static class AccessModifiers
-    {
-        public const string Public = "public";
-        public const string Private = "private";
-    }
 }
