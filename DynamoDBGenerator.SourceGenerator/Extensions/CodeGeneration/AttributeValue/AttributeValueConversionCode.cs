@@ -1,4 +1,3 @@
-using System.Text;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
@@ -6,16 +5,38 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.AttributeV
 
 public static class AttributeValueConversionCode
 {
-    public static string CreateAttributeConversionCode(this ITypeSymbol type)
+    /// <summary>
+    ///     Generated attribute value conversion.
+    /// </summary>
+    /// <param name="type">
+    ///     The root type to create attribute value conversions from.
+    /// </param>
+    /// <param name="settings">
+    ///     Instructions for how the internal source generator should  perform its generations.
+    /// </param>
+    /// <param name="consumerMethodName">
+    ///     The instance method name that the consumer of the source generated code will be invoking.
+    /// </param>
+    /// <returns></returns>
+    public static string CreateAttributeConversionCode(
+        this ITypeSymbol type,
+        in AttributeValueConversionSettings settings,
+        string consumerMethodName
+    )
     {
-        var conversionMethods = ConversionMethods(type, new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default))
+        var conversionMethods = ConversionMethods(
+                type,
+                settings,
+                new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default)
+            )
             .Select(x => x.Code)
-            .Prepend(RootAttributeValueConversionMethod(Constants.AttributeValueGeneratorMethodName));
+            .Prepend(RootAttributeValueConversionMethod(in type, in settings, in consumerMethodName));
 
         return string.Join(Constants.NewLine, conversionMethods);
 
-        IEnumerable<MapToAttributeValueMethod> ConversionMethods(
+        static IEnumerable<MapToAttributeValueMethod> ConversionMethods(
             ITypeSymbol typeSymbol,
+            AttributeValueConversionSettings settings,
             ISet<ITypeSymbol> typeSymbols
         )
         {
@@ -23,7 +44,7 @@ public static class AttributeValueConversionCode
             if (typeSymbols.Add(typeSymbol) is false)
                 yield break;
 
-            var dict = typeSymbol.StaticDictionaryMethod(Constants.AttributeValueGeneratorMethodName);
+            var dict = typeSymbol.StaticDictionaryMethod(settings);
 
             yield return dict;
 
@@ -32,22 +53,31 @@ public static class AttributeValueConversionCode
                 .Select(x => x.Towards.Type);
 
             foreach (var unsupportedType in unsupportedTypes)
-            foreach (var dictionary in ConversionMethods(unsupportedType, typeSymbols))
+            foreach (var dictionary in ConversionMethods(unsupportedType, settings, typeSymbols))
                 yield return dictionary;
         }
     }
 
-    private static string RootAttributeValueConversionMethod(string methodName)
+    private static string RootAttributeValueConversionMethod(
+        in ITypeSymbol type,
+        in AttributeValueConversionSettings settings,
+        in string consumerMethodName
+    )
     {
-        return $@"[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Dictionary<string, AttributeValue> {methodName}() => {methodName}(this);";
+        return $@"
+        /// <summary> 
+        ///    Converts <see cref=""{type.ToDisplayString()}""/> into a <see cref=""Amazon.DynamoDBv2.Model.AttributeValue""/> representation.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Dictionary<string, AttributeValue> {consumerMethodName}() => {settings.MPropertyMethodName}(this);";
     }
 
-
-    private static MapToAttributeValueMethod StaticDictionaryMethod(this INamespaceOrTypeSymbol type, string name)
+    private static MapToAttributeValueMethod StaticDictionaryMethod(this INamespaceOrTypeSymbol type,
+        AttributeValueConversionSettings settings)
     {
         const string paramReference = "entity";
         const string dictionaryName = "attributeValues";
+
         var properties = type
             .GetDynamoDbProperties()
             .Where(x => x.IsIgnored is false)
@@ -56,10 +86,14 @@ public static class AttributeValueConversionCode
                     DDB: x
                 )
             )
+            .Zip(
+                Enumerable.Repeat(new AttributeValueConversion(settings), int.MaxValue),
+                (x, y) => (x.AccessPattern, x.DDB, AttributeValueConverter: y)
+            )
             .Select(x => (
                 x.AccessPattern,
                 x.DDB,
-                AttributeValue: AttributeValueConversion.CreateAttributeValue(
+                AttributeValue: x.AttributeValueConverter.CreateAttributeValue(
                     x.DDB.DataMember.Type,
                     x.AccessPattern
                 )
@@ -78,7 +112,14 @@ public static class AttributeValueConversionCode
 
         const string indent = "            ";
         var dictionary =
-            @$"        private static Dictionary<string, AttributeValue> {name}({type.ToDisplayString()} {paramReference})
+            @$"        
+        /// <summary> 
+        ///    Converts <see cref=""{type.ToDisplayString()}""/> into a <see cref=""Amazon.DynamoDBv2.Model.AttributeValue""/> representation.
+        /// </summary>
+        /// <remarks> 
+        ///    This method should only be invoked by source generated code.
+        /// </remarks>
+        private static Dictionary<string, AttributeValue> {settings.MPropertyMethodName}({type.ToDisplayString()} {paramReference})
         {{ 
             {InitializeDictionary(dictionaryName, properties.Select(x => x.CapacityTernaries))}
             {string.Join(Constants.NewLine + indent, properties.Select(x => x.DictionaryAssignment))}
@@ -88,7 +129,7 @@ public static class AttributeValueConversionCode
 
         return new MapToAttributeValueMethod(
             in dictionary,
-            in name,
+            settings.MPropertyMethodName,
             properties.Select(
                 x => new Conversion<DynamoDbDataMember, AttributeValueAssignment>(in x.DDB, in x.AttributeValue)
             )

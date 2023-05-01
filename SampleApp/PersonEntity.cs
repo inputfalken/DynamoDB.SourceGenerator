@@ -1,22 +1,23 @@
-﻿using Amazon.DynamoDBv2.DataModel;
+﻿using System.ComponentModel;
+using Amazon.DynamoDBv2.DataModel;
 using DynamoDBGenerator;
 
 namespace SampleApp;
 
-[AttributeValueGenerator]
+[AttributeValueGenerator("Abc")]
 public partial class PersonEntity
 {
-    // TODO figure out why the KeyValuePair is not evaluated correctly.
-    [DynamoDBProperty]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public IEnumerable<KeyValuePair<string, int>> Type { get; set; } = null!;
 
     [DynamoDBHashKey]
     public string MyHashKey { get; set; } = null!;
 
-    public Testing DOEET { get; set; }
-    public Testing DOEET2 { get; set; }
+    public PersonEntity()
+    
+    {
+    }
     public class Testing
     {
-        
     }
 }

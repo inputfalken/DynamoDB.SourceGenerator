@@ -10,12 +10,12 @@ public readonly record struct MapToAttributeValueMethod(
     public string MethodName { get; } = MethodName;
 
     /// <summary>
-    /// The C# code for the <see cref="AttributeValue"/> conversion.
+    ///     The C# code for the <see cref="AttributeValue" /> conversion.
     /// </summary>
     public string Code { get; } = Code;
 
     /// <summary>
-    /// The conversions that occur within the method.
+    ///     The conversions that occur within the method.
     /// </summary>
     public IEnumerable<Conversion<DynamoDbDataMember, AttributeValueAssignment>> Conversions { get; } = Conversions;
-};
+}

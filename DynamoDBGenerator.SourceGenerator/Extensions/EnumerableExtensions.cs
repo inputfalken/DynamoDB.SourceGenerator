@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
