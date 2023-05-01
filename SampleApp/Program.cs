@@ -13,5 +13,6 @@ internal static class Program
 
         };
 
+        personEntity.Type.
     }
 }

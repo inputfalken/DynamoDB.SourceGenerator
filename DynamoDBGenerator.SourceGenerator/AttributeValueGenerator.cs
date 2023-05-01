@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Text;
+using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 using DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.AttributeValue;
 using Microsoft.CodeAnalysis;
@@ -45,9 +46,9 @@ public class AttributeValueGenerator : IIncrementalGenerator
                     if (ctx.SemanticModel.GetDeclaredSymbol(classDeclaration) is not ITypeSymbol type)
                         return null;
 
-                    return type
+                    var attribute = type
                         .GetAttributes()
-                        .Any(a => a.AttributeClass is
+                        .FirstOrDefault(a => a.AttributeClass is
                         {
                             Name: nameof(AttributeValueGeneratorAttribute),
                             ContainingNamespace:
@@ -55,29 +56,50 @@ public class AttributeValueGenerator : IIncrementalGenerator
                                 Name: nameof(DynamoDBGenerator),
                                 ContainingNamespace.IsGlobalNamespace: true
                             }
-                        }) is false
-                        ? null
-                        : type;
+                        });
+
+                    if (attribute is null)
+                    {
+                        return ((ITypeSymbol, AttributeValueGeneratorAttribute)?) null;
+                    }
+
+                    return (type, attribute.CreateInstance<AttributeValueGeneratorAttribute>()!);
                 }
             )
             .Where(x => x is not null)
             .Collect();
 
-        context.RegisterSourceOutput(attributeValueGenerators, GenerateCode!);
+        context.RegisterSourceOutput(attributeValueGenerators, GenerateCode);
     }
 
-    private static void GenerateCode(SourceProductionContext context, ImmutableArray<ITypeSymbol> typeSymbols)
+    private static void GenerateCode(SourceProductionContext context,
+        ImmutableArray<(ITypeSymbol, AttributeValueGeneratorAttribute)?> typeSymbols)
     {
-        foreach (var type in typeSymbols)
+        const string mPropertyMethodName = nameof(AttributeValueGeneratorAttribute)
+                                                         + "_"
+                                                         + nameof(DynamoDBGenerator)
+                                                         + "_"
+                                                         + nameof(SourceGenerator);
+        foreach (var tuple in typeSymbols)
         {
-            if (type is null)
+            if (tuple is null)
                 continue;
+
+            var type = tuple.Value.Item1;
+            var settings = tuple.Value.Item2;
 
             var typeNamespace = type.ContainingNamespace.IsGlobalNamespace
                 ? null
                 : $"{type.ContainingNamespace}.";
 
-            var code = type.CreateNamespace(type.CreateClass(type.CreateAttributeConversionCode()));
+            var code = type.CreateNamespace(
+                type.CreateClass(
+                    type.CreateAttributeConversionCode(
+                        new AttributeValueConversionSettings(mPropertyMethodName),
+                        settings.MethodName
+                    )
+                )
+            );
             context.AddSource(
                 $"{typeNamespace}{nameof(AttributeValueGenerator)}.{type.Name}.g.cs",
                 SourceText.From(code, Encoding.UTF8)
