@@ -28,7 +28,7 @@ public static class AttributeValueConversionCode
             if (typeSymbols.Add(typeSymbol) is false)
                 yield break;
 
-            var dict = typeSymbol.StaticDictionaryMethod(Constants.DefaultAttributeValueConversionMethodName);
+            var dict = typeSymbol.StaticDictionaryMethod(Constants.AttributeValueGeneratorMethodName);
 
             yield return dict;
 
@@ -45,7 +45,7 @@ public static class AttributeValueConversionCode
     private static string RootAttributeValueConversionMethod(string methodName)
     {
         return $@"[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Dictionary<string, AttributeValue> {methodName}() => {Constants.DefaultAttributeValueConversionMethodName}(this);";
+        public Dictionary<string, AttributeValue> {methodName}() => {Constants.AttributeValueGeneratorMethodName}(this);";
     }
 
 

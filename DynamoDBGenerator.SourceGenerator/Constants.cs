@@ -5,6 +5,10 @@ public class Constants
     public const string NewLine = @"
 ";
 
-    public const string DefaultAttributeValueConversionMethodName = AttributeValueGeneratorAttribute.DefaultMethodName;
+    public const string AttributeValueGeneratorMethodName = nameof(AttributeValueGeneratorAttribute) 
+                                                            + "_" 
+                                                            + nameof(DynamoDBGenerator) 
+                                                            + "_" 
+                                                            + nameof(SourceGenerator);
 
 }
