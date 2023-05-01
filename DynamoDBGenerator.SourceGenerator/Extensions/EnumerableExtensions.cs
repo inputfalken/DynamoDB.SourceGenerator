@@ -6,6 +6,11 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class EnumerableExtensions
 {
+    public static IEnumerable<T> Yield<T>(this T type)
+    {
+        yield return type;
+    }
+    
     public static IEnumerable<DynamoDbDataMember> GetDynamoDbProperties(this INamespaceOrTypeSymbol type)
     {
         return type

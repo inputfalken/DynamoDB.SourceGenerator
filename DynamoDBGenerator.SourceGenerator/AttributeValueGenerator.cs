@@ -72,8 +72,14 @@ public class AttributeValueGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(attributeValueGenerators, GenerateCode);
     }
 
-    private static void GenerateCode(SourceProductionContext context, ImmutableArray<(ITypeSymbol, AttributeValueGeneratorAttribute)?> typeSymbols)
+    private static void GenerateCode(SourceProductionContext context,
+        ImmutableArray<(ITypeSymbol, AttributeValueGeneratorAttribute)?> typeSymbols)
     {
+        const string mPropertyMethodName = nameof(AttributeValueGeneratorAttribute)
+                                                         + "_"
+                                                         + nameof(DynamoDBGenerator)
+                                                         + "_"
+                                                         + nameof(SourceGenerator);
         foreach (var tuple in typeSymbols)
         {
             if (tuple is null)
@@ -86,7 +92,14 @@ public class AttributeValueGenerator : IIncrementalGenerator
                 ? null
                 : $"{type.ContainingNamespace}.";
 
-            var code = type.CreateNamespace(type.CreateClass(type.CreateAttributeConversionCode(in settings)));
+            var code = type.CreateNamespace(
+                type.CreateClass(
+                    type.CreateAttributeConversionCode(
+                        new AttributeValueConversionSettings(mPropertyMethodName),
+                        settings.MethodName
+                    )
+                )
+            );
             context.AddSource(
                 $"{typeNamespace}{nameof(AttributeValueGenerator)}.{type.Name}.g.cs",
                 SourceText.From(code, Encoding.UTF8)
