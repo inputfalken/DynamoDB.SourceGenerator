@@ -1,3 +1,4 @@
+using System.Collections;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
@@ -5,7 +6,8 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 
 public static class NotNullEvaluationExtensions
 {
-    public static string TernaryExpression(this ITypeSymbol typeSymbol, string accessPattern, string truthy, string falsy)
+    public static string TernaryExpression(this ITypeSymbol typeSymbol, string accessPattern, string truthy,
+        string falsy)
     {
         var result = Expression(typeSymbol, accessPattern) is { } expression
             ? $"{expression} ? {truthy} : {falsy}"
@@ -22,7 +24,7 @@ public static class NotNullEvaluationExtensions
     }
 
 
-    public static string IfStatement(this DataMember typeSymbol,string accessPattern, string truthy)
+    public static string IfStatement(this DataMember typeSymbol, string accessPattern, string truthy)
     {
         return Expression(typeSymbol.Type, accessPattern) is { } expression
             ? $"if ({expression}) {{ {truthy} }}"
@@ -34,8 +36,15 @@ public static class NotNullEvaluationExtensions
     /// </summary>
     private static string? Expression(ITypeSymbol typeSymbol, string accessPattern)
     {
+        return typeSymbol.IsReferenceType
+            ? OnReferenceType(typeSymbol, accessPattern)
+            : OnValueType(typeSymbol, accessPattern);
+    }
+
+    private static string? OnValueType(ITypeSymbol typeSymbol, string accessPattern)
+    {
         if (typeSymbol is not INamedTypeSymbol {IsGenericType: true} namedTypeSymbol)
-            return typeSymbol.IsReferenceType ? $"{accessPattern} is not null" : null;
+            return null;
 
         if (namedTypeSymbol is {Name: nameof(Nullable)})
         {
@@ -48,10 +57,9 @@ public static class NotNullEvaluationExtensions
                 : $"{accessPattern}.HasValue && {expression}";
         }
 
-        // TODO in order to properly handle tuples
-        if (namedTypeSymbol.IsTupleType)
+        if (namedTypeSymbol.SpecialType is SpecialType.None)
         {
-            // use namedTypeSymbol.TupleElements
+            return null;
         }
         
         var expressions = namedTypeSymbol
@@ -60,7 +68,19 @@ public static class NotNullEvaluationExtensions
             .Where(x => x is not null);
 
         return string.Join(" && ", expressions) is var join && join != string.Empty
-            ? join 
+            ? join
             : null;
+    }
+
+    private static string? OnReferenceType(ITypeSymbol typeSymbol, string accessPattern)
+    {
+        if (typeSymbol is not INamedTypeSymbol {IsGenericType: true} namedTypeSymbol)
+            return $"{accessPattern} is not null";
+
+        if (namedTypeSymbol.AllInterfaces.Any(x => x.Name is nameof(IEnumerable)))
+            return $"{accessPattern} is not null";
+
+        throw new NotSupportedException(
+            $"Could not determine the nullability of  type '{typeSymbol.ToDisplayString()}'.");
     }
 }
