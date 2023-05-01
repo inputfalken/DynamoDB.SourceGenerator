@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
@@ -6,11 +5,6 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class EnumerableExtensions
 {
-    public static IEnumerable<T> Yield<T>(this T type)
-    {
-        yield return type;
-    }
-    
     public static IEnumerable<DynamoDbDataMember> GetDynamoDbProperties(this INamespaceOrTypeSymbol type)
     {
         return type

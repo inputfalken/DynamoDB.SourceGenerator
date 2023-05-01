@@ -31,7 +31,7 @@ public class AttributeValueConversion
         return new AttributeValueAssignment(in assignment, in elementType, attributeValue.AssignedBy);
     }
 
-    private AttributeValueAssignment? BuildSet(in ITypeSymbol elementType, in string accessPattern)
+    private static AttributeValueAssignment? BuildSet(in ITypeSymbol elementType, in string accessPattern)
     {
         var newAccessPattern = elementType.LambdaExpression() is { } expression
             ? $"{accessPattern}.Where({expression})"
@@ -53,13 +53,16 @@ public class AttributeValueConversion
             );
     }
 
-    private bool IsNumeric(in ITypeSymbol typeSymbol) => typeSymbol.SpecialType
-        is SpecialType.System_Int16 or SpecialType.System_Byte
-        or SpecialType.System_Int32 or SpecialType.System_Int64
-        or SpecialType.System_SByte or SpecialType.System_UInt16
-        or SpecialType.System_UInt32 or SpecialType.System_UInt64
-        or SpecialType.System_Decimal or SpecialType.System_Double
-        or SpecialType.System_Single;
+    private static bool IsNumeric(in ITypeSymbol typeSymbol)
+    {
+        return typeSymbol.SpecialType
+            is SpecialType.System_Int16 or SpecialType.System_Byte
+            or SpecialType.System_Int32 or SpecialType.System_Int64
+            or SpecialType.System_SByte or SpecialType.System_UInt16
+            or SpecialType.System_UInt32 or SpecialType.System_UInt64
+            or SpecialType.System_Decimal or SpecialType.System_Double
+            or SpecialType.System_Single;
+    }
 
     private AttributeValueAssignment? SingleGenericTypeOrNull(in ITypeSymbol genericType, in string accessPattern)
     {

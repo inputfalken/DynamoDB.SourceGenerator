@@ -6,16 +6,16 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.AttributeV
 public static class AttributeValueConversionCode
 {
     /// <summary>
-    /// Generated attribute value conversion.
+    ///     Generated attribute value conversion.
     /// </summary>
     /// <param name="type">
-    /// The root type to create attribute value conversions from.
+    ///     The root type to create attribute value conversions from.
     /// </param>
     /// <param name="settings">
-    /// Instructions for how the internal source generator should  perform its generations.
+    ///     Instructions for how the internal source generator should  perform its generations.
     /// </param>
     /// <param name="consumerMethodName">
-    /// The instance method name that the consumer of the source generated code will be invoking.
+    ///     The instance method name that the consumer of the source generated code will be invoking.
     /// </param>
     /// <returns></returns>
     public static string CreateAttributeConversionCode(
@@ -58,7 +58,8 @@ public static class AttributeValueConversionCode
         }
     }
 
-    private static string RootAttributeValueConversionMethod(AttributeValueConversionSettings settings, string consumerMethodName)
+    private static string RootAttributeValueConversionMethod(AttributeValueConversionSettings settings,
+        string consumerMethodName)
     {
         return $@"[MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Dictionary<string, AttributeValue> {consumerMethodName}() => {settings.MPropertyMethodName}(this);";
