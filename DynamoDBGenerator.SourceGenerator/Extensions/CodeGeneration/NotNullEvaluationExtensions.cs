@@ -6,10 +6,10 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 
 public static class NotNullEvaluationExtensions
 {
-    public static string TernaryExpression(this ITypeSymbol typeSymbol, string accessPattern, string truthy,
-        string falsy)
+    public static string TernaryExpression(this ITypeSymbol typeSymbol, in string accessPattern, in string truthy,
+        in string falsy)
     {
-        var result = Expression(typeSymbol, accessPattern) is { } expression
+        var result = Expression(in typeSymbol, in accessPattern) is { } expression
             ? $"{expression} ? {truthy} : {falsy}"
             : truthy;
 
@@ -18,13 +18,13 @@ public static class NotNullEvaluationExtensions
 
     public static string? LambdaExpression(this ITypeSymbol typeSymbol)
     {
-        return Expression(typeSymbol, "x") is { } expression
+        return Expression(in typeSymbol, "x") is { } expression
             ? $"x => {expression}"
             : null;
     }
 
 
-    public static string IfStatement(this DataMember typeSymbol, string accessPattern, string truthy)
+    public static string IfStatement(this DataMember typeSymbol, in string accessPattern, in string truthy)
     {
         return Expression(typeSymbol.Type, accessPattern) is { } expression
             ? $"if ({expression}) {{ {truthy} }}"
@@ -34,14 +34,14 @@ public static class NotNullEvaluationExtensions
     /// <summary>
     /// If this expression returns null it means that the evaluation determined the expression to be truthy.
     /// </summary>
-    private static string? Expression(ITypeSymbol typeSymbol, string accessPattern)
+    private static string? Expression(in ITypeSymbol typeSymbol, in string accessPattern)
     {
         return typeSymbol.IsReferenceType
-            ? OnReferenceType(typeSymbol, accessPattern)
-            : OnValueType(typeSymbol, accessPattern);
+            ? OnReferenceType(in typeSymbol, in accessPattern)
+            : OnValueType(in typeSymbol, in accessPattern);
     }
 
-    private static string? OnValueType(ITypeSymbol typeSymbol, string accessPattern)
+    private static string? OnValueType(in ITypeSymbol typeSymbol, in string accessPattern)
     {
         if (typeSymbol is not INamedTypeSymbol {IsGenericType: true} namedTypeSymbol)
             return null;
@@ -52,7 +52,7 @@ public static class NotNullEvaluationExtensions
             {
                 var T = namedTypeSymbol.TypeArguments[0];
 
-                var expression = Expression(T, $"{accessPattern}.Value");
+                var expression = Expression(in T, $"{accessPattern}.Value");
 
                 return expression is null
                     ? $"{accessPattern}.HasValue"
@@ -65,7 +65,7 @@ public static class NotNullEvaluationExtensions
         }
     }
 
-    private static string? OnReferenceType(ITypeSymbol typeSymbol, string accessPattern)
+    private static string? OnReferenceType(in ITypeSymbol typeSymbol, in string accessPattern)
     {
         return $"{accessPattern} is not null";
     }

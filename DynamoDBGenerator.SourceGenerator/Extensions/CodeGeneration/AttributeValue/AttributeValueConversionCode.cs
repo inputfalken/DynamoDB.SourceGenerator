@@ -102,10 +102,10 @@ public static class AttributeValueConversionCode
                     x.DDB,
                     x.AttributeValue,
                     DictionaryAssignment: x.DDB.DataMember.IfStatement(
-                        x.AccessPattern,
+                        in x.AccessPattern,
                         @$"{dictionaryName}.Add(""{x.DDB.AttributeName}"", {x.AttributeValue});"
                     ),
-                    CapacityTernaries: x.DDB.DataMember.Type.TernaryExpression(x.AccessPattern, "1", "0")
+                    CapacityTernaries: x.DDB.DataMember.Type.TernaryExpression(in x.AccessPattern, "1", "0")
                 )
             )
             .ToArray();
