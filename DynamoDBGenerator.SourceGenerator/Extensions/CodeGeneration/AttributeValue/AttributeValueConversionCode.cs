@@ -30,7 +30,7 @@ public static class AttributeValueConversionCode
                 new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default)
             )
             .Select(x => x.Code)
-            .Prepend(RootAttributeValueConversionMethod(settings, consumerMethodName));
+            .Prepend(RootAttributeValueConversionMethod(in type, in settings, in consumerMethodName));
 
         return string.Join(Constants.NewLine, conversionMethods);
 
@@ -58,13 +58,19 @@ public static class AttributeValueConversionCode
         }
     }
 
-    private static string RootAttributeValueConversionMethod(AttributeValueConversionSettings settings,
-        string consumerMethodName)
+    private static string RootAttributeValueConversionMethod(
+        in ITypeSymbol type,
+        in AttributeValueConversionSettings settings,
+        in string consumerMethodName
+    )
     {
-        return $@"[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        return $@"
+        /// <summary> 
+        ///    Converts <see cref=""{type.ToDisplayString()}""/> into a <see cref=""Amazon.DynamoDBv2.Model.AttributeValue""/> representation.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Dictionary<string, AttributeValue> {consumerMethodName}() => {settings.MPropertyMethodName}(this);";
     }
-
 
     private static MapToAttributeValueMethod StaticDictionaryMethod(this INamespaceOrTypeSymbol type,
         AttributeValueConversionSettings settings)
@@ -108,10 +114,10 @@ public static class AttributeValueConversionCode
         var dictionary =
             @$"        
         /// <summary> 
-        ///    This method should only be invoked by source generated code 
+        ///    Converts <see cref=""{type.ToDisplayString()}""/> into a <see cref=""Amazon.DynamoDBv2.Model.AttributeValue""/> representation.
         /// </summary>
         /// <remarks> 
-        ///    Do not invoke this method by yourself.
+        ///    This method should only be invoked by source generated code.
         /// </remarks>
         private static Dictionary<string, AttributeValue> {settings.MPropertyMethodName}({type.ToDisplayString()} {paramReference})
         {{ 
