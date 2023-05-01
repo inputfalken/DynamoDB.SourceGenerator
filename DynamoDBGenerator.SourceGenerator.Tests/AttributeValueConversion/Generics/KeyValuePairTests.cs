@@ -12,20 +12,23 @@ public class KeyValuePairTests
 
         var result = @class.BuildAttributeValues();
 
-        result
-            .Should()
-            .NotBeEmpty()
-            .And
-            .ContainKey(nameof(KeyValuePairClass.KeyValuePair))
-            .And
-            .SatisfyRespectively(x =>
+        result.Should().SatisfyRespectively(
+            x =>
             {
+                x.Key.Should().Be(nameof(KeyValuePairClass.KeyValuePair));
                 x.Value.M.Should().SatisfyRespectively(y =>
-                {
-                    y.Key.Should().Be("1");
-                    y.Value.N.Should().Be("2");
-                });
-            });
+                    {
+                        y.Key.Should().Be("Key");
+                        y.Value.S.Should().Be("1");
+                    },
+                    y =>
+                    {
+                        y.Key.Should().Be("Value");
+                        y.Value.N.Should().Be("2");
+                    }
+                );
+            }
+        );
     }
 
     [Fact]
@@ -38,9 +41,19 @@ public class KeyValuePairTests
 
         var result = @class.BuildAttributeValues();
 
-        result
-            .Should()
-            .BeEmpty();
+        result.Should().SatisfyRespectively(
+            x =>
+            {
+                x.Key.Should().Be(nameof(KeyValuePairClass.KeyValuePair));
+                x.Value.M.Should().SatisfyRespectively(
+                    y =>
+                    {
+                        y.Key.Should().Be("Value");
+                        y.Value.N.Should().Be("2");
+                    }
+                );
+            }
+        );
     }
 
     [Fact]
@@ -53,9 +66,19 @@ public class KeyValuePairTests
 
         var result = @class.BuildAttributeValues();
 
-        result
-            .Should()
-            .BeEmpty();
+        result.Should().SatisfyRespectively(
+            x =>
+            {
+                x.Key.Should().Be(nameof(KeyValuePairClass.KeyValuePair));
+                x.Value.M.Should().SatisfyRespectively(
+                    y =>
+                    {
+                        y.Key.Should().Be("Key");
+                        y.Value.S.Should().Be("abc");
+                    }
+                );
+            }
+        );
     }
 }
 

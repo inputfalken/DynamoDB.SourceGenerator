@@ -46,41 +46,27 @@ public static class NotNullEvaluationExtensions
         if (typeSymbol is not INamedTypeSymbol {IsGenericType: true} namedTypeSymbol)
             return null;
 
-        if (namedTypeSymbol is {Name: nameof(Nullable)})
+        switch (namedTypeSymbol)
         {
-            var T = namedTypeSymbol.TypeArguments[0];
+            case {Name: nameof(Nullable)}:
+            {
+                var T = namedTypeSymbol.TypeArguments[0];
 
-            var expression = Expression(T, $"{accessPattern}.Value");
+                var expression = Expression(T, $"{accessPattern}.Value");
 
-            return expression is null
-                ? $"{accessPattern}.HasValue"
-                : $"{accessPattern}.HasValue && {expression}";
+                return expression is null
+                    ? $"{accessPattern}.HasValue"
+                    : $"{accessPattern}.HasValue && {expression}";
+            }
+            case {IsTupleType: true}:
+                throw new NotSupportedException($"Null evaluation for type '{typeSymbol}'.");
+            default:
+                return null;
         }
-
-        if (namedTypeSymbol.SpecialType is SpecialType.None)
-        {
-            return null;
-        }
-        
-        var expressions = namedTypeSymbol
-            .GetDynamoDbProperties()
-            .Select(x => Expression(x.DataMember.Type, $"{accessPattern}.{x.DataMember.Name}"))
-            .Where(x => x is not null);
-
-        return string.Join(" && ", expressions) is var join && join != string.Empty
-            ? join
-            : null;
     }
 
     private static string? OnReferenceType(ITypeSymbol typeSymbol, string accessPattern)
     {
-        if (typeSymbol is not INamedTypeSymbol {IsGenericType: true} namedTypeSymbol)
-            return $"{accessPattern} is not null";
-
-        if (namedTypeSymbol.AllInterfaces.Any(x => x.Name is nameof(IEnumerable)))
-            return $"{accessPattern} is not null";
-
-        throw new NotSupportedException(
-            $"Could not determine the nullability of  type '{typeSymbol.ToDisplayString()}'.");
+        return $"{accessPattern} is not null";
     }
 }

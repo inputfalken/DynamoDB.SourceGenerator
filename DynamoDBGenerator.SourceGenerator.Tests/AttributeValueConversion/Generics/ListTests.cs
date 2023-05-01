@@ -194,26 +194,39 @@ public class ListTests
 
         result
             .Should()
-            .NotBeEmpty()
-            .And
-            .ContainKey(nameof(ListClass.KeyValuePairs))
-            .And
-            .AllSatisfy(x => x.Value.L
-                .Should()
-                .SatisfyRespectively(
-                    y => y.M.Should().SatisfyRespectively(z =>
+            .AllSatisfy(x =>
+            {
+                x.Key.Should().Be(nameof(ListClass.KeyValuePairs));
+                x.Value.L.Should().SatisfyRespectively(
+                    y => y.M.Should().SatisfyRespectively(
+                        z =>
+                        {
+                            z.Key.Should().Be("Key");
+                            z.Value.S.Should().Be("2");
+                        },
+                        z =>
+                        {
+                            z.Key.Should().Be("Value");
+                            z.Value.N.Should().Be("1");
+                        }
+                    ),
+                    y =>
                     {
-                        z.Key.Should().Be("2");
-                        z.Value.N.Should().Be("1");
-                    }),
-                    y => y.M.Should().SatisfyRespectively(z =>
-                    {
-                        
-                        z.Key.Should().Be("1");
-                        z.Value.N.Should().Be("1");
-                    })
-                )
-            );
+                        y.M.Should().SatisfyRespectively(
+                            z =>
+                            {
+                                z.Key.Should().Be("Key");
+                                z.Value.S.Should().Be("1");
+                            },
+                            z =>
+                            {
+                                z.Key.Should().Be("Value");
+                                z.Value.N.Should().Be("1");
+                            }
+                        );
+                    }
+                );
+            });
     }
 }
 
