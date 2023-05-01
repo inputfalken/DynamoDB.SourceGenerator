@@ -106,7 +106,14 @@ public static class AttributeValueConversionCode
 
         const string indent = "            ";
         var dictionary =
-            @$"        private static Dictionary<string, AttributeValue> {settings.MPropertyMethodName}({type.ToDisplayString()} {paramReference})
+            @$"        
+        /// <summary> 
+        ///    This method should only be invoked by source generated code 
+        /// </summary>
+        /// <remarks> 
+        ///    Do not invoke this method by yourself.
+        /// </remarks>
+        private static Dictionary<string, AttributeValue> {settings.MPropertyMethodName}({type.ToDisplayString()} {paramReference})
         {{ 
             {InitializeDictionary(dictionaryName, properties.Select(x => x.CapacityTernaries))}
             {string.Join(Constants.NewLine + indent, properties.Select(x => x.DictionaryAssignment))}
