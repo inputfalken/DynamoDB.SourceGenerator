@@ -37,38 +37,30 @@ public static class NotNullEvaluationExtensions
         if (typeSymbol is not INamedTypeSymbol {IsGenericType: true} namedTypeSymbol)
             return typeSymbol.IsReferenceType ? $"{accessPattern} is not null" : null;
 
-        switch (namedTypeSymbol)
+        if (namedTypeSymbol is {Name: nameof(Nullable)})
         {
-            case {Name: nameof(Nullable)}:
-            {
-                var T = namedTypeSymbol.TypeArguments[0];
+            var T = namedTypeSymbol.TypeArguments[0];
 
-                var expression = Expression(T, $"{accessPattern}.Value");
+            var expression = Expression(T, $"{accessPattern}.Value");
 
-                return expression is null
-                    ? $"{accessPattern}.HasValue"
-                    : $"{accessPattern}.HasValue && {expression}";
-            }
-            case {Name: "KeyValuePair"}:
-            {
-                return (
-                        keyCondition: Expression(namedTypeSymbol.TypeArguments[0], $"{accessPattern}.Key"),
-                        valueCondition: Expression(namedTypeSymbol.TypeArguments[1], $"{accessPattern}.Value")
-                    ) switch
-                    {
-                        (null, null) => null,
-                        (null, var right) => right,
-                        (var left, null) => left,
-                        var (left, right) => $"{left} && {right}"
-                    };
-            }
+            return expression is null
+                ? $"{accessPattern}.HasValue"
+                : $"{accessPattern}.HasValue && {expression}";
         }
 
-        if (namedTypeSymbol.IsValueType)
-            throw new NotSupportedException(
-                $"Could not determine nullability of '{typeSymbol}' from type '{typeSymbol.OriginalDefinition}' with access pattern '{accessPattern}'."
-            );
+        // TODO in order to properly handle tuples
+        if (namedTypeSymbol.IsTupleType)
+        {
+            // use namedTypeSymbol.TupleElements
+        }
+        
+        var expressions = namedTypeSymbol
+            .GetDynamoDbProperties()
+            .Select(x => Expression(x.DataMember.Type, $"{accessPattern}.{x.DataMember.Name}"))
+            .Where(x => x is not null);
 
-        return typeSymbol.IsReferenceType ? $"{accessPattern} is not null" : null;
+        return string.Join(" && ", expressions) is var join && join != string.Empty
+            ? join 
+            : null;
     }
 }
