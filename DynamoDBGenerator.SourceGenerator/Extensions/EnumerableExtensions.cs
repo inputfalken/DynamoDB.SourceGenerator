@@ -17,7 +17,9 @@ public static class EnumerableExtensions
         var publicInstanceMembers = symbol
             .GetMembers()
             .Where(x => x.IsStatic is false)
-            .Where(x => x.DeclaredAccessibility == Accessibility.Public);
+            .Where(x => x.DeclaredAccessibility == Accessibility.Public)
+            .Where(x => x.Kind is SymbolKind.Field or SymbolKind.Property)
+            .Where(x => x.CanBeReferencedByName);
 
         foreach (var member in publicInstanceMembers)
         {
