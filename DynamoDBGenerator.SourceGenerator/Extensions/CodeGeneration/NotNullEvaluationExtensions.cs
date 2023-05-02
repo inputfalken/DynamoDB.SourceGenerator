@@ -1,13 +1,13 @@
-using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
 namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 
 public static class NotNullEvaluationExtensions
 {
-    public static string TernaryExpression(this ITypeSymbol typeSymbol, string accessPattern, string truthy, string falsy)
+    public static string TernaryExpression(this ITypeSymbol typeSymbol, in string accessPattern, in string truthy,
+        in string falsy)
     {
-        var result = Expression(typeSymbol, accessPattern) is { } expression
+        var result = Expression(in typeSymbol, in accessPattern) is { } expression
             ? $"{expression} ? {truthy} : {falsy}"
             : truthy;
 
@@ -16,15 +16,14 @@ public static class NotNullEvaluationExtensions
 
     public static string? LambdaExpression(this ITypeSymbol typeSymbol)
     {
-        return Expression(typeSymbol, "x") is { } expression
+        return Expression(in typeSymbol, "x") is { } expression
             ? $"x => {expression}"
             : null;
     }
 
-
-    public static string IfStatement(this DataMember typeSymbol,string accessPattern, string truthy)
+    public static string IfStatement(this ITypeSymbol typeSymbol, in string accessPattern, in string truthy)
     {
-        return Expression(typeSymbol.Type, accessPattern) is { } expression
+        return Expression(typeSymbol, accessPattern) is { } expression
             ? $"if ({expression}) {{ {truthy} }}"
             : truthy;
     }
@@ -32,10 +31,17 @@ public static class NotNullEvaluationExtensions
     /// <summary>
     /// If this expression returns null it means that the evaluation determined the expression to be truthy.
     /// </summary>
-    private static string? Expression(ITypeSymbol typeSymbol, string accessPattern)
+    private static string? Expression(in ITypeSymbol typeSymbol, in string accessPattern)
+    {
+        return typeSymbol.IsReferenceType
+            ? OnReferenceType(in typeSymbol, in accessPattern)
+            : OnValueType(in typeSymbol, in accessPattern);
+    }
+
+    private static string? OnValueType(in ITypeSymbol typeSymbol, in string accessPattern)
     {
         if (typeSymbol is not INamedTypeSymbol {IsGenericType: true} namedTypeSymbol)
-            return typeSymbol.IsReferenceType ? $"{accessPattern} is not null" : null;
+            return null;
 
         switch (namedTypeSymbol)
         {
@@ -43,32 +49,19 @@ public static class NotNullEvaluationExtensions
             {
                 var T = namedTypeSymbol.TypeArguments[0];
 
-                var expression = Expression(T, $"{accessPattern}.Value");
+                var expression = Expression(in T, $"{accessPattern}.Value");
 
                 return expression is null
                     ? $"{accessPattern}.HasValue"
                     : $"{accessPattern}.HasValue && {expression}";
             }
-            case {Name: "KeyValuePair"}:
-            {
-                return (
-                        keyCondition: Expression(namedTypeSymbol.TypeArguments[0], $"{accessPattern}.Key"),
-                        valueCondition: Expression(namedTypeSymbol.TypeArguments[1], $"{accessPattern}.Value")
-                    ) switch
-                    {
-                        (null, null) => null,
-                        (null, var right) => right,
-                        (var left, null) => left,
-                        var (left, right) => $"{left} && {right}"
-                    };
-            }
+            default:
+                return null;
         }
+    }
 
-        if (namedTypeSymbol.IsValueType)
-            throw new NotSupportedException(
-                $"Could not determine nullability of '{typeSymbol}' from type '{typeSymbol.OriginalDefinition}' with access pattern '{accessPattern}'."
-            );
-
-        return typeSymbol.IsReferenceType ? $"{accessPattern} is not null" : null;
+    private static string? OnReferenceType(in ITypeSymbol typeSymbol, in string accessPattern)
+    {
+        return $"{accessPattern} is not null";
     }
 }

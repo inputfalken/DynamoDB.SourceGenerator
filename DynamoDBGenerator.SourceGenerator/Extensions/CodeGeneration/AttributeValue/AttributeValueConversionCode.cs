@@ -78,6 +78,7 @@ public static class AttributeValueConversionCode
         const string paramReference = "entity";
         const string dictionaryName = "attributeValues";
 
+
         var properties = type
             .GetDynamoDbProperties()
             .Where(x => x.IsIgnored is false)
@@ -87,7 +88,7 @@ public static class AttributeValueConversionCode
                 )
             )
             .Zip(
-                Enumerable.Repeat(new AttributeValueConversion(settings), int.MaxValue),
+                new AttributeValueConversion(settings),
                 (x, y) => (x.AccessPattern, x.DDB, AttributeValueConverter: y)
             )
             .Select(x => (
@@ -101,11 +102,11 @@ public static class AttributeValueConversionCode
             .Select(x => (
                     x.DDB,
                     x.AttributeValue,
-                    DictionaryAssignment: x.DDB.DataMember.IfStatement(
-                        x.AccessPattern,
+                    DictionaryAssignment: x.DDB.DataMember.Type.IfStatement(
+                        in x.AccessPattern,
                         @$"{dictionaryName}.Add(""{x.DDB.AttributeName}"", {x.AttributeValue});"
                     ),
-                    CapacityTernaries: x.DDB.DataMember.Type.TernaryExpression(x.AccessPattern, "1", "0")
+                    CapacityTernaries: x.DDB.DataMember.Type.TernaryExpression(in x.AccessPattern, "1", "0")
                 )
             )
             .ToArray();

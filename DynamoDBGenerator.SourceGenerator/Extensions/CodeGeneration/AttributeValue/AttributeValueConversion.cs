@@ -124,13 +124,6 @@ public class AttributeValueConversion
                     in T2,
                     dictionary.AssignedBy
                 );
-            case {Name: "KeyValuePair"}:
-                var keyValuePair = CreateAttributeValue(in T2, $"{accessPattern}.Value");
-                return new AttributeValueAssignment(
-                    $@"M = new Dictionary<string, AttributeValue>() {{ {{{accessPattern}.Key, {keyValuePair} }} }}",
-                    in T2,
-                    keyValuePair.AssignedBy
-                );
             default:
                 return null;
         }
