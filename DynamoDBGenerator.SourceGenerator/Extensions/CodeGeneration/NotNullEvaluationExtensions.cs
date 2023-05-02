@@ -1,5 +1,3 @@
-using System.Collections;
-using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
 namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
@@ -23,10 +21,9 @@ public static class NotNullEvaluationExtensions
             : null;
     }
 
-
-    public static string IfStatement(this DataMember typeSymbol, in string accessPattern, in string truthy)
+    public static string IfStatement(this ITypeSymbol typeSymbol, in string accessPattern, in string truthy)
     {
-        return Expression(typeSymbol.Type, accessPattern) is { } expression
+        return Expression(typeSymbol, accessPattern) is { } expression
             ? $"if ({expression}) {{ {truthy} }}"
             : truthy;
     }

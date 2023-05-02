@@ -88,7 +88,7 @@ public static class AttributeValueConversionCode
                 )
             )
             .Zip(
-                Enumerable.Repeat(new AttributeValueConversion(settings), int.MaxValue),
+                new AttributeValueConversion(settings),
                 (x, y) => (x.AccessPattern, x.DDB, AttributeValueConverter: y)
             )
             .Select(x => (
@@ -102,7 +102,7 @@ public static class AttributeValueConversionCode
             .Select(x => (
                     x.DDB,
                     x.AttributeValue,
-                    DictionaryAssignment: x.DDB.DataMember.IfStatement(
+                    DictionaryAssignment: x.DDB.DataMember.Type.IfStatement(
                         in x.AccessPattern,
                         @$"{dictionaryName}.Add(""{x.DDB.AttributeName}"", {x.AttributeValue});"
                     ),
