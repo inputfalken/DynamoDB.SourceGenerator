@@ -78,6 +78,7 @@ public static class AttributeValueConversionCode
         const string paramReference = "entity";
         const string dictionaryName = "attributeValues";
 
+
         var properties = type
             .GetDynamoDbProperties()
             .Where(x => x.IsIgnored is false)

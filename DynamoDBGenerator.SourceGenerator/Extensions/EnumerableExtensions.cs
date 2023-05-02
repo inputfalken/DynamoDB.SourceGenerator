@@ -14,14 +14,24 @@ public static class EnumerableExtensions
 
     private static IEnumerable<DataMember> GetPublicInstanceProperties(this INamespaceOrTypeSymbol symbol)
     {
-        var publicInstanceMembers = symbol
+        var publicInstanceDataMembers = symbol
             .GetMembers()
             .Where(x => x.IsStatic is false)
             .Where(x => x.DeclaredAccessibility == Accessibility.Public)
             .Where(x => x.Kind is SymbolKind.Field or SymbolKind.Property)
             .Where(x => x.CanBeReferencedByName);
 
-        foreach (var member in publicInstanceMembers)
+        // A special rule when it comes to Tuples.
+        // If we remove this we will get duplicated DataMembers when tuples are being used.
+        if (symbol is INamedTypeSymbol {IsTupleType: true} namedTypeSymbol)
+        {
+            foreach (var tupleElement in namedTypeSymbol.TupleElements)
+                yield return DataMember.FromField(in tupleElement);
+
+            yield break;
+        }
+
+        foreach (var member in publicInstanceDataMembers)
         {
             switch (member)
             {

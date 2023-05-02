@@ -58,8 +58,6 @@ public static class NotNullEvaluationExtensions
                     ? $"{accessPattern}.HasValue"
                     : $"{accessPattern}.HasValue && {expression}";
             }
-            case {IsTupleType: true}:
-                throw new NotSupportedException($"Null evaluation for type '{typeSymbol}'.");
             default:
                 return null;
         }
