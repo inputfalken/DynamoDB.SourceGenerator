@@ -12,6 +12,11 @@ public class AttributeValueConversion
         _attributeValueMFieldAssignment = settings;
     }
 
+    private static bool IsTemporal(in ITypeSymbol symbol)
+    {
+        return symbol is {SpecialType: SpecialType.System_DateTime} or {Name: nameof(DateTimeOffset) or "DateOnly"};
+    }
+
     public AttributeValueAssignment CreateAttributeValue(
         in ITypeSymbol typeSymbol,
         in string accessPattern
@@ -129,12 +134,6 @@ public class AttributeValueConversion
         }
     }
 
-
-    private static bool IsTimeRelated(in ITypeSymbol symbol)
-    {
-        return symbol is {SpecialType: SpecialType.System_DateTime} or {Name: nameof(DateTimeOffset) or "DateOnly"};
-    }
-
     private AttributeValueAssignment CreateAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
     {
         var baseTypeConversion = typeSymbol switch
@@ -143,7 +142,7 @@ public class AttributeValueConversion
             {SpecialType: SpecialType.System_Boolean} => $"BOOL = {accessPattern}",
             {SpecialType: SpecialType.System_Char} => $"S = {accessPattern}.ToString()",
             _ when IsNumeric(in typeSymbol) => $"N = {accessPattern}.ToString()",
-            _ when IsTimeRelated(in typeSymbol) => $@"S = {accessPattern}.ToString(""O"")",
+            _ when IsTemporal(in typeSymbol) => $@"S = {accessPattern}.ToString(""O"")",
             _ => null
         };
 
@@ -161,7 +160,6 @@ public class AttributeValueConversion
             IArrayTypeSymbol {ElementType: { } elementType} => BuildList(in elementType, in accessPattern),
             _ => null
         };
-
 
         if (genericConversion is not null)
             return genericConversion.Value;

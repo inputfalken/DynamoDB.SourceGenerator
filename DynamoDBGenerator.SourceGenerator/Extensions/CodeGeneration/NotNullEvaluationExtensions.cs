@@ -29,7 +29,7 @@ public static class NotNullEvaluationExtensions
     }
 
     /// <summary>
-    /// If this expression returns null it means that the evaluation determined the expression to be truthy.
+    ///     If this expression returns null it means that the evaluation determined the expression to be truthy.
     /// </summary>
     private static string? Expression(in ITypeSymbol typeSymbol, in string accessPattern)
     {

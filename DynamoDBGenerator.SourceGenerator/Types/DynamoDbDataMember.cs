@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis;
 namespace DynamoDBGenerator.SourceGenerator.Types;
 
 /// <summary>
-///  A DynamoDB data member that originates from either a field or property.
+///     A DynamoDB data member that originates from either a field or property.
 /// </summary>
 public readonly struct DynamoDbDataMember
 {
@@ -25,36 +25,39 @@ public readonly struct DynamoDbDataMember
     }
 
 
-    ///<inheritdoc cref="Types.DataMember"/>
+    /// <inheritdoc cref="Types.DataMember" />
     public DataMember DataMember { get; }
 
     /// <summary>
-    /// Indicates whether the property is the HashKey.
+    ///     Indicates whether the property is the HashKey.
     /// </summary>
     public bool IsHashKey { get; }
 
     /// <summary>
-    /// Indicates whether the property is the RangeKey.
+    ///     Indicates whether the property is the RangeKey.
     /// </summary>
     public bool IsRangeKey { get; }
 
     /// <summary>
-    /// Indicates whether the property should be ignored being sent to DynamoDB.
+    ///     Indicates whether the property should be ignored being sent to DynamoDB.
     /// </summary>
     public bool IsIgnored { get; }
 
     /// <summary>
-    /// The name of a DynamoDB attribute
+    ///     The name of a DynamoDB attribute
     /// </summary>
     /// <example>
-    /// https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/WorkingWithItems.html
+    ///     https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/WorkingWithItems.html
     /// </example>
     public string AttributeName { get; }
 
     private static IEnumerable<DynamoDBAttribute> GetAttributes(ISymbol symbol)
     {
         static DynamoDBAttribute? CreateInstance<T>(AttributeData attributeData)
-            where T : DynamoDBAttribute => attributeData.CreateInstance<T>();
+            where T : DynamoDBAttribute
+        {
+            return attributeData.CreateInstance<T>();
+        }
 
         var dynamoDbPropertyAttributes = symbol
             .GetAttributes()

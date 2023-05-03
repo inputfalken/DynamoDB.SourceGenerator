@@ -58,10 +58,7 @@ public class AttributeValueGenerator : IIncrementalGenerator
                             }
                         });
 
-                    if (attribute is null)
-                    {
-                        return ((ITypeSymbol, AttributeValueGeneratorAttribute)?) null;
-                    }
+                    if (attribute is null) return ((ITypeSymbol, AttributeValueGeneratorAttribute)?) null;
 
                     return (type, attribute.CreateInstance<AttributeValueGeneratorAttribute>()!);
                 }
@@ -76,10 +73,10 @@ public class AttributeValueGenerator : IIncrementalGenerator
         ImmutableArray<(ITypeSymbol, AttributeValueGeneratorAttribute)?> typeSymbols)
     {
         const string mPropertyMethodName = nameof(AttributeValueGeneratorAttribute)
-                                                         + "_"
-                                                         + nameof(DynamoDBGenerator)
-                                                         + "_"
-                                                         + nameof(SourceGenerator);
+                                           + "_"
+                                           + nameof(DynamoDBGenerator)
+                                           + "_"
+                                           + nameof(SourceGenerator);
         foreach (var tuple in typeSymbols)
         {
             if (tuple is null)

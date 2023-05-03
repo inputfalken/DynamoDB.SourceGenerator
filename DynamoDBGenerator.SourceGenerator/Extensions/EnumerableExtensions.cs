@@ -11,19 +11,14 @@ public static class EnumerableExtensions
     )
     {
         // ReSharper disable once LoopCanBeConvertedToQuery
-        foreach (var first in source)
-        {
-            yield return resultSelector(first, second);
-        }
+        foreach (var first in source) yield return resultSelector(first, second);
     }
 
     public static IEnumerable<DynamoDbDataMember> GetDynamoDbProperties(this INamespaceOrTypeSymbol type)
     {
         // ReSharper disable once LoopCanBeConvertedToQuery
         foreach (var publicInstanceProperty in type.GetPublicInstanceProperties())
-        {
             yield return new DynamoDbDataMember(publicInstanceProperty);
-        }
     }
 
     private static IEnumerable<DataMember> GetPublicInstanceProperties(this INamespaceOrTypeSymbol symbol)
@@ -46,7 +41,6 @@ public static class EnumerableExtensions
         }
 
         foreach (var member in publicInstanceDataMembers)
-        {
             switch (member)
             {
                 case IPropertySymbol propertySymbol:
@@ -56,6 +50,5 @@ public static class EnumerableExtensions
                     yield return DataMember.FromField(in fieldSymbol);
                     break;
             }
-        }
     }
 }

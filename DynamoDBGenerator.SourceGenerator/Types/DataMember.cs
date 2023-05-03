@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis;
 namespace DynamoDBGenerator.SourceGenerator.Types;
 
 /// <summary>
-/// Either an field or property.
+///     Either an field or property.
 /// </summary>
 public readonly struct DataMember
 {
@@ -39,7 +39,7 @@ public readonly struct DataMember
     }
 
     /// <summary>
-    /// Performs matching based on the possible types that <see cref="DataMember"/> can consist of.
+    ///     Performs matching based on the possible types that <see cref="DataMember" /> can consist of.
     /// </summary>
     public T Match<T>(Func<IPropertySymbol, T> propertySelector, Func<IFieldSymbol, T> fieldSelector)
     {
@@ -53,17 +53,17 @@ public readonly struct DataMember
     }
 
     /// <summary>
-    /// The <see cref="ISymbol"/> which this instance is based on.
+    ///     The <see cref="ISymbol" /> which this instance is based on.
     /// </summary>
     public ISymbol BaseSymbol { get; }
 
     /// <summary>
-    /// The name of the data member.
+    ///     The name of the data member.
     /// </summary>
     public string Name { get; }
 
     /// <summary>
-    /// The type of the data member.
+    ///     The type of the data member.
     /// </summary>
     public ITypeSymbol Type { get; }
 }
