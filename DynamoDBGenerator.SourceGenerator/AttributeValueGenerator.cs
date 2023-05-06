@@ -2,7 +2,7 @@
 using System.Text;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
-using DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.AttributeValue;
+using DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAttributeValue;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
@@ -91,9 +91,8 @@ public class AttributeValueGenerator : IIncrementalGenerator
 
             var code = type.CreateNamespace(
                 type.CreateClass(
-                    type.CreateAttributeConversionCode(
-                        new AttributeValueConversionSettings(mPropertyMethodName),
-                        settings.MethodName
+                    type.GenerateAttributeValueConversion(
+                        new Settings(mPropertyMethodName, settings.MethodName)
                     )
                 )
             );

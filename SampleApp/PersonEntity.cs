@@ -14,7 +14,6 @@ public partial class PersonEntity
     public string MyHashKey { get; set; } = null!;
 
     public PersonEntity()
-    
     {
     }
     public class Testing

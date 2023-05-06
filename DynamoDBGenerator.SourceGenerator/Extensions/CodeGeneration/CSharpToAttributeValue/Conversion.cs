@@ -1,11 +1,11 @@
 using DynamoDBGenerator.SourceGenerator.Types;
 
-namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.AttributeValue;
+namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAttributeValue;
 
-public readonly record struct MapToAttributeValueMethod(
+public readonly record struct Conversion(
     in string Code,
     in string MethodName,
-    in IEnumerable<Conversion<DynamoDbDataMember, AttributeValueAssignment>> Conversions)
+    in IEnumerable<Conversion<DynamoDbDataMember, Assignment>> Conversions)
 {
     public string MethodName { get; } = MethodName;
 
@@ -17,5 +17,5 @@ public readonly record struct MapToAttributeValueMethod(
     /// <summary>
     ///     The conversions that occur within the method.
     /// </summary>
-    public IEnumerable<Conversion<DynamoDbDataMember, AttributeValueAssignment>> Conversions { get; } = Conversions;
+    public IEnumerable<Conversion<DynamoDbDataMember, Assignment>> Conversions { get; } = Conversions;
 }
