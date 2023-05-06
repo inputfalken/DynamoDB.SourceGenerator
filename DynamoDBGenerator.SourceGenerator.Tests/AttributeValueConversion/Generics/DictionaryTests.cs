@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.AttributeValueConversion.Generics;
 
 public class DictionaryTests
