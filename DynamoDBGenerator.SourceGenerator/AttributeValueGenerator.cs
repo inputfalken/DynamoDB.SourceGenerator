@@ -64,7 +64,13 @@ public class AttributeValueGenerator : IIncrementalGenerator
             var code = type.CreateNamespace(
                 type.CreateClass(
                     type.GenerateAttributeValueConversion(
-                        new Settings(mPropertyMethodName, settings.MethodName)
+                        new Settings(
+                            mPropertyMethodName,
+                            new Settings.ConsumerMethodConfiguration(settings.MethodName, Settings.ConsumerMethodConfiguration.Parameterization.UnparameterizedInstance, Constants.AccessModifier.Public),
+                            null ,
+                            $"SourceGenerated_{type.Name}_Conversion"
+                            
+                        )
                     )
                 )
             );

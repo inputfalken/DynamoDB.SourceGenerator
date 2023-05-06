@@ -6,70 +6,110 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAt
 
 public class Generation
 {
-    private readonly Settings _attributeValueMFieldAssignment;
+    private readonly Settings _settings;
+    private readonly ITypeSymbol _rootTypeSymbol;
+    private const string Indent = "                ";
 
-    public Generation(in Settings settings)
+    public Generation(in Settings settings, in ITypeSymbol typeSymbol)
     {
-        _attributeValueMFieldAssignment = settings;
+        _settings = settings;
+        _rootTypeSymbol = typeSymbol;
     }
 
-    public string CreateAttributeConversionCode(ITypeSymbol type)
+    /// <summary>
+    /// Creates an Dictionary with string as key and AttributeValue as value.
+    /// </summary>
+    public string CreateAttributeValueDictionary()
     {
-        var conversionMethods = ConversionMethods(
-                type,
-                new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default)
+        var rootMethod = RootAttributeValueConversionMethod();
+        var enumerable = ConversionMethods(
+                _rootTypeSymbol,
+                new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default),
+                0
             )
-            .Select(x => x.Code)
-            .Prepend(RootAttributeValueConversionMethod(in type, in _attributeValueMFieldAssignment));
+            .Select(static x => x.Code);
+        
+        var sourceGeneration = string.Join(Constants.NewLine, enumerable);
 
-        return string.Join(Constants.NewLine, conversionMethods);
+        return @$"{rootMethod}
+        private class {_settings.SourceGeneratedClassName}
+        {{
+            {sourceGeneration}
+        }}";
+    }
+
+    /// <summary>
+    /// Creates an Dictionary with string as key and AttributeUpdate as value.
+    /// </summary>
+    public string CreateAttributeValueUpdateDictionary()
+    {
+        throw new NotSupportedException();
     }
 
     private IEnumerable<Conversion> ConversionMethods(
         ITypeSymbol typeSymbol,
-        ISet<ITypeSymbol> typeSymbols
+        ISet<ITypeSymbol> typeSymbols,
+        int recursionDept
     )
     {
         // We already support the type.
         if (typeSymbols.Add(typeSymbol) is false)
             yield break;
 
-        var dict = StaticDictionaryMethod(typeSymbol);
+        var dict = StaticDictionaryMethod(typeSymbol, recursionDept);
 
         yield return dict;
 
         var unsupportedTypes = dict.Conversions
-            .Where(x => x.Towards.AssignedBy is Assignment.Decision.ExternalMethod)
-            .Select(x => x.Towards.Type);
+            .Where(static x => x.Towards.AssignedBy is Assignment.Decision.ExternalMethod)
+            .Select(static x => x.Towards.Type);
 
         foreach (var unsupportedType in unsupportedTypes)
-        foreach (var dictionary in ConversionMethods(unsupportedType, typeSymbols))
+        foreach (var dictionary in ConversionMethods(unsupportedType, typeSymbols, recursionDept + 1))
             yield return dictionary;
     }
 
-    private static string RootAttributeValueConversionMethod(
-        in ITypeSymbol type,
-        in Settings settings
-    )
+    private string RootAttributeValueConversionMethod()
     {
-        return $@"
-        /// <summary> 
-        ///    Converts <see cref=""{type.ToXmlComment()}""/> into a <see cref=""Amazon.DynamoDBv2.Model.AttributeValue""/> representation.
+        var config = _settings.ConsumerMethodConfig;
+
+        var accessModifier = _settings.ConsumerMethodConfig.AccessModifier.ToCode();
+        var signature = config.MethodParameterization switch
+        {
+            Settings.ConsumerMethodConfiguration.Parameterization.UnparameterizedInstance =>
+                $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}() => {_settings.SourceGeneratedClassName}.{_settings.MPropertyMethodName}(this);",
+            Settings.ConsumerMethodConfiguration.Parameterization.ParameterizedStatic =>
+                $"{accessModifier} static Dictionary<string, AttributeValue> {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {_settings.SourceGeneratedClassName}.{_settings.MPropertyMethodName}(item);",
+            Settings.ConsumerMethodConfiguration.Parameterization.ParameterizedInstance =>
+                $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {_settings.SourceGeneratedClassName}.{_settings.MPropertyMethodName}(item);",
+            _ => throw new NotSupportedException($"Config of '{config.MethodParameterization}'.")
+        };
+        
+        
+        return $@"/// <summary> 
+        ///    Converts <see cref=""{_rootTypeSymbol.ToXmlComment()}""/> into a <see cref=""Amazon.DynamoDBv2.Model.AttributeValue""/> representation.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Dictionary<string, AttributeValue> {settings.ConsumerMethodName}() => {settings.MPropertyMethodName}(this);";
+        {signature}";
     }
 
-    private Conversion StaticDictionaryMethod(ITypeSymbol type)
+    private Conversion StaticDictionaryMethod(ITypeSymbol type, int recursionDept)
     {
         const string paramReference = "entity";
         const string dictionaryName = "attributeValues";
 
+        IEnumerable<DynamoDbDataMember> dynamoDbDataMembers;
 
-        var properties = type
-            .GetDynamoDbProperties()
-            .Where(x => x.IsIgnored is false)
-            .Select(x => (
+        if (_settings.PredicateConfig is null)
+            dynamoDbDataMembers = type.GetDynamoDbProperties();
+        else 
+            dynamoDbDataMembers = type
+                .GetDynamoDbProperties()
+                .Where(_settings.PredicateConfig.Value.Predicate);
+
+        var properties = dynamoDbDataMembers
+            .Where(static x => x.IsIgnored is false)
+            .Select(static x => (
                     AccessPattern: $"{paramReference}.{x.DataMember.Name}",
                     DDB: x
                 )
@@ -82,7 +122,7 @@ public class Generation
                     x.AccessPattern
                 )
             ))
-            .Select(x => (
+            .Select(static x => (
                     x.DDB,
                     x.AttributeValue,
                     DictionaryAssignment: x.DDB.DataMember.Type.IfStatement(
@@ -94,28 +134,27 @@ public class Generation
             )
             .ToArray();
 
-        const string indent = "            ";
         var dictionary =
             @$"        
-        /// <summary> 
-        ///    Converts <see cref=""{type.ToXmlComment()}""/> into a <see cref=""Amazon.DynamoDBv2.Model.AttributeValue""/> representation.
-        /// </summary>
-        /// <remarks> 
-        ///    This method should only be invoked by source generated code.
-        /// </remarks>
-        private static Dictionary<string, AttributeValue> {_attributeValueMFieldAssignment.MPropertyMethodName}({type.ToDisplayString()} {paramReference})
-        {{ 
-            {InitializeDictionary(dictionaryName, properties.Select(x => x.CapacityTernaries))}
-            {string.Join(Constants.NewLine + indent, properties.Select(x => x.DictionaryAssignment))}
-            return {dictionaryName};
-        }}";
+            /// <summary> 
+            ///    Converts <see cref=""{type.ToXmlComment()}""/> into a <see cref=""Amazon.DynamoDBv2.Model.AttributeValue""/> representation.
+            /// </summary>
+            /// <remarks> 
+            ///    This method should only be invoked by source generated code.
+            /// </remarks>
+            public static Dictionary<string, AttributeValue> {_settings.MPropertyMethodName}({type.ToDisplayString()} {paramReference})
+            {{ 
+                {InitializeDictionary(dictionaryName, properties.Select(static x => x.CapacityTernaries))}
+                {string.Join(Constants.NewLine + Indent, properties.Select(static x => x.DictionaryAssignment))}
+                return {dictionaryName};
+            }}";
 
 
         return new Conversion(
             in dictionary,
-            _attributeValueMFieldAssignment.MPropertyMethodName,
+            _settings.MPropertyMethodName,
             properties.Select(
-                x => new Conversion<DynamoDbDataMember, Assignment>(in x.DDB, in x.AttributeValue)
+                static x => new Conversion<DynamoDbDataMember, Assignment>(in x.DDB, in x.AttributeValue)
             )
         );
 
@@ -131,11 +170,9 @@ public class Generation
 
             var ifCheck = $"if (({capacityReference}) is 0) {{ return {dictionaryName}; }}";
 
-            return
-                @$"{capacityDeclaration}
-            var {dictionaryName} = new Dictionary<string, AttributeValue>({capacityReference});
-            {ifCheck}
-";
+            return @$"{capacityDeclaration}
+                var {dictionaryName} = new Dictionary<string, AttributeValue>({capacityReference});
+                {ifCheck}";
         }
     }
 
@@ -292,7 +329,7 @@ public class Generation
             return genericConversion.Value;
 
         return new Assignment(
-            $"M = {_attributeValueMFieldAssignment.MPropertyMethodName}({accessPattern})",
+            $"M = {_settings.MPropertyMethodName}({accessPattern})",
             in typeSymbol,
             Assignment.Decision.ExternalMethod
         );
