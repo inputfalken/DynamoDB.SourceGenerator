@@ -8,6 +8,11 @@ public class Generation
 {
     private readonly Settings _attributeValueMFieldAssignment;
 
+    public Generation(in Settings settings)
+    {
+        _attributeValueMFieldAssignment = settings;
+    }
+
     public string CreateAttributeConversionCode(ITypeSymbol type)
     {
         var conversionMethods = ConversionMethods(
@@ -49,13 +54,13 @@ public class Generation
     {
         return $@"
         /// <summary> 
-        ///    Converts <see cref=""{type.ToDisplayString()}""/> into a <see cref=""Amazon.DynamoDBv2.Model.AttributeValue""/> representation.
+        ///    Converts <see cref=""{type.ToXmlComment()}""/> into a <see cref=""Amazon.DynamoDBv2.Model.AttributeValue""/> representation.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Dictionary<string, AttributeValue> {settings.ConsumerMethodName}() => {settings.MPropertyMethodName}(this);";
     }
 
-    private Conversion StaticDictionaryMethod(INamespaceOrTypeSymbol type)
+    private Conversion StaticDictionaryMethod(ITypeSymbol type)
     {
         const string paramReference = "entity";
         const string dictionaryName = "attributeValues";
@@ -93,7 +98,7 @@ public class Generation
         var dictionary =
             @$"        
         /// <summary> 
-        ///    Converts <see cref=""{type.ToDisplayString()}""/> into a <see cref=""Amazon.DynamoDBv2.Model.AttributeValue""/> representation.
+        ///    Converts <see cref=""{type.ToXmlComment()}""/> into a <see cref=""Amazon.DynamoDBv2.Model.AttributeValue""/> representation.
         /// </summary>
         /// <remarks> 
         ///    This method should only be invoked by source generated code.
@@ -134,17 +139,12 @@ public class Generation
         }
     }
 
-    public Generation(in Settings settings)
-    {
-        _attributeValueMFieldAssignment = settings;
-    }
-
     private static bool IsTemporal(in ITypeSymbol symbol)
     {
         return symbol is {SpecialType: SpecialType.System_DateTime} or {Name: nameof(DateTimeOffset) or "DateOnly"};
     }
 
-    public Assignment CreateAttributeValue(
+    private Assignment CreateAttributeValue(
         in ITypeSymbol typeSymbol,
         in string accessPattern
     )

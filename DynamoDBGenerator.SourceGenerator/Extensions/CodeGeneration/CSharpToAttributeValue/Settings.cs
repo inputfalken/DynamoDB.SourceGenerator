@@ -13,7 +13,7 @@ public readonly record struct Settings(in string MPropertyMethodName, in string 
     public string MPropertyMethodName { get; } = MPropertyMethodName;
 
     /// <summary>
-    /// The name of the method available for public usage by the consumer.
+    ///     The name of the method available for public usage by the consumer.
     /// </summary>
     public string ConsumerMethodName { get; } = ConsumerMethodName;
 }

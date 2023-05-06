@@ -4,6 +4,12 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAt
 
 public readonly record struct Assignment
 {
+    public enum Decision
+    {
+        ExternalMethod = 1,
+        Inline = 2
+    }
+
     private readonly string _assignment;
 
     public Assignment(in string assignment,
@@ -13,12 +19,6 @@ public readonly record struct Assignment
         _assignment = assignment;
         this.Type = Type;
         this.AssignedBy = AssignedBy;
-    }
-
-    public enum Decision
-    {
-        ExternalMethod = 1,
-        Inline = 2
     }
 
 

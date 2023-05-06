@@ -22,7 +22,7 @@ public static class CodeGenerationExtensions
     }
 
     /// <summary>
-    /// Creates a namespace based on the type.
+    ///     Creates a namespace based on the type.
     /// </summary>
     public static string CreateNamespace(this ITypeSymbol type, string content)
     {
@@ -44,7 +44,7 @@ using System.Linq;
     }
 
     /// <summary>
-    /// Creates a class based on the type.
+    ///     Creates a class based on the type.
     /// </summary>
     /// <param name="type"></param>
     /// <param name="content"></param>

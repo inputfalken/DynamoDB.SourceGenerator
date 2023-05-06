@@ -5,15 +5,6 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class EnumerableExtensions
 {
-    public static IEnumerable<TResult> Zip<TFirst, TSecond, TResult>(
-        this IEnumerable<TFirst> source, TSecond second,
-        Func<TFirst, TSecond, TResult> resultSelector
-    )
-    {
-        // ReSharper disable once LoopCanBeConvertedToQuery
-        foreach (var first in source) yield return resultSelector(first, second);
-    }
-
     public static IEnumerable<DynamoDbDataMember> GetDynamoDbProperties(this INamespaceOrTypeSymbol type)
     {
         // ReSharper disable once LoopCanBeConvertedToQuery
