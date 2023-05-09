@@ -1,22 +1,17 @@
-﻿using System.ComponentModel;
-using Amazon.DynamoDBv2.DataModel;
-using DynamoDBGenerator;
+﻿using DynamoDBGenerator;
 
 namespace SampleApp;
 
-[AttributeValueGenerator("Abc")]
+[AttributeValueGenerator]
 public partial class PersonEntity
 {
-    [EditorBrowsable(EditorBrowsableState.Never)]
     public IEnumerable<KeyValuePair<string, int>> Type { get; set; } = null!;
 
-    [DynamoDBHashKey]
     public string MyHashKey { get; set; } = null!;
 
-    public PersonEntity()
-    {
-    }
-    public class Testing
-    {
-    }
+    public (int X, int Y, int Z) Coordinate { get; set; }
+    public (int X, int Y, int Z) Coordinate2 { get; set; }
+    public (int X, int Y, int Z) Coordinate4 { get; set; }
+    public (int X, int Y, int Z) Coordinate5 { get; set; }
+    public (int X, int Y, int Z) Coordinate6 { get; set; }
 }

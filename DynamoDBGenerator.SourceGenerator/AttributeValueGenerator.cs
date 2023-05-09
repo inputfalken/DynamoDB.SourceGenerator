@@ -14,80 +14,52 @@ public class AttributeValueGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var attributeValueGenerators = context.SyntaxProvider
-            .CreateSyntaxProvider((syntaxNode, _) =>
-                {
-                    if (syntaxNode is not AttributeSyntax attribute)
-                        return false;
+        var classDeclarations = context.SyntaxProvider
+            .ForAttributeWithMetadataName(
+                Constants.AttributeValueGeneratorFullName,
+                static (node, _) => node is ClassDeclarationSyntax,
+                static (context, _) => (ClassDeclarationSyntax) context.TargetNode
+            );
 
-                    var name = attribute.Name switch
-                    {
-                        SimpleNameSyntax ins => ins.Identifier.Text,
-                        QualifiedNameSyntax qns => qns.Right.Identifier.Text,
-                        _ => null
-                    };
+        var compilationAndClasses = context.CompilationProvider.Combine(classDeclarations.Collect());
 
-                    return name switch
-                    {
-                        "AttributeValueGeneratorAttribute" => true,
-                        "AttributeValueGenerator" => true,
-                        _ => false
-                    };
-                },
-                (ctx, _) =>
-                {
-                    var attributeSyntax = (AttributeSyntax) ctx.Node;
-
-                    // "attribute.Parent" is "AttributeListSyntax"
-                    // "attribute.Parent.Parent" is a C# fragment the attributes are applied to
-                    if (attributeSyntax.Parent?.Parent is not ClassDeclarationSyntax classDeclaration)
-                        return null;
-
-                    if (ctx.SemanticModel.GetDeclaredSymbol(classDeclaration) is not ITypeSymbol type)
-                        return null;
-
-                    var attribute = type
-                        .GetAttributes()
-                        .FirstOrDefault(a => a.AttributeClass is
-                        {
-                            Name: nameof(AttributeValueGeneratorAttribute),
-                            ContainingNamespace:
-                            {
-                                Name: nameof(DynamoDBGenerator),
-                                ContainingNamespace.IsGlobalNamespace: true
-                            }
-                        });
-
-                    if (attribute is null) return ((ITypeSymbol, AttributeValueGeneratorAttribute)?) null;
-
-                    return (type, attribute.CreateInstance<AttributeValueGeneratorAttribute>()!);
-                }
-            )
-            .Where(x => x is not null)
-            .Collect();
-
-        context.RegisterSourceOutput(attributeValueGenerators, GenerateCode);
+        context.RegisterSourceOutput(compilationAndClasses, (spc, source) => Execute(source.Item1, source.Item2, spc));
     }
 
-    private static void GenerateCode(SourceProductionContext context,
-        ImmutableArray<(ITypeSymbol, AttributeValueGeneratorAttribute)?> typeSymbols)
+    private static void Execute(
+        Compilation compilation,
+        ImmutableArray<ClassDeclarationSyntax> classDeclarations,
+        SourceProductionContext context
+    )
     {
         const string mPropertyMethodName = nameof(AttributeValueGeneratorAttribute)
                                            + "_"
                                            + nameof(DynamoDBGenerator)
                                            + "_"
                                            + nameof(SourceGenerator);
-        foreach (var tuple in typeSymbols)
+
+        foreach (var syntax in classDeclarations)
         {
-            if (tuple is null)
+            var symbol = compilation
+                .GetSemanticModel(syntax.SyntaxTree)
+                .GetDeclaredSymbol(syntax);
+
+            if (symbol is null)
                 continue;
 
-            var type = tuple.Value.Item1;
-            var settings = tuple.Value.Item2;
+            var type = (ITypeSymbol) symbol;
 
-            var typeNamespace = type.ContainingNamespace.IsGlobalNamespace
-                ? null
-                : $"{type.ContainingNamespace}.";
+            var attributeData = type.GetAttributes().First(a => a.AttributeClass is
+            {
+                Name: nameof(AttributeValueGeneratorAttribute),
+                ContainingNamespace:
+                {
+                    Name: nameof(DynamoDBGenerator),
+                    ContainingNamespace.IsGlobalNamespace: true
+                }
+            });
+
+            var settings = attributeData.CreateInstance<AttributeValueGeneratorAttribute>()!;
 
             var code = type.CreateNamespace(
                 type.CreateClass(
@@ -96,8 +68,9 @@ public class AttributeValueGenerator : IIncrementalGenerator
                     )
                 )
             );
+            
             context.AddSource(
-                $"{typeNamespace}{nameof(AttributeValueGenerator)}.{type.Name}.g.cs",
+                $"{nameof(AttributeValueGenerator)}.{type.Name}.g.cs",
                 SourceText.From(code, Encoding.UTF8)
             );
         }
