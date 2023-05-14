@@ -4,7 +4,7 @@ A .NET source generator whose goal is to automate the low-level DynamoDB API.
 
 ## Note
 
-This project has not been tested in any real scenario and currently serves as mostly a hobby project.
+This project has not been tested in any real scenario and currently serves as a hobby project.
 
 ## Features
 
