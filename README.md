@@ -1,4 +1,4 @@
-# What is this?
+# DynamoDB.SourceGenerator
 
 A .NET source generator whose goal is to automate the low-level DynamoDB API.
 
