@@ -24,11 +24,10 @@ public class Generation
         var rootMethod = RootAttributeValueConversionMethod();
         var enumerable = ConversionMethods(
                 _rootTypeSymbol,
-                new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default),
-                0
+                new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default)
             )
             .Select(static x => x.Code);
-        
+
         var sourceGeneration = string.Join(Constants.NewLine, enumerable);
 
         return @$"{rootMethod}
@@ -48,25 +47,25 @@ public class Generation
 
     private IEnumerable<Conversion> ConversionMethods(
         ITypeSymbol typeSymbol,
-        ISet<ITypeSymbol> typeSymbols,
-        int recursionDept
+        ISet<ITypeSymbol> typeSymbols
     )
     {
         // We already support the type.
         if (typeSymbols.Add(typeSymbol) is false)
             yield break;
 
-        var dict = StaticDictionaryMethod(typeSymbol, recursionDept);
+        var dict = StaticDictionaryMethod(typeSymbol);
 
         yield return dict;
 
-        var unsupportedTypes = dict.Conversions
-            .Where(static x => x.Towards.AssignedBy is Assignment.Decision.ExternalMethod)
-            .Select(static x => x.Towards.Type);
+        foreach (var unsupportedType in dict.Conversions)
+        {
+            if (unsupportedType.AssignedBy is not Assignment.Decision.ExternalMethod)
+                continue;
 
-        foreach (var unsupportedType in unsupportedTypes)
-        foreach (var dictionary in ConversionMethods(unsupportedType, typeSymbols, recursionDept + 1))
-            yield return dictionary;
+            foreach (var dictionary in ConversionMethods(unsupportedType.Type, typeSymbols))
+                yield return dictionary;
+        }
     }
 
     private string RootAttributeValueConversionMethod()
@@ -84,8 +83,8 @@ public class Generation
                 $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {_settings.SourceGeneratedClassName}.{_settings.MPropertyMethodName}(item);",
             _ => throw new NotSupportedException($"Config of '{config.MethodParameterization}'.")
         };
-        
-        
+
+
         return $@"/// <summary> 
         ///    Converts <see cref=""{_rootTypeSymbol.ToXmlComment()}""/> into a <see cref=""Amazon.DynamoDBv2.Model.AttributeValue""/> representation.
         /// </summary>
@@ -93,7 +92,7 @@ public class Generation
         {signature}";
     }
 
-    private Conversion StaticDictionaryMethod(ITypeSymbol type, int recursionDept)
+    private Conversion StaticDictionaryMethod(ITypeSymbol type)
     {
         const string paramReference = "entity";
         const string dictionaryName = "attributeValues";
@@ -102,7 +101,7 @@ public class Generation
 
         if (_settings.PredicateConfig is null)
             dynamoDbDataMembers = type.GetDynamoDbProperties();
-        else 
+        else
             dynamoDbDataMembers = type
                 .GetDynamoDbProperties()
                 .Where(_settings.PredicateConfig.Value.Predicate);
@@ -150,13 +149,7 @@ public class Generation
             }}";
 
 
-        return new Conversion(
-            in dictionary,
-            _settings.MPropertyMethodName,
-            properties.Select(
-                static x => new Conversion<DynamoDbDataMember, Assignment>(in x.DDB, in x.AttributeValue)
-            )
-        );
+        return new Conversion(in dictionary, properties.Select(static x => x.AttributeValue));
 
         static string InitializeDictionary(string dictionaryName, IEnumerable<string> capacityCalculations)
         {
