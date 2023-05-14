@@ -3,6 +3,7 @@ using DynamoDBGenerator;
 
 namespace SampleApp;
 
+[AttributeValueGenerator]
 public partial class Address
 {
     [DynamoDBHashKey]
