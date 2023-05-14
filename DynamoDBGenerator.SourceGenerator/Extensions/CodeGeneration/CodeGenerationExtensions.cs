@@ -16,9 +16,9 @@ public static class CodeGenerationExtensions
     /// </param>
     /// <returns></returns>
     public static string GenerateAttributeValueConversion(this ITypeSymbol type,
-        Settings settings)
+        in Settings settings)
     {
-        return new Generation(in settings).CreateAttributeConversionCode(type);
+        return new Generation(in settings, type).CreateAttributeValueDictionary();
     }
 
     /// <summary>
@@ -54,7 +54,6 @@ using System.Linq;
         return @$"partial class {type.Name}
     {{
         {content}
-    }}
-";
+    }}";
     }
 }
