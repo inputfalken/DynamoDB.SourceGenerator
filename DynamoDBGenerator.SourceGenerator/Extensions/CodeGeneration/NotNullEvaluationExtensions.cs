@@ -23,9 +23,18 @@ public static class NotNullEvaluationExtensions
 
     public static string IfStatement(this ITypeSymbol typeSymbol, in string accessPattern, in string truthy)
     {
-        return Expression(typeSymbol, accessPattern) is { } expression
-            ? $"if ({expression}) {{ {truthy} }}"
-            : truthy;
+        if (Expression(typeSymbol, accessPattern) is not { } expression)
+            return truthy;
+
+        var ifClause = $"if ({expression}) {{ {truthy} }}";
+        return typeSymbol.NullableAnnotation switch
+        {
+            NullableAnnotation.None => ifClause,
+            NullableAnnotation.NotAnnotated => $"{ifClause} else {{ throw new ArgumentNullException(nameof({accessPattern})); }}",
+            NullableAnnotation.Annotated => ifClause,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
     }
 
     /// <summary>
