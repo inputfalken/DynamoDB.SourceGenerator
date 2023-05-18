@@ -1,4 +1,6 @@
-﻿using DynamoDBGenerator;
+﻿using System;
+using System.Collections.Generic;
+using DynamoDBGenerator;
 
 namespace SampleApp;
 
