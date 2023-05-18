@@ -32,12 +32,6 @@ public class AttributeValueGenerator : IIncrementalGenerator
         SourceProductionContext context
     )
     {
-        const string mPropertyMethodName = nameof(AttributeValueGeneratorAttribute)
-                                           + "_"
-                                           + nameof(DynamoDBGenerator)
-                                           + "_"
-                                           + nameof(SourceGenerator);
-
         foreach (var syntax in classDeclarations)
         {
             var symbol = compilation
@@ -65,7 +59,6 @@ public class AttributeValueGenerator : IIncrementalGenerator
                 type.CreateClass(
                     type.GenerateAttributeValueConversion(
                         new Settings(
-                            mPropertyMethodName,
                             new Settings.ConsumerMethodConfiguration(settings.MethodName, Settings.ConsumerMethodConfiguration.Parameterization.UnparameterizedInstance, Constants.AccessModifier.Public),
                             null ,
                             $"SourceGenerated_{type.Name}_Conversion"

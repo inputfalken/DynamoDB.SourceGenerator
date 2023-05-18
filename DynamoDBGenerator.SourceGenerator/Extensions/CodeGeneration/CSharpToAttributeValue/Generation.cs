@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Concurrent;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
@@ -24,7 +25,7 @@ public class Generation
         var rootMethod = RootAttributeValueConversionMethod();
         var enumerable = ConversionMethods(
                 _rootTypeSymbol,
-                new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default)
+                new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability)
             )
             .Select(static x => x.Code);
 
@@ -35,14 +36,6 @@ public class Generation
         {{
             {sourceGeneration}
         }}";
-    }
-
-    /// <summary>
-    /// Creates an Dictionary with string as key and AttributeUpdate as value.
-    /// </summary>
-    public string CreateAttributeValueUpdateDictionary()
-    {
-        throw new NotSupportedException();
     }
 
     private IEnumerable<Conversion> ConversionMethods(
@@ -73,14 +66,15 @@ public class Generation
         var config = _settings.ConsumerMethodConfig;
 
         var accessModifier = _settings.ConsumerMethodConfig.AccessModifier.ToCode();
+        var methodName = CreateMethodName(_rootTypeSymbol);
         var signature = config.MethodParameterization switch
         {
             Settings.ConsumerMethodConfiguration.Parameterization.UnparameterizedInstance =>
-                $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}() => {_settings.SourceGeneratedClassName}.{_settings.MPropertyMethodName}(this);",
+                $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}() => {_settings.SourceGeneratedClassName}.{methodName}(this);",
             Settings.ConsumerMethodConfiguration.Parameterization.ParameterizedStatic =>
-                $"{accessModifier} static Dictionary<string, AttributeValue> {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {_settings.SourceGeneratedClassName}.{_settings.MPropertyMethodName}(item);",
+                $"{accessModifier} static Dictionary<string, AttributeValue> {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {_settings.SourceGeneratedClassName}.{methodName}(item);",
             Settings.ConsumerMethodConfiguration.Parameterization.ParameterizedInstance =>
-                $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {_settings.SourceGeneratedClassName}.{_settings.MPropertyMethodName}(item);",
+                $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {_settings.SourceGeneratedClassName}.{methodName}(item);",
             _ => throw new NotSupportedException($"Config of '{config.MethodParameterization}'.")
         };
 
@@ -141,7 +135,7 @@ public class Generation
             /// <remarks> 
             ///    This method should only be invoked by source generated code.
             /// </remarks>
-            public static Dictionary<string, AttributeValue> {_settings.MPropertyMethodName}({type.ToDisplayString()} {paramReference})
+            public static Dictionary<string, AttributeValue> {CreateMethodName(type)}({type.ToDisplayString()} {paramReference})
             {{ 
                 {InitializeDictionary(dictionaryName, properties.Select(static x => x.CapacityTernaries))}
                 {string.Join(Constants.NewLine + Indent, properties.Select(static x => x.DictionaryAssignment))}
@@ -322,9 +316,51 @@ public class Generation
             return genericConversion.Value;
 
         return new Assignment(
-            $"M = {_settings.MPropertyMethodName}({accessPattern})",
+            $"M = {CreateMethodName(typeSymbol)}({accessPattern})",
             in typeSymbol,
             Assignment.Decision.ExternalMethod
         );
+    }
+
+    private readonly ConcurrentDictionary<ITypeSymbol, string> _methodNameCache =
+        new(SymbolEqualityComparer.IncludeNullability);
+
+    private string CreateMethodName(ITypeSymbol typeSymbol)
+    {
+        return Execution(_methodNameCache, typeSymbol, false);
+
+        static string Execution(
+            ConcurrentDictionary<ITypeSymbol, string> cache,
+            ITypeSymbol typeSymbol,
+            bool isRecursive
+        )
+        {
+            if (cache.TryGetValue(typeSymbol, out var methodName))
+                return methodName;
+
+            var typeDisplay = new string(typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
+                .Where(char.IsLetter).ToArray());
+            var str = typeSymbol.NullableAnnotation switch
+            {
+                NullableAnnotation.None => typeDisplay,
+                NullableAnnotation.NotAnnotated => $"N{typeDisplay}",
+                NullableAnnotation.Annotated => $"NN{typeDisplay}",
+                _ => throw new ArgumentOutOfRangeException()
+            };
+
+            if (typeSymbol is not INamedTypeSymbol namedTypeSymbol)
+            {
+                // We do not need to populate the dictionary if the execution originates from recursion.
+                if (isRecursive is false)
+                    cache.TryAdd(typeSymbol, str);
+
+                return str;
+            }
+
+            var result = string.Join(string.Empty,
+                namedTypeSymbol.TypeArguments.Select(x => Execution(cache, x, true)).Prepend(str));
+            cache.TryAdd(typeSymbol, result);
+            return result;
+        }
     }
 }

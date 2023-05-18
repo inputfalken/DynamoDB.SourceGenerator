@@ -36,37 +36,48 @@ public class NullableAnnotationTests
             result.Should().NotThrow();
     }
 
-    // The reason these tests are failing is due to that we're only supporting one signature per type signature.
-    // Since nullable reference types are not a real type we wont be able to create separate signatures due to collisions with the method signature.
     [Theory]
-    [InlineData("1", "2", "3", false)]
-    [InlineData(null, "2", "3", false)]
-    [InlineData("1", null, "3", false)]
-    [InlineData(null, null, "3", false)]
-    [InlineData("1", "2", null, true)]
-    [InlineData(null, "2", null, true)]
-    [InlineData(null, null, null, true)]
-    public void BuildAttributeValues_NestedGenericWith_NullabilityChecks(
+    [InlineData("1", "2", "3")]
+    [InlineData(null, "2", "3")]
+    [InlineData("1", null, "3")]
+    [InlineData(null, null, "3")]
+    public void BuildAttributeValues_NestedGenericWith_NullabilityCheckNotThrows(
         string disabledNullableReferenceType,
         string enabledNullableReferenceType,
-        string enabledNoneNullableReferenceType,
-        bool shouldThrow)
+        string enabledNoneNullableReferenceType)
     {
-        var @class = new NesteNullableAnnotationTestclass()
+        var @class = new NestedNullableAnnotationTestClass()
         {
-            DisabledNullableReferenceType = new KeyValuePair<string, int>(disabledNullableReferenceType, 1),
-            EnabledNullableReferenceType = new KeyValuePair<string?, int>(enabledNullableReferenceType, 1),
-            EnabledNoneNullableReferenceType = new KeyValuePair<string, int>(enabledNoneNullableReferenceType, 1)
+            DisabledNullableReferenceType = new KeyValuePair<int, string>(1, disabledNullableReferenceType),
+            EnabledNullableReferenceType = new KeyValuePair<int, string?>(1, enabledNullableReferenceType),
+            EnabledNoneNullableReferenceType = new KeyValuePair<int, string>(1, enabledNoneNullableReferenceType)
         };
 
         var result = () => @class.BuildAttributeValues();
 
-        if (shouldThrow)
-            result.Should()
-                .ThrowExactly<ArgumentNullException>()
-                .WithMessage("Value cannot be null. (Parameter 'EnabledNoneNullableReferenceType')");
-        else
-            result.Should().NotThrow();
+        result.Should().NotThrow();
+    }
+
+    [Theory]
+    [InlineData("1", "2", null)]
+    [InlineData(null, "2", null)]
+    [InlineData(null, null, null)]
+    public void BuildAttributeValues_NestedGenericWith_NullabilityCheckThrows(
+        string disabledNullableReferenceType,
+        string enabledNullableReferenceType,
+        string enabledNoneNullableReferenceType)
+    {
+        var @class = new NestedNullableAnnotationTestClass()
+        {
+            DisabledNullableReferenceType = new KeyValuePair<int, string>(1, disabledNullableReferenceType),
+            EnabledNullableReferenceType = new KeyValuePair<int, string?>(1, enabledNullableReferenceType),
+            EnabledNoneNullableReferenceType = new KeyValuePair<int, string>(1, enabledNoneNullableReferenceType)
+        };
+
+        var result = () => @class.BuildAttributeValues();
+
+        result.Should()
+            .ThrowExactly<ArgumentNullException>();
     }
 }
 
@@ -85,13 +96,13 @@ public partial class NullableAnnotationTestClass
 }
 
 [AttributeValueGenerator]
-public partial class NesteNullableAnnotationTestclass
+public partial class NestedNullableAnnotationTestClass
 {
 #nullable disable
-    public KeyValuePair<string, int> DisabledNullableReferenceType { get; set; }
+    public KeyValuePair<int, string> DisabledNullableReferenceType { get; set; }
 #nullable enable
 
-    public KeyValuePair<string?, int> EnabledNullableReferenceType { get; set; }
+    public KeyValuePair<int, string?> EnabledNullableReferenceType { get; set; }
 
-    public KeyValuePair<string, int> EnabledNoneNullableReferenceType { get; set; }
+    public KeyValuePair<int, string> EnabledNoneNullableReferenceType { get; set; }
 }
