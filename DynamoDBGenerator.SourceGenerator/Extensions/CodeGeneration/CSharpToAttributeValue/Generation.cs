@@ -339,7 +339,7 @@ public class Generation
                 return methodName;
 
             var displayString = typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-            
+
             var str = (typeSymbol.NullableAnnotation, typeDisplay: displayString) switch
             {
                 (_, {Length: > Constants.MaxMethodNameLenght}) => $"B64_{displayString.ToBase64()}",
@@ -358,8 +358,15 @@ public class Generation
                 return str;
             }
 
-            var result = string.Join("_", namedTypeSymbol.TypeArguments.Select(x => Execution(cache, x, true)).Prepend(str));
-            cache.Add(typeSymbol, result);
+            var result = string.Join(
+                "_",
+                namedTypeSymbol.TypeArguments.Select(x => Execution(cache, x, true)).Prepend(str)
+            );
+            
+            // We do not need to populate the dictionary if the execution originates from recursion.
+            if (isRecursive is false) 
+                cache.Add(typeSymbol, result);
+
             return result;
         }
     }
