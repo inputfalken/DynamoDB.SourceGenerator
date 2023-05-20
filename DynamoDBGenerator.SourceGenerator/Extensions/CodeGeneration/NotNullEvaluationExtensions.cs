@@ -21,10 +21,9 @@ public static class NotNullEvaluationExtensions
             : null;
     }
 
-    // TODO could be good to pass the type that has the property in order to give an even better exception message.
-    private static string CreateException(in ITypeSymbol typeSymbol, string accessPattern)
+    private static string CreateException(in string accessPattern)
     {
-        return @$"throw new ArgumentNullException(nameof({accessPattern}), ""The property is not supposed to be null, to allow this; make the property nullable.\nLocation:{accessPattern}\nType:{typeSymbol.ToDisplayString()}"");";
+        return @$"throw new ArgumentNullException(nameof({accessPattern}), ""The value is not supposed to be null, to allow this; make the property nullable."");";
     }
     public static string IfStatement(this ITypeSymbol typeSymbol, in string accessPattern, in string truthy)
     {
@@ -35,9 +34,9 @@ public static class NotNullEvaluationExtensions
         return typeSymbol.NullableAnnotation switch
         {
             NullableAnnotation.None => ifClause,
-            NullableAnnotation.NotAnnotated => $@"{ifClause} else {{ {CreateException(typeSymbol, accessPattern) }}}",
+            NullableAnnotation.NotAnnotated => $@"{ifClause} else {{ {CreateException(in accessPattern) }}}",
             NullableAnnotation.Annotated => ifClause,
-            _ => throw new ArgumentOutOfRangeException()
+            _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
         };
 
     }
