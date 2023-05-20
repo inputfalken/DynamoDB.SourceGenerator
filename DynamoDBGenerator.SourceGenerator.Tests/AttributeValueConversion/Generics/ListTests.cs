@@ -246,5 +246,5 @@ public partial class ListClass
     public IReadOnlyList<string>? ReadOnlyList { get; set; }
 
     [DynamoDBProperty]
-    public IReadOnlyList<KeyValuePair<string, int>> KeyValuePairs { get; set; }
+    public IReadOnlyList<KeyValuePair<string, int>>? KeyValuePairs { get; set; }
 }

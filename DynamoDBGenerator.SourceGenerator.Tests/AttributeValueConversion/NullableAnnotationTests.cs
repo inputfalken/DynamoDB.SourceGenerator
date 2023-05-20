@@ -31,7 +31,7 @@ public class NullableAnnotationTests
         if (shouldThrow)
             result.Should()
                 .ThrowExactly<ArgumentNullException>()
-                .WithMessage("Value cannot be null. (Parameter 'EnabledNoneNullableReferenceType')");
+                .WithMessage("The value is not supposed to be null, to allow this; make the property nullable. (Parameter 'EnabledNoneNullableReferenceType')");
         else
             result.Should().NotThrow();
     }
