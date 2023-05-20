@@ -1,5 +1,3 @@
-using Microsoft.CodeAnalysis;
-
 namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class StringExtensions
@@ -12,13 +10,18 @@ public static class StringExtensions
 
     public static string ToAlphaNumericMethodName(this string txt)
     {
-        var arr = txt
-            .Select((x, y) => (x, y))
-            .Where(x => char.IsLetter(x.x) || (x.y > 0 && char.IsNumber(x.x)))
-            .Select(x => x.x)
-            .ToArray();
+        var arr = new char[txt.Length];
+        var index = 0;
 
-        return new string(arr);
+        for (var i = 0; i < txt.Length; i++)
+        {
+            var c = txt[i];
+            if (char.IsLetter(c) || (index > 0 && char.IsNumber(c)))
+            {
+                arr[index++] = c;
+            }
+        }
 
+        return new string(arr, 0, index);
     }
 }
