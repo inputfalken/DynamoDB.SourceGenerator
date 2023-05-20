@@ -322,15 +322,15 @@ public class Generation
         );
     }
 
-    private readonly ConcurrentDictionary<ITypeSymbol, string> _methodNameCache =
-        new(SymbolEqualityComparer.IncludeNullability);
+    private readonly IDictionary<ITypeSymbol, string> _methodNameCache =
+        new Dictionary<ITypeSymbol, string>(SymbolEqualityComparer.IncludeNullability);
 
     private string CreateMethodName(ITypeSymbol typeSymbol)
     {
         return Execution(_methodNameCache, typeSymbol, false);
 
         static string Execution(
-            ConcurrentDictionary<ITypeSymbol, string> cache,
+            IDictionary<ITypeSymbol, string> cache,
             ITypeSymbol typeSymbol,
             bool isRecursive
         )
@@ -338,13 +338,14 @@ public class Generation
             if (cache.TryGetValue(typeSymbol, out var methodName))
                 return methodName;
 
-            var typeDisplay = new string(typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
-                .Where(char.IsLetter).ToArray());
-            var str = typeSymbol.NullableAnnotation switch
+            var displayString = typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+            
+            var str = (typeSymbol.NullableAnnotation, typeDisplay: displayString) switch
             {
-                NullableAnnotation.None => typeDisplay,
-                NullableAnnotation.NotAnnotated => $"N{typeDisplay}",
-                NullableAnnotation.Annotated => $"NN{typeDisplay}",
+                (_, {Length: > Constants.MaxMethodNameLenght}) => $"B64_{displayString.ToBase64()}",
+                (NullableAnnotation.NotAnnotated, _) => $"NN_{displayString.ToAlphaNumericMethodName()}",
+                (NullableAnnotation.None, _) => displayString.ToAlphaNumericMethodName(),
+                (NullableAnnotation.Annotated, _) => $"N_{displayString.ToAlphaNumericMethodName()}",
                 _ => throw new ArgumentOutOfRangeException()
             };
 
@@ -352,14 +353,13 @@ public class Generation
             {
                 // We do not need to populate the dictionary if the execution originates from recursion.
                 if (isRecursive is false)
-                    cache.TryAdd(typeSymbol, str);
+                    cache.Add(typeSymbol, str);
 
                 return str;
             }
 
-            var result = string.Join(string.Empty,
-                namedTypeSymbol.TypeArguments.Select(x => Execution(cache, x, true)).Prepend(str));
-            cache.TryAdd(typeSymbol, result);
+            var result = string.Join("_", namedTypeSymbol.TypeArguments.Select(x => Execution(cache, x, true)).Prepend(str));
+            cache.Add(typeSymbol, result);
             return result;
         }
     }
