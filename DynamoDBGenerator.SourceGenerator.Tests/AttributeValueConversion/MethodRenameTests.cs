@@ -20,11 +20,11 @@ public class MethodRenameTests
 [AttributeValueGenerator]
 public partial class DefaultName
 {
-    public string FooBar { get; set; }
+    public string? FooBar { get; set; }
 }
 
 [AttributeValueGenerator(methodName: MethodRenameTests.MethodName)]
 public partial class OverridenMethodName
 {
-    public string FooBar { get; set; }
+    public string? FooBar { get; set; }
 }
