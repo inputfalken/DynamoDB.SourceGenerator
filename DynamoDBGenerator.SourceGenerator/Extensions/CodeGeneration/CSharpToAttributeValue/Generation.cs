@@ -342,7 +342,7 @@ public class Generation
 
             var str = (typeSymbol.NullableAnnotation, typeDisplay: displayString) switch
             {
-                (_, {Length: > Constants.MaxMethodNameLenght}) => $"B64_{displayString.ToBase64()}",
+                (_, {Length: > Constants.MaxMethodNameLenght}) => throw new NotSupportedException($"Could not generate a method name that's within the supported method lenght {Constants.MaxMethodNameLenght} for type '{displayString}'."),
                 (NullableAnnotation.NotAnnotated, _) => $"NN_{displayString.ToAlphaNumericMethodName()}",
                 (NullableAnnotation.None, _) => displayString.ToAlphaNumericMethodName(),
                 (NullableAnnotation.Annotated, _) => $"N_{displayString.ToAlphaNumericMethodName()}",
