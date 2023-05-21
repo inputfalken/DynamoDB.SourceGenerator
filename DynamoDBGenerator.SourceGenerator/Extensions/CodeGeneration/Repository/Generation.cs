@@ -31,7 +31,6 @@ public static class Generation
             if (attributeClassName is nameof(DynamoDBPutOperationAttribute))
             {
                 var settings = new Settings(
-                    namedTypeSymbol.Name,
                     new Settings.ConsumerMethodConfiguration($"Put{namedTypeSymbol.Name}AttributeValues", Settings.ConsumerMethodConfiguration.Parameterization.ParameterizedInstance, Constants.AccessModifier.Public),
                     null,
                     $"SourceGenerated_{namedTypeSymbol.Name}_Put_Conversion"
@@ -44,7 +43,6 @@ public static class Generation
             if (attributeClassName is nameof(DynamoDBUpdateOperationAttribute))
             {
                 var keysSettings = new Settings(
-                    namedTypeSymbol.Name,
                     new Settings.ConsumerMethodConfiguration($"Update{namedTypeSymbol.Name}AttributeValueKeys", Settings.ConsumerMethodConfiguration.Parameterization.ParameterizedInstance, Constants.AccessModifier.Public),
                     new Settings.PredicateConfiguration(static x => x.IsHashKey || x.IsRangeKey),
                     $"SourceGenerated_{namedTypeSymbol.Name}_Update_Key_Conversion"
@@ -53,7 +51,6 @@ public static class Generation
                 yield return keys;
                 
                 var settings = new Settings(
-                    namedTypeSymbol.Name,
                     new Settings.ConsumerMethodConfiguration($"Update{namedTypeSymbol.Name}AttributeValues", Settings.ConsumerMethodConfiguration.Parameterization.ParameterizedInstance, Constants.AccessModifier.Public),
                     new Settings.PredicateConfiguration(static x => x.IsHashKey is false && x.IsRangeKey is false),
                     $"SourceGenerated_{namedTypeSymbol.Name}_Update_Conversion"

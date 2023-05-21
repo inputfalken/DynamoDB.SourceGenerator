@@ -4,7 +4,7 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 
 public static class NotNullEvaluationExtensions
 {
-    public static string TernaryExpression(this ITypeSymbol typeSymbol, in string accessPattern, in string truthy,
+    public static string NotNullTernaryExpression(this ITypeSymbol typeSymbol, in string accessPattern, in string truthy,
         in string falsy)
     {
         var result = Expression(in typeSymbol, in accessPattern) is { } expression
@@ -14,18 +14,31 @@ public static class NotNullEvaluationExtensions
         return $"({result})";
     }
 
-    public static string? LambdaExpression(this ITypeSymbol typeSymbol)
+    public static string? NotNullLambdaExpression(this ITypeSymbol typeSymbol)
     {
         return Expression(in typeSymbol, "x") is { } expression
             ? $"x => {expression}"
             : null;
     }
 
-    public static string IfStatement(this ITypeSymbol typeSymbol, in string accessPattern, in string truthy)
+    private static string CreateException(in string accessPattern)
     {
-        return Expression(typeSymbol, accessPattern) is { } expression
-            ? $"if ({expression}) {{ {truthy} }}"
-            : truthy;
+        return @$"throw new ArgumentNullException(nameof({accessPattern}), ""The value is not supposed to be null, to allow this; make the property nullable."");";
+    }
+    public static string NotNullIfStatement(this ITypeSymbol typeSymbol, in string accessPattern, in string truthy)
+    {
+        if (Expression(typeSymbol, accessPattern) is not { } expression)
+            return truthy;
+
+        var ifClause = $"if ({expression}) {{ {truthy} }}";
+        return typeSymbol.NullableAnnotation switch
+        {
+            NullableAnnotation.None => ifClause,
+            NullableAnnotation.NotAnnotated => $@"{ifClause} else {{ {CreateException(in accessPattern) }}}",
+            NullableAnnotation.Annotated => ifClause,
+            _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
+        };
+
     }
 
     /// <summary>

@@ -46,17 +46,17 @@ public class FieldInclusionTests
 [AttributeValueGenerator]
 public partial class ClassWithOneDDBField
 {
-    [DynamoDBProperty] public string Id;
+    [DynamoDBProperty] public string? Id;
 }
 
 [AttributeValueGenerator]
 public partial class ClassWithOneField
 {
-    public string Id;
+    public string? Id;
 }
 
 [AttributeValueGenerator]
 public partial class ClassWithIgnoredField
 {
-    [DynamoDBIgnore] public string Id;
+    [DynamoDBIgnore] public string? Id;
 }

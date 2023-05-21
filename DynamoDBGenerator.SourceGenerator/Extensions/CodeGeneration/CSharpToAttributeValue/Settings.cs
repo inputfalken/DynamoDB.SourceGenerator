@@ -1,5 +1,3 @@
-using Amazon.DynamoDBv2.DataModel;
-using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.SourceGenerator.Types;
 
 namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAttributeValue;
@@ -7,22 +5,18 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAt
 /// <summary>
 /// </summary>
 public readonly record struct Settings(
-    in string MPropertyMethodName,
     in Settings.ConsumerMethodConfiguration ConsumerMethodConfig,
     Settings.PredicateConfiguration? PredicateConfig,
     string SourceGeneratedClassName
     )
 {
-    /// <summary>
-    ///     The generated method name that will be used for  <see cref="AttributeValue" /> property
-    ///     <see cref="AttributeValue.M" />.
-    /// </summary>
-    public string MPropertyMethodName { get; } = MPropertyMethodName;
-
     public ConsumerMethodConfiguration ConsumerMethodConfig { get; } = ConsumerMethodConfig;
 
     public PredicateConfiguration? PredicateConfig { get; } = PredicateConfig;
 
+    // TODO instead of making the the consumer have the ability to set the class name we could just offer some form of identifier.
+    // The main reason this exist is to make the consumer be able to use this generation multiple times without collision.
+    // We could return a type that contains the AccessPattern (SourceGenerated_Class_X) as well as the method name.
     public string SourceGeneratedClassName { get; } = SourceGeneratedClassName;
 
     public readonly record struct PredicateConfiguration(in Func<DynamoDbDataMember, bool> Predicate)

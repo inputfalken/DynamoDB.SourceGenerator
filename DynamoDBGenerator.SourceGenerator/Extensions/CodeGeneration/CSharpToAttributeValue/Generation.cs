@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Concurrent;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
@@ -24,7 +25,7 @@ public class Generation
         var rootMethod = RootAttributeValueConversionMethod();
         var enumerable = ConversionMethods(
                 _rootTypeSymbol,
-                new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default)
+                new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability)
             )
             .Select(static x => x.Code);
 
@@ -35,14 +36,6 @@ public class Generation
         {{
             {sourceGeneration}
         }}";
-    }
-
-    /// <summary>
-    /// Creates an Dictionary with string as key and AttributeUpdate as value.
-    /// </summary>
-    public string CreateAttributeValueUpdateDictionary()
-    {
-        throw new NotSupportedException();
     }
 
     private IEnumerable<Conversion> ConversionMethods(
@@ -73,14 +66,15 @@ public class Generation
         var config = _settings.ConsumerMethodConfig;
 
         var accessModifier = _settings.ConsumerMethodConfig.AccessModifier.ToCode();
+        var methodName = CreateMethodName(_rootTypeSymbol);
         var signature = config.MethodParameterization switch
         {
             Settings.ConsumerMethodConfiguration.Parameterization.UnparameterizedInstance =>
-                $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}() => {_settings.SourceGeneratedClassName}.{_settings.MPropertyMethodName}(this);",
+                $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}() => {_settings.SourceGeneratedClassName}.{methodName}(this);",
             Settings.ConsumerMethodConfiguration.Parameterization.ParameterizedStatic =>
-                $"{accessModifier} static Dictionary<string, AttributeValue> {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {_settings.SourceGeneratedClassName}.{_settings.MPropertyMethodName}(item);",
+                $"{accessModifier} static Dictionary<string, AttributeValue> {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {_settings.SourceGeneratedClassName}.{methodName}(item);",
             Settings.ConsumerMethodConfiguration.Parameterization.ParameterizedInstance =>
-                $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {_settings.SourceGeneratedClassName}.{_settings.MPropertyMethodName}(item);",
+                $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {_settings.SourceGeneratedClassName}.{methodName}(item);",
             _ => throw new NotSupportedException($"Config of '{config.MethodParameterization}'.")
         };
 
@@ -124,11 +118,11 @@ public class Generation
             .Select(static x => (
                     x.DDB,
                     x.AttributeValue,
-                    DictionaryAssignment: x.DDB.DataMember.Type.IfStatement(
+                    DictionaryAssignment: x.DDB.DataMember.Type.NotNullIfStatement(
                         in x.AccessPattern,
                         @$"{dictionaryName}.Add(""{x.DDB.AttributeName}"", {x.AttributeValue});"
                     ),
-                    CapacityTernaries: x.DDB.DataMember.Type.TernaryExpression(in x.AccessPattern, "1", "0")
+                    CapacityTernaries: x.DDB.DataMember.Type.NotNullTernaryExpression(in x.AccessPattern, "1", "0")
                 )
             )
             .ToArray();
@@ -141,7 +135,7 @@ public class Generation
             /// <remarks> 
             ///    This method should only be invoked by source generated code.
             /// </remarks>
-            public static Dictionary<string, AttributeValue> {_settings.MPropertyMethodName}({type.ToDisplayString()} {paramReference})
+            public static Dictionary<string, AttributeValue> {CreateMethodName(type)}({type.ToDisplayString(NullableFlowState.None)} {paramReference})
             {{ 
                 {InitializeDictionary(dictionaryName, properties.Select(static x => x.CapacityTernaries))}
                 {string.Join(Constants.NewLine + Indent, properties.Select(static x => x.DictionaryAssignment))}
@@ -155,17 +149,13 @@ public class Generation
         {
             var capacityCalculation = string.Join(" + ", capacityCalculations);
 
-            const string capacityReference = "capacity";
-
-            var capacityDeclaration = string.IsNullOrWhiteSpace(capacityCalculation)
-                ? $"const int {capacityReference} = 0;"
-                : $"var {capacityReference} = {capacityCalculation};";
-
-            var ifCheck = $"if (({capacityReference}) is 0) {{ return {dictionaryName}; }}";
-
-            return @$"{capacityDeclaration}
-                var {dictionaryName} = new Dictionary<string, AttributeValue>({capacityReference});
-                {ifCheck}";
+            return string.Join(" + ", capacityCalculation)switch
+            {
+                "" => $"var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: 0);",
+                var capacities => $@"var capacity = {capacities};
+                var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: capacity);
+                if (capacity is 0) {{ return {dictionaryName}; }} "
+            };
         }
     }
 
@@ -186,7 +176,7 @@ public class Generation
     {
         var attributeValue = CreateAttributeValue(elementType, "x");
         var select = $"Select(x => {attributeValue}))";
-        var assignment = elementType.LambdaExpression() is { } whereBody
+        var assignment = elementType.NotNullLambdaExpression() is { } whereBody
             ? $"L = new List<AttributeValue>({accessPattern}.Where({whereBody}).{select}"
             : $"L = new List<AttributeValue>({accessPattern}.{select}";
 
@@ -195,7 +185,7 @@ public class Generation
 
     private static Assignment? BuildSet(in ITypeSymbol elementType, in string accessPattern)
     {
-        var newAccessPattern = elementType.LambdaExpression() is { } expression
+        var newAccessPattern = elementType.NotNullLambdaExpression() is { } expression
             ? $"{accessPattern}.Where({expression})"
             : accessPattern;
 
@@ -322,9 +312,58 @@ public class Generation
             return genericConversion.Value;
 
         return new Assignment(
-            $"M = {_settings.MPropertyMethodName}({accessPattern})",
+            $"M = {CreateMethodName(typeSymbol)}({accessPattern})",
             in typeSymbol,
             Assignment.Decision.ExternalMethod
         );
+    }
+
+    private readonly IDictionary<ITypeSymbol, string> _methodNameCache =
+        new Dictionary<ITypeSymbol, string>(SymbolEqualityComparer.IncludeNullability);
+
+    private string CreateMethodName(ITypeSymbol typeSymbol)
+    {
+        return Execution(_methodNameCache, typeSymbol, false);
+
+        static string Execution(
+            IDictionary<ITypeSymbol, string> cache,
+            ITypeSymbol typeSymbol,
+            bool isRecursive
+        )
+        {
+            if (cache.TryGetValue(typeSymbol, out var methodName))
+                return methodName;
+
+            var displayString = typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+
+            var str = (typeSymbol.NullableAnnotation, typeDisplay: displayString) switch
+            {
+                (_, {Length: > Constants.MaxMethodNameLenght}) => throw new NotSupportedException($"Could not generate a method name that's within the supported method lenght {Constants.MaxMethodNameLenght} for type '{displayString}'."),
+                (NullableAnnotation.NotAnnotated, _) => $"NN_{displayString.ToAlphaNumericMethodName()}",
+                (NullableAnnotation.None, _) => displayString.ToAlphaNumericMethodName(),
+                (NullableAnnotation.Annotated, _) => $"N_{displayString.ToAlphaNumericMethodName()}",
+                _ => throw new ArgumentOutOfRangeException()
+            };
+
+            if (typeSymbol is not INamedTypeSymbol namedTypeSymbol)
+            {
+                // We do not need to populate the dictionary if the execution originates from recursion.
+                if (isRecursive is false)
+                    cache.Add(typeSymbol, str);
+
+                return str;
+            }
+
+            var result = string.Join(
+                "_",
+                namedTypeSymbol.TypeArguments.Select(x => Execution(cache, x, true)).Prepend(str)
+            );
+            
+            // We do not need to populate the dictionary if the execution originates from recursion.
+            if (isRecursive is false) 
+                cache.Add(typeSymbol, result);
+
+            return result;
+        }
     }
 }

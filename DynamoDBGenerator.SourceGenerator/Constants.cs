@@ -8,6 +8,8 @@ public class Constants
     public const string NewLine = @"
 ";
 
+    public const int MaxMethodNameLenght = 511;
+
     // ReSharper disable once InconsistentNaming
     public const string DynamoDBPutOperationFullName =
         nameof(DynamoDBGenerator) + "." + nameof(DynamoDBPutOperationAttribute);

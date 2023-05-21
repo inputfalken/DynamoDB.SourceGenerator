@@ -167,17 +167,17 @@ public class ChildClassTests
 [AttributeValueGenerator]
 public partial class ParentClass
 {
-    public string Id { get; set; }
-    public ChildClass CustomClass { get; set; }
+    public string? Id { get; set; }
+    public ChildClass? CustomClass { get; set; }
 
     public class ChildClass
     {
-        public string PropertyId { get; set; }
-        public GrandChildClass GrandChild { get; set; }
+        public string? PropertyId { get; set; }
+        public GrandChildClass? GrandChild { get; set; }
 
         public class GrandChildClass
         {
-            public string GrandChildId { get; set; }
+            public string? GrandChildId { get; set; }
         }
     }
 }

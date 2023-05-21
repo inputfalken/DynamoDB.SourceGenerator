@@ -7,7 +7,7 @@ public class KeyValuePairTests
     {
         var @class = new KeyValuePairClass()
         {
-            KeyValuePair = new KeyValuePair<string, int?>("1", 2)
+            KeyValuePair = new KeyValuePair<string?, int?>("1", 2)
         };
 
         var result = @class.BuildAttributeValues();
@@ -36,7 +36,7 @@ public class KeyValuePairTests
     {
         var @class = new KeyValuePairClass()
         {
-            KeyValuePair = new KeyValuePair<string, int?>(null, 2)
+            KeyValuePair = new KeyValuePair<string?, int?>(null, 2)
         };
 
         var result = @class.BuildAttributeValues();
@@ -61,7 +61,7 @@ public class KeyValuePairTests
     {
         var @class = new KeyValuePairClass()
         {
-            KeyValuePair = new KeyValuePair<string, int?>("abc", null)
+            KeyValuePair = new KeyValuePair<string?, int?>("abc", null)
         };
 
         var result = @class.BuildAttributeValues();
@@ -86,5 +86,5 @@ public class KeyValuePairTests
 public partial class KeyValuePairClass
 {
     [DynamoDBProperty]
-    public KeyValuePair<string, int?> KeyValuePair { get; set; }
+    public KeyValuePair<string?, int?> KeyValuePair { get; set; }
 }

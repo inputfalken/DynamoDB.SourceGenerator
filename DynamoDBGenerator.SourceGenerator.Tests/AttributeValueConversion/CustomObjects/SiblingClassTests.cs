@@ -82,11 +82,11 @@ public class SiblingClassTests
 [AttributeValueGenerator]
 public partial class SiblingClassOne
 {
-    public string Id { get; set; }
-    public SiblingClassTwo CustomClass { get; set; }
+    public string? Id { get; set; }
+    public SiblingClassTwo? CustomClass { get; set; }
 }
 
 public class SiblingClassTwo
 {
-    public string PropertyId { get; set; }
+    public string? PropertyId { get; set; }
 }

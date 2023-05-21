@@ -47,13 +47,13 @@ public class PropertyInclusionTests
 public partial class ClassWithOneDDBProperty
 {
     [DynamoDBProperty]
-    public string Id { get; set; }
+    public string? Id { get; set; }
 }
 
 [AttributeValueGenerator]
 public partial class ClassWithOneProperty
 {
-    public string Id { get; set; }
+    public string? Id { get; set; }
 }
 
 [AttributeValueGenerator]
@@ -65,5 +65,5 @@ public partial class EmptyClass
 public partial class ClassWithIgnoredProperty
 {
     [DynamoDBIgnore]
-    public string Id { get; set; }
+    public string? Id { get; set; }
 }
