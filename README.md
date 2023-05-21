@@ -46,5 +46,20 @@ This project has not been tested in any real scenario and currently serves as a 
 | `ISet<ulong>`                         | `NS`        |                                                                                                               |
 | `T[]`                                 | `L`         |                                                                                                               |
 
+#### Nullable reference types
+The source generated code will adapt to your NullableReference types if you have it enabled.
+
+##### Examples
+```csharp
+#nullable enable
+// The following would be considered to be optional.
+public string? MyOptionalString { get; set; }
+// The following would be considered required and throw ArgumentNullException if the value was not provided.
+public string MyRequiredString { get; set; }
+#nullable disable
+// The following does not have nullable enabled thus the source generated code will treat is optional.
+public string MyUnknownString { get; set; }
+```
+
 #### Object types
 TODO...
