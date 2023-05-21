@@ -57,7 +57,7 @@ public string? MyOptionalString { get; set; }
 // The following would be considered required and throw ArgumentNullException if the value was not provided.
 public string MyRequiredString { get; set; }
 #nullable disable
-// The following does not have nullable enabled thus the source generated code will treat is optional.
+// The following does not have nullable enabled and would consider the string to be optional.
 public string MyUnknownString { get; set; }
 ```
 

@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace DynamoDBGenerator.SourceGenerator.Tests.AttributeValueConversion;
 
 public class NullableAnnotationTests
@@ -34,7 +31,8 @@ public class NullableAnnotationTests
         if (shouldThrow)
             result.Should()
                 .ThrowExactly<ArgumentNullException>()
-                .WithMessage("The value is not supposed to be null, to allow this; make the property nullable. (Parameter 'EnabledNoneNullableReferenceType')");
+                .WithMessage(
+                    "The value is not supposed to be null, to allow this; make the property nullable. (Parameter 'EnabledNoneNullableReferenceType')");
         else
             result.Should().NotThrow();
     }
@@ -51,9 +49,9 @@ public class NullableAnnotationTests
     {
         var @class = new NestedNullableAnnotationTestClass()
         {
-            DisabledNullableReferenceType = new KeyValuePair<int, string>(1, disabledNullableReferenceType),
-            EnabledNullableReferenceType = new KeyValuePair<int, string?>(1, enabledNullableReferenceType),
-            EnabledNoneNullableReferenceType = new KeyValuePair<int, string>(1, enabledNoneNullableReferenceType)
+            DisabledNullableReferenceType = (1, disabledNullableReferenceType),
+            EnabledNullableReferenceType = (1, enabledNullableReferenceType),
+            EnabledNoneNullableReferenceType = (1, enabledNoneNullableReferenceType)
         };
 
         var result = () => @class.BuildAttributeValues();
@@ -70,22 +68,24 @@ public class NullableAnnotationTests
         string enabledNullableReferenceType,
         string enabledNoneNullableReferenceType)
     {
-        var @class = new NestedNullableAnnotationTestClass()
+        var @class = new NestedNullableAnnotationTestClass
         {
-            DisabledNullableReferenceType = new KeyValuePair<int, string>(1, disabledNullableReferenceType),
-            EnabledNullableReferenceType = new KeyValuePair<int, string?>(1, enabledNullableReferenceType),
-            EnabledNoneNullableReferenceType = new KeyValuePair<int, string>(1, enabledNoneNullableReferenceType)
+            DisabledNullableReferenceType = (1, disabledNullableReferenceType),
+            EnabledNullableReferenceType = (1, enabledNullableReferenceType),
+            EnabledNoneNullableReferenceType = (1, enabledNoneNullableReferenceType)
         };
 
         var result = () => @class.BuildAttributeValues();
 
         result.Should()
-            .ThrowExactly<ArgumentNullException>();
+            .ThrowExactly<ArgumentNullException>()
+            .WithMessage(
+                "The value is not supposed to be null, to allow this; make the property nullable. (Parameter 'EnabledNoneNullableValue')");
     }
 }
 
 // TODO even though we do handle the nullablity outside the method invocation; we get warnings inside the method.
-// To solve this we could get rid of the last nullablity of the parameter.  So we only generate signatures whose parameter is never nullable.
+// To solve this we could get rid of the last nullability of the parameter.  So we only generate signatures whose parameter is never nullable.
 [AttributeValueGenerator]
 public partial class NullableAnnotationTestClass
 {
@@ -104,10 +104,10 @@ public partial class NullableAnnotationTestClass
 public partial class NestedNullableAnnotationTestClass
 {
 #nullable disable
-    public KeyValuePair<int, string> DisabledNullableReferenceType { get; set; }
+    public (int DisabledNullableKey, string DisabledNullableValue) DisabledNullableReferenceType { get; set; }
 #nullable enable
 
-    public KeyValuePair<int, string?> EnabledNullableReferenceType { get; set; }
+    public (int EnabledNullableKey, string? EnabledNullableValue) EnabledNullableReferenceType { get; set; }
 
-    public KeyValuePair<int, string> EnabledNoneNullableReferenceType { get; set; }
+    public (int EnabledNullableKey, string EnabledNoneNullableValue) EnabledNoneNullableReferenceType { get; set; }
 }
