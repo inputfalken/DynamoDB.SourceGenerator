@@ -118,11 +118,11 @@ public class Generation
             .Select(static x => (
                     x.DDB,
                     x.AttributeValue,
-                    DictionaryAssignment: x.DDB.DataMember.Type.IfStatement(
+                    DictionaryAssignment: x.DDB.DataMember.Type.NotNullIfStatement(
                         in x.AccessPattern,
                         @$"{dictionaryName}.Add(""{x.DDB.AttributeName}"", {x.AttributeValue});"
                     ),
-                    CapacityTernaries: x.DDB.DataMember.Type.TernaryExpression(in x.AccessPattern, "1", "0")
+                    CapacityTernaries: x.DDB.DataMember.Type.NotNullTernaryExpression(in x.AccessPattern, "1", "0")
                 )
             )
             .ToArray();
@@ -180,7 +180,7 @@ public class Generation
     {
         var attributeValue = CreateAttributeValue(elementType, "x");
         var select = $"Select(x => {attributeValue}))";
-        var assignment = elementType.LambdaExpression() is { } whereBody
+        var assignment = elementType.NotNullLambdaExpression() is { } whereBody
             ? $"L = new List<AttributeValue>({accessPattern}.Where({whereBody}).{select}"
             : $"L = new List<AttributeValue>({accessPattern}.{select}";
 
@@ -189,7 +189,7 @@ public class Generation
 
     private static Assignment? BuildSet(in ITypeSymbol elementType, in string accessPattern)
     {
-        var newAccessPattern = elementType.LambdaExpression() is { } expression
+        var newAccessPattern = elementType.NotNullLambdaExpression() is { } expression
             ? $"{accessPattern}.Where({expression})"
             : accessPattern;
 
