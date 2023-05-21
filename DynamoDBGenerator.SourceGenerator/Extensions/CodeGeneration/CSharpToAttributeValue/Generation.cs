@@ -149,17 +149,13 @@ public class Generation
         {
             var capacityCalculation = string.Join(" + ", capacityCalculations);
 
-            const string capacityReference = "capacity";
-
-            var capacityDeclaration = string.IsNullOrWhiteSpace(capacityCalculation)
-                ? $"const int {capacityReference} = 0;"
-                : $"var {capacityReference} = {capacityCalculation};";
-
-            var ifCheck = $"if (({capacityReference}) is 0) {{ return {dictionaryName}; }}";
-
-            return @$"{capacityDeclaration}
-                var {dictionaryName} = new Dictionary<string, AttributeValue>({capacityReference});
-                {ifCheck}";
+            return string.Join(" + ", capacityCalculation)switch
+            {
+                "" => $"var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: 0);",
+                var capacities => $@"var capacity = {capacities};
+                var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: capacity);
+                if (capacity is 0) {{ return {dictionaryName}; }} "
+            };
         }
     }
 
