@@ -135,7 +135,7 @@ public class Generation
             /// <remarks> 
             ///    This method should only be invoked by source generated code.
             /// </remarks>
-            public static Dictionary<string, AttributeValue> {CreateMethodName(type)}({type.ToDisplayString()} {paramReference})
+            public static Dictionary<string, AttributeValue> {CreateMethodName(type)}({type.ToDisplayString(NullableFlowState.None)} {paramReference})
             {{ 
                 {InitializeDictionary(dictionaryName, properties.Select(static x => x.CapacityTernaries))}
                 {string.Join(Constants.NewLine + Indent, properties.Select(static x => x.DictionaryAssignment))}
