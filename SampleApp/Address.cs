@@ -6,13 +6,10 @@ namespace SampleApp;
 [AttributeValueGenerator]
 public partial class Address
 {
-    [DynamoDBHashKey]
     public string Id { get; set; } = null!;
 
-    [DynamoDBProperty]
     public string Street { get; set; } = null!;
 
-    [DynamoDBProperty]
-
     public PostalCode PostalCode { get; set; } = null!;
+
 }

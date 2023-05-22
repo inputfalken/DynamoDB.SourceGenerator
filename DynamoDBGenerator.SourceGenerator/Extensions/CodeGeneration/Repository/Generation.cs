@@ -56,6 +56,7 @@ public static class Generation
                             MethodParameterization = ParameterizedInstance
                         }
                 };
+
                 var keys = namedTypeSymbol.GeneratePocoToAttributeValueFactory(in keysSettings);
                 yield return keys.Code;
 
@@ -70,6 +71,10 @@ public static class Generation
                 };
                 var conversion = namedTypeSymbol.GeneratePocoToAttributeValueFactory(in settings);
                 yield return conversion.Code;
+                
+                var f = new CSharpToAttributeValue.Generation(new Settings(),namedTypeSymbol);
+
+                yield return f.CreateExpressionAttributeNames();
             }
         }
     }

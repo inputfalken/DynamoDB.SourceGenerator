@@ -28,7 +28,7 @@ public class GroupingTests
     }
 
     [Fact]
-    public void BuildAttributeValues_EmptyLookup_IsIncluded()
+    public void BuildAttributeValues_EmptyGrouping_IsIncluded()
     {
         var @class = new GroupingClass()
         {
@@ -48,7 +48,7 @@ public class GroupingTests
     }
 
     [Fact]
-    public void BuildAttributeValues_LookupWithValues_IsIncluded()
+    public void BuildAttributeValues_GroupingWithValues_IsIncluded()
     {
         var @class = new GroupingClass
         {

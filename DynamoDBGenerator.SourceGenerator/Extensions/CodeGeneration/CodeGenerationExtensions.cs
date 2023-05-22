@@ -15,16 +15,16 @@ public static class CodeGenerationExtensions
     ///     Instructions for how the internal source generator should perform its generations.
     /// </param>
     /// <returns></returns>
-    public static SourceGeneratedAttributeValueFactory GeneratePocoToAttributeValueFactory(this ITypeSymbol type,
+    public static SourceGeneratedCode GeneratePocoToAttributeValueFactory(this ITypeSymbol type,
         in Settings settings)
     {
-        return new Generation(in settings, type).CreateAttributeValueFactory();
+        return new Generation(in settings, in type).CreateAttributeValueFactory();
     }
 
     /// <summary>
     ///     Creates a namespace based on the type.
     /// </summary>
-    public static string CreateNamespace(this ITypeSymbol type, string content)
+    public static string CreateNamespace(this ITypeSymbol type, in string content)
     {
         var nameSpace = type.ContainingNamespace.IsGlobalNamespace
             ? null
@@ -37,6 +37,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Amazon.DynamoDBv2.Model;
+using DynamoDBGenerator;
 
 {(nameSpace is null ? null : $@"namespace {nameSpace}
 {{")}
@@ -48,14 +49,18 @@ using Amazon.DynamoDBv2.Model;
     /// <summary>
     ///     Creates a class based on the type.
     /// </summary>
-    /// <param name="type"></param>
-    /// <param name="content"></param>
-    /// <returns></returns>
-    public static string CreateClass(this ITypeSymbol type, string content)
+    public static string CreateClass(this ITypeSymbol type, in string content, in int indentLevel = 1)
     {
-        return @$"partial class {type.Name}
-    {{
-        {content}
-    }}";
+        return CreateClass(Accessibility.Public, type.Name, in content, in indentLevel, isPartial:true);
+    }
+
+    public static string CreateClass(in Accessibility accessibility, in string className, in string content, in int indentLevel, in bool isPartial = false)
+    {
+        var indent = StringExtensions.Indent(indentLevel);
+        var indent2 = StringExtensions.Indent(indentLevel + 1);
+        return $@"{accessibility.ToCode()}{(isPartial ? " partial": null)} class {className}
+{indent}{{
+{indent2}{content}
+{indent}}}";
     }
 }

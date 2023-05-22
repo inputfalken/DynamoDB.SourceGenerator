@@ -1,3 +1,6 @@
+using DynamoDBGenerator.SourceGenerator.Types;
+using Microsoft.CodeAnalysis;
+
 namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAttributeValue;
 
 /// <summary>
@@ -38,7 +41,7 @@ public record Settings
         /// <summary>
         /// Determines the access modifier.
         /// </summary>
-        public Constants.AccessModifier AccessModifier { get; set; } = Constants.AccessModifier.Public;
+        public Accessibility AccessModifier { get; set; } = Accessibility.Public;
 
 
         public enum Parameterization

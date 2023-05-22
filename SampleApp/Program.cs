@@ -9,10 +9,30 @@ internal static class Program
 {
     public static void Main()
     {
+        var repository = new Repository();
+
+        var updateAddress = repository.UpdateAddress(new Address()
+        {
+            Id = "123",
+            PostalCode = new PostalCode()
+            {
+                ZipCode = "1337",
+                Town = "WilleTown"
+            },
+            Street = "WilleStreet"
+        });
     }
 }
 
 [DynamoDBUpdateOperation(typeof(Address))]
 public partial class Repository
 {
+    public UpdateItemRequest UpdateAddress(Address address)
+    {
+
+
+        return null;
+
+
+    }
 }

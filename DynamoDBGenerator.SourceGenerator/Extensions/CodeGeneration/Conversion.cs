@@ -1,4 +1,4 @@
-namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAttributeValue;
+namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 
 public readonly record struct Conversion(
     in string Code,

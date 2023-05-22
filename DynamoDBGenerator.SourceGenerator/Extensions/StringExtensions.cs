@@ -8,6 +8,18 @@ public static class StringExtensions
         return Convert.ToBase64String(plainTextBytes);
     }
 
+    private static readonly IDictionary<int, string> IndentCache = new Dictionary<int, string>();
+
+    public static string Indent(int level)
+    {
+        if (IndentCache.TryGetValue(level, out var indent)) return indent;
+        
+        indent = new string(' ', level * 4);
+        IndentCache[level] = indent;
+
+        return indent;
+    }
+
     public static string ToAlphaNumericMethodName(this string txt)
     {
         var arr = new char[txt.Length];

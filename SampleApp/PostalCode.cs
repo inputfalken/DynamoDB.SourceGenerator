@@ -6,9 +6,10 @@ namespace SampleApp;
 [AttributeValueGenerator]
 public partial class PostalCode
 {
-    [DynamoDBProperty]
     public string ZipCode { get; set; } = null!;
 
-    [DynamoDBProperty]
     public string Town { get; set; } = null!;
+    public KeyValuePair<string, int> String { get; set; }
+
+    public PostalCode PostCodeNested { get; set; }
 }
