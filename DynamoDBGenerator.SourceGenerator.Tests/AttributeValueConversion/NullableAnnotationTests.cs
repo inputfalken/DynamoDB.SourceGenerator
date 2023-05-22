@@ -84,8 +84,6 @@ public class NullableAnnotationTests
     }
 }
 
-// TODO even though we do handle the nullablity outside the method invocation; we get warnings inside the method.
-// To solve this we could get rid of the last nullability of the parameter.  So we only generate signatures whose parameter is never nullable.
 [AttributeValueGenerator]
 public partial class NullableAnnotationTestClass
 {
