@@ -1,6 +1,4 @@
 using System.Collections;
-using System.Collections.Concurrent;
-using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
 namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAttributeValue;
@@ -10,17 +8,19 @@ public class Generation
     private readonly Settings _settings;
     private readonly ITypeSymbol _rootTypeSymbol;
     private const string Indent = "                ";
+    private readonly string _className;
 
     public Generation(in Settings settings, in ITypeSymbol typeSymbol)
     {
         _settings = settings;
         _rootTypeSymbol = typeSymbol;
+        _className = $"{typeSymbol.Name}_{settings.ConsumerMethodConfig.Name}";
     }
 
     /// <summary>
     /// Creates an Dictionary with string as key and AttributeValue as value.
     /// </summary>
-    public string CreateAttributeValueDictionary()
+    public SourceGeneratedAttributeValueFactory CreateAttributeValueFactory()
     {
         var rootMethod = RootAttributeValueConversionMethod();
         var enumerable = ConversionMethods(
@@ -31,11 +31,13 @@ public class Generation
 
         var sourceGeneration = string.Join(Constants.NewLine, enumerable);
 
-        return @$"{rootMethod}
-        private class {_settings.SourceGeneratedClassName}
+        var code = @$"{rootMethod}
+        private class {_className}
         {{
             {sourceGeneration}
         }}";
+
+        return new SourceGeneratedAttributeValueFactory(code, _className, _settings.ConsumerMethodConfig.Name);
     }
 
     private IEnumerable<Conversion> ConversionMethods(
@@ -50,6 +52,10 @@ public class Generation
         var dict = StaticDictionaryMethod(typeSymbol);
 
         yield return dict;
+
+        // Keys should only exist in the root entity.
+        if (_settings.KeyStrategy == Settings.Keys.Only)
+            yield break;
 
         foreach (var unsupportedType in dict.Conversions)
         {
@@ -70,11 +76,11 @@ public class Generation
         var signature = config.MethodParameterization switch
         {
             Settings.ConsumerMethodConfiguration.Parameterization.UnparameterizedInstance =>
-                $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}() => {_settings.SourceGeneratedClassName}.{methodName}(this);",
+                $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}() => {_className}.{methodName}(this);",
             Settings.ConsumerMethodConfiguration.Parameterization.ParameterizedStatic =>
-                $"{accessModifier} static Dictionary<string, AttributeValue> {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {_settings.SourceGeneratedClassName}.{methodName}(item);",
+                $"{accessModifier} static Dictionary<string, AttributeValue> {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {_className}.{methodName}(item);",
             Settings.ConsumerMethodConfiguration.Parameterization.ParameterizedInstance =>
-                $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {_settings.SourceGeneratedClassName}.{methodName}(item);",
+                $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {_className}.{methodName}(item);",
             _ => throw new NotSupportedException($"Config of '{config.MethodParameterization}'.")
         };
 
@@ -91,16 +97,17 @@ public class Generation
         const string paramReference = "entity";
         const string dictionaryName = "attributeValues";
 
-        IEnumerable<DynamoDbDataMember> dynamoDbDataMembers;
+        var dynamoDbProperties = _settings.KeyStrategy switch
+        {
+            Settings.Keys.Ignore => type.GetDynamoDbProperties()
+                .Where(static x => x is {IsRangeKey: false, IsHashKey: false}),
+            Settings.Keys.Only => type.GetDynamoDbProperties()
+                .Where(static x => x is {IsRangeKey: true, IsHashKey: true}),
+            Settings.Keys.Include => type.GetDynamoDbProperties(),
+            _ => throw new ArgumentOutOfRangeException()
+        };
 
-        if (_settings.PredicateConfig is null)
-            dynamoDbDataMembers = type.GetDynamoDbProperties();
-        else
-            dynamoDbDataMembers = type
-                .GetDynamoDbProperties()
-                .Where(_settings.PredicateConfig.Value.Predicate);
-
-        var properties = dynamoDbDataMembers
+        var properties = dynamoDbProperties
             .Where(static x => x.IsIgnored is false)
             .Select(static x => (
                     AccessPattern: $"{paramReference}.{x.DataMember.Name}",
@@ -338,10 +345,11 @@ public class Generation
 
             var str = (typeSymbol.NullableAnnotation, typeDisplay: displayString) switch
             {
-                (_, {Length: > Constants.MaxMethodNameLenght}) => throw new NotSupportedException($"Could not generate a method name that's within the supported method lenght {Constants.MaxMethodNameLenght} for type '{displayString}'."),
-                (NullableAnnotation.NotAnnotated, _) => $"NN_{displayString.ToAlphaNumericMethodName()}",
-                (NullableAnnotation.None, _) => displayString.ToAlphaNumericMethodName(),
-                (NullableAnnotation.Annotated, _) => $"N_{displayString.ToAlphaNumericMethodName()}",
+                (_, {Length: > Constants.MaxMethodNameLenght}) => throw new NotSupportedException(
+                    $"Could not generate a method name that's within the supported method lenght {Constants.MaxMethodNameLenght} for type '{displayString}'."),
+                (NullableAnnotation.NotAnnotated, _) => $"NN_{displayString.ToAlphaNumericMethodName()}Factory",
+                (NullableAnnotation.None, _) => $"{displayString.ToAlphaNumericMethodName()}Factory",
+                (NullableAnnotation.Annotated, _) => $"N_{displayString.ToAlphaNumericMethodName()}Factory",
                 _ => throw new ArgumentOutOfRangeException()
             };
 
@@ -358,9 +366,9 @@ public class Generation
                 "_",
                 namedTypeSymbol.TypeArguments.Select(x => Execution(cache, x, true)).Prepend(str)
             );
-            
+
             // We do not need to populate the dictionary if the execution originates from recursion.
-            if (isRecursive is false) 
+            if (isRecursive is false)
                 cache.Add(typeSymbol, result);
 
             return result;

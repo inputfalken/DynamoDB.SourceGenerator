@@ -1,5 +1,3 @@
-using DynamoDBGenerator.SourceGenerator.Types;
-
 namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAttributeValue;
 
 public readonly record struct Conversion(
@@ -7,7 +5,7 @@ public readonly record struct Conversion(
     in IEnumerable<Assignment> Conversions)
 {
     /// <summary>
-    ///     The C# code for the <see cref="AttributeValue" /> conversion.
+    ///     The C# code for the <see cref="Amazon.DynamoDBv2.Model.AttributeValue" /> conversion.
     /// </summary>
     public string Code { get; } = Code;
 

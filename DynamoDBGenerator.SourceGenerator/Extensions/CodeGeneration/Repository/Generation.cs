@@ -1,5 +1,7 @@
 using DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAttributeValue;
 using Microsoft.CodeAnalysis;
+using static DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAttributeValue.Settings.
+    ConsumerMethodConfiguration.Parameterization;
 
 namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.Repository;
 
@@ -30,34 +32,44 @@ public static class Generation
             var attributeClassName = typeName.AttributeData.AttributeClass!.Name;
             if (attributeClassName is nameof(DynamoDBPutOperationAttribute))
             {
-                var settings = new Settings(
-                    new Settings.ConsumerMethodConfiguration($"Put{namedTypeSymbol.Name}AttributeValues", Settings.ConsumerMethodConfiguration.Parameterization.ParameterizedInstance, Constants.AccessModifier.Public),
-                    null,
-                    $"SourceGenerated_{namedTypeSymbol.Name}_Put_Conversion"
-                );
-                var conversion = namedTypeSymbol.GenerateAttributeValueConversion(in settings);
-                yield return conversion;
+                var settings = new Settings
+                {
+                    ConsumerMethodConfig =
+                        new Settings.ConsumerMethodConfiguration($"Put{namedTypeSymbol.Name}AttributeValues")
+                        {
+                            MethodParameterization = ParameterizedInstance
+                        }
+                };
+                var conversion = namedTypeSymbol.GeneratePocoToAttributeValueFactory(in settings);
+                yield return conversion.Code;
             }
 
 
             if (attributeClassName is nameof(DynamoDBUpdateOperationAttribute))
             {
-                var keysSettings = new Settings(
-                    new Settings.ConsumerMethodConfiguration($"Update{namedTypeSymbol.Name}AttributeValueKeys", Settings.ConsumerMethodConfiguration.Parameterization.ParameterizedInstance, Constants.AccessModifier.Public),
-                    new Settings.PredicateConfiguration(static x => x.IsHashKey || x.IsRangeKey),
-                    $"SourceGenerated_{namedTypeSymbol.Name}_Update_Key_Conversion"
-                );
-                var keys = namedTypeSymbol.GenerateAttributeValueConversion(in keysSettings);
-                yield return keys;
-                
-                var settings = new Settings(
-                    new Settings.ConsumerMethodConfiguration($"Update{namedTypeSymbol.Name}AttributeValues", Settings.ConsumerMethodConfiguration.Parameterization.ParameterizedInstance, Constants.AccessModifier.Public),
-                    new Settings.PredicateConfiguration(static x => x.IsHashKey is false && x.IsRangeKey is false),
-                    $"SourceGenerated_{namedTypeSymbol.Name}_Update_Conversion"
-                );
-                var conversion = namedTypeSymbol.GenerateAttributeValueConversion(in settings);
-                yield return conversion;
-                
+                var keysSettings = new Settings
+                {
+                    KeyStrategy = Settings.Keys.Only,
+                    ConsumerMethodConfig =
+                        new Settings.ConsumerMethodConfiguration($"Update{namedTypeSymbol.Name}AttributeValueKeys")
+                        {
+                            MethodParameterization = ParameterizedInstance
+                        }
+                };
+                var keys = namedTypeSymbol.GeneratePocoToAttributeValueFactory(in keysSettings);
+                yield return keys.Code;
+
+                var settings = new Settings
+                {
+                    KeyStrategy = Settings.Keys.Ignore,
+                    ConsumerMethodConfig =
+                        new Settings.ConsumerMethodConfiguration($"Update{namedTypeSymbol.Name}AttributeValues")
+                        {
+                            MethodParameterization = ParameterizedInstance
+                        }
+                };
+                var conversion = namedTypeSymbol.GeneratePocoToAttributeValueFactory(in settings);
+                yield return conversion.Code;
             }
         }
     }

@@ -2,6 +2,18 @@ using Microsoft.CodeAnalysis;
 
 namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAttributeValue;
 
+public readonly record struct SourceGeneratedAttributeValueFactory(in string Code, in string ClassName, string MethodName)
+{
+    public string Code { get; } = Code;
+    public string ClassName { get; } = ClassName;
+    public string MethodName { get; } = MethodName;
+
+    public override string ToString()
+    {
+        return $"{ClassName}.{MethodName}";
+    }
+}
+
 public readonly record struct Assignment
 {
     public enum Decision

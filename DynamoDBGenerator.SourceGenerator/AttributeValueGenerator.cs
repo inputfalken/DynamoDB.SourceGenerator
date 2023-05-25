@@ -57,17 +57,15 @@ public class AttributeValueGenerator : IIncrementalGenerator
 
             var code = type.CreateNamespace(
                 type.CreateClass(
-                    type.GenerateAttributeValueConversion(
-                        new Settings(
-                            new Settings.ConsumerMethodConfiguration(settings.MethodName, Settings.ConsumerMethodConfiguration.Parameterization.UnparameterizedInstance, Constants.AccessModifier.Public),
-                            null ,
-                            $"SourceGenerated_{type.Name}_Conversion"
-                            
-                        )
-                    )
+                    type.GeneratePocoToAttributeValueFactory(
+                        new Settings
+                        {
+                            ConsumerMethodConfig = new Settings.ConsumerMethodConfiguration(settings.MethodName)
+                        }
+                    ).Code
                 )
             );
-            
+
             context.AddSource(
                 $"{nameof(AttributeValueGenerator)}.{type.Name}.g.cs",
                 SourceText.From(code, Encoding.UTF8)
