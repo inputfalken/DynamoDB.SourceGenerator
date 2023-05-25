@@ -2,7 +2,7 @@ using Microsoft.CodeAnalysis;
 
 namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAttributeValue;
 
-public readonly record struct AttributeValueGeneration(in string Code, in string ClassName, string MethodName)
+public readonly record struct SourceGeneratedAttributeValueFactory(in string Code, in string ClassName, string MethodName)
 {
     public string Code { get; } = Code;
     public string ClassName { get; } = ClassName;

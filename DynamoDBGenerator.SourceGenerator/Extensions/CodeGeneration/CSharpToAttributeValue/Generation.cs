@@ -1,6 +1,4 @@
 using System.Collections;
-using System.Collections.Concurrent;
-using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
 namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAttributeValue;
@@ -10,17 +8,19 @@ public class Generation
     private readonly Settings _settings;
     private readonly ITypeSymbol _rootTypeSymbol;
     private const string Indent = "                ";
+    private readonly string _className;
 
     public Generation(in Settings settings, in ITypeSymbol typeSymbol)
     {
         _settings = settings;
         _rootTypeSymbol = typeSymbol;
+        _className = $"{typeSymbol.Name}_{settings.ConsumerMethodConfig.Name}";
     }
 
     /// <summary>
     /// Creates an Dictionary with string as key and AttributeValue as value.
     /// </summary>
-    public string CreateAttributeValueDictionary()
+    public SourceGeneratedAttributeValueFactory CreateAttributeValueFactory()
     {
         var rootMethod = RootAttributeValueConversionMethod();
         var enumerable = ConversionMethods(
@@ -31,11 +31,13 @@ public class Generation
 
         var sourceGeneration = string.Join(Constants.NewLine, enumerable);
 
-        return @$"{rootMethod}
-        private class {_settings.SourceGeneratedClassName}
+        var code = @$"{rootMethod}
+        private class {_className}
         {{
             {sourceGeneration}
         }}";
+
+        return new SourceGeneratedAttributeValueFactory(code, _className, _settings.ConsumerMethodConfig.Name);
     }
 
     private IEnumerable<Conversion> ConversionMethods(
@@ -74,11 +76,11 @@ public class Generation
         var signature = config.MethodParameterization switch
         {
             Settings.ConsumerMethodConfiguration.Parameterization.UnparameterizedInstance =>
-                $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}() => {_settings.SourceGeneratedClassName}.{methodName}(this);",
+                $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}() => {_className}.{methodName}(this);",
             Settings.ConsumerMethodConfiguration.Parameterization.ParameterizedStatic =>
-                $"{accessModifier} static Dictionary<string, AttributeValue> {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {_settings.SourceGeneratedClassName}.{methodName}(item);",
+                $"{accessModifier} static Dictionary<string, AttributeValue> {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {_className}.{methodName}(item);",
             Settings.ConsumerMethodConfiguration.Parameterization.ParameterizedInstance =>
-                $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {_settings.SourceGeneratedClassName}.{methodName}(item);",
+                $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {_className}.{methodName}(item);",
             _ => throw new NotSupportedException($"Config of '{config.MethodParameterization}'.")
         };
 
@@ -345,9 +347,9 @@ public class Generation
             {
                 (_, {Length: > Constants.MaxMethodNameLenght}) => throw new NotSupportedException(
                     $"Could not generate a method name that's within the supported method lenght {Constants.MaxMethodNameLenght} for type '{displayString}'."),
-                (NullableAnnotation.NotAnnotated, _) => $"NN_{displayString.ToAlphaNumericMethodName()}",
-                (NullableAnnotation.None, _) => displayString.ToAlphaNumericMethodName(),
-                (NullableAnnotation.Annotated, _) => $"N_{displayString.ToAlphaNumericMethodName()}",
+                (NullableAnnotation.NotAnnotated, _) => $"NN_{displayString.ToAlphaNumericMethodName()}Factory",
+                (NullableAnnotation.None, _) => $"{displayString.ToAlphaNumericMethodName()}Factory",
+                (NullableAnnotation.Annotated, _) => $"N_{displayString.ToAlphaNumericMethodName()}Factory",
                 _ => throw new ArgumentOutOfRangeException()
             };
 

@@ -1,19 +1,11 @@
-using DynamoDBGenerator.SourceGenerator.Types;
-
 namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAttributeValue;
 
 /// <summary>
 /// </summary>
-public record Settings(string SourceGeneratedClassName)
+public record Settings
 {
     public ConsumerMethodConfiguration ConsumerMethodConfig { get; set; } = new("BuildAttributeValues");
-
     public Keys KeyStrategy { get; set; } = Keys.Include;
-
-    // TODO instead of making the the consumer have the ability to set the class name we could just offer some form of identifier.
-    // The main reason this exist is to make the consumer be able to use this generation multiple times without collision.
-    // We could return a type that contains the AccessPattern (SourceGenerated_Class_X) as well as the method name.
-    public string SourceGeneratedClassName { get; } = SourceGeneratedClassName;
 
     public enum Keys
     {

@@ -32,7 +32,7 @@ public static class Generation
             var attributeClassName = typeName.AttributeData.AttributeClass!.Name;
             if (attributeClassName is nameof(DynamoDBPutOperationAttribute))
             {
-                var settings = new Settings($"SourceGenerated_{namedTypeSymbol.Name}_Put_Conversion")
+                var settings = new Settings
                 {
                     ConsumerMethodConfig =
                         new Settings.ConsumerMethodConfiguration($"Put{namedTypeSymbol.Name}AttributeValues")
@@ -40,16 +40,14 @@ public static class Generation
                             MethodParameterization = ParameterizedInstance
                         }
                 };
-                var conversion = namedTypeSymbol.GenerateAttributeValueConversion(in settings);
-                yield return conversion;
+                var conversion = namedTypeSymbol.GeneratePocoToAttributeValueFactory(in settings);
+                yield return conversion.Code;
             }
 
 
             if (attributeClassName is nameof(DynamoDBUpdateOperationAttribute))
             {
-                var keysSettings = new Settings(
-                    $"SourceGenerated_{namedTypeSymbol.Name}_Update_Key_Conversion"
-                )
+                var keysSettings = new Settings
                 {
                     KeyStrategy = Settings.Keys.Only,
                     ConsumerMethodConfig =
@@ -58,12 +56,10 @@ public static class Generation
                             MethodParameterization = ParameterizedInstance
                         }
                 };
-                var keys = namedTypeSymbol.GenerateAttributeValueConversion(in keysSettings);
-                yield return keys;
+                var keys = namedTypeSymbol.GeneratePocoToAttributeValueFactory(in keysSettings);
+                yield return keys.Code;
 
-                var settings = new Settings(
-                    $"SourceGenerated_{namedTypeSymbol.Name}_Update_Conversion"
-                )
+                var settings = new Settings
                 {
                     KeyStrategy = Settings.Keys.Ignore,
                     ConsumerMethodConfig =
@@ -72,8 +68,8 @@ public static class Generation
                             MethodParameterization = ParameterizedInstance
                         }
                 };
-                var conversion = namedTypeSymbol.GenerateAttributeValueConversion(in settings);
-                yield return conversion;
+                var conversion = namedTypeSymbol.GeneratePocoToAttributeValueFactory(in settings);
+                yield return conversion.Code;
             }
         }
     }

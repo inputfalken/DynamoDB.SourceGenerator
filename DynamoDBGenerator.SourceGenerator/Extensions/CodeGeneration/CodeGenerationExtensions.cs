@@ -15,10 +15,10 @@ public static class CodeGenerationExtensions
     ///     Instructions for how the internal source generator should perform its generations.
     /// </param>
     /// <returns></returns>
-    public static string GenerateAttributeValueConversion(this ITypeSymbol type,
+    public static SourceGeneratedAttributeValueFactory GeneratePocoToAttributeValueFactory(this ITypeSymbol type,
         in Settings settings)
     {
-        return new Generation(in settings, type).CreateAttributeValueDictionary();
+        return new Generation(in settings, type).CreateAttributeValueFactory();
     }
 
     /// <summary>
