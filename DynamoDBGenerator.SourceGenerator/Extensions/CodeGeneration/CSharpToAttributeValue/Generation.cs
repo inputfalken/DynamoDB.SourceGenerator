@@ -51,6 +51,10 @@ public class Generation
 
         yield return dict;
 
+        // Keys should only exist in the root entity.
+        if (_settings.KeyStrategy == Settings.Keys.Only)
+            yield break;
+
         foreach (var unsupportedType in dict.Conversions)
         {
             if (unsupportedType.AssignedBy is not Assignment.Decision.ExternalMethod)
@@ -91,16 +95,17 @@ public class Generation
         const string paramReference = "entity";
         const string dictionaryName = "attributeValues";
 
-        IEnumerable<DynamoDbDataMember> dynamoDbDataMembers;
+        var dynamoDbProperties = _settings.KeyStrategy switch
+        {
+            Settings.Keys.Ignore => type.GetDynamoDbProperties()
+                .Where(static x => x is {IsRangeKey: false, IsHashKey: false}),
+            Settings.Keys.Only => type.GetDynamoDbProperties()
+                .Where(static x => x is {IsRangeKey: true, IsHashKey: true}),
+            Settings.Keys.Include => type.GetDynamoDbProperties(),
+            _ => throw new ArgumentOutOfRangeException()
+        };
 
-        if (_settings.PredicateConfig is null)
-            dynamoDbDataMembers = type.GetDynamoDbProperties();
-        else
-            dynamoDbDataMembers = type
-                .GetDynamoDbProperties()
-                .Where(_settings.PredicateConfig.Value.Predicate);
-
-        var properties = dynamoDbDataMembers
+        var properties = dynamoDbProperties
             .Where(static x => x.IsIgnored is false)
             .Select(static x => (
                     AccessPattern: $"{paramReference}.{x.DataMember.Name}",
@@ -338,7 +343,8 @@ public class Generation
 
             var str = (typeSymbol.NullableAnnotation, typeDisplay: displayString) switch
             {
-                (_, {Length: > Constants.MaxMethodNameLenght}) => throw new NotSupportedException($"Could not generate a method name that's within the supported method lenght {Constants.MaxMethodNameLenght} for type '{displayString}'."),
+                (_, {Length: > Constants.MaxMethodNameLenght}) => throw new NotSupportedException(
+                    $"Could not generate a method name that's within the supported method lenght {Constants.MaxMethodNameLenght} for type '{displayString}'."),
                 (NullableAnnotation.NotAnnotated, _) => $"NN_{displayString.ToAlphaNumericMethodName()}",
                 (NullableAnnotation.None, _) => displayString.ToAlphaNumericMethodName(),
                 (NullableAnnotation.Annotated, _) => $"N_{displayString.ToAlphaNumericMethodName()}",
@@ -358,9 +364,9 @@ public class Generation
                 "_",
                 namedTypeSymbol.TypeArguments.Select(x => Execution(cache, x, true)).Prepend(str)
             );
-            
+
             // We do not need to populate the dictionary if the execution originates from recursion.
-            if (isRecursive is false) 
+            if (isRecursive is false)
                 cache.Add(typeSymbol, result);
 
             return result;
