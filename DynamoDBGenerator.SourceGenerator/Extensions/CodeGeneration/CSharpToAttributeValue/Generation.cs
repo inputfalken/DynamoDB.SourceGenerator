@@ -6,13 +6,10 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAt
 public class Generation
 {
     private readonly ITypeSymbol _rootTypeSymbol;
-    private const string Indent = "                ";
-    private readonly string _rootExpressionAttributeNames;
 
     public Generation(in ITypeSymbol typeSymbol)
     {
         _rootTypeSymbol = typeSymbol;
-        _rootExpressionAttributeNames = CreateExpressionAttributeNamesClass(typeSymbol);
     }
 
     /// <summary>
@@ -107,8 +104,9 @@ public class Generation
             indentLevel: 2
         );
 
+        var rootExpressionAttributeNames = CreateExpressionAttributeNamesClass(_rootTypeSymbol);
         return
-            $@"public {className}.{_rootExpressionAttributeNames} Get{_rootTypeSymbol.Name}AttributeNames() => new {className}.{_rootExpressionAttributeNames}();
+            $@"public {className}.{rootExpressionAttributeNames} Get{_rootTypeSymbol.Name}AttributeNames() => new {className}.{rootExpressionAttributeNames}();
 {@class}
 ";
     }
@@ -202,50 +200,9 @@ public class Generation
     {
         const string paramReference = "entity";
         const string dictionaryName = "attributeValues";
+        var properties = GetAssignments(type, keyStrategy).ToArray();
 
-        var dynamoDbProperties = keyStrategy switch
-        {
-            KeyStrategy.Ignore => type.GetDynamoDbProperties()
-                .Where(static x => x is {IsRangeKey: false, IsHashKey: false}),
-            KeyStrategy.Only => type.GetDynamoDbProperties()
-                .Where(static x => x is {IsRangeKey: true, IsHashKey: true}),
-            KeyStrategy.Include => type.GetDynamoDbProperties(),
-            _ => throw new ArgumentOutOfRangeException()
-        };
-
-        var properties = dynamoDbProperties
-            .Where(static x => x.IsIgnored is false)
-            .Select(static x => (
-                    AccessPattern: $"{paramReference}.{x.DataMember.Name}",
-                    DDB: x
-                )
-            )
-            .Select(x => (
-                x.AccessPattern,
-                x.DDB,
-                AttributeValue: AttributeValueAssignment(
-                    x.DDB.DataMember.Type,
-                    x.AccessPattern
-                )
-            ))
-            .Where(x => keyStrategy switch
-            {
-                // We skip creating assignments of external dependencies if the intent is only to fetch keys.
-                KeyStrategy.Only => x.AttributeValue.HasExternalDependency is false,
-                _ => true
-            })
-            .Select(static x => (
-                    x.DDB,
-                    x.AttributeValue,
-                    DictionaryAssignment: x.DDB.DataMember.Type.NotNullIfStatement(
-                        in x.AccessPattern,
-                        @$"{dictionaryName}.Add(""{x.DDB.AttributeName}"", {x.AttributeValue.ToAttributeValue()});"
-                    ),
-                    CapacityTernaries: x.DDB.DataMember.Type.NotNullTernaryExpression(in x.AccessPattern, "1", "0")
-                )
-            )
-            .ToArray();
-
+        const string indent = "                ";
         var dictionary =
             @$"        
             /// <summary> 
@@ -256,21 +213,53 @@ public class Generation
             /// </remarks>
             public static Dictionary<string, AttributeValue> {CreateMethodName(type)}({type.ToDisplayString(topLevelNullability: NullableFlowState.None)} {paramReference})
             {{ 
-                {InitializeDictionary(dictionaryName, properties.Select(static x => x.CapacityTernaries))}
-                {string.Join(Constants.NewLine + Indent, properties.Select(static x => x.DictionaryAssignment))}
+                {InitializeDictionary(dictionaryName, properties.Select(static x => x.capacityTernary))}
+                {string.Join(Constants.NewLine + indent, properties.Select(static x => x.dictionaryPopulation))}
                 return {dictionaryName};
             }}";
 
-
-        var conversions = keyStrategy switch
-        {
-            // We skip considering creating external methods if the intent is to fetch keys only.
-            KeyStrategy.Only => Enumerable.Empty<Assignment>(),
-            _ => properties
-                .Select(static x => x.AttributeValue)
+        return new Conversion(
+            in dictionary,
+            properties
+                .Select(static x => x.assignment)
                 .Where(static x => x.HasExternalDependency)
-        };
-        return new Conversion(in dictionary, in conversions);
+        );
+
+        IEnumerable<(string dictionaryPopulation, string capacityTernary, Assignment assignment)> GetAssignments(
+            ITypeSymbol typeSymbol,
+            KeyStrategy strategy
+        )
+        {
+            var dynamoDbProperties = strategy switch
+            {
+                KeyStrategy.Ignore => typeSymbol.GetDynamoDbProperties()
+                    .Where(static x => x is {IsRangeKey: false, IsHashKey: false}),
+                KeyStrategy.Only => typeSymbol.GetDynamoDbProperties()
+                    .Where(static x => x is {IsRangeKey: true, IsHashKey: true}),
+                KeyStrategy.Include => typeSymbol.GetDynamoDbProperties(),
+                _ => throw new ArgumentOutOfRangeException()
+            };
+
+            foreach (var x in dynamoDbProperties)
+            {
+                if (x.IsIgnored)
+                    continue;
+                
+                var accessPattern = $"{paramReference}.{x.DataMember.Name}";
+                var attributeValue = AttributeValueAssignment(x.DataMember.Type, accessPattern);
+                if (strategy == KeyStrategy.Only && attributeValue.HasExternalDependency)
+                    continue;
+
+                var dictionaryAssignment = x.DataMember.Type.NotNullIfStatement(
+                    in accessPattern,
+                    @$"{dictionaryName}.Add(""{x.AttributeName}"", {attributeValue.ToAttributeValue()});"
+                );
+
+                var capacityTernaries = x.DataMember.Type.NotNullTernaryExpression(in accessPattern, "1", "0");
+
+                yield return (dictionaryAssignment, capacityTernaries, attributeValue);
+            }
+        }
 
         static string InitializeDictionary(string dictionaryName, IEnumerable<string> capacityCalculations)
         {
