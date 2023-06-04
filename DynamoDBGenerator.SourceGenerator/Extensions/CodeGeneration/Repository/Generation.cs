@@ -1,7 +1,5 @@
 using DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAttributeValue;
 using Microsoft.CodeAnalysis;
-using static DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAttributeValue.Settings.
-    ConsumerMethodConfiguration.Parameterization;
 
 namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.Repository;
 
@@ -32,47 +30,37 @@ public static class Generation
             var attributeClassName = typeName.AttributeData.AttributeClass!.Name;
             if (attributeClassName is nameof(DynamoDBPutOperationAttribute))
             {
-                var settings = new Settings
-                {
-                    ConsumerMethodConfig =
-                        new Settings.ConsumerMethodConfiguration($"Put{namedTypeSymbol.Name}AttributeValues")
-                        {
-                            MethodParameterization = ParameterizedInstance
-                        }
-                };
-                var conversion = namedTypeSymbol.GeneratePocoToAttributeValueFactory(in settings);
+                var conversion = namedTypeSymbol.GeneratePocoToAttributeValueFactory(
+                    new ConsumerMethodConfiguration($"Put{namedTypeSymbol.Name}AttributeValues")
+                    {
+                        MethodParameterization = ConsumerMethodConfiguration.Parameterization.ParameterizedInstance
+                    }
+                );
                 yield return conversion.Code;
             }
 
-
             if (attributeClassName is nameof(DynamoDBUpdateOperationAttribute))
             {
-                var keysSettings = new Settings
-                {
-                    KeyStrategy = Settings.Keys.Only,
-                    ConsumerMethodConfig =
-                        new Settings.ConsumerMethodConfiguration($"Update{namedTypeSymbol.Name}AttributeValueKeys")
-                        {
-                            MethodParameterization = ParameterizedInstance
-                        }
-                };
-
-                var keys = namedTypeSymbol.GeneratePocoToAttributeValueFactory(in keysSettings);
+                var keys = namedTypeSymbol.GeneratePocoToAttributeValueFactory(
+                    new ConsumerMethodConfiguration($"Update{namedTypeSymbol.Name}AttributeValueKeys")
+                    {
+                        MethodParameterization = ConsumerMethodConfiguration.Parameterization.ParameterizedInstance
+                    },
+                    KeyStrategy.Only
+                );
                 yield return keys.Code;
 
-                var settings = new Settings
-                {
-                    KeyStrategy = Settings.Keys.Ignore,
-                    ConsumerMethodConfig =
-                        new Settings.ConsumerMethodConfiguration($"Update{namedTypeSymbol.Name}AttributeValues")
-                        {
-                            MethodParameterization = ParameterizedInstance
-                        }
-                };
-                var conversion = namedTypeSymbol.GeneratePocoToAttributeValueFactory(in settings);
-                yield return conversion.Code;
                 
-                var f = new CSharpToAttributeValue.Generation(new Settings(),namedTypeSymbol);
+                var conversion = namedTypeSymbol.GeneratePocoToAttributeValueFactory(
+                    new ConsumerMethodConfiguration($"Update{namedTypeSymbol.Name}AttributeValues")
+                    {
+                        MethodParameterization = ConsumerMethodConfiguration.Parameterization.ParameterizedInstance
+                    },
+                    KeyStrategy.Ignore
+                );
+                yield return conversion.Code;
+
+                var f = new CSharpToAttributeValue.Generation(namedTypeSymbol);
 
                 yield return f.CreateExpressionAttributeNames();
             }

@@ -8,17 +8,10 @@ public static class CodeGenerationExtensions
     /// <summary>
     ///     Generated attribute value conversion.
     /// </summary>
-    /// <param name="type">
-    ///     The root type to create attribute value conversions from.
-    /// </param>
-    /// <param name="settings">
-    ///     Instructions for how the internal source generator should perform its generations.
-    /// </param>
-    /// <returns></returns>
-    public static SourceGeneratedCode GeneratePocoToAttributeValueFactory(this ITypeSymbol type,
-        in Settings settings)
+    public static SourceGeneratedCode GeneratePocoToAttributeValueFactory(this ITypeSymbol type, in ConsumerMethodConfiguration methodConfiguration, KeyStrategy keyStrategy= KeyStrategy.Include)
     {
-        return new Generation(in settings, in type).CreateAttributeValueFactory();
+        return new Generation(in type)
+            .CreateAttributeValueFactory(in methodConfiguration, keyStrategy);
     }
 
     /// <summary>

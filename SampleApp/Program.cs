@@ -1,5 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+using System.Runtime.CompilerServices;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator;
 

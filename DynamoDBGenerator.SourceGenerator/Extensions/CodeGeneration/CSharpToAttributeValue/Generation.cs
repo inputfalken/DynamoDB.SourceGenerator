@@ -5,29 +5,34 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAt
 
 public class Generation
 {
-    private readonly Settings _settings;
     private readonly ITypeSymbol _rootTypeSymbol;
     private const string Indent = "                ";
-    private readonly string _className;
     private readonly string _rootExpressionAttributeNames;
 
-    public Generation(in Settings settings, in ITypeSymbol typeSymbol)
+    public Generation(in ITypeSymbol typeSymbol)
     {
-        _settings = settings;
         _rootTypeSymbol = typeSymbol;
         _rootExpressionAttributeNames = CreateExpressionAttributeNamesClass(typeSymbol);
-        _className = $"{typeSymbol.Name}_{settings.ConsumerMethodConfig.Name}";
     }
 
     /// <summary>
     /// Creates an Dictionary with string as key and AttributeValue as value.
     /// </summary>
-    public SourceGeneratedCode CreateAttributeValueFactory()
+    public SourceGeneratedCode CreateAttributeValueFactory(
+        in ConsumerMethodConfiguration methodConfiguration,
+        KeyStrategy keyStrategy)
     {
-        var consumerMethod = RootMethod("Dictionary<string, AttributeValue>");
-        var enumerable = ConversionMethods(
+        var className = $"{_rootTypeSymbol.Name}_{methodConfiguration.Name}";
+        var consumerMethod = RootMethod(
+            "Dictionary<string, AttributeValue>",
+            className,
+            CreateMethodName(_rootTypeSymbol),
+            methodConfiguration
+        );
+
+        var enumerable = Conversion.ConversionMethods(
                 _rootTypeSymbol,
-                StaticAttributeValueDictionaryFactory,
+                x => StaticAttributeValueDictionaryFactory(x, keyStrategy),
                 new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability)
             )
             .Select(static x => x.Code);
@@ -36,14 +41,14 @@ public class Generation
 
         var @class = CodeGenerationExtensions.CreateClass(
             Accessibility.Private,
-            in _className,
+            in className,
             in sourceGeneratedCode,
             indentLevel: 2
         );
 
         var code = $@"{consumerMethod}
 {@class}";
-        return new SourceGeneratedCode(code, _className, _settings.ConsumerMethodConfig.Name);
+        return new SourceGeneratedCode(code, className, methodConfiguration.Name);
     }
 
     // TODO come up with a solution to make the following intuitive 
@@ -85,7 +90,7 @@ public class Generation
     //            },
     public string CreateExpressionAttributeNames()
     {
-        var enumerable = ConversionMethods(
+        var enumerable = Conversion.ConversionMethods(
                 _rootTypeSymbol,
                 StaticExpressionAttributeNamesFactory,
                 new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability)
@@ -169,46 +174,19 @@ public class Generation
         return $"{typeSymbol.Name}ExpressionAttributeNames";
     }
 
-    private IEnumerable<Conversion> ConversionMethods(
-        ITypeSymbol typeSymbol,
-        Func<ITypeSymbol, Conversion> conversionSelector,
-        ISet<ITypeSymbol> typeSymbols
-    )
+
+    private string RootMethod(string returnType, string className, string methodName,
+        ConsumerMethodConfiguration config)
     {
-        // We already support the type.
-        if (typeSymbols.Add(typeSymbol) is false)
-            yield break;
-
-        var rootConversion = conversionSelector(typeSymbol);
-
-        yield return rootConversion;
-
-        // Keys should only exist in the root entity.
-        if (_settings.KeyStrategy == Settings.Keys.Only)
-            yield break;
-
-        foreach (var conversion in rootConversion.Conversions)
-        {
-            foreach (var recursionConversion in ConversionMethods(conversion.Type, conversionSelector, typeSymbols))
-                yield return recursionConversion;
-        }
-    }
-
-
-    private string RootMethod(string returnType)
-    {
-        var config = _settings.ConsumerMethodConfig;
-
-        var accessModifier = _settings.ConsumerMethodConfig.AccessModifier.ToCode();
-        var methodName = CreateMethodName(_rootTypeSymbol);
+        var accessModifier = config.AccessModifier.ToCode();
         var signature = config.MethodParameterization switch
         {
-            Settings.ConsumerMethodConfiguration.Parameterization.UnparameterizedInstance =>
-                $"{accessModifier} {returnType} {config.Name}() => {_className}.{methodName}(this);",
-            Settings.ConsumerMethodConfiguration.Parameterization.ParameterizedStatic =>
-                $"{accessModifier} static {returnType} {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {_className}.{methodName}(item);",
-            Settings.ConsumerMethodConfiguration.Parameterization.ParameterizedInstance =>
-                $"{accessModifier} {returnType} {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {_className}.{methodName}(item);",
+            ConsumerMethodConfiguration.Parameterization.UnparameterizedInstance =>
+                $"{accessModifier} {returnType} {config.Name}() => {className}.{methodName}(this);",
+            ConsumerMethodConfiguration.Parameterization.ParameterizedStatic =>
+                $"{accessModifier} static {returnType} {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {className}.{methodName}(item);",
+            ConsumerMethodConfiguration.Parameterization.ParameterizedInstance =>
+                $"{accessModifier} {returnType} {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {className}.{methodName}(item);",
             _ => throw new NotSupportedException($"Config of '{config.MethodParameterization}'.")
         };
 
@@ -220,21 +198,20 @@ public class Generation
         {signature}";
     }
 
-    private Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type)
+    private Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type, KeyStrategy keyStrategy)
     {
         const string paramReference = "entity";
         const string dictionaryName = "attributeValues";
 
-        var dynamoDbProperties = _settings.KeyStrategy switch
+        var dynamoDbProperties = keyStrategy switch
         {
-            Settings.Keys.Ignore => type.GetDynamoDbProperties()
+            KeyStrategy.Ignore => type.GetDynamoDbProperties()
                 .Where(static x => x is {IsRangeKey: false, IsHashKey: false}),
-            Settings.Keys.Only => type.GetDynamoDbProperties()
+            KeyStrategy.Only => type.GetDynamoDbProperties()
                 .Where(static x => x is {IsRangeKey: true, IsHashKey: true}),
-            Settings.Keys.Include => type.GetDynamoDbProperties(),
+            KeyStrategy.Include => type.GetDynamoDbProperties(),
             _ => throw new ArgumentOutOfRangeException()
         };
-
 
         var properties = dynamoDbProperties
             .Where(static x => x.IsIgnored is false)
@@ -251,6 +228,12 @@ public class Generation
                     x.AccessPattern
                 )
             ))
+            .Where(x => keyStrategy switch
+            {
+                // We skip creating assignments of external dependencies if the intent is only to fetch keys.
+                KeyStrategy.Only => x.AttributeValue.HasExternalDependency is false,
+                _ => true
+            })
             .Select(static x => (
                     x.DDB,
                     x.AttributeValue,
@@ -279,8 +262,14 @@ public class Generation
             }}";
 
 
-        var conversions = properties.Select(static x => x.AttributeValue)
-            .Where(x => x.HasExternalDependency);
+        var conversions = keyStrategy switch
+        {
+            // We skip considering creating external methods if the intent is to fetch keys only.
+            KeyStrategy.Only => Enumerable.Empty<Assignment>(),
+            _ => properties
+                .Select(static x => x.AttributeValue)
+                .Where(static x => x.HasExternalDependency)
+        };
         return new Conversion(in dictionary, in conversions);
 
         static string InitializeDictionary(string dictionaryName, IEnumerable<string> capacityCalculations)
@@ -374,13 +363,15 @@ public class Generation
                 BaseType.SupportedType.Bool => typeSymbol.ToInlineAssignment($"BOOL = {accessPattern}"),
                 BaseType.SupportedType.Number => typeSymbol.ToInlineAssignment($"N = {accessPattern}.ToString()"),
                 BaseType.SupportedType.Char => typeSymbol.ToInlineAssignment($"S = {accessPattern}.ToString()"),
-                BaseType.SupportedType.Temporal => typeSymbol.ToInlineAssignment($@"S = {accessPattern}.ToString(""O"")"),
+                BaseType.SupportedType.Temporal => typeSymbol.ToInlineAssignment(
+                    $@"S = {accessPattern}.ToString(""O"")"),
                 _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
             },
             SingleGeneric singleGeneric => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Collection => BuildList(singleGeneric.T, in accessPattern),
-                SingleGeneric.SupportedType.Nullable => AttributeValueAssignment(singleGeneric.T, $"{accessPattern}.Value"),
+                SingleGeneric.SupportedType.Nullable => AttributeValueAssignment(singleGeneric.T,
+                    $"{accessPattern}.Value"),
                 SingleGeneric.SupportedType.Set => BuildSet(singleGeneric.T, accessPattern),
                 _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
             },
@@ -390,7 +381,7 @@ public class Generation
 
         return assignment ?? ExternalAssignment(in typeSymbol, in accessPattern);
 
-        Assignment ExternalAssignment(in ITypeSymbol typeSymbol, in string accessPattern) => 
+        Assignment ExternalAssignment(in ITypeSymbol typeSymbol, in string accessPattern) =>
             typeSymbol.ToExternalDependencyAssignment($"M = {CreateMethodName(typeSymbol)}({accessPattern})");
     }
 
