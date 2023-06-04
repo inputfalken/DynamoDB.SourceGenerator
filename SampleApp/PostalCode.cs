@@ -1,4 +1,5 @@
-﻿using Amazon.DynamoDBv2.DataModel;
+﻿using System.Collections.Generic;
+using Amazon.DynamoDBv2.DataModel;
 using DynamoDBGenerator;
 
 namespace SampleApp;
@@ -11,5 +12,4 @@ public partial class PostalCode
     public string Town { get; set; } = null!;
     public KeyValuePair<string, int> String { get; set; }
 
-    public PostalCode PostCodeNested { get; set; }
 }

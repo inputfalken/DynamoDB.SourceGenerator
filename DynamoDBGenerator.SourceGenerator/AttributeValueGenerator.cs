@@ -58,7 +58,7 @@ public class AttributeValueGenerator : IIncrementalGenerator
             var code = type.CreateNamespace(
                 type.CreateClass(
                     type.GeneratePocoToAttributeValueFactory(
-                        new ConsumerMethodConfiguration(settings.MethodName)
+                        new MethodConfiguration(settings.MethodName)
                     ).Code
                 )
             );

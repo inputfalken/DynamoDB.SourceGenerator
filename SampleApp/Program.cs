@@ -1,8 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-
-using System.Runtime.CompilerServices;
-using Amazon.DynamoDBv2.Model;
-using DynamoDBGenerator;
+﻿using DynamoDBGenerator;
 
 namespace SampleApp;
 
@@ -22,18 +18,24 @@ internal static class Program
             },
             Street = "WilleStreet"
         });
+        
+        foreach (var keyValuePair in updateAddress)
+        {
+            Console.WriteLine(keyValuePair);
+        }
+
+        foreach (var kv in updateAddress.PostalCode)
+        {
+            Console.WriteLine(kv);
+        }
     }
 }
 
 [DynamoDBUpdateOperation(typeof(Address))]
 public partial class Repository
 {
-    public UpdateItemRequest UpdateAddress(Address address)
+    public Address_ExpressionAttribute.AddressExpressionAttribute UpdateAddress(Address address)
     {
-
-
-        return null;
-
-
+        return GetAddressExpressionAttribute();
     }
 }

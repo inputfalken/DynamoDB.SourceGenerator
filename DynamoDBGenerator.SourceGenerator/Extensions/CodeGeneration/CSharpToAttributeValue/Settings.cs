@@ -20,7 +20,7 @@ public enum KeyStrategy
     Only = 3,
 }
 
-public record ConsumerMethodConfiguration(in string Name)
+public record MethodConfiguration(in string Name)
 {
     /// <summary>
     ///     The name method.

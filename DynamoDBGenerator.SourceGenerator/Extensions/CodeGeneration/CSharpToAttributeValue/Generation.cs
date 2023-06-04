@@ -16,11 +16,12 @@ public class Generation
     /// Creates an Dictionary with string as key and AttributeValue as value.
     /// </summary>
     public SourceGeneratedCode CreateAttributeValueFactory(
-        in ConsumerMethodConfiguration methodConfiguration,
+        in MethodConfiguration methodConfiguration,
         KeyStrategy keyStrategy)
     {
         var className = $"{_rootTypeSymbol.Name}_{methodConfiguration.Name}";
-        var consumerMethod = RootMethod(
+        var consumerMethod = CreateMethod(
+            _rootTypeSymbol,
             "Dictionary<string, AttributeValue>",
             className,
             CreateMethodName(_rootTypeSymbol),
@@ -106,7 +107,7 @@ public class Generation
 
         var rootExpressionAttributeNames = CreateExpressionAttributeNamesClass(_rootTypeSymbol);
         return
-            $@"public {className}.{rootExpressionAttributeNames} Get{_rootTypeSymbol.Name}AttributeNames() => new {className}.{rootExpressionAttributeNames}();
+            $@"public {className}.{rootExpressionAttributeNames} Get{_rootTypeSymbol.Name}ExpressionAttribute() => new {className}.{rootExpressionAttributeNames}();
 {@class}
 ";
     }
@@ -121,15 +122,15 @@ public class Generation
 
         var fieldDeclarations = dataMembers.Select(x =>
             x.IsKnown
-                ? $@"public string {x.DDB.DataMember.Name} {{ get; }}"
-                : $@"public {x.DDB.DataMember.Type.Name}ExpressionAttributeNames {x.DDB.DataMember.Name} {{ get; }}");
+                ? $@"public ExpressionAttribute {x.DDB.DataMember.Name} {{ get; }}"
+                : $@"public {x.DDB.DataMember.Type.Name}ExpressionAttribute {x.DDB.DataMember.Name} {{ get; }}");
 
         var dictionaryFields = dataMembers
             .Where(x => x.IsKnown)
             .Select(x => x.DDB)
             .Select(x => isRoot
                 ? $@"{{""#{x.AttributeName}"", ""{x.AttributeName}""}}"
-                : $@"{{$""{{prefix}}.{x.AttributeName}"", ""{x.AttributeName}""}}"
+                : $@"{{$""#{{name}}.{x.AttributeName}"", ""{x.AttributeName}""}}"
             );
 
         var dictionary = $"new Dictionary<string, string> {{{string.Join(", ", dictionaryFields)}}}";
@@ -140,12 +141,12 @@ public class Generation
             {
                 var assignment = (AssignedBy: x.IsKnown, isRoot) switch
                 {
-                    (true, true) => $@"{x.DDB.DataMember.Name} = ""#{x.DDB.AttributeName}"";",
-                    (true, false) => $@"{x.DDB.DataMember.Name} = $""{{prefix}}.#{x.DDB.AttributeName}"";",
+                    (true, true) => $@"{x.DDB.DataMember.Name} = new ExpressionAttribute(""#{x.DDB.AttributeName}"", "":{x.DDB.AttributeName}"");",
+                    (true, false) => $@"{x.DDB.DataMember.Name} = new ExpressionAttribute($""#{{name}}.#{x.DDB.AttributeName}"", "":{x.DDB.AttributeName}"");",
                     (false, true) =>
-                        $@"{x.DDB.DataMember.Name} = new {x.DDB.DataMember.Type.Name}ExpressionAttributeNames(""#{x.DDB.AttributeName}"");",
+                        $@"{x.DDB.DataMember.Name} = new {x.DDB.DataMember.Type.Name}ExpressionAttribute(""{x.DDB.AttributeName}"");",
                     (false, false) =>
-                        $@"{x.DDB.DataMember.Name} = new {x.DDB.DataMember.Type.Name}ExpressionAttributeNames($""{{prefix}}.#{x.DDB.AttributeName}"");",
+                        $@"{x.DDB.DataMember.Name} = new {x.DDB.DataMember.Type.Name}ExpressionAttribute($""#{{name}}.#{x.DDB.AttributeName}"");",
                 };
 
                 return new Assignment(assignment, x.DDB.DataMember.Type, x.IsKnown is false);
@@ -153,7 +154,7 @@ public class Generation
             .ToArray();
 
         var indent = StringExtensions.Indent(2);
-        var constructor = $@"public {className}({(isRoot ? null : "string prefix")}) : base ({dictionary}) 
+        var constructor = $@"public {className}({(isRoot ? null : "string name")}) : base ({dictionary}) 
     {{
         {string.Join($"{Constants.NewLine}{indent}", fieldAssignments.Select(x => x.Value))}
     }}";
@@ -169,28 +170,32 @@ public class Generation
 
     private static string CreateExpressionAttributeNamesClass(ITypeSymbol typeSymbol)
     {
-        return $"{typeSymbol.Name}ExpressionAttributeNames";
+        return $"{typeSymbol.Name}ExpressionAttribute";
     }
 
 
-    private string RootMethod(string returnType, string className, string methodName,
-        ConsumerMethodConfiguration config)
+    private static string CreateMethod(
+        ITypeSymbol typeSymbol,
+        string returnType,
+        string className,
+        string methodName,
+        MethodConfiguration config)
     {
         var accessModifier = config.AccessModifier.ToCode();
         var signature = config.MethodParameterization switch
         {
-            ConsumerMethodConfiguration.Parameterization.UnparameterizedInstance =>
+            MethodConfiguration.Parameterization.UnparameterizedInstance =>
                 $"{accessModifier} {returnType} {config.Name}() => {className}.{methodName}(this);",
-            ConsumerMethodConfiguration.Parameterization.ParameterizedStatic =>
-                $"{accessModifier} static {returnType} {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {className}.{methodName}(item);",
-            ConsumerMethodConfiguration.Parameterization.ParameterizedInstance =>
-                $"{accessModifier} {returnType} {config.Name}({_rootTypeSymbol.ToDisplayString()} item) => {className}.{methodName}(item);",
+            MethodConfiguration.Parameterization.ParameterizedStatic =>
+                $"{accessModifier} static {returnType} {config.Name}({typeSymbol.ToDisplayString()} item) => {className}.{methodName}(item);",
+            MethodConfiguration.Parameterization.ParameterizedInstance =>
+                $"{accessModifier} {returnType} {config.Name}({typeSymbol.ToDisplayString()} item) => {className}.{methodName}(item);",
             _ => throw new NotSupportedException($"Config of '{config.MethodParameterization}'.")
         };
 
 
         return $@"/// <summary> 
-        ///    Converts <see cref=""{_rootTypeSymbol.ToXmlComment()}""/> into a <see cref=""Amazon.DynamoDBv2.Model.AttributeValue""/> representation.
+        ///    Converts <see cref=""{typeSymbol.ToXmlComment()}""/> into a <see cref=""Amazon.DynamoDBv2.Model.AttributeValue""/> representation.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         {signature}";
@@ -244,7 +249,7 @@ public class Generation
             {
                 if (x.IsIgnored)
                     continue;
-                
+
                 var accessPattern = $"{paramReference}.{x.DataMember.Name}";
                 var attributeValue = AttributeValueAssignment(x.DataMember.Type, accessPattern);
                 if (strategy == KeyStrategy.Only && attributeValue.HasExternalDependency)

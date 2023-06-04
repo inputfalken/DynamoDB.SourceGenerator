@@ -31,9 +31,9 @@ public static class Generation
             if (attributeClassName is nameof(DynamoDBPutOperationAttribute))
             {
                 var conversion = namedTypeSymbol.GeneratePocoToAttributeValueFactory(
-                    new ConsumerMethodConfiguration($"Put{namedTypeSymbol.Name}AttributeValues")
+                    new MethodConfiguration($"Put{namedTypeSymbol.Name}AttributeValues")
                     {
-                        MethodParameterization = ConsumerMethodConfiguration.Parameterization.ParameterizedInstance
+                        MethodParameterization = MethodConfiguration.Parameterization.ParameterizedInstance
                     }
                 );
                 yield return conversion.Code;
@@ -42,9 +42,9 @@ public static class Generation
             if (attributeClassName is nameof(DynamoDBUpdateOperationAttribute))
             {
                 var keys = namedTypeSymbol.GeneratePocoToAttributeValueFactory(
-                    new ConsumerMethodConfiguration($"Update{namedTypeSymbol.Name}AttributeValueKeys")
+                    new MethodConfiguration($"Update{namedTypeSymbol.Name}AttributeValueKeys")
                     {
-                        MethodParameterization = ConsumerMethodConfiguration.Parameterization.ParameterizedInstance
+                        MethodParameterization = MethodConfiguration.Parameterization.ParameterizedInstance
                     },
                     KeyStrategy.Only
                 );
@@ -52,9 +52,9 @@ public static class Generation
 
                 
                 var conversion = namedTypeSymbol.GeneratePocoToAttributeValueFactory(
-                    new ConsumerMethodConfiguration($"Update{namedTypeSymbol.Name}AttributeValues")
+                    new MethodConfiguration($"Update{namedTypeSymbol.Name}AttributeValues")
                     {
-                        MethodParameterization = ConsumerMethodConfiguration.Parameterization.ParameterizedInstance
+                        MethodParameterization = MethodConfiguration.Parameterization.ParameterizedInstance
                     },
                     KeyStrategy.Ignore
                 );

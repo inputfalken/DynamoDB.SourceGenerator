@@ -8,7 +8,7 @@ public static class CodeGenerationExtensions
     /// <summary>
     ///     Generated attribute value conversion.
     /// </summary>
-    public static SourceGeneratedCode GeneratePocoToAttributeValueFactory(this ITypeSymbol type, in ConsumerMethodConfiguration methodConfiguration, KeyStrategy keyStrategy= KeyStrategy.Include)
+    public static SourceGeneratedCode GeneratePocoToAttributeValueFactory(this ITypeSymbol type, in MethodConfiguration methodConfiguration, KeyStrategy keyStrategy= KeyStrategy.Include)
     {
         return new Generation(in type)
             .CreateAttributeValueFactory(in methodConfiguration, keyStrategy);
