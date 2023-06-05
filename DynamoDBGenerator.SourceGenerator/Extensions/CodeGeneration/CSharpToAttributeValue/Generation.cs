@@ -91,7 +91,7 @@ public class Generation
         var enumerable = Conversion.ConversionMethods(
                 _rootTypeSymbol,
                 StaticExpressionAttributeNamesFactory,
-                new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability)
+                new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default)
             )
             .Select(static x => x.Code);
 
@@ -107,14 +107,13 @@ public class Generation
 
         var rootExpressionAttributeNames = CreateExpressionAttributeNamesClass(_rootTypeSymbol);
         return
-            $@"public {className}.{rootExpressionAttributeNames} Get{_rootTypeSymbol.Name}ExpressionAttribute() => new {className}.{rootExpressionAttributeNames}();
+            $@"public {className}.{rootExpressionAttributeNames} Get{_rootTypeSymbol.Name}ExpressionAttributes() => new {className}.{rootExpressionAttributeNames}(null);
 {@class}
 ";
     }
 
-    private Conversion StaticExpressionAttributeNamesFactory(ITypeSymbol typeSymbol)
+    private static Conversion StaticExpressionAttributeNamesFactory(ITypeSymbol typeSymbol)
     {
-        var isRoot = _rootTypeSymbol.Equals(typeSymbol, SymbolEqualityComparer.Default);
         var dataMembers = typeSymbol.GetDynamoDbProperties()
             .Where(static x => x.IsIgnored is false)
             .Select(x => (IsKnown: x.DataMember.Type.GetKnownType() is not null, DDB: x))
@@ -123,44 +122,33 @@ public class Generation
         var fieldDeclarations = dataMembers.Select(x =>
             x.IsKnown
                 ? $@"public ExpressionAttribute {x.DDB.DataMember.Name} {{ get; }}"
-                : $@"public {x.DDB.DataMember.Type.Name}ExpressionAttribute {x.DDB.DataMember.Name} {{ get; }}");
-
-        var dictionaryFields = dataMembers
-            .Where(x => x.IsKnown)
-            .Select(x => x.DDB)
-            .Select(x => isRoot
-                ? $@"{{""#{x.AttributeName}"", ""{x.AttributeName}""}}"
-                : $@"{{$""#{{name}}.{x.AttributeName}"", ""{x.AttributeName}""}}"
-            );
-
-        var dictionary = $"new Dictionary<string, string> {{{string.Join(", ", dictionaryFields)}}}";
-        var className = CreateExpressionAttributeNamesClass(typeSymbol);
+                : $@"public {x.DDB.DataMember.Type.Name}ExpressionAttributes {x.DDB.DataMember.Name} {{ get; }}");
 
         var fieldAssignments = dataMembers
             .Select(x =>
             {
-                var assignment = (AssignedBy: x.IsKnown, isRoot) switch
+                var nameNotNull = @$"$""#{{name}}.#{x.DDB.AttributeName}""";
+                var nameNull = @$"$""#{x.DDB.AttributeName}""";
+                var ternaryExpressionName = $"name is null ? {nameNull}: {nameNotNull}";
+                
+                var assignment =  x.IsKnown switch
                 {
-                    (true, true) => $@"{x.DDB.DataMember.Name} = new ExpressionAttribute(""#{x.DDB.AttributeName}"", "":{x.DDB.AttributeName}"");",
-                    (true, false) => $@"{x.DDB.DataMember.Name} = new ExpressionAttribute($""#{{name}}.#{x.DDB.AttributeName}"", "":{x.DDB.AttributeName}"");",
-                    (false, true) =>
-                        $@"{x.DDB.DataMember.Name} = new {x.DDB.DataMember.Type.Name}ExpressionAttribute(""{x.DDB.AttributeName}"");",
-                    (false, false) =>
-                        $@"{x.DDB.DataMember.Name} = new {x.DDB.DataMember.Type.Name}ExpressionAttribute($""#{{name}}.#{x.DDB.AttributeName}"");",
+                    true => $@"{x.DDB.DataMember.Name} = new ExpressionAttribute({ternaryExpressionName}, "":{x.DDB.AttributeName}"");",
+                    false => $@"{x.DDB.DataMember.Name} = new {x.DDB.DataMember.Type.Name}ExpressionAttributes({ternaryExpressionName});",
                 };
-
                 return new Assignment(assignment, x.DDB.DataMember.Type, x.IsKnown is false);
             })
             .ToArray();
 
         var indent = StringExtensions.Indent(2);
-        var constructor = $@"public {className}({(isRoot ? null : "string name")}) : base ({dictionary}) 
+        var className = CreateExpressionAttributeNamesClass(typeSymbol);
+        var constructor = $@"public {className}(string? name)
     {{
         {string.Join($"{Constants.NewLine}{indent}", fieldAssignments.Select(x => x.Value))}
     }}";
         var @class = CodeGenerationExtensions.CreateClass(
             Accessibility.Public,
-            $"{className} : Dictionary<string, string>",
+            $"{className}",
             $@"{constructor}
 {indent}{string.Join($"{Constants.NewLine}{indent}", fieldDeclarations)}",
             0
@@ -170,7 +158,7 @@ public class Generation
 
     private static string CreateExpressionAttributeNamesClass(ITypeSymbol typeSymbol)
     {
-        return $"{typeSymbol.Name}ExpressionAttribute";
+        return $"{typeSymbol.Name}ExpressionAttributes";
     }
 
 

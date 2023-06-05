@@ -1,4 +1,5 @@
-﻿using DynamoDBGenerator;
+﻿using Amazon.DynamoDBv2.Model;
+using DynamoDBGenerator;
 
 namespace SampleApp;
 
@@ -19,23 +20,15 @@ internal static class Program
             Street = "WilleStreet"
         });
         
-        foreach (var keyValuePair in updateAddress)
-        {
-            Console.WriteLine(keyValuePair);
-        }
-
-        foreach (var kv in updateAddress.PostalCode)
-        {
-            Console.WriteLine(kv);
-        }
     }
 }
 
 [DynamoDBUpdateOperation(typeof(Address))]
 public partial class Repository
 {
-    public Address_ExpressionAttribute.AddressExpressionAttribute UpdateAddress(Address address)
-    {
-        return GetAddressExpressionAttribute();
+    public Address_ExpressionAttribute.AddressExpressionAttributes UpdateAddress(Address address)
+    { 
+        new UpdateItemRequest(){ExpressionAttributeValues = }
+        return GetAddressExpressionAttributes();
     }
 }

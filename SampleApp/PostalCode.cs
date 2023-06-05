@@ -12,4 +12,6 @@ public partial class PostalCode
     public string Town { get; set; } = null!;
     public KeyValuePair<string, int> String { get; set; }
 
+    public Address Address { get; set; }
+
 }
