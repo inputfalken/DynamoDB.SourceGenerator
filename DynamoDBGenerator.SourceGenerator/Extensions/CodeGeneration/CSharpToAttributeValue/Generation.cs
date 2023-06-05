@@ -107,12 +107,12 @@ public class Generation
 
         var rootExpressionAttributeNames = CreateExpressionAttributeNamesClass(_rootTypeSymbol);
         return
-            $@"public {className}.{rootExpressionAttributeNames} Get{_rootTypeSymbol.Name}ExpressionAttributes() => new {className}.{rootExpressionAttributeNames}(null);
+            $@"public static {className}.{rootExpressionAttributeNames} Get{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}() => new {className}.{rootExpressionAttributeNames}(null);
 {@class}
 ";
     }
 
-    private static Conversion StaticExpressionAttributeNamesFactory(ITypeSymbol typeSymbol)
+    private Conversion StaticExpressionAttributeNamesFactory(ITypeSymbol typeSymbol)
     {
         var dataMembers = typeSymbol.GetDynamoDbProperties()
             .Where(static x => x.IsIgnored is false)
@@ -121,8 +121,8 @@ public class Generation
 
         var fieldDeclarations = dataMembers.Select(x =>
             x.IsKnown
-                ? $@"public ExpressionAttribute {x.DDB.DataMember.Name} {{ get; }}"
-                : $@"public {x.DDB.DataMember.Type.Name}ExpressionAttributes {x.DDB.DataMember.Name} {{ get; }}");
+                ? $@"public AttributeReference {x.DDB.DataMember.Name} {{ get; }}"
+                : $@"public {CreateExpressionAttributeNamesClass(x.DDB.DataMember.Type)} {x.DDB.DataMember.Name} {{ get; }}");
 
         var fieldAssignments = dataMembers
             .Select(x =>
@@ -130,11 +130,13 @@ public class Generation
                 var nameNotNull = @$"$""#{{name}}.#{x.DDB.AttributeName}""";
                 var nameNull = @$"$""#{x.DDB.AttributeName}""";
                 var ternaryExpressionName = $"name is null ? {nameNull}: {nameNotNull}";
-                
-                var assignment =  x.IsKnown switch
+
+                var assignment = x.IsKnown switch
                 {
-                    true => $@"{x.DDB.DataMember.Name} = new ExpressionAttribute({ternaryExpressionName}, "":{x.DDB.AttributeName}"");",
-                    false => $@"{x.DDB.DataMember.Name} = new {x.DDB.DataMember.Type.Name}ExpressionAttributes({ternaryExpressionName});",
+                    true =>
+                        $@"{x.DDB.DataMember.Name} = new AttributeReference({ternaryExpressionName}, "":{x.DDB.AttributeName}"");",
+                    false =>
+                        $@"{x.DDB.DataMember.Name} = new {CreateExpressionAttributeNamesClass(x.DDB.DataMember.Type)}({ternaryExpressionName});",
                 };
                 return new Assignment(assignment, x.DDB.DataMember.Type, x.IsKnown is false);
             })
@@ -146,19 +148,31 @@ public class Generation
     {{
         {string.Join($"{Constants.NewLine}{indent}", fieldAssignments.Select(x => x.Value))}
     }}";
+
+        var yieldReturns = dataMembers.Select(x =>
+        {
+            return x.IsKnown switch
+            {
+                true =>
+                    $@"yield return new KeyValuePair<string, string>({x.DDB.DataMember.Name}.Name, ""{x.DDB.AttributeName}"");",
+                false => $"foreach (var x in {x.DDB.DataMember.Name}) {{ yield return x; }}"
+            };
+        });
         var @class = CodeGenerationExtensions.CreateClass(
             Accessibility.Public,
-            $"{className}",
+            $"{className} : AttributeReferences",
             $@"{constructor}
-{indent}{string.Join($"{Constants.NewLine}{indent}", fieldDeclarations)}",
+{indent}{string.Join($"{Constants.NewLine}{indent}", fieldDeclarations)}
+protected override IEnumerable<KeyValuePair<string, string>> ToExpressionAttributeNameEnumerable()
+{{
+        
+{string.Join(Constants.NewLine, yieldReturns)}
+
+}}
+",
             0
         );
         return new Conversion(@class, fieldAssignments.Where(x => x.HasExternalDependency));
-    }
-
-    private static string CreateExpressionAttributeNamesClass(ITypeSymbol typeSymbol)
-    {
-        return $"{typeSymbol.Name}ExpressionAttributes";
     }
 
 
@@ -367,8 +381,14 @@ public class Generation
             typeSymbol.ToExternalDependencyAssignment($"M = {CreateMethodName(typeSymbol)}({accessPattern})");
     }
 
+    private string CreateExpressionAttributeNamesClass(ITypeSymbol typeSymbol)
+    {
+        return $"{typeSymbol.Name}AttributeReferences";
+    }
+
     private readonly IDictionary<ITypeSymbol, string> _methodNameCache =
         new Dictionary<ITypeSymbol, string>(SymbolEqualityComparer.IncludeNullability);
+
 
     private string CreateMethodName(ITypeSymbol typeSymbol)
     {
