@@ -119,10 +119,16 @@ public class Generation
             .Select(x => (IsKnown: x.DataMember.Type.GetKnownType() is not null, DDB: x))
             .ToArray();
 
-        var fieldDeclarations = dataMembers.Select(x =>
+        var lazyFieldDeclarations = dataMembers.Select(x =>
             x.IsKnown
-                ? $@"public AttributeReference {x.DDB.DataMember.Name} {{ get; }}"
-                : $@"public {CreateExpressionAttributeNamesClass(x.DDB.DataMember.Type)} {x.DDB.DataMember.Name} {{ get; }}");
+                ? $@"private readonly Lazy<AttributeReference> _{x.DDB.DataMember.Name};"
+                : $@"private readonly Lazy<{CreateExpressionAttributeNamesClass(x.DDB.DataMember.Type)}> _{x.DDB.DataMember.Name};");
+
+        var fieldDeclarations = dataMembers.Select(x =>
+                x.IsKnown
+                    ? $@"public AttributeReference {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;"
+                    : $@"public {CreateExpressionAttributeNamesClass(x.DDB.DataMember.Type)} {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;")
+            .Concat(lazyFieldDeclarations);
 
         var fieldAssignments = dataMembers
             .Select(x =>
@@ -131,13 +137,18 @@ public class Generation
                 var nameNull = @$"$""#{x.DDB.AttributeName}""";
                 var ternaryExpressionName = $"name is null ? {nameNull}: {nameNotNull}";
 
-                var assignment = x.IsKnown switch
+
+                string assignment;
+                if (x.IsKnown)
+                    assignment =
+                        $@"_{x.DDB.DataMember.Name} = new Lazy<AttributeReference>(() => new AttributeReference({ternaryExpressionName}, "":{x.DDB.AttributeName}""));";
+                else
                 {
-                    true =>
-                        $@"{x.DDB.DataMember.Name} = new AttributeReference({ternaryExpressionName}, "":{x.DDB.AttributeName}"");",
-                    false =>
-                        $@"{x.DDB.DataMember.Name} = new {CreateExpressionAttributeNamesClass(x.DDB.DataMember.Type)}({ternaryExpressionName});",
-                };
+                    var name = CreateExpressionAttributeNamesClass(x.DDB.DataMember.Type);
+                    assignment =
+                        $@"_{x.DDB.DataMember.Name} = new Lazy<{name}>(() => new {name}({ternaryExpressionName}));";
+                }
+
                 return new Assignment(assignment, x.DDB.DataMember.Type, x.IsKnown is false);
             })
             .ToArray();
@@ -154,8 +165,8 @@ public class Generation
             return x.IsKnown switch
             {
                 true =>
-                    $@"yield return new KeyValuePair<string, string>({x.DDB.DataMember.Name}.Name, ""{x.DDB.AttributeName}"");",
-                false => $"foreach (var x in {x.DDB.DataMember.Name}) {{ yield return x; }}"
+                    $@"if (_{x.DDB.DataMember.Name}.IsValueCreated) yield return new KeyValuePair<string, string>({x.DDB.DataMember.Name}.Name, ""{x.DDB.AttributeName}"");",
+                false => $"if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in {x.DDB.DataMember.Name}) {{ yield return x; }}"
             };
         });
         var @class = CodeGenerationExtensions.CreateClass(
@@ -381,7 +392,7 @@ protected override IEnumerable<KeyValuePair<string, string>> ToExpressionAttribu
             typeSymbol.ToExternalDependencyAssignment($"M = {CreateMethodName(typeSymbol)}({accessPattern})");
     }
 
-    private string CreateExpressionAttributeNamesClass(ITypeSymbol typeSymbol)
+    private static string CreateExpressionAttributeNamesClass(ITypeSymbol typeSymbol)
     {
         return $"{typeSymbol.Name}AttributeReferences";
     }

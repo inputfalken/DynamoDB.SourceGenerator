@@ -19,16 +19,27 @@ internal static class Program
             },
             Street = "WilleStreet"
         });
-        
+
+
+        var test = updateAddress.PostalCode.Address.PostalCode.Address.PostalCode.ZipCode.Name;
+        var f=  updateAddress.ToDictionary(x => x.Key, x => x.Value);
+
+        foreach (var keyValuePair in f)
+        {
+            Console.WriteLine(keyValuePair);
+        }
     }
 }
 
+public class UpdateAddressStreet
+{
+    
+}
 [DynamoDBUpdateOperation(typeof(Address))]
 public partial class Repository
 {
-    public Address_ExpressionAttribute.AddressExpressionAttributes UpdateAddress(Address address)
-    { 
-        new UpdateItemRequest(){ExpressionAttributeValues = }
-        return GetAddressExpressionAttributes();
+    public Address_ExpressionAttribute.AddressAttributeReferences UpdateAddress(Address address)
+    {
+        return GetAddressAttributeReferences();
     }
 }

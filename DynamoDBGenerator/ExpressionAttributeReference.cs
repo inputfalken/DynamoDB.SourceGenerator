@@ -5,7 +5,13 @@ namespace DynamoDBGenerator;
 
 public record AttributeReference(string Name, string Value)
 {
+    /// <summary>
+    /// Dynamodb column reference.
+    /// </summary>
     public string Name { get; } = Name;
+    /// <summary>
+    /// update value provided in execution.
+    /// </summary>
     public string Value { get; } = Value;
 }
 
