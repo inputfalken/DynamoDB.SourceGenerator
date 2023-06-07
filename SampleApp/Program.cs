@@ -1,4 +1,5 @@
-﻿using Amazon.DynamoDBv2.Model;
+﻿using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator;
 
 namespace SampleApp;
@@ -7,9 +8,11 @@ internal static class Program
 {
     public static void Main()
     {
-        new Repository().UpdateStreetAndZipCode(new PersonEntity()
+        new Repository().UpdatePerson(new PersonEntity()
         {
             Id = "Abc",
+            Firstname = "John",
+            Lastname = "Doe",
             Address = new Address()
             {
                 Id = "SomeId",
@@ -26,35 +29,20 @@ internal static class Program
 [DynamoDBUpdateOperation(typeof(PersonEntity))]
 public partial class Repository
 {
-    public void UpdateStreetAndZipCode(PersonEntity address)
+    public void UpdatePerson(PersonEntity person)
     {
-        var attributeReferences = GetPersonEntityAttributeReferences();
+        var attributeReferences =
+            CreatePersonEntityUpdateItemRequest(person, "TableName", x => $"{x.Firstname.Name} = {x.Firstname.Value}");
 
+        foreach (var keyValuePair in attributeReferences.Key)
+            Console.WriteLine($"Keys: {keyValuePair}");
 
-        var zipcodeReference = attributeReferences.Address.PostalCode.ZipCode;
-        var streetReference = attributeReferences.Address.Street;
-        var updateExpression = $"{streetReference.Name} = {streetReference.Value} & {zipcodeReference.Name} = {zipcodeReference.Value}";
+        foreach (var keyValuePair in attributeReferences.ExpressionAttributeValues)
+            Console.WriteLine($"Values: {keyValuePair}");
 
-        var updateRequest = new UpdateItemRequest()
-        {
-            UpdateExpression = updateExpression,
-            Key = UpdatePersonEntityAttributeValueKeys(address),
-            ExpressionAttributeNames = attributeReferences.ToExpressionAttributeNameEnumerable()
-                .ToDictionary(x => x.Key, x => x.Value),
-            ExpressionAttributeValues = attributeReferences.ToExpressionAttributeValueEnumerable(address)
-                .ToDictionary(x => x.Key, x => x.Value),
-        };
+        foreach (var keyValuePair in attributeReferences.ExpressionAttributeNames)
+            Console.WriteLine($"Names: {keyValuePair}");
 
-        foreach (var val in updateRequest.ExpressionAttributeNames)
-        {
-            Console.WriteLine(val);
-        }
-
-        foreach (var val in updateRequest.ExpressionAttributeValues)
-        {
-            Console.WriteLine(val);
-        }
-
-        Console.WriteLine(updateExpression);
+        Console.WriteLine($"UpdateExpression: {attributeReferences.UpdateExpression}");
     }
 }

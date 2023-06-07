@@ -107,7 +107,20 @@ public class Generation
 
         var rootExpressionAttributeNames = CreateExpressionAttributeNamesClass(_rootTypeSymbol);
         return
-            $@"public static {className}.{rootExpressionAttributeNames} Get{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}() => new {className}.{rootExpressionAttributeNames}(null);
+            $@"public UpdateItemRequest Create{_rootTypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}UpdateItemRequest({_rootTypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)} entity,string tableName, Func<{className}.{rootExpressionAttributeNames}, string> updateExpressionSelector) 
+{{
+var expressionSelectorArg = new {className}.{rootExpressionAttributeNames}(null);
+var attributeReferences = expressionSelectorArg as {AttributeInterfaceName(_rootTypeSymbol)};
+return new UpdateItemRequest() 
+    {{ 
+        UpdateExpression = updateExpressionSelector(expressionSelectorArg),
+        TableName = tableName,
+        ExpressionAttributeNames = attributeReferences.{nameof(IAttributeReferences<object>.ToExpressionAttributeNameEnumerable)}().ToDictionary(x => x.Key, x => x.Value),
+        ExpressionAttributeValues = attributeReferences.{nameof(IAttributeReferences<object>.ToExpressionAttributeValueEnumerable)}(entity).ToDictionary(x => x.Key, x => x.Value),
+        Key = UpdatePersonEntityAttributeValueKeys(entity)
+        
+    }};
+}}
 {@class}
 ";
     }
@@ -115,8 +128,8 @@ public class Generation
     private Conversion StaticExpressionAttributeNamesFactory(ITypeSymbol typeSymbol)
     {
         const string valueEnumerableMethodName =
-            nameof(AttributeReferences<object>.ToExpressionAttributeValueEnumerable);
-        const string nameEnumerableMethodName = nameof(AttributeReferences<object>.ToExpressionAttributeNameEnumerable);
+            nameof(IAttributeReferences<object>.ToExpressionAttributeValueEnumerable);
+        const string nameEnumerableMethodName = nameof(IAttributeReferences<object>.ToExpressionAttributeNameEnumerable);
 
         var dataMembers = typeSymbol.GetDynamoDbProperties()
             .Where(static x => x.IsIgnored is false)
@@ -167,28 +180,29 @@ public class Generation
 
         var expressionAttributeNameYields = dataMembers.Select(x => x.IsKnown
             ? $@"if (_{x.DDB.DataMember.Name}.IsValueCreated) yield return new KeyValuePair<string, string>({x.DDB.DataMember.Name}.Name, ""{x.DDB.AttributeName}"");"
-            : $"if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in {x.DDB.DataMember.Name}.{nameEnumerableMethodName}()) {{ yield return x; }}");
+            : $"if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {AttributeInterfaceName(x.DDB.DataMember.Type)}).{nameEnumerableMethodName}()) {{ yield return x; }}");
         var expressionAttributeValueYields = dataMembers
             .Select(x =>
             {
                 var accessPattern = $"entity.{x.DDB.DataMember.Name}";
                 return x.IsKnown
                     ? $@"if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new KeyValuePair<string, AttributeValue>({x.DDB.DataMember.Name}.Value, {AttributeValueAssignment(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}").ToAttributeValue()});")}"
-                    : $"if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in {x.DDB.DataMember.Name}.{valueEnumerableMethodName}({accessPattern})) {{ yield return x; }}")}";
+                    : $"if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {AttributeInterfaceName(x.DDB.DataMember.Type)}).{valueEnumerableMethodName}({accessPattern})) {{ yield return x; }}")}";
             });
 
+        var interfaceName = AttributeInterfaceName(typeSymbol);
         var @class = CodeGenerationExtensions.CreateClass(
             Accessibility.Public,
-            $"{className} : AttributeReferences<{typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}>",
+            $"{className} : {interfaceName}",
             $@"{constructor}
 {indent}{string.Join($"{Constants.NewLine}{indent}", fieldDeclarations)}
-public override IEnumerable<KeyValuePair<string, string>> {nameEnumerableMethodName}()
+IEnumerable<KeyValuePair<string, string>> {interfaceName}.{nameEnumerableMethodName}()
 {{
         
 {string.Join(Constants.NewLine, expressionAttributeNameYields)}
 
 }}
-public override IEnumerable<KeyValuePair<string, AttributeValue>> {valueEnumerableMethodName}({typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)} entity)
+IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{valueEnumerableMethodName}({typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)} entity)
 {{
 {string.Join(Constants.NewLine, expressionAttributeValueYields)}
 }}
@@ -196,7 +210,12 @@ public override IEnumerable<KeyValuePair<string, AttributeValue>> {valueEnumerab
             0
         );
         return new Conversion(@class, fieldAssignments.Where(x => x.HasExternalDependency));
+
     }
+        private static string AttributeInterfaceName(ITypeSymbol typeSymbol)
+        {
+            return $"IAttributeReferences<{typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}>";
+        }
 
 
     private static string CreateMethod(
@@ -256,7 +275,7 @@ public override IEnumerable<KeyValuePair<string, AttributeValue>> {valueEnumerab
         );
 
         IEnumerable<(string dictionaryPopulation, string capacityTernary, Assignment assignment)> GetAssignments(
-            ITypeSymbol typeSymbol,
+            INamespaceOrTypeSymbol typeSymbol,
             KeyStrategy strategy
         )
         {
@@ -265,7 +284,7 @@ public override IEnumerable<KeyValuePair<string, AttributeValue>> {valueEnumerab
                 KeyStrategy.Ignore => typeSymbol.GetDynamoDbProperties()
                     .Where(static x => x is {IsRangeKey: false, IsHashKey: false}),
                 KeyStrategy.Only => typeSymbol.GetDynamoDbProperties()
-                    .Where(static x => x is {IsRangeKey: true, IsHashKey: true}),
+                    .Where(static x => x.IsHashKey || x.IsRangeKey),
                 KeyStrategy.Include => typeSymbol.GetDynamoDbProperties(),
                 _ => throw new ArgumentOutOfRangeException()
             };
