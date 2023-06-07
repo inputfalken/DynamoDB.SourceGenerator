@@ -7,39 +7,54 @@ internal static class Program
 {
     public static void Main()
     {
-        var repository = new Repository();
-
-        var updateAddress = repository.UpdateAddress(new Address()
+        new Repository().UpdateStreetAndZipCode(new PersonEntity()
         {
-            Id = "123",
-            PostalCode = new PostalCode()
+            Id = "Abc",
+            Address = new Address()
             {
-                ZipCode = "1337",
-                Town = "WilleTown"
-            },
-            Street = "WilleStreet"
+                Id = "SomeId",
+                PostalCode = new PostalCode()
+                {
+                    ZipCode = "123"
+                },
+                Street = "Abc"
+            }
         });
-
-
-        var test = updateAddress.PostalCode.Address.PostalCode.Address.PostalCode.ZipCode.Name;
-        var f=  updateAddress.ToDictionary(x => x.Key, x => x.Value);
-
-        foreach (var keyValuePair in f)
-        {
-            Console.WriteLine(keyValuePair);
-        }
     }
 }
 
-public class UpdateAddressStreet
-{
-    
-}
-[DynamoDBUpdateOperation(typeof(Address))]
+[DynamoDBUpdateOperation(typeof(PersonEntity))]
 public partial class Repository
 {
-    public Address_ExpressionAttribute.AddressAttributeReferences UpdateAddress(Address address)
+    public void UpdateStreetAndZipCode(PersonEntity address)
     {
-        return GetAddressAttributeReferences();
+        var attributeReferences = GetPersonEntityAttributeReferences();
+
+
+        var zipcodeReference = attributeReferences.Address.PostalCode.ZipCode;
+        var streetReference = attributeReferences.Address.Street;
+        var updateExpression = $"{streetReference.Name} = {streetReference.Value} & {zipcodeReference.Name} = {zipcodeReference.Value}";
+
+        var updateRequest = new UpdateItemRequest()
+        {
+            UpdateExpression = updateExpression,
+            Key = UpdatePersonEntityAttributeValueKeys(address),
+            ExpressionAttributeNames = attributeReferences.ToExpressionAttributeNameEnumerable()
+                .ToDictionary(x => x.Key, x => x.Value),
+            ExpressionAttributeValues = attributeReferences.ToExpressionAttributeValueEnumerable(address)
+                .ToDictionary(x => x.Key, x => x.Value),
+        };
+
+        foreach (var val in updateRequest.ExpressionAttributeNames)
+        {
+            Console.WriteLine(val);
+        }
+
+        foreach (var val in updateRequest.ExpressionAttributeValues)
+        {
+            Console.WriteLine(val);
+        }
+
+        Console.WriteLine(updateExpression);
     }
 }

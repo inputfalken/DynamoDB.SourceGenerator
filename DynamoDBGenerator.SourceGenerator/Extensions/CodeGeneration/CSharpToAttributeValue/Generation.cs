@@ -114,6 +114,10 @@ public class Generation
 
     private Conversion StaticExpressionAttributeNamesFactory(ITypeSymbol typeSymbol)
     {
+        const string valueEnumerableMethodName =
+            nameof(AttributeReferences<object>.ToExpressionAttributeValueEnumerable);
+        const string nameEnumerableMethodName = nameof(AttributeReferences<object>.ToExpressionAttributeNameEnumerable);
+
         var dataMembers = typeSymbol.GetDynamoDbProperties()
             .Where(static x => x.IsIgnored is false)
             .Select(x => (IsKnown: x.DataMember.Type.GetKnownType() is not null, DDB: x))
@@ -133,18 +137,19 @@ public class Generation
         var fieldAssignments = dataMembers
             .Select(x =>
             {
-                var nameNotNull = @$"$""#{{name}}.#{x.DDB.AttributeName}""";
-                var nameNull = @$"$""#{x.DDB.AttributeName}""";
-                var ternaryExpressionName = $"name is null ? {nameNull}: {nameNotNull}";
-
-
                 string assignment;
                 if (x.IsKnown)
+                {
+                    var ternaryExpressionName =
+                        $"name is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{name}}.#{x.DDB.AttributeName}"""}";
                     assignment =
                         $@"_{x.DDB.DataMember.Name} = new Lazy<AttributeReference>(() => new AttributeReference({ternaryExpressionName}, "":{x.DDB.AttributeName}""));";
+                }
                 else
                 {
                     var name = CreateExpressionAttributeNamesClass(x.DDB.DataMember.Type);
+                    var ternaryExpressionName =
+                        $"name is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{name}}.#{x.DDB.AttributeName}"""}";
                     assignment =
                         $@"_{x.DDB.DataMember.Name} = new Lazy<{name}>(() => new {name}({ternaryExpressionName}));";
                 }
@@ -160,25 +165,32 @@ public class Generation
         {string.Join($"{Constants.NewLine}{indent}", fieldAssignments.Select(x => x.Value))}
     }}";
 
-        var yieldReturns = dataMembers.Select(x =>
-        {
-            return x.IsKnown switch
+        var expressionAttributeNameYields = dataMembers.Select(x => x.IsKnown
+            ? $@"if (_{x.DDB.DataMember.Name}.IsValueCreated) yield return new KeyValuePair<string, string>({x.DDB.DataMember.Name}.Name, ""{x.DDB.AttributeName}"");"
+            : $"if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in {x.DDB.DataMember.Name}.{nameEnumerableMethodName}()) {{ yield return x; }}");
+        var expressionAttributeValueYields = dataMembers
+            .Select(x =>
             {
-                true =>
-                    $@"if (_{x.DDB.DataMember.Name}.IsValueCreated) yield return new KeyValuePair<string, string>({x.DDB.DataMember.Name}.Name, ""{x.DDB.AttributeName}"");",
-                false => $"if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in {x.DDB.DataMember.Name}) {{ yield return x; }}"
-            };
-        });
+                var accessPattern = $"entity.{x.DDB.DataMember.Name}";
+                return x.IsKnown
+                    ? $@"if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new KeyValuePair<string, AttributeValue>({x.DDB.DataMember.Name}.Value, {AttributeValueAssignment(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}").ToAttributeValue()});")}"
+                    : $"if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in {x.DDB.DataMember.Name}.{valueEnumerableMethodName}({accessPattern})) {{ yield return x; }}")}";
+            });
+
         var @class = CodeGenerationExtensions.CreateClass(
             Accessibility.Public,
-            $"{className} : AttributeReferences",
+            $"{className} : AttributeReferences<{typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}>",
             $@"{constructor}
 {indent}{string.Join($"{Constants.NewLine}{indent}", fieldDeclarations)}
-protected override IEnumerable<KeyValuePair<string, string>> ToExpressionAttributeNameEnumerable()
+public override IEnumerable<KeyValuePair<string, string>> {nameEnumerableMethodName}()
 {{
         
-{string.Join(Constants.NewLine, yieldReturns)}
+{string.Join(Constants.NewLine, expressionAttributeNameYields)}
 
+}}
+public override IEnumerable<KeyValuePair<string, AttributeValue>> {valueEnumerableMethodName}({typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)} entity)
+{{
+{string.Join(Constants.NewLine, expressionAttributeValueYields)}
 }}
 ",
             0
