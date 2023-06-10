@@ -17,17 +17,8 @@ public record AttributeReference(string Name, string Value)
     public string Value { get; } = Value;
 }
 
-public interface IDynamoDbOperation<in TEntity>
+public interface IExpressionAttributeReferences<in TEntity>
 {
-    public Dictionary<string, string> BuildAttributeNames();
-    public Dictionary<string, AttributeValue> BuildAttributeValues(TEntity entity);
-    public Dictionary<string, AttributeValue> BuildKeys(TEntity entity);
-
-    public string Expression { get; }
-}
-
-public interface IAttributeReferences<in TEntity>
-{
-    public IEnumerable<KeyValuePair<string, string>> ToExpressionAttributeNameEnumerable();
-    public IEnumerable<KeyValuePair<string, AttributeValue>> ToExpressionAttributeValueEnumerable(TEntity entity);
+    public IEnumerable<KeyValuePair<string, string>> AccessedAttributeNames();
+    public IEnumerable<KeyValuePair<string, AttributeValue>> AccessedAttributeValues(TEntity entity);
 }

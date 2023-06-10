@@ -90,7 +90,7 @@ public class Generation
     {
         var enumerable = Conversion.ConversionMethods(
                 _rootTypeSymbol,
-                StaticExpressionAttributeNamesFactory,
+                ExpressionAttributeReferencesClassGenerator,
                 new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default)
             )
             .Select(static x => x.Code);
@@ -115,8 +115,8 @@ return new UpdateItemRequest()
     {{ 
         UpdateExpression = updateExpressionSelector(expressionSelectorArg),
         TableName = tableName,
-        ExpressionAttributeNames = attributeReferences.{nameof(IAttributeReferences<object>.ToExpressionAttributeNameEnumerable)}().ToDictionary(x => x.Key, x => x.Value),
-        ExpressionAttributeValues = attributeReferences.{nameof(IAttributeReferences<object>.ToExpressionAttributeValueEnumerable)}(entity).ToDictionary(x => x.Key, x => x.Value),
+        ExpressionAttributeNames = attributeReferences.{nameof(IExpressionAttributeReferences<object>.AccessedAttributeNames)}().ToDictionary(x => x.Key, x => x.Value),
+        ExpressionAttributeValues = attributeReferences.{nameof(IExpressionAttributeReferences<object>.AccessedAttributeValues)}(entity).ToDictionary(x => x.Key, x => x.Value),
         Key = UpdatePersonEntityAttributeValueKeys(entity)
         
     }};
@@ -125,30 +125,31 @@ return new UpdateItemRequest()
 ";
     }
 
-    private Conversion StaticExpressionAttributeNamesFactory(ITypeSymbol typeSymbol)
+    private Conversion ExpressionAttributeReferencesClassGenerator(ITypeSymbol typeSymbol)
     {
         const string valueEnumerableMethodName =
-            nameof(IAttributeReferences<object>.ToExpressionAttributeValueEnumerable);
-        const string nameEnumerableMethodName = nameof(IAttributeReferences<object>.ToExpressionAttributeNameEnumerable);
+            nameof(IExpressionAttributeReferences<object>.AccessedAttributeValues);
+        const string nameEnumerableMethodName = nameof(IExpressionAttributeReferences<object>.AccessedAttributeNames);
 
-        var dataMembers = typeSymbol.GetDynamoDbProperties()
+        var dataMembers = typeSymbol
+            .GetDynamoDbProperties()
             .Where(static x => x.IsIgnored is false)
-            .Select(x => (IsKnown: x.DataMember.Type.GetKnownType() is not null, DDB: x))
+            .Select(static x => (IsKnown: x.DataMember.Type.GetKnownType() is not null, DDB: x))
             .ToArray();
 
-        var lazyFieldDeclarations = dataMembers.Select(x =>
+        var lazyFieldDeclarations = dataMembers.Select(static x =>
             x.IsKnown
                 ? $@"private readonly Lazy<AttributeReference> _{x.DDB.DataMember.Name};"
                 : $@"private readonly Lazy<{CreateExpressionAttributeNamesClass(x.DDB.DataMember.Type)}> _{x.DDB.DataMember.Name};");
 
-        var fieldDeclarations = dataMembers.Select(x =>
+        var fieldDeclarations = dataMembers.Select(static x =>
                 x.IsKnown
                     ? $@"public AttributeReference {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;"
                     : $@"public {CreateExpressionAttributeNamesClass(x.DDB.DataMember.Type)} {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;")
             .Concat(lazyFieldDeclarations);
 
         var fieldAssignments = dataMembers
-            .Select(x =>
+            .Select(static x =>
             {
                 string assignment;
                 if (x.IsKnown)
@@ -178,7 +179,7 @@ return new UpdateItemRequest()
         {string.Join($"{Constants.NewLine}{indent}", fieldAssignments.Select(x => x.Value))}
     }}";
 
-        var expressionAttributeNameYields = dataMembers.Select(x => x.IsKnown
+        var expressionAttributeNameYields = dataMembers.Select(static x => x.IsKnown
             ? $@"if (_{x.DDB.DataMember.Name}.IsValueCreated) yield return new KeyValuePair<string, string>({x.DDB.DataMember.Name}.Name, ""{x.DDB.AttributeName}"");"
             : $"if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {AttributeInterfaceName(x.DDB.DataMember.Type)}).{nameEnumerableMethodName}()) {{ yield return x; }}");
         var expressionAttributeValueYields = dataMembers
@@ -210,12 +211,13 @@ IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{valueEnumerab
             0
         );
         return new Conversion(@class, fieldAssignments.Where(x => x.HasExternalDependency));
-
     }
-        private static string AttributeInterfaceName(ITypeSymbol typeSymbol)
-        {
-            return $"IAttributeReferences<{typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}>";
-        }
+
+    private static string AttributeInterfaceName(ITypeSymbol typeSymbol)
+    {
+        return
+            $"{nameof(IExpressionAttributeReferences<object>)}<{typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}>";
+    }
 
 
     private static string CreateMethod(
