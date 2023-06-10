@@ -137,16 +137,23 @@ return new UpdateItemRequest()
             .Select(static x => (IsKnown: x.DataMember.Type.GetKnownType() is not null, DDB: x))
             .ToArray();
 
-        var lazyFieldDeclarations = dataMembers.Select(static x =>
-            x.IsKnown
-                ? $@"private readonly Lazy<AttributeReference> _{x.DDB.DataMember.Name};"
-                : $@"private readonly Lazy<{CreateExpressionAttributeNamesClass(x.DDB.DataMember.Type)}> _{x.DDB.DataMember.Name};");
+        var fieldDeclarations = dataMembers
+            .SelectMany(static x =>
+            {
+                if (x.IsKnown)
+                    return new[]
+                    {
+                        $@"    private readonly Lazy<AttributeReference> _{x.DDB.DataMember.Name};",
+                        $@"    public AttributeReference {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;"
+                    };
 
-        var fieldDeclarations = dataMembers.Select(static x =>
-                x.IsKnown
-                    ? $@"public AttributeReference {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;"
-                    : $@"public {CreateExpressionAttributeNamesClass(x.DDB.DataMember.Type)} {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;")
-            .Concat(lazyFieldDeclarations);
+                var typeName = CreateExpressionAttributeNamesClass(x.DDB.DataMember.Type);
+                return new[]
+                {
+                    $@"    private readonly Lazy<{typeName}> _{x.DDB.DataMember.Name};",
+                    $@"    public {typeName} {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;"
+                };
+            });
 
         var fieldAssignments = dataMembers
             .Select(static x =>
@@ -157,7 +164,7 @@ return new UpdateItemRequest()
                     var ternaryExpressionName =
                         $"name is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{name}}.#{x.DDB.AttributeName}"""}";
                     assignment =
-                        $@"_{x.DDB.DataMember.Name} = new Lazy<AttributeReference>(() => new AttributeReference({ternaryExpressionName}, "":{x.DDB.AttributeName}""));";
+                        $@"        _{x.DDB.DataMember.Name} = new Lazy<AttributeReference>(() => new AttributeReference({ternaryExpressionName}, "":{x.DDB.AttributeName}""));";
                 }
                 else
                 {
@@ -165,30 +172,29 @@ return new UpdateItemRequest()
                     var ternaryExpressionName =
                         $"name is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{name}}.#{x.DDB.AttributeName}"""}";
                     assignment =
-                        $@"_{x.DDB.DataMember.Name} = new Lazy<{name}>(() => new {name}({ternaryExpressionName}));";
+                        $@"        _{x.DDB.DataMember.Name} = new Lazy<{name}>(() => new {name}({ternaryExpressionName}));";
                 }
 
                 return new Assignment(assignment, x.DDB.DataMember.Type, x.IsKnown is false);
             })
             .ToArray();
 
-        var indent = StringExtensions.Indent(2);
         var className = CreateExpressionAttributeNamesClass(typeSymbol);
         var constructor = $@"public {className}(string? name)
     {{
-        {string.Join($"{Constants.NewLine}{indent}", fieldAssignments.Select(x => x.Value))}
+{string.Join(Constants.NewLine, fieldAssignments.Select(x => x.Value))}
     }}";
 
         var expressionAttributeNameYields = dataMembers.Select(static x => x.IsKnown
-            ? $@"if (_{x.DDB.DataMember.Name}.IsValueCreated) yield return new KeyValuePair<string, string>({x.DDB.DataMember.Name}.Name, ""{x.DDB.AttributeName}"");"
-            : $"if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {AttributeInterfaceName(x.DDB.DataMember.Type)}).{nameEnumerableMethodName}()) {{ yield return x; }}");
+            ? $@"{StringExtensions.Indent(2)}if (_{x.DDB.DataMember.Name}.IsValueCreated) yield return new KeyValuePair<string, string>({x.DDB.DataMember.Name}.Name, ""{x.DDB.AttributeName}"");"
+            : $"{StringExtensions.Indent(2)}if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {AttributeInterfaceName(x.DDB.DataMember.Type)}).{nameEnumerableMethodName}()) {{ yield return x; }}");
         var expressionAttributeValueYields = dataMembers
             .Select(x =>
             {
                 var accessPattern = $"entity.{x.DDB.DataMember.Name}";
                 return x.IsKnown
-                    ? $@"if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new KeyValuePair<string, AttributeValue>({x.DDB.DataMember.Name}.Value, {AttributeValueAssignment(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}").ToAttributeValue()});")}"
-                    : $"if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {AttributeInterfaceName(x.DDB.DataMember.Type)}).{valueEnumerableMethodName}({accessPattern})) {{ yield return x; }}")}";
+                    ? $"{StringExtensions.Indent(2)}if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new KeyValuePair<string, AttributeValue>({x.DDB.DataMember.Name}.Value, {AttributeValueAssignment(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}").ToAttributeValue()});")}"
+                    : $"{StringExtensions.Indent(2)}if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {AttributeInterfaceName(x.DDB.DataMember.Type)}).{valueEnumerableMethodName}({accessPattern})) {{ yield return x; }}")}";
             });
 
         var interfaceName = AttributeInterfaceName(typeSymbol);
@@ -196,18 +202,15 @@ return new UpdateItemRequest()
             Accessibility.Public,
             $"{className} : {interfaceName}",
             $@"{constructor}
-{indent}{string.Join($"{Constants.NewLine}{indent}", fieldDeclarations)}
-IEnumerable<KeyValuePair<string, string>> {interfaceName}.{nameEnumerableMethodName}()
-{{
-        
+{string.Join(Constants.NewLine, fieldDeclarations)}
+    IEnumerable<KeyValuePair<string, string>> {interfaceName}.{nameEnumerableMethodName}()
+    {{
 {string.Join(Constants.NewLine, expressionAttributeNameYields)}
-
-}}
-IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{valueEnumerableMethodName}({typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)} entity)
-{{
+    }}
+    IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{valueEnumerableMethodName}({typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)} entity)
+    {{
 {string.Join(Constants.NewLine, expressionAttributeValueYields)}
-}}
-",
+    }}",
             0
         );
         return new Conversion(@class, fieldAssignments.Where(x => x.HasExternalDependency));
