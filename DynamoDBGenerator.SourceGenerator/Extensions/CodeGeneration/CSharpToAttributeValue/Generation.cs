@@ -188,14 +188,14 @@ return new UpdateItemRequest()
     }}";
 
         var expressionAttributeNameYields = dataMembers.Select(static x => x.IsKnown
-            ? $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) yield return new KeyValuePair<string, string>({x.DDB.DataMember.Name}.Name, ""{x.DDB.AttributeName}"");"
+            ? $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) yield return new KeyValuePair<string, string>({x.DDB.DataMember.Name}.{nameof(AttributeReference.Name)}, ""{x.DDB.AttributeName}"");"
             : $"        if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {AttributeInterfaceName(x.DDB.DataMember.Type)}).{nameEnumerableMethodName}()) {{ yield return x; }}");
         var expressionAttributeValueYields = dataMembers
             .Select(x =>
             {
                 var accessPattern = $"entity.{x.DDB.DataMember.Name}";
                 return x.IsKnown
-                    ? $"        if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new KeyValuePair<string, AttributeValue>({x.DDB.DataMember.Name}.Value, {AttributeValueAssignment(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}").ToAttributeValue()});")}"
+                    ? $"        if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new KeyValuePair<string, AttributeValue>({x.DDB.DataMember.Name}.{nameof(AttributeReference.Value)}, {AttributeValueAssignment(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}").ToAttributeValue()});")}"
                     : $"        if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {AttributeInterfaceName(x.DDB.DataMember.Type)}).{valueEnumerableMethodName}({accessPattern})) {{ yield return x; }}")}";
             });
 
