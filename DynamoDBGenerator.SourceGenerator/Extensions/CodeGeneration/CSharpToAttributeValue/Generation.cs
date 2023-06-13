@@ -99,7 +99,7 @@ public class Generation
 
         var className = $"{_rootTypeSymbol.Name}_ExpressionAttribute";
         var @class = CodeGenerationExtensions.CreateClass(
-            Accessibility.Public,
+            Accessibility.Private,
             className,
             in sourceGeneratedCode,
             indentLevel: 2
@@ -107,7 +107,7 @@ public class Generation
 
         var rootExpressionAttributeNames = CreateExpressionAttributeNamesClass(_rootTypeSymbol);
         return
-            $@"public UpdateItemRequest Create{_rootTypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}UpdateItemRequest({_rootTypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)} entity,string tableName, Func<{className}.{rootExpressionAttributeNames}, string> updateExpressionSelector) 
+            $@"private UpdateItemRequest Create{_rootTypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}UpdateItemRequest({_rootTypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)} entity,string tableName, Func<{className}.{rootExpressionAttributeNames}, string> updateExpressionSelector) 
 {{
 var expressionSelectorArg = new {className}.{rootExpressionAttributeNames}(null);
 var attributeReferences = expressionSelectorArg as {AttributeInterfaceName(_rootTypeSymbol)};
