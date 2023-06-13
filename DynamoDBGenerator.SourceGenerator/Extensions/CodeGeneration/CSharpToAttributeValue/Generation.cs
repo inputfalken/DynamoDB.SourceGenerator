@@ -155,6 +155,8 @@ return new UpdateItemRequest()
                 };
             });
 
+        const string dbConstructorReference = "databaseReference";
+        const string localConstructorReference = "localReference";
         var fieldAssignments = dataMembers
             .Select(static x =>
             {
@@ -162,7 +164,7 @@ return new UpdateItemRequest()
                 if (x.IsKnown)
                 {
                     var ternaryExpressionName =
-                        $"name is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{name}}.#{x.DDB.AttributeName}"""}";
+                        $"{dbConstructorReference} is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{attributeName}}.#{x.DDB.AttributeName}"""}";
                     assignment =
                         $@"        _{x.DDB.DataMember.Name} = new Lazy<AttributeReference>(() => new AttributeReference({ternaryExpressionName}, "":{x.DDB.AttributeName}""));";
                 }
@@ -170,7 +172,7 @@ return new UpdateItemRequest()
                 {
                     var name = CreateExpressionAttributeNamesClass(x.DDB.DataMember.Type);
                     var ternaryExpressionName =
-                        $"name is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{name}}.#{x.DDB.AttributeName}"""}";
+                        $"{dbConstructorReference} is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{attributeName}}.#{x.DDB.AttributeName}"""}";
                     assignment =
                         $@"        _{x.DDB.DataMember.Name} = new Lazy<{name}>(() => new {name}({ternaryExpressionName}));";
                 }
@@ -180,7 +182,7 @@ return new UpdateItemRequest()
             .ToArray();
 
         var className = CreateExpressionAttributeNamesClass(typeSymbol);
-        var constructor = $@"public {className}(string? name)
+        var constructor = $@"public {className}(string? {dbConstructorReference})
     {{
 {string.Join(Constants.NewLine, fieldAssignments.Select(x => x.Value))}
     }}";
