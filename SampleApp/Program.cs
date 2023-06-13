@@ -24,6 +24,7 @@ internal static class Program
             }
         });
     }
+    
 }
 
 [DynamoDBUpdateOperation(typeof(PersonEntity))]

@@ -134,7 +134,7 @@ return new UpdateItemRequest()
         var dataMembers = typeSymbol
             .GetDynamoDbProperties()
             .Where(static x => x.IsIgnored is false)
-            .Select(static x => (IsKnown: x.DataMember.Type.GetKnownType() is not null, DDB: x))
+            .Select(static x => (IsKnown: x.DataMember.Type.GetKnownType() is not null, DDB: x, NameRef: $"_{x.DataMember.Name}NameRef", ValueRef: $"_{x.DataMember.Name}ValueRef"))
             .ToArray();
 
         var fieldDeclarations = dataMembers
@@ -143,8 +143,9 @@ return new UpdateItemRequest()
                 if (x.IsKnown)
                     return new[]
                     {
-                        $@"    private readonly Lazy<AttributeReference> _{x.DDB.DataMember.Name};",
-                        $@"    public AttributeReference {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;"
+                        $@"    private readonly Lazy<string> {x.ValueRef};",
+                        $@"    private readonly Lazy<string> {x.NameRef};",
+                        $@"    public AttributeReference {x.DDB.DataMember.Name} {{ get; }}"
                     };
 
                 var typeName = CreateExpressionAttributeNamesClass(x.DDB.DataMember.Type);
@@ -155,18 +156,20 @@ return new UpdateItemRequest()
                 };
             });
 
-        const string dbConstructorReference = "databaseReference";
-        const string localConstructorReference = "localReference";
+        const string constructorAttributeName = "nameRef";
+        const string constructorAttributeValue = "valueRef";
         var fieldAssignments = dataMembers
             .Select(static x =>
             {
                 string assignment;
                 var ternaryExpressionName =
-                    $"{dbConstructorReference} is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{attributeName}}.#{x.DDB.AttributeName}"""}";
+                    $"{constructorAttributeName} is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{{constructorAttributeName}}}.#{x.DDB.AttributeName}"""}";
                 if (x.IsKnown)
                 {
                     assignment =
-                        $@"        _{x.DDB.DataMember.Name} = new Lazy<AttributeReference>(() => new AttributeReference({ternaryExpressionName}, "":{x.DDB.AttributeName}""));";
+                        $@"        {x.ValueRef} = new Lazy<string>(() => "":{x.DDB.AttributeName}"");
+        {x.NameRef} = new Lazy<string>(() => {ternaryExpressionName});
+        {x.DDB.DataMember.Name} = new AttributeReference(in {x.NameRef}, in {x.ValueRef});";
                 }
                 else
                 {
@@ -180,21 +183,21 @@ return new UpdateItemRequest()
             .ToArray();
 
         var className = CreateExpressionAttributeNamesClass(typeSymbol);
-        var constructor = $@"public {className}(string? {dbConstructorReference})
+        var constructor = $@"public {className}(string? {constructorAttributeName})
     {{
 {string.Join(Constants.NewLine, fieldAssignments.Select(x => x.Value))}
     }}";
 
         var expressionAttributeNameYields = dataMembers.Select(static x => x.IsKnown
-            ? $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) yield return new KeyValuePair<string, string>({x.DDB.DataMember.Name}.{nameof(AttributeReference.Name)}, ""{x.DDB.AttributeName}"");"
-            : $"        if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {AttributeInterfaceName(x.DDB.DataMember.Type)}).{nameEnumerableMethodName}()) {{ yield return x; }}");
+            ? $@"       if ({x.NameRef}.IsValueCreated) yield return new KeyValuePair<string, string>({x.NameRef}.Value, ""{x.DDB.AttributeName}"");"
+            : $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {AttributeInterfaceName(x.DDB.DataMember.Type)}).{nameEnumerableMethodName}()) {{ yield return x; }}");
         var expressionAttributeValueYields = dataMembers
             .Select(x =>
             {
                 var accessPattern = $"entity.{x.DDB.DataMember.Name}";
                 return x.IsKnown
-                    ? $"        if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new KeyValuePair<string, AttributeValue>({x.DDB.DataMember.Name}.{nameof(AttributeReference.Value)}, {AttributeValueAssignment(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}").ToAttributeValue()});")}"
-                    : $"        if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {AttributeInterfaceName(x.DDB.DataMember.Type)}).{valueEnumerableMethodName}({accessPattern})) {{ yield return x; }}")}";
+                    ? $@"       if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new KeyValuePair<string, AttributeValue>({x.ValueRef}.Value, {AttributeValueAssignment(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}").ToAttributeValue()});")}"
+                    : $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {AttributeInterfaceName(x.DDB.DataMember.Type)}).{valueEnumerableMethodName}({accessPattern})) {{ yield return x; }}")}";
             });
 
         var interfaceName = AttributeInterfaceName(typeSymbol);
