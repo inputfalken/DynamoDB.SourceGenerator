@@ -161,18 +161,16 @@ return new UpdateItemRequest()
             .Select(static x =>
             {
                 string assignment;
+                var ternaryExpressionName =
+                    $"{dbConstructorReference} is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{attributeName}}.#{x.DDB.AttributeName}"""}";
                 if (x.IsKnown)
                 {
-                    var ternaryExpressionName =
-                        $"{dbConstructorReference} is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{attributeName}}.#{x.DDB.AttributeName}"""}";
                     assignment =
                         $@"        _{x.DDB.DataMember.Name} = new Lazy<AttributeReference>(() => new AttributeReference({ternaryExpressionName}, "":{x.DDB.AttributeName}""));";
                 }
                 else
                 {
                     var name = CreateExpressionAttributeNamesClass(x.DDB.DataMember.Type);
-                    var ternaryExpressionName =
-                        $"{dbConstructorReference} is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{attributeName}}.#{x.DDB.AttributeName}"""}";
                     assignment =
                         $@"        _{x.DDB.DataMember.Name} = new Lazy<{name}>(() => new {name}({ternaryExpressionName}));";
                 }
