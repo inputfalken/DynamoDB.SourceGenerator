@@ -115,8 +115,8 @@ return new UpdateItemRequest()
     {{ 
         UpdateExpression = updateExpressionSelector(expressionSelectorArg),
         TableName = tableName,
-        ExpressionAttributeNames = attributeReferences.{nameof(IExpressionAttributeReferences<object>.AccessedAttributeNames)}().ToDictionary(x => x.Key, x => x.Value),
-        ExpressionAttributeValues = attributeReferences.{nameof(IExpressionAttributeReferences<object>.AccessedAttributeValues)}(entity).ToDictionary(x => x.Key, x => x.Value),
+        ExpressionAttributeNames = attributeReferences.{nameof(IExpressionAttributeReferences<object>.AccessedNames)}().ToDictionary(x => x.Key, x => x.Value),
+        ExpressionAttributeValues = attributeReferences.{nameof(IExpressionAttributeReferences<object>.AccessedValues)}(entity).ToDictionary(x => x.Key, x => x.Value),
         Key = UpdatePersonEntityAttributeValueKeys(entity)
         
     }};
@@ -128,8 +128,8 @@ return new UpdateItemRequest()
     private Conversion ExpressionAttributeReferencesClassGenerator(ITypeSymbol typeSymbol)
     {
         const string valueEnumerableMethodName =
-            nameof(IExpressionAttributeReferences<object>.AccessedAttributeValues);
-        const string nameEnumerableMethodName = nameof(IExpressionAttributeReferences<object>.AccessedAttributeNames);
+            nameof(IExpressionAttributeReferences<object>.AccessedValues);
+        const string nameEnumerableMethodName = nameof(IExpressionAttributeReferences<object>.AccessedNames);
 
         var dataMembers = typeSymbol
             .GetDynamoDbProperties()

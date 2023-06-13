@@ -23,6 +23,7 @@ internal static class Program
                 Street = "Abc"
             }
         });
+        
     }
     
 }
@@ -33,7 +34,8 @@ public partial class Repository
     public void UpdatePerson(PersonEntity person)
     {
         var attributeReferences =
-            CreatePersonEntityUpdateItemRequest(person, "TableName", x => $"{x.Firstname.Name} = {x.Firstname.Value}");
+            CreatePersonEntityUpdateItemRequest(person, "TableName", x => $"{x.Firstname.Name}.Add({x.Lastname.Value}) ");
+        CreatePersonEntityUpdateItemRequest(person, "", x => x.Firstname.Name);
 
         foreach (var keyValuePair in attributeReferences.Key)
             Console.WriteLine($"Keys: {keyValuePair}");
