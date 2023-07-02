@@ -69,14 +69,14 @@ public class Generation
         var implementInterface = $@"
 {marshalMethods.Code}
 {keysClass}
-{nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<int, int>)}<{_rootTypeSymbol.Name},{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}>.{nameof(IDynamoDbDocument<object, object>.Marshal)}({_rootTypeSymbol.Name} entity) => {marshalMethods.MethodName}(entity);
-{nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<int, int>)}<{_rootTypeSymbol.Name},{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}>.{nameof(IDynamoDbDocument<object, object>.Keys)}({_rootTypeSymbol.Name} entity) => KeysClass.{keysMethod.MethodName}(entity);
-{nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDynamoDbDocument<int, int>)}<{_rootTypeSymbol.Name},{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}>.{nameof(IDynamoDbDocument<object, object>.UpdateExpression)}(Func<{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}, string> selector)
+public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<object, object>.Marshal)}({_rootTypeSymbol.Name} entity) => {marshalMethods.MethodName}(entity);
+public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<object, object>.Keys)}({_rootTypeSymbol.Name} entity) => KeysClass.{keysMethod.MethodName}(entity);
+public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDynamoDbDocument<object, object>.UpdateExpression)}(Func<{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}, string> selector)
 {{
         var reference = new {className}.{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}(null);
         return new {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}>(reference, selector(reference));
 }}
-{nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDynamoDbDocument<int, int>)}<{_rootTypeSymbol.Name},{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}>.{nameof(IDynamoDbDocument<object, object>.ConditionExpression)}(Func<{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}, string> selector)
+public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDynamoDbDocument<object, object>.ConditionExpression)}(Func<{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}, string> selector)
 {{
         var reference = new {className}.{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}(null);
         return new {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}>(reference, selector(reference));
