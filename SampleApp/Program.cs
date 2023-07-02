@@ -8,7 +8,7 @@ internal static class Program
 {
     public static void Main()
     {
-        new Repository().UpdatePerson(new PersonEntity()
+        new PersonEntity()
         {
             Id = "Abc",
             Firstname = "John",
@@ -22,30 +22,14 @@ internal static class Program
                 },
                 Street = "Abc"
             }
-        });
-        
+        };
+
     }
-    
+
 }
 
 [DynamoDBUpdateOperation(typeof(PersonEntity))]
 public partial class Repository
 {
-    public void UpdatePerson(PersonEntity person)
-    {
-        var attributeReferences =
-            CreatePersonEntityUpdateItemRequest(person, "TableName", x => $"{x.Firstname.Name}.Add({x.Lastname.Value}) ");
-        CreatePersonEntityUpdateItemRequest(person, "", x => x.Firstname.Name);
-
-        foreach (var keyValuePair in attributeReferences.Key)
-            Console.WriteLine($"Keys: {keyValuePair}");
-
-        foreach (var keyValuePair in attributeReferences.ExpressionAttributeValues)
-            Console.WriteLine($"Values: {keyValuePair}");
-
-        foreach (var keyValuePair in attributeReferences.ExpressionAttributeNames)
-            Console.WriteLine($"Names: {keyValuePair}");
-
-        Console.WriteLine($"UpdateExpression: {attributeReferences.UpdateExpression}");
-    }
 }
+

@@ -19,11 +19,9 @@ public class Generation
         in MethodConfiguration methodConfiguration,
         KeyStrategy keyStrategy)
     {
-        var className = $"{_rootTypeSymbol.Name}_{methodConfiguration.Name}";
         var consumerMethod = CreateMethod(
             _rootTypeSymbol,
             "Dictionary<string, AttributeValue>",
-            className,
             CreateMethodName(_rootTypeSymbol),
             methodConfiguration
         );
@@ -37,16 +35,9 @@ public class Generation
 
         var sourceGeneratedCode = string.Join(Constants.NewLine, enumerable);
 
-        var @class = CodeGenerationExtensions.CreateClass(
-            Accessibility.Private,
-            in className,
-            in sourceGeneratedCode,
-            indentLevel: 2
-        );
-
         var code = $@"{consumerMethod}
-{@class}";
-        return new SourceGeneratedCode(code, className, methodConfiguration.Name);
+{sourceGeneratedCode}";
+        return new SourceGeneratedCode(code, "nop", methodConfiguration.Name);
     }
 
     // TODO come up with a solution to make the following intuitive 
@@ -88,9 +79,10 @@ public class Generation
     //            },
     public string CreateExpressionAttributeNames()
     {
+        var i = 0;
         var enumerable = Conversion.ConversionMethods(
                 _rootTypeSymbol,
-                ExpressionAttributeReferencesClassGenerator,
+                x => ExpressionAttributeReferencesClassGenerator(x, i++),
                 new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default)
             )
             .Select(static x => x.Code);
@@ -105,31 +97,45 @@ public class Generation
             indentLevel: 2
         );
 
-        var rootExpressionAttributeNames = CreateExpressionAttributeNamesClass(_rootTypeSymbol);
-        return
-            $@"private UpdateItemRequest Create{_rootTypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}UpdateItemRequest({_rootTypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)} entity,string tableName, Func<{className}.{rootExpressionAttributeNames}, string> updateExpressionSelector) 
-{{
-var expressionSelectorArg = new {className}.{rootExpressionAttributeNames}(null);
-var attributeReferences = expressionSelectorArg as {AttributeInterfaceName(_rootTypeSymbol)};
-return new UpdateItemRequest() 
-    {{ 
-        UpdateExpression = updateExpressionSelector(expressionSelectorArg),
-        TableName = tableName,
-        ExpressionAttributeNames = attributeReferences.{nameof(IExpressionAttributeReferences<object>.AccessedNames)}().ToDictionary(x => x.Key, x => x.Value),
-        ExpressionAttributeValues = attributeReferences.{nameof(IExpressionAttributeReferences<object>.AccessedValues)}(entity).ToDictionary(x => x.Key, x => x.Value),
-        Key = UpdatePersonEntityAttributeValueKeys(entity)
-        
-    }};
-}}
-{@class}
-";
+        return $"{@class}";
     }
 
-    private Conversion ExpressionAttributeReferencesClassGenerator(ITypeSymbol typeSymbol)
+    private Conversion ExpressionAttributeReferencesClassGenerator(ITypeSymbol typeSymbol, int iterationCount)
     {
         const string valueEnumerableMethodName =
             nameof(IExpressionAttributeReferences<object>.AccessedValues);
         const string nameEnumerableMethodName = nameof(IExpressionAttributeReferences<object>.AccessedNames);
+
+        string? initialImplementation = null;
+        if (iterationCount is 0 && typeSymbol.Equals(_rootTypeSymbol, SymbolEqualityComparer.Default))
+        {
+
+            var marshalMethods = CreateAttributeValueFactory(new MethodConfiguration($"{typeSymbol.Name}Values")
+            {
+                AccessModifier = Accessibility.Private,
+                MethodParameterization = MethodConfiguration.Parameterization.ParameterizedInstance
+            }, KeyStrategy.Include);
+            var keysMethod = CreateAttributeValueFactory(new MethodConfiguration($"{typeSymbol.Name}Keys")
+            {
+                AccessModifier = Accessibility.Private,
+                MethodParameterization = MethodConfiguration.Parameterization.ParameterizedInstance
+            }, KeyStrategy.Only);
+
+            initialImplementation = $@"
+{marshalMethods.Code}
+{keysMethod.Code}
+public Dictionary<string, AttributeValue>{nameof(IDynamoDbDocument<object, object>.Marshal)}({_rootTypeSymbol.Name} entity) => {marshalMethods.MethodName}(entity);
+public Dictionary<string, AttributeValue>{nameof(IDynamoDbDocument<object, object>.Keys)}({_rootTypeSymbol.Name} entity) => {keysMethod.MethodName}(entity);
+public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDynamoDbDocument<object,object>.UpdateExpression)}(Func<{CreateExpressionAttributeNamesClass(typeSymbol)}, string> selector)
+{{
+        return new {nameof(AttributeExpression<object>)}(({AttributeInterfaceName(typeSymbol)}) this, selector(this));
+}}
+public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDynamoDbDocument<object,object>.ConditionExpression)}(Func<{CreateExpressionAttributeNamesClass(typeSymbol)}, string> selector)
+{{
+        return new {nameof(AttributeExpression<object>)}(({AttributeInterfaceName(typeSymbol)}) this, selector());
+}}
+";
+        }
 
         var dataMembers = typeSymbol
             .GetDynamoDbProperties()
@@ -201,10 +207,13 @@ return new UpdateItemRequest()
             });
 
         var interfaceName = AttributeInterfaceName(typeSymbol);
+        var implementation = iterationCount is 0 ? $"{nameof(IDynamoDbDocument<object, object>)}<{typeSymbol.Name}, {CreateExpressionAttributeNamesClass(typeSymbol)}> {interfaceName}"
+            : interfaceName;
         var @class = CodeGenerationExtensions.CreateClass(
             Accessibility.Public,
-            $"{className} : {interfaceName}",
+            $"{className} : {implementation}",
             $@"{constructor}
+{initialImplementation}
 {string.Join(Constants.NewLine, fieldDeclarations)}
     IEnumerable<KeyValuePair<string, string>> {interfaceName}.{nameEnumerableMethodName}()
     {{
@@ -221,6 +230,7 @@ return new UpdateItemRequest()
 
     private static string AttributeInterfaceName(ITypeSymbol typeSymbol)
     {
+        
         return
             $"{nameof(IExpressionAttributeReferences<object>)}<{typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}>";
     }
@@ -229,7 +239,6 @@ return new UpdateItemRequest()
     private static string CreateMethod(
         ITypeSymbol typeSymbol,
         string returnType,
-        string className,
         string methodName,
         MethodConfiguration config)
     {
@@ -237,14 +246,13 @@ return new UpdateItemRequest()
         var signature = config.MethodParameterization switch
         {
             MethodConfiguration.Parameterization.UnparameterizedInstance =>
-                $"{accessModifier} {returnType} {config.Name}() => {className}.{methodName}(this);",
+                $"{accessModifier} {returnType} {config.Name}() => {methodName}(this);",
             MethodConfiguration.Parameterization.ParameterizedStatic =>
-                $"{accessModifier} static {returnType} {config.Name}({typeSymbol.ToDisplayString()} item) => {className}.{methodName}(item);",
+                $"{accessModifier} static {returnType} {config.Name}({typeSymbol.ToDisplayString()} item) => {methodName}(item);",
             MethodConfiguration.Parameterization.ParameterizedInstance =>
-                $"{accessModifier} {returnType} {config.Name}({typeSymbol.ToDisplayString()} item) => {className}.{methodName}(item);",
+                $"{accessModifier} {returnType} {config.Name}({typeSymbol.ToDisplayString()} item) => {methodName}(item);",
             _ => throw new NotSupportedException($"Config of '{config.MethodParameterization}'.")
         };
-
 
         return $@"/// <summary> 
         ///    Converts <see cref=""{typeSymbol.ToXmlComment()}""/> into a <see cref=""Amazon.DynamoDBv2.Model.AttributeValue""/> representation.

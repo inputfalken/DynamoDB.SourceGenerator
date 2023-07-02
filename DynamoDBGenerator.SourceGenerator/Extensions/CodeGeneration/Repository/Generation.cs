@@ -26,44 +26,9 @@ public static class Generation
             if (namedTypeSymbol is null)
                 continue;
 
+            var f = new CSharpToAttributeValue.Generation(namedTypeSymbol);
 
-            var attributeClassName = typeName.AttributeData.AttributeClass!.Name;
-            if (attributeClassName is nameof(DynamoDBPutOperationAttribute))
-            {
-                var conversion = namedTypeSymbol.GeneratePocoToAttributeValueFactory(
-                    new MethodConfiguration($"Put{namedTypeSymbol.Name}AttributeValues")
-                    {
-                        MethodParameterization = MethodConfiguration.Parameterization.ParameterizedInstance
-                    }
-                );
-                yield return conversion.Code;
-            }
-
-            if (attributeClassName is nameof(DynamoDBUpdateOperationAttribute))
-            {
-                var keys = namedTypeSymbol.GeneratePocoToAttributeValueFactory(
-                    new MethodConfiguration($"Update{namedTypeSymbol.Name}AttributeValueKeys")
-                    {
-                        MethodParameterization = MethodConfiguration.Parameterization.ParameterizedInstance
-                    },
-                    KeyStrategy.Only
-                );
-                yield return keys.Code;
-
-                
-                var conversion = namedTypeSymbol.GeneratePocoToAttributeValueFactory(
-                    new MethodConfiguration($"Update{namedTypeSymbol.Name}AttributeValues")
-                    {
-                        MethodParameterization = MethodConfiguration.Parameterization.ParameterizedInstance
-                    },
-                    KeyStrategy.Ignore
-                );
-                yield return conversion.Code;
-
-                var f = new CSharpToAttributeValue.Generation(namedTypeSymbol);
-
-                yield return f.CreateExpressionAttributeNames();
-            }
+            yield return f.CreateExpressionAttributeNames();
         }
     }
 }
