@@ -24,7 +24,8 @@ internal static class Program
                     ZipCode = "123",
                     Town = "Abc"
                 },
-                Street = "Abc"
+                Street = "Abc",
+                Neighbours = Array.Empty<PersonEntity>()
             }
 
         };
@@ -43,7 +44,7 @@ internal static class Program
 
 }
 
-[DynamoDBUpdateOperation(typeof(PersonEntity))]
+[DynamoDbDocument(typeof(PersonEntity))]
 public partial class Repository
 {
     public Repository()

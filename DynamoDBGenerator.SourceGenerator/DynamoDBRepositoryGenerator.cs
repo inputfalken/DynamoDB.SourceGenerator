@@ -13,46 +13,32 @@ public class DynamoDBRepositoryGenerator : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var putClassDeclarations = context.SyntaxProvider
-            .ForAttributeWithMetadataName(
-                Constants.DynamoDBPutOperationFullName,
-                static (node, _) => node is ClassDeclarationSyntax,
-                static (context, _) => (ClassDeclarationSyntax) context.TargetNode
-            );
-
         var updateClassDeclarations = context.SyntaxProvider
             .ForAttributeWithMetadataName(
-                Constants.DynamoDBUpdateOperationFullName,
+                Constants.DynamoDBDocumentFullname,
                 static (node, _) => node is ClassDeclarationSyntax,
-                static (context, _) => (ClassDeclarationSyntax) context.TargetNode
+                static (context, _) => (ClassDeclarationSyntax)context.TargetNode
             );
 
-
-        var compilationAndClasses = context.CompilationProvider
-            .Combine(putClassDeclarations.Collect())
-            .Combine(updateClassDeclarations.Collect());
-
+        var compilationAndClasses = context.CompilationProvider.Combine(updateClassDeclarations.Collect());
         context.RegisterSourceOutput(compilationAndClasses, Execute);
     }
 
     // https://github.com/dotnet/runtime/blob/4ea93a6be4ea1b084158cf2aed7cac2414f10a2d/src/libraries/System.Text.Json/gen/JsonSourceGenerator.Roslyn4.0.cs
-    private static void Execute(SourceProductionContext context,
-        ((Compilation Left, ImmutableArray<ClassDeclarationSyntax> Right) Left, ImmutableArray<ClassDeclarationSyntax>
-            Right) tuple)
+    private static void Execute(SourceProductionContext context, (Compilation Left, ImmutableArray<ClassDeclarationSyntax> Right) tuple)
     {
-        var ((compilation, putClasses), updateClasses) = tuple;
+        var (compilation, documents) = tuple;
 
-
-        if (putClasses.IsDefaultOrEmpty && updateClasses.IsDefaultOrEmpty)
+        if (documents.IsDefaultOrEmpty)
             return;
 
-        var typeSymbols = compilation.GetTypeSymbols(putClasses.Concat(updateClasses).GetUnique());
-        foreach (var typeSymbol in typeSymbols)
+        foreach (var typeSymbol in compilation.GetTypeSymbols(documents))
         {
             var repository = typeSymbol.CreateRepository(compilation);
             var code = typeSymbol.CreateNamespace(typeSymbol.CreateClass(repository));
             context.AddSource(typeSymbol.Name, code);
         }
     }
+
 
 }

@@ -12,12 +12,9 @@ public class Constants
 
     public const int MaxMethodNameLenght = 511;
 
+
     // ReSharper disable once InconsistentNaming
-    public const string DynamoDBPutOperationFullName =
-        nameof(DynamoDBGenerator) + "." + nameof(DynamoDBPutOperationAttribute);
-    // ReSharper disable once InconsistentNaming
-    public const string DynamoDBUpdateOperationFullName =
-        nameof(DynamoDBGenerator) + "." + nameof(DynamoDBUpdateOperationAttribute);
+    public const string DynamoDBDocumentFullname = nameof(DynamoDBGenerator) + "." + nameof(DynamoDbDocument);
 }
 
 public static class ConstantExtensions

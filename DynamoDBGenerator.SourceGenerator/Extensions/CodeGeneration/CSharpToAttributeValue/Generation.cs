@@ -39,112 +39,69 @@ public class Generation
 
         var code = $@"{consumerMethod}
 {sourceGeneratedCode}";
-        return new SourceGeneratedCode(code,  methodConfiguration.Name);
+        return new SourceGeneratedCode(code, methodConfiguration.Name);
     }
 
-    // TODO come up with a solution to make the following intuitive 
-    // `ConditionExpression = "#S <> :status"`
-    // `UpdateExpression = "SET #S = :status, #MD.#DT = :statusUpdatedAt"`
-    // Perhaps having a class constants for the respective use case.
-    // Like : ExpressionAttribute.Values.{Type}.Status & ExpressionAttribute.Names.{Type}.Status
-    // ExpressionAttribute.Values.UpdateStatus.Status
-    // ExpressionAttribute.Names.UpdateStatus.Status
-    // ExpressionAttribute.Values.UpdateStatus.Metadata.ModifiedAt
-    // ExpressionAttribute.Names.UpdateStatus.Metadata.ModifiedAt
-
-    // Or perhaps  pass a custom generated class for the ExpressionAttribute
-    // UpdateStatusExpressionAttribute expressionAttributes = GetExpressionAttributes();  
-    // expressionAttributes.Value.Status;
-    // expressionAttributes.Name.Status;
-    // expressionAttributes.Value.Status.Metadata.ModifiedAt;
-    // expressionAttributes.Name.Status.Metadata.ModifiedAt;
-
-    // TODO create a method that can generate the following 
-    //        ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-    //        {
-    //            {":status", new AttributeValue {S = determinedReplacement.Status}},
-    //            {":statusUpdatedAt", new AttributeValue {S = DateTimeOffset.UtcNow.ToIso8601()}}
-    //        },
-    public string CreateExpressionAttributeValues()
-    {
-        throw new NotImplementedException();
-    }
-
-
-    // TODO create a method that can generate the following 
-    //        ExpressionAttributeNames =
-    //            new Dictionary<string, string>
-    //            {
-    //                {"#S", nameof(ReplacementEntity.Status)},
-    //                {"#DT", nameof(ReplacementEntity.Metadata.StatusModifiedAt)},
-    //                {"#MD", nameof(ReplacementEntity.Metadata)},
-    //            },
     public string CreateExpressionAttributeNames()
     {
-        var i = 0;
         var enumerable = Conversion.ConversionMethods(
                 _rootTypeSymbol,
-                x => ExpressionAttributeReferencesClassGenerator(x, i++),
+                ExpressionAttributeReferencesClassGenerator,
                 new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default)
             )
             .Select(static x => x.Code);
 
-        var sourceGeneratedCode = string.Join(Constants.NewLine, enumerable);
+        var className = $"{_rootTypeSymbol.Name}_Document";
+        var marshalMethods = CreateAttributeValueFactory(new MethodConfiguration($"{_rootTypeSymbol.Name}Values")
+        {
+            AccessModifier = Accessibility.Private,
+            MethodParameterization = MethodConfiguration.Parameterization.ParameterizedInstance
+        }, KeyStrategy.Include);
 
-        var className = $"{_rootTypeSymbol.Name}_ExpressionAttribute";
+        var keysMethod = CreateAttributeValueFactory(new MethodConfiguration($"{_rootTypeSymbol.Name}Keys")
+        {
+            AccessModifier = Accessibility.Public,
+            MethodParameterization = MethodConfiguration.Parameterization.ParameterizedStatic
+        }, KeyStrategy.Only);
+
+        var keysClass = CodeGenerationExtensions.CreateClass(Accessibility.Private, "KeysClass", keysMethod.Code, 2);
+
+        var implementInterface = $@"
+{marshalMethods.Code}
+{keysClass}
+{nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<int, int>)}<{_rootTypeSymbol.Name},{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}>.{nameof(IDynamoDbDocument<object, object>.Marshal)}({_rootTypeSymbol.Name} entity) => {marshalMethods.MethodName}(entity);
+{nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<int, int>)}<{_rootTypeSymbol.Name},{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}>.{nameof(IDynamoDbDocument<object, object>.Keys)}({_rootTypeSymbol.Name} entity) => KeysClass.{keysMethod.MethodName}(entity);
+{nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDynamoDbDocument<int, int>)}<{_rootTypeSymbol.Name},{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}>.{nameof(IDynamoDbDocument<object, object>.UpdateExpression)}(Func<{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}, string> selector)
+{{
+        var reference = new {className}.{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}(null);
+        return new {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}>(reference, selector(reference));
+}}
+{nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDynamoDbDocument<int, int>)}<{_rootTypeSymbol.Name},{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}>.{nameof(IDynamoDbDocument<object, object>.ConditionExpression)}(Func<{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}, string> selector)
+{{
+        var reference = new {className}.{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}(null);
+        return new {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}>(reference, selector(reference));
+}}
+";
+
+        var sourceGeneratedCode = string.Join(Constants.NewLine, enumerable.Prepend(implementInterface));
+
         var @class = CodeGenerationExtensions.CreateClass(
             Accessibility.Public,
-            className,
+            $"{className}: {nameof(IDynamoDbDocument<object, object>)}<{_rootTypeSymbol.Name}, {className}.{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}>",
             in sourceGeneratedCode,
             indentLevel: 2
         );
 
-        return $@"public {nameof(IDynamoDbDocument<object,object>)}<{_rootTypeSymbol.Name}, {className}.{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}> {_rootTypeSymbol.Name}Document {{ get; }} = new {className}.{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}(null);
+        return $@"public {nameof(IDynamoDbDocument<object, object>)}<{_rootTypeSymbol.Name}, {className}.{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}> {_rootTypeSymbol.Name}Document {{ get; }} = new {className}();
 {@class}";
     }
 
-    private Conversion ExpressionAttributeReferencesClassGenerator(ITypeSymbol typeSymbol, int iterationCount)
+    private Conversion ExpressionAttributeReferencesClassGenerator(ITypeSymbol typeSymbol)
     {
-        const string valueEnumerableMethodName =
-            nameof(IExpressionAttributeReferences<object>.AccessedValues);
+        const string valueEnumerableMethodName = nameof(IExpressionAttributeReferences<object>.AccessedValues);
         const string nameEnumerableMethodName = nameof(IExpressionAttributeReferences<object>.AccessedNames);
         var interfaceName = AttributeInterfaceName(typeSymbol);
-
-        string? initialImplementation = null;
-        if (iterationCount is 0 && typeSymbol.Equals(_rootTypeSymbol, SymbolEqualityComparer.Default))
-        {
-
-            var marshalMethods = CreateAttributeValueFactory(new MethodConfiguration($"{typeSymbol.Name}Values")
-            {
-                AccessModifier = Accessibility.Private,
-                MethodParameterization = MethodConfiguration.Parameterization.ParameterizedInstance
-            }, KeyStrategy.Include);
-            
-
-            var keysMethod = CreateAttributeValueFactory(new MethodConfiguration($"{typeSymbol.Name}Keys")
-            {
-                AccessModifier = Accessibility.Public,
-                MethodParameterization = MethodConfiguration.Parameterization.ParameterizedStatic
-            }, KeyStrategy.Only);
-            
-            var keysClass = CodeGenerationExtensions.CreateClass(Accessibility.Private, "KeysClass", keysMethod.Code, 2);
-
-            initialImplementation = $@"
-{marshalMethods.Code}
-{keysClass}
-{nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<int, int>)}<{typeSymbol.Name},{CreateExpressionAttributeNamesClass(typeSymbol)}>.{nameof(IDynamoDbDocument<object, object>.Marshal)}({_rootTypeSymbol.Name} entity) => {marshalMethods.MethodName}(entity);
-{nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<int, int>)}<{typeSymbol.Name},{CreateExpressionAttributeNamesClass(typeSymbol)}>.{nameof(IDynamoDbDocument<object, object>.Keys)}({_rootTypeSymbol.Name} entity) => KeysClass.{keysMethod.MethodName}(entity);
-{nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDynamoDbDocument<int, int>)}<{typeSymbol.Name},{CreateExpressionAttributeNamesClass(typeSymbol)}>.{nameof(IDynamoDbDocument<object, object>.UpdateExpression)}(Func<{CreateExpressionAttributeNamesClass(typeSymbol)}, string> selector)
-{{
-        return new {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}>(this, selector(this));
-}}
-{nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDynamoDbDocument<int, int>)}<{typeSymbol.Name},{CreateExpressionAttributeNamesClass(typeSymbol)}>.{nameof(IDynamoDbDocument<object, object>.ConditionExpression)}(Func<{CreateExpressionAttributeNamesClass(typeSymbol)}, string> selector)
-{{
-        return new {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}>(this, selector(this));
-}}
-";
-        }
-
+        
         var dataMembers = typeSymbol
             .GetDynamoDbProperties()
             .Where(static x => x.IsIgnored is false)
@@ -214,13 +171,10 @@ public class Generation
                     : $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {AttributeInterfaceName(x.DDB.DataMember.Type)}).{valueEnumerableMethodName}({accessPattern})) {{ yield return x; }}")}";
             });
 
-        var implementation = iterationCount is 0 ? $"{nameof(IDynamoDbDocument<object, object>)}<{typeSymbol.Name}, {CreateExpressionAttributeNamesClass(typeSymbol)}>, {interfaceName}"
-            : interfaceName;
         var @class = CodeGenerationExtensions.CreateClass(
             Accessibility.Public,
-            $"{className} : {implementation}",
+            $"{className} : {interfaceName}",
             $@"{constructor}
-{initialImplementation}
 {string.Join(Constants.NewLine, fieldDeclarations)}
     IEnumerable<KeyValuePair<string, string>> {interfaceName}.{nameEnumerableMethodName}()
     {{
@@ -237,7 +191,7 @@ public class Generation
 
     private static string AttributeInterfaceName(ITypeSymbol typeSymbol)
     {
-        
+
         return
             $"{nameof(IExpressionAttributeReferences<object>)}<{typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}>";
     }
