@@ -180,7 +180,7 @@ public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDy
     {{
 {string.Join(Constants.NewLine, expressionAttributeNameYields)}
     }}
-    IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{valueEnumerableMethodName}({typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)} entity)
+    IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{valueEnumerableMethodName}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} entity)
     {{
 {string.Join(Constants.NewLine, expressionAttributeValueYields)}
     }}",
@@ -193,7 +193,7 @@ public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDy
     {
 
         return
-            $"{nameof(IExpressionAttributeReferences<object>)}<{typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}>";
+            $"{nameof(IExpressionAttributeReferences<object>)}<{typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}>";
     }
 
 
@@ -237,7 +237,7 @@ public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDy
             /// <remarks> 
             ///    This method should only be invoked by source generated code.
             /// </remarks>
-            public static Dictionary<string, AttributeValue> {CreateMethodName(type)}({type.ToDisplayString(topLevelNullability: NullableFlowState.None)} {paramReference})
+            public static Dictionary<string, AttributeValue> {CreateMethodName(type)}({type.ToDisplayString(topLevelNullability: NullableFlowState.None, SymbolDisplayFormat.FullyQualifiedFormat)} {paramReference})
             {{ 
                 {InitializeDictionary(dictionaryName, properties.Select(static x => x.capacityTernary))}
                 {string.Join(Constants.NewLine + indent, properties.Select(static x => x.dictionaryPopulation))}
