@@ -24,12 +24,19 @@ internal static class Program
             }
         };
 
+
+        var repo = new Repository();
     }
 
 }
 
+
 [DynamoDBUpdateOperation(typeof(PersonEntity))]
 public partial class Repository
 {
+    public Repository()
+    {
+    }
 }
+
 

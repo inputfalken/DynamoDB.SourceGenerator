@@ -37,7 +37,7 @@ public class Generation
 
         var code = $@"{consumerMethod}
 {sourceGeneratedCode}";
-        return new SourceGeneratedCode(code, "nop", methodConfiguration.Name);
+        return new SourceGeneratedCode(code,  methodConfiguration.Name);
     }
 
     // TODO come up with a solution to make the following intuitive 
@@ -91,13 +91,14 @@ public class Generation
 
         var className = $"{_rootTypeSymbol.Name}_ExpressionAttribute";
         var @class = CodeGenerationExtensions.CreateClass(
-            Accessibility.Private,
+            Accessibility.Public,
             className,
             in sourceGeneratedCode,
             indentLevel: 2
         );
 
-        return $"{@class}";
+        return $@"public {nameof(IDynamoDbDocument<object,object>)}<{_rootTypeSymbol.Name}, {className}.{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}> {_rootTypeSymbol.Name}Document {{ get; }} = new {className}.{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}(null);
+{@class}";
     }
 
     private Conversion ExpressionAttributeReferencesClassGenerator(ITypeSymbol typeSymbol, int iterationCount)
@@ -115,24 +116,28 @@ public class Generation
                 AccessModifier = Accessibility.Private,
                 MethodParameterization = MethodConfiguration.Parameterization.ParameterizedInstance
             }, KeyStrategy.Include);
+            
+
             var keysMethod = CreateAttributeValueFactory(new MethodConfiguration($"{typeSymbol.Name}Keys")
             {
-                AccessModifier = Accessibility.Private,
-                MethodParameterization = MethodConfiguration.Parameterization.ParameterizedInstance
+                AccessModifier = Accessibility.Public,
+                MethodParameterization = MethodConfiguration.Parameterization.ParameterizedStatic
             }, KeyStrategy.Only);
+            
+            var keysClass = CodeGenerationExtensions.CreateClass(Accessibility.Private, "KeysClass", keysMethod.Code, 2);
 
             initialImplementation = $@"
 {marshalMethods.Code}
-{keysMethod.Code}
+{keysClass}
 public Dictionary<string, AttributeValue>{nameof(IDynamoDbDocument<object, object>.Marshal)}({_rootTypeSymbol.Name} entity) => {marshalMethods.MethodName}(entity);
-public Dictionary<string, AttributeValue>{nameof(IDynamoDbDocument<object, object>.Keys)}({_rootTypeSymbol.Name} entity) => {keysMethod.MethodName}(entity);
+public Dictionary<string, AttributeValue>{nameof(IDynamoDbDocument<object, object>.Keys)}({_rootTypeSymbol.Name} entity) => KeysClass.{keysMethod.MethodName}(entity);
 public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDynamoDbDocument<object,object>.UpdateExpression)}(Func<{CreateExpressionAttributeNamesClass(typeSymbol)}, string> selector)
 {{
-        return new {nameof(AttributeExpression<object>)}(({AttributeInterfaceName(typeSymbol)}) this, selector(this));
+        return new {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}>(this, selector(this));
 }}
 public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDynamoDbDocument<object,object>.ConditionExpression)}(Func<{CreateExpressionAttributeNamesClass(typeSymbol)}, string> selector)
 {{
-        return new {nameof(AttributeExpression<object>)}(({AttributeInterfaceName(typeSymbol)}) this, selector());
+        return new {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}>(this, selector(this));
 }}
 ";
         }
@@ -207,7 +212,7 @@ public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDy
             });
 
         var interfaceName = AttributeInterfaceName(typeSymbol);
-        var implementation = iterationCount is 0 ? $"{nameof(IDynamoDbDocument<object, object>)}<{typeSymbol.Name}, {CreateExpressionAttributeNamesClass(typeSymbol)}> {interfaceName}"
+        var implementation = iterationCount is 0 ? $"{nameof(IDynamoDbDocument<object, object>)}<{typeSymbol.Name}, {CreateExpressionAttributeNamesClass(typeSymbol)}>, {interfaceName}"
             : interfaceName;
         var @class = CodeGenerationExtensions.CreateClass(
             Accessibility.Public,
