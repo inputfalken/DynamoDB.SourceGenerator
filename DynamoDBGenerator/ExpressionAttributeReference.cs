@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 
 namespace DynamoDBGenerator;
@@ -27,8 +26,6 @@ public readonly record struct AttributeReference
     public string Value => _value.Value;
 }
 
-// TODO figure out how to source generate this interface for the root element only. One approach is to introduce depth into the Conversion method and check whether we're in the first iteration of the recursion.
-// By exposing this interface; we're able to extend it into multiple methods such as UpdateItemRequest, DeleteRequest etc which means we don't need to maintain those flows by source generation.
 public interface IDynamoDbDocument<TEntity, out TEntityReferences>
 {
     /// <summary>
@@ -40,24 +37,27 @@ public interface IDynamoDbDocument<TEntity, out TEntityReferences>
     ///  Contains all the AttributeValues for <see cref="TEntity"/>.
     /// </summary>
     public Dictionary<string, AttributeValue> Marshal(TEntity entity);
+
     /// <summary>
-    /// 
+    ///  Creates a <see cref="AttributeExpression{T}"/> for <see cref="UpdateItemRequest.UpdateExpression"/>.
     /// </summary>
-    /// <param name="updateExpressions"></param>
-    /// <returns></returns>
     public AttributeExpression<TEntity> UpdateExpression(Func<TEntityReferences, string> updateExpressions);
+
+    /// <summary>
+    ///  Creates a <see cref="AttributeExpression{T}"/> for <see cref="UpdateItemRequest.ConditionExpression"/>.
+    /// </summary>
     public AttributeExpression<TEntity> ConditionExpression(Func<TEntityReferences, string> conditionalExpressions);
 }
 
-public readonly struct AttributeExpression<T>
+public class AttributeExpression<T>
 {
-    public AttributeExpression(IExpressionAttributeReferences<T> expressionAttributeReferences, string expression)
+    public AttributeExpression(IExpressionAttributeReferences<T> references, string expression)
     {
-        ExpressionAttributeReferences = expressionAttributeReferences;
+        References = references;
         Expression = expression;
     }
-    
-    public IExpressionAttributeReferences<T> ExpressionAttributeReferences { get; }
+
+    public IExpressionAttributeReferences<T> References { get; }
     public string Expression { get; }
 }
 

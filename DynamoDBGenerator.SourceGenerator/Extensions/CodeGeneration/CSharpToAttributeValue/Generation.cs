@@ -1,3 +1,5 @@
+using System.ComponentModel;
+using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
@@ -106,6 +108,7 @@ public class Generation
         const string valueEnumerableMethodName =
             nameof(IExpressionAttributeReferences<object>.AccessedValues);
         const string nameEnumerableMethodName = nameof(IExpressionAttributeReferences<object>.AccessedNames);
+        var interfaceName = AttributeInterfaceName(typeSymbol);
 
         string? initialImplementation = null;
         if (iterationCount is 0 && typeSymbol.Equals(_rootTypeSymbol, SymbolEqualityComparer.Default))
@@ -129,13 +132,13 @@ public class Generation
             initialImplementation = $@"
 {marshalMethods.Code}
 {keysClass}
-public Dictionary<string, AttributeValue>{nameof(IDynamoDbDocument<object, object>.Marshal)}({_rootTypeSymbol.Name} entity) => {marshalMethods.MethodName}(entity);
-public Dictionary<string, AttributeValue>{nameof(IDynamoDbDocument<object, object>.Keys)}({_rootTypeSymbol.Name} entity) => KeysClass.{keysMethod.MethodName}(entity);
-public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDynamoDbDocument<object,object>.UpdateExpression)}(Func<{CreateExpressionAttributeNamesClass(typeSymbol)}, string> selector)
+{nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<int, int>)}<{typeSymbol.Name},{CreateExpressionAttributeNamesClass(typeSymbol)}>.{nameof(IDynamoDbDocument<object, object>.Marshal)}({_rootTypeSymbol.Name} entity) => {marshalMethods.MethodName}(entity);
+{nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<int, int>)}<{typeSymbol.Name},{CreateExpressionAttributeNamesClass(typeSymbol)}>.{nameof(IDynamoDbDocument<object, object>.Keys)}({_rootTypeSymbol.Name} entity) => KeysClass.{keysMethod.MethodName}(entity);
+{nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDynamoDbDocument<int, int>)}<{typeSymbol.Name},{CreateExpressionAttributeNamesClass(typeSymbol)}>.{nameof(IDynamoDbDocument<object, object>.UpdateExpression)}(Func<{CreateExpressionAttributeNamesClass(typeSymbol)}, string> selector)
 {{
         return new {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}>(this, selector(this));
 }}
-public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDynamoDbDocument<object,object>.ConditionExpression)}(Func<{CreateExpressionAttributeNamesClass(typeSymbol)}, string> selector)
+{nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDynamoDbDocument<int, int>)}<{typeSymbol.Name},{CreateExpressionAttributeNamesClass(typeSymbol)}>.{nameof(IDynamoDbDocument<object, object>.ConditionExpression)}(Func<{CreateExpressionAttributeNamesClass(typeSymbol)}, string> selector)
 {{
         return new {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}>(this, selector(this));
 }}
@@ -211,7 +214,6 @@ public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDy
                     : $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {AttributeInterfaceName(x.DDB.DataMember.Type)}).{valueEnumerableMethodName}({accessPattern})) {{ yield return x; }}")}";
             });
 
-        var interfaceName = AttributeInterfaceName(typeSymbol);
         var implementation = iterationCount is 0 ? $"{nameof(IDynamoDbDocument<object, object>)}<{typeSymbol.Name}, {CreateExpressionAttributeNamesClass(typeSymbol)}>, {interfaceName}"
             : interfaceName;
         var @class = CodeGenerationExtensions.CreateClass(
