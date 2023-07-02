@@ -3,7 +3,7 @@ using DynamoDBGenerator;
 
 namespace SampleApp;
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class Address
 {
     public string Id { get; set; } = null!;

@@ -43,25 +43,25 @@ public class PropertyInclusionTests
     }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class ClassWithOneDDBProperty
 {
     [DynamoDBProperty]
     public string? Id { get; set; }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class ClassWithOneProperty
 {
     public string? Id { get; set; }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class EmptyClass
 {
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class ClassWithIgnoredProperty
 {
     [DynamoDBIgnore]

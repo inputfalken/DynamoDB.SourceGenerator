@@ -47,7 +47,7 @@ public class DateTimeOffsetTests
     }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class DateTimeOffsetClass
 {
     [DynamoDBProperty]

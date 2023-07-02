@@ -44,7 +44,7 @@ internal static class Program
 
 }
 
-[DynamoDbDocument(typeof(PersonEntity))]
+[DynamoDbDocumentProperty(typeof(PersonEntity))]
 public partial class Repository
 {
     public Repository()

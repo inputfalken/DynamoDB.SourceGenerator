@@ -15,7 +15,7 @@ public class ReferenceTypeTests
     }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class ReferenceTypeClass
 {
     [DynamoDBProperty]

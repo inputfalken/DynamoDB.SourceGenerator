@@ -22,7 +22,7 @@ public class CharTests
     }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class CharClass
 {
     public char Letter { get; set; }

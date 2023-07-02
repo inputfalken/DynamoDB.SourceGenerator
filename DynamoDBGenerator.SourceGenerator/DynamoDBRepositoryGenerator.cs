@@ -15,7 +15,7 @@ public class DynamoDBRepositoryGenerator : IIncrementalGenerator
     {
         var updateClassDeclarations = context.SyntaxProvider
             .ForAttributeWithMetadataName(
-                Constants.DynamoDBDocumentFullname,
+                Constants.DynamoDbDocumentPropertyFullname,
                 static (node, _) => node is ClassDeclarationSyntax,
                 static (context, _) => (ClassDeclarationSyntax)context.TargetNode
             );

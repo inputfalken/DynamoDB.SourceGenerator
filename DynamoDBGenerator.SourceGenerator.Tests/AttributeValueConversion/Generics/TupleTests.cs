@@ -118,7 +118,7 @@ public class TupleTests
     }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class TupleClass
 {
     public (int X, int Y)? XYCoordinate { get; set; }

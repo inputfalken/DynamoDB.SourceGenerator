@@ -72,7 +72,7 @@ public class GroupingTests
     }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class GroupingClass
 {
     public IGrouping<string, int>? Grouping { get; set; }

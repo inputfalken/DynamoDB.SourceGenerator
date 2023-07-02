@@ -1,23 +1,99 @@
-using System.ComponentModel;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
-
 namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAttributeValue;
 
-public class Generation
+public class DynamoDbDocumentGenerator
 {
+
+    private readonly IDictionary<ITypeSymbol, string> _methodNameCache =
+        new Dictionary<ITypeSymbol, string>(SymbolEqualityComparer.IncludeNullability);
+
     private readonly ITypeSymbol _rootTypeSymbol;
 
-    public Generation(in ITypeSymbol typeSymbol)
+    public DynamoDbDocumentGenerator(in ITypeSymbol typeSymbol)
     {
         _rootTypeSymbol = typeSymbol;
     }
 
+    private static string AttributeInterfaceName(ITypeSymbol typeSymbol)
+    {
+
+        return
+            $"{nameof(IExpressionAttributeReferences<object>)}<{typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}>";
+    }
+
+    private Assignment AttributeValueAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
+    {
+        if (typeSymbol.GetKnownType() is not { } knownType) return ExternalAssignment(in typeSymbol, in accessPattern);
+
+        var assignment = knownType switch
+        {
+            BaseType baseType => baseType.Type switch
+            {
+                BaseType.SupportedType.String => typeSymbol.ToInlineAssignment($"S = {accessPattern}"),
+                BaseType.SupportedType.Bool => typeSymbol.ToInlineAssignment($"BOOL = {accessPattern}"),
+                BaseType.SupportedType.Number => typeSymbol.ToInlineAssignment($"N = {accessPattern}.ToString()"),
+                BaseType.SupportedType.Char => typeSymbol.ToInlineAssignment($"S = {accessPattern}.ToString()"),
+                BaseType.SupportedType.Temporal => typeSymbol.ToInlineAssignment(
+                    $@"S = {accessPattern}.ToString(""O"")"),
+                _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
+            },
+            SingleGeneric singleGeneric => singleGeneric.Type switch
+            {
+                SingleGeneric.SupportedType.Collection => BuildList(singleGeneric.T, in accessPattern),
+                SingleGeneric.SupportedType.Nullable => AttributeValueAssignment(singleGeneric.T,
+                    $"{accessPattern}.Value"),
+                SingleGeneric.SupportedType.Set => BuildSet(singleGeneric.T, accessPattern),
+                _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
+            },
+            KeyValueGeneric keyValueGeneric => StringKeyedValuedGeneric(in keyValueGeneric, in accessPattern),
+            _ => null
+        };
+
+        return assignment ?? ExternalAssignment(in typeSymbol, in accessPattern);
+
+        Assignment ExternalAssignment(in ITypeSymbol typeSymbol, in string accessPattern) =>
+            typeSymbol.ToExternalDependencyAssignment($"M = {CreateMethodName(typeSymbol)}({accessPattern})");
+    }
+
+    private Assignment BuildList(in ITypeSymbol elementType, in string accessPattern)
+    {
+        var attributeValue = AttributeValueAssignment(elementType, "x");
+        var select = $"Select(x => {attributeValue.ToAttributeValue()}))";
+        var assignment = elementType.NotNullLambdaExpression() is { } whereBody
+            ? $"L = new List<AttributeValue>({accessPattern}.Where({whereBody}).{select}"
+            : $"L = new List<AttributeValue>({accessPattern}.{select}";
+
+        return new Assignment(in assignment, in elementType, attributeValue.HasExternalDependency);
+    }
+
+    private static Assignment? BuildSet(in ITypeSymbol elementType, in string accessPattern)
+    {
+        var newAccessPattern = elementType.NotNullLambdaExpression() is { } expression
+            ? $"{accessPattern}.Where({expression})"
+            : accessPattern;
+
+        if (elementType.SpecialType is SpecialType.System_String)
+            return new Assignment(
+                $"SS = new List<string>({newAccessPattern})",
+                in elementType,
+                false
+            );
+
+        return elementType.IsNumeric() is false
+            ? null
+            : new Assignment(
+                $"NS = new List<string>({newAccessPattern}.Select(x => x.ToString()))",
+                in elementType,
+                false
+            );
+    }
+
     /// <summary>
-    /// Creates an Dictionary with string as key and AttributeValue as value.
+    ///     Creates an Dictionary with string as key and AttributeValue as value.
     /// </summary>
-    public SourceGeneratedCode CreateAttributeValueFactory(
+    private (string Code, string MethodName) CreateAttributeValueFactory(
         in MethodConfiguration methodConfiguration,
         KeyStrategy keyStrategy)
     {
@@ -39,10 +115,35 @@ public class Generation
 
         var code = $@"{consumerMethod}
 {sourceGeneratedCode}";
-        return new SourceGeneratedCode(code, methodConfiguration.Name);
+        return (code, methodConfiguration.Name);
+
+        static string CreateMethod(
+            ITypeSymbol typeSymbol,
+            string returnType,
+            string methodName,
+            MethodConfiguration config)
+        {
+            var accessModifier = config.AccessModifier.ToCode();
+            var signature = config.MethodParameterization switch
+            {
+                MethodConfiguration.Parameterization.UnparameterizedInstance =>
+                    $"{accessModifier} {returnType} {config.Name}() => {methodName}(this);",
+                MethodConfiguration.Parameterization.ParameterizedStatic =>
+                    $"{accessModifier} static {returnType} {config.Name}({typeSymbol.ToDisplayString()} item) => {methodName}(item);",
+                MethodConfiguration.Parameterization.ParameterizedInstance =>
+                    $"{accessModifier} {returnType} {config.Name}({typeSymbol.ToDisplayString()} item) => {methodName}(item);",
+                _ => throw new NotSupportedException($"Config of '{config.MethodParameterization}'.")
+            };
+
+            return $@"/// <summary> 
+        ///    Converts <see cref=""{typeSymbol.ToXmlComment()}""/> into a <see cref=""Amazon.DynamoDBv2.Model.AttributeValue""/> representation.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        {signature}";
+        }
     }
 
-    public string CreateExpressionAttributeNames()
+    private (string Code, string PropertyAccess) CreateDynamoDbDocumentProperty(Accessibility accessibility)
     {
         var enumerable = Conversion.ConversionMethods(
                 _rootTypeSymbol,
@@ -89,11 +190,69 @@ public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDy
             Accessibility.Public,
             $"{className}: {nameof(IDynamoDbDocument<object, object>)}<{_rootTypeSymbol.Name}, {className}.{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}>",
             in sourceGeneratedCode,
-            indentLevel: 2
+            2
         );
 
-        return $@"public {nameof(IDynamoDbDocument<object, object>)}<{_rootTypeSymbol.Name}, {className}.{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}> {_rootTypeSymbol.Name}Document {{ get; }} = new {className}();
-{@class}";
+        var propertyName = $"{_rootTypeSymbol.Name}Document";
+        return ($@"{accessibility.ToCode()} {nameof(IDynamoDbDocument<object, object>)}<{_rootTypeSymbol.Name}, {className}.{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}> {propertyName} {{ get; }} = new {className}();
+{@class}", propertyName);
+    }
+
+    private static string CreateExpressionAttributeNamesClass(ITypeSymbol typeSymbol)
+    {
+        return $"{typeSymbol.Name}AttributeReferences";
+    }
+
+
+    private string CreateMethodName(ITypeSymbol typeSymbol)
+    {
+        return Execution(_methodNameCache, typeSymbol, false);
+
+        static string Execution(
+            IDictionary<ITypeSymbol, string> cache,
+            ITypeSymbol typeSymbol,
+            bool isRecursive
+        )
+        {
+            if (cache.TryGetValue(typeSymbol, out var methodName))
+                return methodName;
+
+            var displayString = typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+
+            var str = (typeSymbol.NullableAnnotation, typeDisplay: displayString) switch
+            {
+                (_, {Length: > Constants.MaxMethodNameLenght}) => throw new NotSupportedException(
+                    $"Could not generate a method name that's within the supported method lenght {Constants.MaxMethodNameLenght} for type '{displayString}'."),
+                (NullableAnnotation.NotAnnotated, _) => $"NN_{displayString.ToAlphaNumericMethodName()}Factory",
+                (NullableAnnotation.None, _) => $"{displayString.ToAlphaNumericMethodName()}Factory",
+                (NullableAnnotation.Annotated, _) => $"N_{displayString.ToAlphaNumericMethodName()}Factory",
+                _ => throw new ArgumentOutOfRangeException()
+            };
+
+            if (typeSymbol is not INamedTypeSymbol namedTypeSymbol)
+            {
+                // We do not need to populate the dictionary if the execution originates from recursion.
+                if (isRecursive is false)
+                    cache.Add(typeSymbol, str);
+
+                return str;
+            }
+
+            var result = string.Join(
+                "_",
+                namedTypeSymbol.TypeArguments.Select(x => Execution(cache, x, true)).Prepend(str)
+            );
+
+            // We do not need to populate the dictionary if the execution originates from recursion.
+            if (isRecursive is false)
+                cache.Add(typeSymbol, result);
+
+            return result;
+        }
+    }
+    public string DynamoDbDocumentProperty()
+    {
+        return CreateDynamoDbDocumentProperty(Accessibility.Public).Code;
     }
 
     private Conversion ExpressionAttributeReferencesClassGenerator(ITypeSymbol typeSymbol)
@@ -101,7 +260,7 @@ public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDy
         const string valueEnumerableMethodName = nameof(IExpressionAttributeReferences<object>.AccessedValues);
         const string nameEnumerableMethodName = nameof(IExpressionAttributeReferences<object>.AccessedNames);
         var interfaceName = AttributeInterfaceName(typeSymbol);
-        
+
         var dataMembers = typeSymbol
             .GetDynamoDbProperties()
             .Where(static x => x.IsIgnored is false)
@@ -178,49 +337,26 @@ public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDy
 {string.Join(Constants.NewLine, fieldDeclarations)}
     IEnumerable<KeyValuePair<string, string>> {interfaceName}.{nameEnumerableMethodName}()
     {{
-{string.Join(Constants.NewLine, expressionAttributeNameYields)}
+{(string.Join(Constants.NewLine, expressionAttributeNameYields) is var res && res != string.Empty ? res : "return Enumerable.Empty<KeyValuePair<string, string>>();")}
     }}
     IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{valueEnumerableMethodName}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} entity)
     {{
-{string.Join(Constants.NewLine, expressionAttributeValueYields)}
+{(string.Join(Constants.NewLine, expressionAttributeValueYields) is var res1 && res1 != string.Empty ? res1 : "return Enumerable.Empty<KeyValuePair<string, AttributeValue>>();")}
     }}",
             0
         );
         return new Conversion(@class, fieldAssignments.Where(x => x.HasExternalDependency));
     }
 
-    private static string AttributeInterfaceName(ITypeSymbol typeSymbol)
+    public string ImplementDynamoDbDocument()
     {
+        var dynamoDbDocumentProperty = CreateDynamoDbDocumentProperty(Accessibility.Private);
 
-        return
-            $"{nameof(IExpressionAttributeReferences<object>)}<{typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}>";
+        return $@"public Dictionary<string, AttributeValue> BuildAttributeValues() => {dynamoDbDocumentProperty.PropertyAccess}.{nameof(IDynamoDbDocument<int, int>.Marshal)}(this);
+{dynamoDbDocumentProperty.Code}";
+
     }
 
-
-    private static string CreateMethod(
-        ITypeSymbol typeSymbol,
-        string returnType,
-        string methodName,
-        MethodConfiguration config)
-    {
-        var accessModifier = config.AccessModifier.ToCode();
-        var signature = config.MethodParameterization switch
-        {
-            MethodConfiguration.Parameterization.UnparameterizedInstance =>
-                $"{accessModifier} {returnType} {config.Name}() => {methodName}(this);",
-            MethodConfiguration.Parameterization.ParameterizedStatic =>
-                $"{accessModifier} static {returnType} {config.Name}({typeSymbol.ToDisplayString()} item) => {methodName}(item);",
-            MethodConfiguration.Parameterization.ParameterizedInstance =>
-                $"{accessModifier} {returnType} {config.Name}({typeSymbol.ToDisplayString()} item) => {methodName}(item);",
-            _ => throw new NotSupportedException($"Config of '{config.MethodParameterization}'.")
-        };
-
-        return $@"/// <summary> 
-        ///    Converts <see cref=""{typeSymbol.ToXmlComment()}""/> into a <see cref=""Amazon.DynamoDBv2.Model.AttributeValue""/> representation.
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        {signature}";
-    }
 
     private Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type, KeyStrategy keyStrategy)
     {
@@ -237,7 +373,7 @@ public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDy
             /// <remarks> 
             ///    This method should only be invoked by source generated code.
             /// </remarks>
-            public static Dictionary<string, AttributeValue> {CreateMethodName(type)}({type.ToDisplayString(topLevelNullability: NullableFlowState.None, SymbolDisplayFormat.FullyQualifiedFormat)} {paramReference})
+            public static Dictionary<string, AttributeValue> {CreateMethodName(type)}({type.ToDisplayString(NullableFlowState.None, SymbolDisplayFormat.FullyQualifiedFormat)} {paramReference})
             {{ 
                 {InitializeDictionary(dictionaryName, properties.Select(static x => x.capacityTernary))}
                 {string.Join(Constants.NewLine + indent, properties.Select(static x => x.dictionaryPopulation))}
@@ -301,39 +437,6 @@ public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDy
         }
     }
 
-    private Assignment BuildList(in ITypeSymbol elementType, in string accessPattern)
-    {
-        var attributeValue = AttributeValueAssignment(elementType, "x");
-        var select = $"Select(x => {attributeValue.ToAttributeValue()}))";
-        var assignment = elementType.NotNullLambdaExpression() is { } whereBody
-            ? $"L = new List<AttributeValue>({accessPattern}.Where({whereBody}).{select}"
-            : $"L = new List<AttributeValue>({accessPattern}.{select}";
-
-        return new Assignment(in assignment, in elementType, attributeValue.HasExternalDependency);
-    }
-
-    private static Assignment? BuildSet(in ITypeSymbol elementType, in string accessPattern)
-    {
-        var newAccessPattern = elementType.NotNullLambdaExpression() is { } expression
-            ? $"{accessPattern}.Where({expression})"
-            : accessPattern;
-
-        if (elementType.SpecialType is SpecialType.System_String)
-            return new Assignment(
-                $"SS = new List<string>({newAccessPattern})",
-                in elementType,
-                false
-            );
-
-        return elementType.IsNumeric() is false
-            ? null
-            : new Assignment(
-                $"NS = new List<string>({newAccessPattern}.Select(x => x.ToString()))",
-                in elementType,
-                false
-            );
-    }
-
     private Assignment? StringKeyedValuedGeneric(in KeyValueGeneric keyValueGeneric, in string accessPattern)
     {
         switch (keyValueGeneric)
@@ -363,96 +466,6 @@ public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDy
                 );
             default:
                 return null;
-        }
-    }
-
-    private Assignment AttributeValueAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
-    {
-        if (typeSymbol.GetKnownType() is not { } knownType) return ExternalAssignment(in typeSymbol, in accessPattern);
-
-        var assignment = knownType switch
-        {
-            BaseType baseType => baseType.Type switch
-            {
-                BaseType.SupportedType.String => typeSymbol.ToInlineAssignment($"S = {accessPattern}"),
-                BaseType.SupportedType.Bool => typeSymbol.ToInlineAssignment($"BOOL = {accessPattern}"),
-                BaseType.SupportedType.Number => typeSymbol.ToInlineAssignment($"N = {accessPattern}.ToString()"),
-                BaseType.SupportedType.Char => typeSymbol.ToInlineAssignment($"S = {accessPattern}.ToString()"),
-                BaseType.SupportedType.Temporal => typeSymbol.ToInlineAssignment(
-                    $@"S = {accessPattern}.ToString(""O"")"),
-                _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
-            },
-            SingleGeneric singleGeneric => singleGeneric.Type switch
-            {
-                SingleGeneric.SupportedType.Collection => BuildList(singleGeneric.T, in accessPattern),
-                SingleGeneric.SupportedType.Nullable => AttributeValueAssignment(singleGeneric.T,
-                    $"{accessPattern}.Value"),
-                SingleGeneric.SupportedType.Set => BuildSet(singleGeneric.T, accessPattern),
-                _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
-            },
-            KeyValueGeneric keyValueGeneric => StringKeyedValuedGeneric(in keyValueGeneric, in accessPattern),
-            _ => null
-        };
-
-        return assignment ?? ExternalAssignment(in typeSymbol, in accessPattern);
-
-        Assignment ExternalAssignment(in ITypeSymbol typeSymbol, in string accessPattern) =>
-            typeSymbol.ToExternalDependencyAssignment($"M = {CreateMethodName(typeSymbol)}({accessPattern})");
-    }
-
-    private static string CreateExpressionAttributeNamesClass(ITypeSymbol typeSymbol)
-    {
-        return $"{typeSymbol.Name}AttributeReferences";
-    }
-
-    private readonly IDictionary<ITypeSymbol, string> _methodNameCache =
-        new Dictionary<ITypeSymbol, string>(SymbolEqualityComparer.IncludeNullability);
-
-
-    private string CreateMethodName(ITypeSymbol typeSymbol)
-    {
-        return Execution(_methodNameCache, typeSymbol, false);
-
-        static string Execution(
-            IDictionary<ITypeSymbol, string> cache,
-            ITypeSymbol typeSymbol,
-            bool isRecursive
-        )
-        {
-            if (cache.TryGetValue(typeSymbol, out var methodName))
-                return methodName;
-
-            var displayString = typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-
-            var str = (typeSymbol.NullableAnnotation, typeDisplay: displayString) switch
-            {
-                (_, {Length: > Constants.MaxMethodNameLenght}) => throw new NotSupportedException(
-                    $"Could not generate a method name that's within the supported method lenght {Constants.MaxMethodNameLenght} for type '{displayString}'."),
-                (NullableAnnotation.NotAnnotated, _) => $"NN_{displayString.ToAlphaNumericMethodName()}Factory",
-                (NullableAnnotation.None, _) => $"{displayString.ToAlphaNumericMethodName()}Factory",
-                (NullableAnnotation.Annotated, _) => $"N_{displayString.ToAlphaNumericMethodName()}Factory",
-                _ => throw new ArgumentOutOfRangeException()
-            };
-
-            if (typeSymbol is not INamedTypeSymbol namedTypeSymbol)
-            {
-                // We do not need to populate the dictionary if the execution originates from recursion.
-                if (isRecursive is false)
-                    cache.Add(typeSymbol, str);
-
-                return str;
-            }
-
-            var result = string.Join(
-                "_",
-                namedTypeSymbol.TypeArguments.Select(x => Execution(cache, x, true)).Prepend(str)
-            );
-
-            // We do not need to populate the dictionary if the execution originates from recursion.
-            if (isRecursive is false)
-                cache.Add(typeSymbol, result);
-
-            return result;
         }
     }
 }

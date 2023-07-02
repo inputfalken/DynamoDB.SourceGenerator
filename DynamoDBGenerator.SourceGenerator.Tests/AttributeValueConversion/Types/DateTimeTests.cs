@@ -45,7 +45,7 @@ public class DateTimeTests
     }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class DateTimeClass
 {
     [DynamoDBProperty]

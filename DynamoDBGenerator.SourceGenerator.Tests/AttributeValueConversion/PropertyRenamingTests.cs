@@ -30,7 +30,7 @@ public class PropertyRenamingTests
     }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class PropertyWithMixedNames
 {
     public string PlainProperty { get; init; } = null!;

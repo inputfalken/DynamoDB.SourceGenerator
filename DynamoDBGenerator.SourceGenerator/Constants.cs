@@ -4,17 +4,14 @@ namespace DynamoDBGenerator.SourceGenerator;
 
 public class Constants
 {
-    public const string AttributeValueGeneratorFullName =
-        nameof(DynamoDBGenerator) + "." + nameof(AttributeValueGeneratorAttribute);
-
+    public const string DynamoDbDocumentFullName = nameof(DynamoDBGenerator) + "." + nameof(DynamoDbDocument);
+    public const string DynamoDbDocumentPropertyFullname = nameof(DynamoDBGenerator) + "." + nameof(DynamoDbDocumentProperty);
     public const string NewLine = @"
 ";
 
     public const int MaxMethodNameLenght = 511;
 
 
-    // ReSharper disable once InconsistentNaming
-    public const string DynamoDBDocumentFullname = nameof(DynamoDBGenerator) + "." + nameof(DynamoDbDocument);
 }
 
 public static class ConstantExtensions

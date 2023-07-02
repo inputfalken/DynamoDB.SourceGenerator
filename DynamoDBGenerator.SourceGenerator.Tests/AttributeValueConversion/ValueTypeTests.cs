@@ -19,7 +19,7 @@ public class ValueTypeTests
     }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class ValueTypeClass
 {
     [DynamoDBProperty]

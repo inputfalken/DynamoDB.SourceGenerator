@@ -1,15 +1,11 @@
 using System;
-
 namespace DynamoDBGenerator;
 
-// ReSharper disable once InconsistentNaming
-[AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
+[AttributeUsage(AttributeTargets.Class)]
 public class DynamoDbDocument : Attribute
 {
-    public Type? Type { get; }
 
-    public DynamoDbDocument(Type type)
+    public DynamoDbDocument()
     {
-        Type = type;
     }
 }

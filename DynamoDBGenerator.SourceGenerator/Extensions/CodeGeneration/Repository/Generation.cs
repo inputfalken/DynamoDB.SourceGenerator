@@ -15,7 +15,7 @@ public static class Generation
         var typeNames = typeSymbol
             .GetAttributes()
             .Where(x => x.AttributeClass?.ContainingNamespace is {Name: nameof(DynamoDBGenerator)})
-            .Where(x => x.AttributeClass!.Name is nameof(DynamoDbDocument))
+            .Where(x => x.AttributeClass!.Name is nameof(DynamoDbDocumentProperty))
             .SelectMany(x => x.ConstructorArguments, (x, y) => (AttributeData: x, TypeConstant: y))
             .Where(x => x.TypeConstant.Kind is TypedConstantKind.Type);
 
@@ -25,7 +25,7 @@ public static class Generation
             if (namedTypeSymbol is null)
                 continue;
 
-            yield return new CSharpToAttributeValue.Generation(namedTypeSymbol).CreateExpressionAttributeNames();
+            yield return new DynamoDbDocumentGenerator(namedTypeSymbol).DynamoDbDocumentProperty();
         }
     }
 }
