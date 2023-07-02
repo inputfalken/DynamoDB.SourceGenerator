@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 
 namespace DynamoDBGenerator;
@@ -28,7 +29,7 @@ public readonly record struct AttributeReference
 
 // TODO figure out how to source generate this interface for the root element only. One approach is to introduce depth into the Conversion method and check whether we're in the first iteration of the recursion.
 // By exposing this interface; we're able to extend it into multiple methods such as UpdateItemRequest, DeleteRequest etc which means we don't need to maintain those flows by source generation.
-public interface IExpressionAttributes<in TEntity>
+public interface IDynamoDbDocument<in TEntity, out TEntityReferences>
 {
     /// <summary>
     /// Contains the keys for <see cref="TEntity"/>.
@@ -36,14 +37,31 @@ public interface IExpressionAttributes<in TEntity>
     public Dictionary<string, AttributeValue> Keys(TEntity entity);
 
     /// <summary>
+    ///  Contains all the AttributeValues for <see cref="TEntity"/>.
+    /// </summary>
+    public Dictionary<string, AttributeValue> Marshal(TEntity entity);
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="updateExpressions"></param>
+    /// <returns></returns>
+    public IExpressionAttributes<TEntity> UpdateExpression(Func<TEntityReferences, string> updateExpressions);
+    public IExpressionAttributes<TEntity> ConditionExpression(Func<TEntityReferences, string> conditionalExpressions);
+}
+
+public interface IExpressionAttributes<in TEntity>
+{
+    public string Expression { get; }
+
+    /// <summary>
     /// Contains the AttributeValues in <see cref="TEntity"/> for 'ExpressionAttributeValues' that exist in types such as <see cref="UpdateItemRequest"/> or <see cref="DeleteItemRequest"/>
     /// </summary>
-    public Dictionary<string, AttributeValue> AttributeValues(TEntity entity);
+    public Dictionary<string, AttributeValue> Values(TEntity entity);
 
     /// <summary>
     /// Contains the AttributeNames for 'ExpressionAttributeNames' that exist in types such as <see cref="UpdateItemRequest"/> or <see cref="DeleteItemRequest"/>
     /// </summary>
-    public Dictionary<string, string> AttributeNames();
+    public Dictionary<string, string> Names();
 }
 
 public interface IExpressionAttributeReferences<in TEntity>
