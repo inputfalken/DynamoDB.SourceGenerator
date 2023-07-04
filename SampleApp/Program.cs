@@ -44,6 +44,12 @@ internal static class Program
 
 }
 
+public class Person
+{
+    public string FirstName { get; set; }
+    public IReadOnlyList<Person> Friends { get; set; }
+}
+
 [DynamoDbDocumentProperty(typeof(PersonEntity))]
 public partial class Repository
 {

@@ -6,8 +6,7 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAt
 public class DynamoDbDocumentGenerator
 {
 
-    private readonly IDictionary<ITypeSymbol, string> _methodNameCache =
-        new Dictionary<ITypeSymbol, string>(SymbolEqualityComparer.IncludeNullability);
+    private readonly IDictionary<ITypeSymbol, string> _methodNameCache = new Dictionary<ITypeSymbol, string>(SymbolEqualityComparer.IncludeNullability);
 
     private readonly ITypeSymbol _rootTypeSymbol;
 
@@ -18,9 +17,7 @@ public class DynamoDbDocumentGenerator
 
     private static string AttributeInterfaceName(ITypeSymbol typeSymbol)
     {
-
-        return
-            $"{nameof(IExpressionAttributeReferences<object>)}<{typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}>";
+        return $"{nameof(IExpressionAttributeReferences<object>)}<{typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}>";
     }
 
     private Assignment AttributeValueAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
@@ -42,8 +39,7 @@ public class DynamoDbDocumentGenerator
             SingleGeneric singleGeneric => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Collection => BuildList(singleGeneric.T, in accessPattern),
-                SingleGeneric.SupportedType.Nullable => AttributeValueAssignment(singleGeneric.T,
-                    $"{accessPattern}.Value"),
+                SingleGeneric.SupportedType.Nullable => AttributeValueAssignment(singleGeneric.T, $"{accessPattern}.Value"),
                 SingleGeneric.SupportedType.Set => BuildSet(singleGeneric.T, accessPattern),
                 _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
             },
@@ -129,9 +125,9 @@ public class DynamoDbDocumentGenerator
                 MethodConfiguration.Parameterization.UnparameterizedInstance =>
                     $"{accessModifier} {returnType} {config.Name}() => {methodName}(this);",
                 MethodConfiguration.Parameterization.ParameterizedStatic =>
-                    $"{accessModifier} static {returnType} {config.Name}({typeSymbol.ToDisplayString()} item) => {methodName}(item);",
+                    $"{accessModifier} static {returnType} {config.Name}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} item) => {methodName}(item);",
                 MethodConfiguration.Parameterization.ParameterizedInstance =>
-                    $"{accessModifier} {returnType} {config.Name}({typeSymbol.ToDisplayString()} item) => {methodName}(item);",
+                    $"{accessModifier} {returnType} {config.Name}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} item) => {methodName}(item);",
                 _ => throw new NotSupportedException($"Config of '{config.MethodParameterization}'.")
             };
 
@@ -167,20 +163,22 @@ public class DynamoDbDocumentGenerator
 
         var keysClass = CodeGenerationExtensions.CreateClass(Accessibility.Private, "KeysClass", keysMethod.Code, 2);
 
+        var fullyQualifiedName = _rootTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var expressionAttributeName = CreateExpressionAttributeNamesClass(_rootTypeSymbol);
         var implementInterface = $@"
 {marshalMethods.Code}
 {keysClass}
-public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<object, object>.Marshal)}({_rootTypeSymbol.Name} entity) => {marshalMethods.MethodName}(entity);
-public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<object, object>.Keys)}({_rootTypeSymbol.Name} entity) => KeysClass.{keysMethod.MethodName}(entity);
-public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDynamoDbDocument<object, object>.UpdateExpression)}(Func<{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}, string> selector)
+public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<object, object>.Marshal)}({fullyQualifiedName} entity) => {marshalMethods.MethodName}(entity);
+public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<object, object>.Keys)}({fullyQualifiedName} entity) => KeysClass.{keysMethod.MethodName}(entity);
+public {nameof(AttributeExpression<object>)}<{fullyQualifiedName}> {nameof(IDynamoDbDocument<object, object>.UpdateExpression)}(Func<{expressionAttributeName}, string> selector)
 {{
-        var reference = new {className}.{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}(null);
+        var reference = new {className}.{expressionAttributeName}(null);
         return new {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}>(reference, selector(reference));
 }}
-public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDynamoDbDocument<object, object>.ConditionExpression)}(Func<{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}, string> selector)
+public {nameof(AttributeExpression<object>)}<{fullyQualifiedName}> {nameof(IDynamoDbDocument<object, object>.ConditionExpression)}(Func<{expressionAttributeName}, string> selector)
 {{
-        var reference = new {className}.{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}(null);
-        return new {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}>(reference, selector(reference));
+        var reference = new {className}.{expressionAttributeName}(null);
+        return new {nameof(AttributeExpression<object>)}<{fullyQualifiedName}>(reference, selector(reference));
 }}
 ";
 
@@ -188,13 +186,13 @@ public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDy
 
         var @class = CodeGenerationExtensions.CreateClass(
             Accessibility.Public,
-            $"{className}: {nameof(IDynamoDbDocument<object, object>)}<{_rootTypeSymbol.Name}, {className}.{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}>",
+            $"{className}: {nameof(IDynamoDbDocument<object, object>)}<{_rootTypeSymbol.Name}, {className}.{expressionAttributeName}>",
             in sourceGeneratedCode,
             2
         );
 
         var propertyName = $"{_rootTypeSymbol.Name}Document";
-        return ($@"{accessibility.ToCode()} {nameof(IDynamoDbDocument<object, object>)}<{_rootTypeSymbol.Name}, {className}.{CreateExpressionAttributeNamesClass(_rootTypeSymbol)}> {propertyName} {{ get; }} = new {className}();
+        return ($@"{accessibility.ToCode()} {nameof(IDynamoDbDocument<object, object>)}<{fullyQualifiedName}, {className}.{expressionAttributeName}> {propertyName} {{ get; }} = new {className}();
 {@class}", propertyName);
     }
 
@@ -202,7 +200,6 @@ public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDy
     {
         return $"{typeSymbol.Name}AttributeReferences";
     }
-
 
     private string CreateMethodName(ITypeSymbol typeSymbol)
     {
@@ -257,14 +254,19 @@ public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDy
 
     private Conversion ExpressionAttributeReferencesClassGenerator(ITypeSymbol typeSymbol)
     {
-        const string valueEnumerableMethodName = nameof(IExpressionAttributeReferences<object>.AccessedValues);
-        const string nameEnumerableMethodName = nameof(IExpressionAttributeReferences<object>.AccessedNames);
-        var interfaceName = AttributeInterfaceName(typeSymbol);
+        const string valueEnumerableMethodName = nameof(IExpressionAttributeReferences<int>.AccessedValues);
+        const string nameEnumerableMethodName = nameof(IExpressionAttributeReferences<int>.AccessedNames);
 
         var dataMembers = typeSymbol
             .GetDynamoDbProperties()
             .Where(static x => x.IsIgnored is false)
-            .Select(static x => (IsKnown: x.DataMember.Type.GetKnownType() is not null, DDB: x, NameRef: $"_{x.DataMember.Name}NameRef", ValueRef: $"_{x.DataMember.Name}ValueRef"))
+            .Select(static x => (
+                IsKnown: x.DataMember.Type.GetKnownType() is not null,
+                DDB: x,
+                NameRef: $"_{x.DataMember.Name}NameRef",
+                ValueRef: $"_{x.DataMember.Name}ValueRef",
+                AttributeReference: CreateExpressionAttributeNamesClass(x.DataMember.Type),
+                AttributeInterfaceName: AttributeInterfaceName(x.DataMember.Type)))
             .ToArray();
 
         var fieldDeclarations = dataMembers
@@ -278,16 +280,14 @@ public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDy
                         $@"    public AttributeReference {x.DDB.DataMember.Name} {{ get; }}"
                     };
 
-                var typeName = CreateExpressionAttributeNamesClass(x.DDB.DataMember.Type);
                 return new[]
                 {
-                    $@"    private readonly Lazy<{typeName}> _{x.DDB.DataMember.Name};",
-                    $@"    public {typeName} {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;"
+                    $@"    private readonly Lazy<{x.AttributeReference}> _{x.DDB.DataMember.Name};",
+                    $@"    public {x.AttributeReference} {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;"
                 };
             });
 
         const string constructorAttributeName = "nameRef";
-        const string constructorAttributeValue = "valueRef";
         var fieldAssignments = dataMembers
             .Select(static x =>
             {
@@ -303,9 +303,8 @@ public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDy
                 }
                 else
                 {
-                    var name = CreateExpressionAttributeNamesClass(x.DDB.DataMember.Type);
                     assignment =
-                        $@"        _{x.DDB.DataMember.Name} = new Lazy<{name}>(() => new {name}({ternaryExpressionName}));";
+                        $@"        _{x.DDB.DataMember.Name} = new Lazy<{x.AttributeReference}>(() => new {x.AttributeReference}({ternaryExpressionName}));";
                 }
 
                 return new Assignment(assignment, x.DDB.DataMember.Type, x.IsKnown is false);
@@ -320,16 +319,17 @@ public {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}> {nameof(IDy
 
         var expressionAttributeNameYields = dataMembers.Select(static x => x.IsKnown
             ? $@"       if ({x.NameRef}.IsValueCreated) yield return new KeyValuePair<string, string>({x.NameRef}.Value, ""{x.DDB.AttributeName}"");"
-            : $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {AttributeInterfaceName(x.DDB.DataMember.Type)}).{nameEnumerableMethodName}()) {{ yield return x; }}");
+            : $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{nameEnumerableMethodName}()) {{ yield return x; }}");
         var expressionAttributeValueYields = dataMembers
             .Select(x =>
             {
                 var accessPattern = $"entity.{x.DDB.DataMember.Name}";
                 return x.IsKnown
                     ? $@"       if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new KeyValuePair<string, AttributeValue>({x.ValueRef}.Value, {AttributeValueAssignment(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}").ToAttributeValue()});")}"
-                    : $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {AttributeInterfaceName(x.DDB.DataMember.Type)}).{valueEnumerableMethodName}({accessPattern})) {{ yield return x; }}")}";
+                    : $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{valueEnumerableMethodName}({accessPattern})) {{ yield return x; }}")}";
             });
 
+        var interfaceName = AttributeInterfaceName(typeSymbol);
         var @class = CodeGenerationExtensions.CreateClass(
             Accessibility.Public,
             $"{className} : {interfaceName}",
