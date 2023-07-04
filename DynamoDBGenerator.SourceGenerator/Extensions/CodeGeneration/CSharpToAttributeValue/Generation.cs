@@ -162,20 +162,20 @@ public class DynamoDbDocumentGenerator
         var fullyQualifiedName = _rootTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var expressionAttributeName = CreateExpressionAttributeNamesClass(_rootTypeSymbol);
         var implementInterface = $@"
+            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<object, object>.Marshal)}({fullyQualifiedName} entity) => {marshalMethods.MethodName}(entity);
+            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<object, object>.Keys)}({fullyQualifiedName} entity) => KeysClass.{keysMethod.MethodName}(entity);
+            public {nameof(AttributeExpression<object>)}<{fullyQualifiedName}> {nameof(IDynamoDbDocument<object, object>.UpdateExpression)}(Func<{expressionAttributeName}, string> selector)
+            {{
+                var reference = new {className}.{expressionAttributeName}(null);
+                return new {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}>(reference, selector(reference));
+            }}
+            public {nameof(AttributeExpression<object>)}<{fullyQualifiedName}> {nameof(IDynamoDbDocument<object, object>.ConditionExpression)}(Func<{expressionAttributeName}, string> selector)
+            {{
+                var reference = new {className}.{expressionAttributeName}(null);
+                return new {nameof(AttributeExpression<object>)}<{fullyQualifiedName}>(reference, selector(reference));
+            }}
 {marshalMethods.Code}
 {keysClass}
-public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<object, object>.Marshal)}({fullyQualifiedName} entity) => {marshalMethods.MethodName}(entity);
-public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<object, object>.Keys)}({fullyQualifiedName} entity) => KeysClass.{keysMethod.MethodName}(entity);
-public {nameof(AttributeExpression<object>)}<{fullyQualifiedName}> {nameof(IDynamoDbDocument<object, object>.UpdateExpression)}(Func<{expressionAttributeName}, string> selector)
-{{
-        var reference = new {className}.{expressionAttributeName}(null);
-        return new {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}>(reference, selector(reference));
-}}
-public {nameof(AttributeExpression<object>)}<{fullyQualifiedName}> {nameof(IDynamoDbDocument<object, object>.ConditionExpression)}(Func<{expressionAttributeName}, string> selector)
-{{
-        var reference = new {className}.{expressionAttributeName}(null);
-        return new {nameof(AttributeExpression<object>)}<{fullyQualifiedName}>(reference, selector(reference));
-}}
 ";
 
         var sourceGeneratedCode = string.Join(Constants.NewLine, enumerable.Prepend(implementInterface));
