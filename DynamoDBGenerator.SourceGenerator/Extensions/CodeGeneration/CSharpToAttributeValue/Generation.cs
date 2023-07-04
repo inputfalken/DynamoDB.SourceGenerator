@@ -131,11 +131,7 @@ public class DynamoDbDocumentGenerator
                 _ => throw new NotSupportedException($"Config of '{config.MethodParameterization}'.")
             };
 
-            return $@"/// <summary> 
-        ///    Converts <see cref=""{typeSymbol.ToXmlComment()}""/> into a <see cref=""Amazon.DynamoDBv2.Model.AttributeValue""/> representation.
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        {signature}";
+            return $@"            {signature}";
         }
     }
 
@@ -367,12 +363,6 @@ public {nameof(AttributeExpression<object>)}<{fullyQualifiedName}> {nameof(IDyna
         const string indent = "                ";
         var dictionary =
             @$"        
-            /// <summary> 
-            ///    Converts <see cref=""{type.ToXmlComment()}""/> into a <see cref=""Amazon.DynamoDBv2.Model.AttributeValue""/> representation.
-            /// </summary>
-            /// <remarks> 
-            ///    This method should only be invoked by source generated code.
-            /// </remarks>
             public static Dictionary<string, AttributeValue> {CreateMethodName(type)}({type.ToDisplayString(NullableFlowState.None, SymbolDisplayFormat.FullyQualifiedFormat)} {paramReference})
             {{ 
                 {InitializeDictionary(dictionaryName, properties.Select(static x => x.capacityTernary))}
