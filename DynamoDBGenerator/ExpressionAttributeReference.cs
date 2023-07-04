@@ -34,17 +34,22 @@ public interface IDynamoDbDocument<TEntity, out TEntityReferences>
     public Dictionary<string, AttributeValue> Keys(TEntity entity);
 
     /// <summary>
-    ///  Contains all the AttributeValues for <see cref="TEntity"/>.
+    ///  Serializes the <typeparamref name="TEntity"/> into AttributeValues.
     /// </summary>
-    public Dictionary<string, AttributeValue> Marshal(TEntity entity);
+    public Dictionary<string, AttributeValue> Serialize(TEntity entity);
 
     /// <summary>
-    ///  Creates a <see cref="AttributeExpression{T}"/> for <see cref="UpdateItemRequest.UpdateExpression"/>.
+    /// Deserializes the provided AttributeValues into an <typeparamref name="TEntity"/>.
+    /// </summary>
+    public TEntity Deserialize(Dictionary<string, AttributeValue> document);
+
+    /// <summary>
+    ///  Creates a <see cref="AttributeExpression{T}"/> to build an 'UpdateExpression'.
     /// </summary>
     public AttributeExpression<TEntity> UpdateExpression(Func<TEntityReferences, string> updateExpressions);
 
     /// <summary>
-    ///  Creates a <see cref="AttributeExpression{T}"/> for <see cref="UpdateItemRequest.ConditionExpression"/>.
+    ///  Creates a <see cref="AttributeExpression{T}"/> to build an 'ConditionExpression'.
     /// </summary>
     public AttributeExpression<TEntity> ConditionExpression(Func<TEntityReferences, string> conditionalExpressions);
 }

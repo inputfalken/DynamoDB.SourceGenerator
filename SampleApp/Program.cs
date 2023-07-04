@@ -37,6 +37,7 @@ internal static class Program
             var stopwatch = Stopwatch.StartNew();
 
             var update = repo.PersonEntityDocument.CreatePutItemRequest(person, x => x.Firstname.Value);
+            repo.PersonEntityDocument.Deserialize(repo.PersonEntityDocument.Serialize(person));
             Console.WriteLine(stopwatch.Elapsed);
             stopwatch.Restart();
         }

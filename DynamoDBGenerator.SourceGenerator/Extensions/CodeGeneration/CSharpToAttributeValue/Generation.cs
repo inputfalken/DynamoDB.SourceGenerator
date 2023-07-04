@@ -162,7 +162,8 @@ public class DynamoDbDocumentGenerator
         var fullyQualifiedName = _rootTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var expressionAttributeName = CreateExpressionAttributeNamesClass(_rootTypeSymbol);
         var implementInterface = $@"
-            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<object, object>.Marshal)}({fullyQualifiedName} entity) => {marshalMethods.MethodName}(entity);
+            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<object, object>.Serialize)}({fullyQualifiedName} entity) => {marshalMethods.MethodName}(entity);
+            public {fullyQualifiedName} {nameof(IDynamoDbDocument<object, object>.Deserialize)}({nameof(Dictionary<int,int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => throw new NotImplementedException();
             public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<object, object>.Keys)}({fullyQualifiedName} entity) => KeysClass.{keysMethod.MethodName}(entity);
             public {nameof(AttributeExpression<object>)}<{fullyQualifiedName}> {nameof(IDynamoDbDocument<object, object>.UpdateExpression)}(Func<{expressionAttributeName}, string> selector)
             {{
@@ -348,7 +349,7 @@ public class DynamoDbDocumentGenerator
     {
         var dynamoDbDocumentProperty = CreateDynamoDbDocumentProperty(Accessibility.Private);
 
-        return $@"public Dictionary<string, AttributeValue> BuildAttributeValues() => {dynamoDbDocumentProperty.PropertyAccess}.{nameof(IDynamoDbDocument<int, int>.Marshal)}(this);
+        return $@"public Dictionary<string, AttributeValue> BuildAttributeValues() => {dynamoDbDocumentProperty.PropertyAccess}.{nameof(IDynamoDbDocument<int, int>.Serialize)}(this);
 {dynamoDbDocumentProperty.Code}";
 
     }
