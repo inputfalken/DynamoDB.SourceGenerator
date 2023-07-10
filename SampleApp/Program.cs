@@ -37,14 +37,14 @@ internal static class Program
         {
             var stopwatch = Stopwatch.StartNew();
 
+            var lazy = new Lazy<string>("");
             var update = repo.PersonEntityDocument.CreatePutItemRequest(person, BuildConditionExpression);
-            Console.WriteLine(stopwatch.Elapsed);
             stopwatch.Restart();
         }
     }
     private static string BuildConditionExpression(Repository.PersonEntity_Document.PersonEntityReferences x)
     {
-        return $"{x.Address.PostalCode.Town.Name} == 'Stockholm'";
+        return $"{x.Address.PostalCode.Town.Name} <> {x.Address.PostalCode.Town.Value}";
     }
 
 }

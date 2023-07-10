@@ -168,12 +168,12 @@ public class DynamoDbDocumentGenerator
             public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<object, object>.Keys)}({fullyQualifiedName} entity) => KeysClass.{keysMethod.MethodName}(entity);
             public {nameof(AttributeExpression<object>)}<{fullyQualifiedName}> {nameof(IDynamoDbDocument<object, object>.UpdateExpression)}(Func<{expressionAttributeName}, string> selector)
             {{
-                var reference = new {className}.{expressionAttributeName}(null);
+                var reference = new {className}.{expressionAttributeName}(null, 0);
                 return new {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}>(reference, selector(reference));
             }}
             public {nameof(AttributeExpression<object>)}<{fullyQualifiedName}> {nameof(IDynamoDbDocument<object, object>.ConditionExpression)}(Func<{expressionAttributeName}, string> selector)
             {{
-                var reference = new {className}.{expressionAttributeName}(null);
+                var reference = new {className}.{expressionAttributeName}(null, 0);
                 return new {nameof(AttributeExpression<object>)}<{fullyQualifiedName}>(reference, selector(reference));
             }}
 {marshalMethods.Code}
@@ -218,10 +218,12 @@ public class DynamoDbDocumentGenerator
                 DDB: x,
                 NameRef: $"_{x.DataMember.Name}NameRef",
                 ValueRef: $"_{x.DataMember.Name}ValueRef",
+                CountRef: $"{x.DataMember.Name}ParamCountRef",
                 AttributeReference: CreateExpressionAttributeNamesClass(x.DataMember.Type),
                 AttributeInterfaceName: AttributeInterfaceName(x.DataMember.Type)))
             .ToArray();
 
+        const string constAttributeReferenceCount = "AttributeReferenceCount";
         var fieldDeclarations = dataMembers
             .SelectMany(static x =>
             {
@@ -238,9 +240,11 @@ public class DynamoDbDocumentGenerator
                     $@"    private readonly Lazy<{x.AttributeReference}> _{x.DDB.DataMember.Name};",
                     $@"    public {x.AttributeReference} {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;"
                 };
-            });
+            })
+            .Prepend($"    public const int {constAttributeReferenceCount} = {dataMembers.Count(x => x.IsKnown)};");
 
         const string constructorAttributeName = "nameRef";
+        const string constructorParamCounter = "paramCount";
         var fieldAssignments = dataMembers
             .Select(static x =>
             {
@@ -250,22 +254,25 @@ public class DynamoDbDocumentGenerator
                 if (x.IsKnown)
                 {
                     assignment =
-                        $@"        {x.ValueRef} = new Lazy<string>(() => "":{x.DDB.AttributeName}"");
+                        $@"        var {x.CountRef} = {constructorParamCounter} += 1;
+        {x.ValueRef} = new Lazy<string>(() => $"":p{{{x.CountRef}}}"");
         {x.NameRef} = new Lazy<string>(() => {ternaryExpressionName});
-        {x.DDB.DataMember.Name} = new AttributeReference(in {x.NameRef}, in {x.ValueRef});";
+        {x.DDB.DataMember.Name} = new AttributeReference(in {x.NameRef}, in {x.ValueRef});
+        ";
                 }
                 else
                 {
+                    // We're jumping numbers due to performing addition on AttributeReferenceCount and afterwards performing additional additions per field.
                     assignment =
-                        $@"        _{x.DDB.DataMember.Name} = new Lazy<{x.AttributeReference}>(() => new {x.AttributeReference}({ternaryExpressionName}));";
-                }
+                        $@"        var {x.CountRef} = {constructorParamCounter} + {x.AttributeReference}.{constAttributeReferenceCount};
+        _{x.DDB.DataMember.Name} = new Lazy<{x.AttributeReference}>(() => new {x.AttributeReference}({ternaryExpressionName}, {x.CountRef}));"; }
 
                 return new Assignment(assignment, x.DDB.DataMember.Type, x.IsKnown is false);
             })
             .ToArray();
 
         var className = CreateExpressionAttributeNamesClass(typeSymbol);
-        var constructor = $@"public {className}(string? {constructorAttributeName})
+        var constructor = $@"public {className}(string? {constructorAttributeName}, int {constructorParamCounter})
     {{
 {string.Join(Constants.NewLine, fieldAssignments.Select(x => x.Value))}
     }}";
@@ -290,11 +297,11 @@ public class DynamoDbDocumentGenerator
 {string.Join(Constants.NewLine, fieldDeclarations)}
     IEnumerable<KeyValuePair<string, string>> {interfaceName}.{nameEnumerableMethodName}()
     {{
-{(string.Join(Constants.NewLine, expressionAttributeNameYields) is var res && res != string.Empty ? res : "return Enumerable.Empty<KeyValuePair<string, string>>();")}
+{(string.Join(Constants.NewLine, expressionAttributeNameYields) is var joinedNames && joinedNames != string.Empty ? joinedNames : "return Enumerable.Empty<KeyValuePair<string, string>>();")}
     }}
     IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{valueEnumerableMethodName}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} entity)
     {{
-{(string.Join(Constants.NewLine, expressionAttributeValueYields) is var res1 && res1 != string.Empty ? res1 : "return Enumerable.Empty<KeyValuePair<string, AttributeValue>>();")}
+{(string.Join(Constants.NewLine, expressionAttributeValueYields) is var joinedValues && joinedValues != string.Empty ? joinedValues : "return Enumerable.Empty<KeyValuePair<string, AttributeValue>>();")}
     }}",
             0
         );
