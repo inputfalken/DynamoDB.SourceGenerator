@@ -7,6 +7,59 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class TypeExtensions
 {
+
+    public static Func<ITypeSymbol, string> CachedTypeStringificationFactory(string suffix)
+    {
+        return x => Execution(
+            new Dictionary<ITypeSymbol, string>(SymbolEqualityComparer.IncludeNullability),
+            x,
+            false,
+            suffix
+        );
+
+        static string Execution(
+            IDictionary<ITypeSymbol, string> cache,
+            ITypeSymbol typeSymbol,
+            bool isRecursive,
+            string suffix
+        )
+        {
+            if (cache.TryGetValue(typeSymbol, out var methodName))
+                return methodName;
+
+            var displayString = typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+
+            var str = (typeSymbol.NullableAnnotation, typeDisplay: displayString) switch
+            {
+                (_, {Length: > Constants.MaxMethodNameLenght}) => throw new NotSupportedException(
+                    $"Could not generate a method name that's within the supported method lenght {Constants.MaxMethodNameLenght} for type '{displayString}'."),
+                (NullableAnnotation.NotAnnotated, _) => $"NN_{displayString.ToAlphaNumericMethodName()}{suffix}",
+                (NullableAnnotation.None, _) => $"{displayString.ToAlphaNumericMethodName()}{suffix}",
+                (NullableAnnotation.Annotated, _) => $"N_{displayString.ToAlphaNumericMethodName()}{suffix}",
+                _ => throw new ArgumentOutOfRangeException()
+            };
+
+            if (typeSymbol is not INamedTypeSymbol namedTypeSymbol)
+            {
+                // We do not need to populate the dictionary if the execution originates from recursion.
+                if (isRecursive is false)
+                    cache[typeSymbol] = str;
+
+                return str;
+            }
+
+            var result = string.Join(
+                "_",
+                namedTypeSymbol.TypeArguments.Select(x => Execution(cache, x, true, suffix)).Prepend(str)
+            );
+
+            // We do not need to populate the dictionary if the execution originates from recursion.
+            if (isRecursive is false)
+                cache[typeSymbol] = result;
+
+            return result;
+        }
+    }
     public static Assignment ToInlineAssignment(this ITypeSymbol typeSymbol, string value)
     {
         return new Assignment(in value, in typeSymbol, false);

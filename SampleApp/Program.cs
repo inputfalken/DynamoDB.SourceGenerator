@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator;
@@ -36,11 +37,14 @@ internal static class Program
         {
             var stopwatch = Stopwatch.StartNew();
 
-            var update = repo.PersonEntityDocument.CreatePutItemRequest(person, x => x.Firstname.Value);
-            repo.PersonEntityDocument.Deserialize(repo.PersonEntityDocument.Serialize(person));
+            var update = repo.PersonEntityDocument.CreatePutItemRequest(person, BuildConditionExpression);
             Console.WriteLine(stopwatch.Elapsed);
             stopwatch.Restart();
         }
+    }
+    private static string BuildConditionExpression(Repository.PersonEntity_Document.PersonEntityReferences x)
+    {
+        return $"{x.Address.PostalCode.Town.Name} == 'Stockholm'";
     }
 
 }
@@ -52,6 +56,7 @@ public class Person
 }
 
 [DynamoDbDocumentProperty(typeof(PersonEntity))]
+[DynamoDbDocumentProperty(typeof(Address))]
 public partial class Repository
 {
     public Repository()

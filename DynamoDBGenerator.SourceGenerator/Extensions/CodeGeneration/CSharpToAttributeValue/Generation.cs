@@ -6,9 +6,10 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAt
 public class DynamoDbDocumentGenerator
 {
 
-    private readonly IDictionary<ITypeSymbol, string> _methodNameCache = new Dictionary<ITypeSymbol, string>(SymbolEqualityComparer.IncludeNullability);
 
     private readonly ITypeSymbol _rootTypeSymbol;
+    private readonly Func<ITypeSymbol, string> _createMethodName = TypeExtensions.CachedTypeStringificationFactory("Factory");
+    private readonly Func<ITypeSymbol, string> _createTypeName = TypeExtensions.CachedTypeStringificationFactory("References");
 
     public DynamoDbDocumentGenerator(in ITypeSymbol typeSymbol)
     {
@@ -50,7 +51,7 @@ public class DynamoDbDocumentGenerator
         return assignment ?? ExternalAssignment(in typeSymbol, in accessPattern);
 
         Assignment ExternalAssignment(in ITypeSymbol typeSymbol, in string accessPattern) =>
-            typeSymbol.ToExternalDependencyAssignment($"M = {CreateMethodName(typeSymbol)}({accessPattern})");
+            typeSymbol.ToExternalDependencyAssignment($"M = {_createMethodName(typeSymbol)}({accessPattern})");
     }
 
     private Assignment BuildList(in ITypeSymbol elementType, in string accessPattern)
@@ -96,7 +97,7 @@ public class DynamoDbDocumentGenerator
         var consumerMethod = CreateMethod(
             _rootTypeSymbol,
             "Dictionary<string, AttributeValue>",
-            CreateMethodName(_rootTypeSymbol),
+            _createMethodName(_rootTypeSymbol),
             methodConfiguration
         );
 
@@ -163,7 +164,7 @@ public class DynamoDbDocumentGenerator
         var expressionAttributeName = CreateExpressionAttributeNamesClass(_rootTypeSymbol);
         var implementInterface = $@"
             public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<object, object>.Serialize)}({fullyQualifiedName} entity) => {marshalMethods.MethodName}(entity);
-            public {fullyQualifiedName} {nameof(IDynamoDbDocument<object, object>.Deserialize)}({nameof(Dictionary<int,int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => throw new NotImplementedException();
+            public {fullyQualifiedName} {nameof(IDynamoDbDocument<object, object>.Deserialize)}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => throw new NotImplementedException();
             public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<object, object>.Keys)}({fullyQualifiedName} entity) => KeysClass.{keysMethod.MethodName}(entity);
             public {nameof(AttributeExpression<object>)}<{fullyQualifiedName}> {nameof(IDynamoDbDocument<object, object>.UpdateExpression)}(Func<{expressionAttributeName}, string> selector)
             {{
@@ -193,57 +194,12 @@ public class DynamoDbDocumentGenerator
 {@class}", propertyName);
     }
 
-    private static string CreateExpressionAttributeNamesClass(ITypeSymbol typeSymbol)
+    private string CreateExpressionAttributeNamesClass(ITypeSymbol typeSymbol)
     {
-        return $"{typeSymbol.Name}AttributeReferences";
+        return _createTypeName(typeSymbol);
     }
 
-    private string CreateMethodName(ITypeSymbol typeSymbol)
-    {
-        return Execution(_methodNameCache, typeSymbol, false);
 
-        static string Execution(
-            IDictionary<ITypeSymbol, string> cache,
-            ITypeSymbol typeSymbol,
-            bool isRecursive
-        )
-        {
-            if (cache.TryGetValue(typeSymbol, out var methodName))
-                return methodName;
-
-            var displayString = typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-
-            var str = (typeSymbol.NullableAnnotation, typeDisplay: displayString) switch
-            {
-                (_, {Length: > Constants.MaxMethodNameLenght}) => throw new NotSupportedException(
-                    $"Could not generate a method name that's within the supported method lenght {Constants.MaxMethodNameLenght} for type '{displayString}'."),
-                (NullableAnnotation.NotAnnotated, _) => $"NN_{displayString.ToAlphaNumericMethodName()}Factory",
-                (NullableAnnotation.None, _) => $"{displayString.ToAlphaNumericMethodName()}Factory",
-                (NullableAnnotation.Annotated, _) => $"N_{displayString.ToAlphaNumericMethodName()}Factory",
-                _ => throw new ArgumentOutOfRangeException()
-            };
-
-            if (typeSymbol is not INamedTypeSymbol namedTypeSymbol)
-            {
-                // We do not need to populate the dictionary if the execution originates from recursion.
-                if (isRecursive is false)
-                    cache.Add(typeSymbol, str);
-
-                return str;
-            }
-
-            var result = string.Join(
-                "_",
-                namedTypeSymbol.TypeArguments.Select(x => Execution(cache, x, true)).Prepend(str)
-            );
-
-            // We do not need to populate the dictionary if the execution originates from recursion.
-            if (isRecursive is false)
-                cache.Add(typeSymbol, result);
-
-            return result;
-        }
-    }
     public string DynamoDbDocumentProperty()
     {
         return CreateDynamoDbDocumentProperty(Accessibility.Public).Code;
@@ -257,7 +213,7 @@ public class DynamoDbDocumentGenerator
         var dataMembers = typeSymbol
             .GetDynamoDbProperties()
             .Where(static x => x.IsIgnored is false)
-            .Select(static x => (
+            .Select(x => (
                 IsKnown: x.DataMember.Type.GetKnownType() is not null,
                 DDB: x,
                 NameRef: $"_{x.DataMember.Name}NameRef",
@@ -364,7 +320,7 @@ public class DynamoDbDocumentGenerator
         const string indent = "                ";
         var dictionary =
             @$"        
-            public static Dictionary<string, AttributeValue> {CreateMethodName(type)}({type.ToDisplayString(NullableFlowState.None, SymbolDisplayFormat.FullyQualifiedFormat)} {paramReference})
+            public static Dictionary<string, AttributeValue> {_createMethodName(type)}({type.ToDisplayString(NullableFlowState.None, SymbolDisplayFormat.FullyQualifiedFormat)} {paramReference})
             {{ 
                 {InitializeDictionary(dictionaryName, properties.Select(static x => x.capacityTernary))}
                 {string.Join(Constants.NewLine + indent, properties.Select(static x => x.dictionaryPopulation))}
