@@ -141,7 +141,7 @@ public class DynamoDbDocumentGenerator
         var enumerable = Conversion.ConversionMethods(
                 _rootTypeSymbol,
                 ExpressionAttributeReferencesClassGenerator,
-                new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default)
+                new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability)
             )
             .Select(static x => x.Code);
 
