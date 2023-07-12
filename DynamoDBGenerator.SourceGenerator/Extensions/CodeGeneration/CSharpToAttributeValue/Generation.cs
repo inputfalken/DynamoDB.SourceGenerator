@@ -218,7 +218,7 @@ public class DynamoDbDocumentGenerator
                 DDB: x,
                 NameRef: $"_{x.DataMember.Name}NameRef",
                 ValueRef: $"_{x.DataMember.Name}ValueRef",
-                CountRef: $"{x.DataMember.Name}ParamCountRef",
+                CountRef: $"capturedParamRefFor{x.DataMember.Name}",
                 AttributeReference: CreateExpressionAttributeNamesClass(x.DataMember.Type),
                 AttributeInterfaceName: AttributeInterfaceName(x.DataMember.Type)))
             .ToArray();
@@ -257,15 +257,14 @@ public class DynamoDbDocumentGenerator
                         $@"        var {x.CountRef} = {constructorParamCounter} += 1;
         {x.ValueRef} = new Lazy<string>(() => $"":p{{{x.CountRef}}}"");
         {x.NameRef} = new Lazy<string>(() => {ternaryExpressionName});
-        {x.DDB.DataMember.Name} = new AttributeReference(in {x.NameRef}, in {x.ValueRef});
-        ";
+        {x.DDB.DataMember.Name} = new AttributeReference(in {x.NameRef}, in {x.ValueRef});";
                 }
                 else
                 {
-                    // We're jumping numbers due to performing addition on AttributeReferenceCount and afterwards performing additional additions per field.
                     assignment =
-                        $@"        var {x.CountRef} = {constructorParamCounter} + {x.AttributeReference}.{constAttributeReferenceCount};
-        _{x.DDB.DataMember.Name} = new Lazy<{x.AttributeReference}>(() => new {x.AttributeReference}({ternaryExpressionName}, {x.CountRef}));"; }
+                        $@"         var {x.CountRef} = {constructorParamCounter};
+        _{x.DDB.DataMember.Name} = new Lazy<{x.AttributeReference}>(() => new {x.AttributeReference}({ternaryExpressionName}, {x.CountRef}));
+        {constructorParamCounter} += {x.AttributeReference}.{constAttributeReferenceCount};"; }
 
                 return new Assignment(assignment, x.DDB.DataMember.Type, x.IsKnown is false);
             })
