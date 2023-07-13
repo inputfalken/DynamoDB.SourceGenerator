@@ -1,19 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using Amazon.DynamoDBv2.DataModel;
 using DynamoDBGenerator;
 
 namespace SampleApp;
 
-[AttributeValueGenerator]
 public partial class PersonEntity
 {
-    public IEnumerable<KeyValuePair<string, int>> Type { get; set; } = null!;
+    [DynamoDBHashKey]
+    public string Id { get; set; }
 
-    public string MyHashKey { get; set; } = null!;
+    public string Firstname { get; set; }
+    public string Lastname { get; set; }
+    public Address Address { get; set; }
+    public (string, string, string) Test { get; set; }
+    
 
-    public (int X, int Y, int Z) Coordinate { get; set; }
-    public (int X, int Y, int Z) Coordinate2 { get; set; }
-    public (int X, int Y, int Z) Coordinate4 { get; set; }
-    public (int X, int Y, int Z) Coordinate5 { get; set; }
-    public (int X, int Y, int Z) Coordinate6 { get; set; }
 }

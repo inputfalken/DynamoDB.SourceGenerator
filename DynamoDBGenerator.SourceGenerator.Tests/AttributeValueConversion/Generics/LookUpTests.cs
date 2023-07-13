@@ -57,7 +57,7 @@ public class LookUpTests
     }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class LookUpClass
 {
     [DynamoDBProperty]

@@ -3,16 +3,15 @@ using DynamoDBGenerator;
 
 namespace SampleApp;
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class Address
 {
-    [DynamoDBHashKey]
     public string Id { get; set; } = null!;
 
-    [DynamoDBProperty]
     public string Street { get; set; } = null!;
 
-    [DynamoDBProperty]
-
     public PostalCode PostalCode { get; set; } = null!;
+
+    public IReadOnlyList<PersonEntity> Neighbours { get; set; }
+
 }

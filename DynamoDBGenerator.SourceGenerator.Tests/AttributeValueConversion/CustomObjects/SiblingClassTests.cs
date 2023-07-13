@@ -79,7 +79,7 @@ public class SiblingClassTests
     }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class SiblingClassOne
 {
     public string? Id { get; set; }

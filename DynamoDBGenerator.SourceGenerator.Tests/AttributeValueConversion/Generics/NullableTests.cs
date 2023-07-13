@@ -34,7 +34,7 @@ public class NullableTests
     }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class NullableValueTypeClass
 {
     [DynamoDBProperty]

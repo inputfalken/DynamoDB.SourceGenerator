@@ -1,14 +1,15 @@
-﻿using Amazon.DynamoDBv2.DataModel;
+﻿using System.Collections.Generic;
+using Amazon.DynamoDBv2.DataModel;
 using DynamoDBGenerator;
 
 namespace SampleApp;
 
-[AttributeValueGenerator]
 public partial class PostalCode
 {
-    [DynamoDBProperty]
     public string ZipCode { get; set; } = null!;
 
-    [DynamoDBProperty]
     public string Town { get; set; } = null!;
+
+    // We could provide a cache to determine whether this symbol has already been generated amd filter it out to avoid recursive constructor.
+
 }

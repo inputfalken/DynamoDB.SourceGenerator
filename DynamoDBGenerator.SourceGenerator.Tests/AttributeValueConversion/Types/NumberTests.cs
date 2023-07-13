@@ -223,77 +223,77 @@ public class NumberTests
     }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class Int8Class
 {
     [DynamoDBProperty]
     public sbyte Count { get; set; }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class Int16Class
 {
     [DynamoDBProperty]
     public short Count { get; set; }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class Int32Class
 {
     [DynamoDBProperty]
     public int Count { get; set; }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class Int64Class
 {
     [DynamoDBProperty]
     public long Count { get; set; }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class UInt8Class
 {
     [DynamoDBProperty]
     public byte Count { get; set; }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class UInt16Class
 {
     [DynamoDBProperty]
     public ushort Count { get; set; }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class UInt32Class
 {
     [DynamoDBProperty]
     public uint Count { get; set; }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class UInt64Class
 {
     [DynamoDBProperty]
     public ulong Count { get; set; }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class DoubleClass
 {
     [DynamoDBProperty]
     public double Count { get; set; }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class DecimalClass
 {
     [DynamoDBProperty]
     public decimal Count { get; set; }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class FloatClass
 {
     [DynamoDBProperty]

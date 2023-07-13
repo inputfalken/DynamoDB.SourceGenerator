@@ -45,7 +45,7 @@ public class DateOnlyTests
     }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class DateOnlyClass
 {
     [DynamoDBProperty]

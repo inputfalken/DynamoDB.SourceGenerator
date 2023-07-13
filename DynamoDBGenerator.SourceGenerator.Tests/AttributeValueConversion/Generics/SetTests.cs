@@ -120,14 +120,14 @@ public class SetTests
 }
 
 // Could potentially add tests for int64 etc...
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class Int32SetClass
 {
     [DynamoDBProperty]
     public HashSet<int>? IntSet { get; set; }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class StringSetClass
 {
     [DynamoDBProperty]

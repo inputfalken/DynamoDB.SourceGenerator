@@ -1,8 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Text;
-using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
-using DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAttributeValue;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
@@ -16,9 +14,9 @@ public class AttributeValueGenerator : IIncrementalGenerator
     {
         var classDeclarations = context.SyntaxProvider
             .ForAttributeWithMetadataName(
-                Constants.AttributeValueGeneratorFullName,
+                Constants.DynamoDbDocumentFullName,
                 static (node, _) => node is ClassDeclarationSyntax,
-                static (context, _) => (ClassDeclarationSyntax) context.TargetNode
+                static (context, _) => (ClassDeclarationSyntax)context.TargetNode
             );
 
         var compilationAndClasses = context.CompilationProvider.Combine(classDeclarations.Collect());
@@ -41,28 +39,11 @@ public class AttributeValueGenerator : IIncrementalGenerator
             if (symbol is null)
                 continue;
 
-            var type = (ITypeSymbol) symbol;
-
-            var attributeData = type.GetAttributes().First(a => a.AttributeClass is
-            {
-                Name: nameof(AttributeValueGeneratorAttribute),
-                ContainingNamespace:
-                {
-                    Name: nameof(DynamoDBGenerator),
-                    ContainingNamespace.IsGlobalNamespace: true
-                }
-            });
-
-            var settings = attributeData.CreateInstance<AttributeValueGeneratorAttribute>()!;
+            var type = (ITypeSymbol)symbol;
 
             var code = type.CreateNamespace(
                 type.CreateClass(
-                    type.GeneratePocoToAttributeValueFactory(
-                        new Settings
-                        {
-                            ConsumerMethodConfig = new Settings.ConsumerMethodConfiguration(settings.MethodName)
-                        }
-                    ).Code
+                    type.GeneratePocoToAttributeValueFactory()
                 )
             );
 

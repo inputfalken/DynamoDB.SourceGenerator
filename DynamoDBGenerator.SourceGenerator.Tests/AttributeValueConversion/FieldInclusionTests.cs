@@ -43,19 +43,19 @@ public class FieldInclusionTests
     }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class ClassWithOneDDBField
 {
     [DynamoDBProperty] public string? Id;
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class ClassWithOneField
 {
     public string? Id;
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class ClassWithIgnoredField
 {
     [DynamoDBIgnore] public string? Id;

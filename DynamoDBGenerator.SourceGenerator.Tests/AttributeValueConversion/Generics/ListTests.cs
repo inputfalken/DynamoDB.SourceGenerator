@@ -230,7 +230,7 @@ public class ListTests
     }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class ListClass
 {
     [DynamoDBProperty]

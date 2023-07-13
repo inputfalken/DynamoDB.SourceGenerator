@@ -82,7 +82,7 @@ public class KeyValuePairTests
     }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class KeyValuePairClass
 {
     [DynamoDBProperty]

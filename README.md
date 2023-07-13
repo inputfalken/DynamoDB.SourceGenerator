@@ -63,3 +63,30 @@ public string MyUnknownString { get; set; }
 
 #### Object types
 TODO...
+
+### Usage
+
+```csharp
+internal static class Program
+{
+    public static void Main()
+    {
+        var repository = new();
+        var putItemRequest = repository.PersonDocument.ToPutItemRequest(new Person());
+        ...
+    }
+}
+
+public class Person
+{
+    public string Firstname { get; set; }
+    public Contact ContactInfo { get; set; }
+
+    public class Contact
+    {
+        public string Email { get; set;}
+    }
+}
+[DynamoDbDocumentProperty(typeof(Person))]
+public class Repository { }
+```

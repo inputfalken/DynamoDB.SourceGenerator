@@ -84,7 +84,7 @@ public class NullableAnnotationTests
     }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class NullableAnnotationTestClass
 {
 #nullable disable
@@ -98,7 +98,7 @@ public partial class NullableAnnotationTestClass
     public int? NullableValueType { get; set; }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class NestedNullableAnnotationTestClass
 {
 #nullable disable

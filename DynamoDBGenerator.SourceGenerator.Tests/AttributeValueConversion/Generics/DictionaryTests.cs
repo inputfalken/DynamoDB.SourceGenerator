@@ -59,7 +59,7 @@ public class DictionaryTests
     }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class DictionaryClass
 {
     [DynamoDBProperty]

@@ -164,7 +164,7 @@ public class ChildClassTests
     }
 }
 
-[AttributeValueGenerator]
+[DynamoDbDocument]
 public partial class ParentClass
 {
     public string? Id { get; set; }
