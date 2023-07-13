@@ -265,15 +265,15 @@ public class DynamoDbDocumentGenerator
                 {
                     assignment =
                         $@"        var {x.CountRef} = {constructorParamCounter} += 1;
-        {x.ValueRef} = new Lazy<string>(() => $"":p{{{x.CountRef}}}"");
-        {x.NameRef} = new Lazy<string>(() => {ternaryExpressionName});
-        {x.DDB.DataMember.Name} = new AttributeReference(in {x.NameRef}, in {x.ValueRef});";
+        {x.ValueRef} = new (() => $"":p{{{x.CountRef}}}"");
+        {x.NameRef} = new (() => {ternaryExpressionName});
+        {x.DDB.DataMember.Name} = new (in {x.NameRef}, in {x.ValueRef});";
                 }
                 else
                 {
                     assignment =
                         $@"         var {x.CountRef} = {constructorParamCounter};
-        _{x.DDB.DataMember.Name} = new Lazy<{x.AttributeReference}>(() => new {x.AttributeReference}({ternaryExpressionName}, {x.CountRef}));
+        _{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({ternaryExpressionName}, {x.CountRef}));
         {constructorParamCounter} += {x.AttributeReference}.{constAttributeReferenceCount};"; }
 
                 return new Assignment(assignment, x.DDB.DataMember.Type, x.IsKnown is false);
@@ -287,14 +287,14 @@ public class DynamoDbDocumentGenerator
     }}";
 
         var expressionAttributeNameYields = dataMembers.Select(static x => x.IsKnown
-            ? $@"       if ({x.NameRef}.IsValueCreated) yield return new KeyValuePair<string, string>({x.NameRef}.Value, ""{x.DDB.AttributeName}"");"
+            ? $@"       if ({x.NameRef}.IsValueCreated) yield return new ({x.NameRef}.Value, ""{x.DDB.AttributeName}"");"
             : $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{nameEnumerableMethodName}()) {{ yield return x; }}");
         var expressionAttributeValueYields = dataMembers
             .Select(x =>
             {
                 var accessPattern = $"entity.{x.DDB.DataMember.Name}";
                 return x.IsKnown
-                    ? $@"       if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new KeyValuePair<string, AttributeValue>({x.ValueRef}.Value, {AttributeValueAssignment(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}").ToAttributeValue()});")}"
+                    ? $@"       if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {AttributeValueAssignment(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}").ToAttributeValue()});")}"
                     : $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{valueEnumerableMethodName}({accessPattern})) {{ yield return x; }}")}";
             });
 
