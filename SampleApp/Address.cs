@@ -12,6 +12,6 @@ public partial class Address
 
     public PostalCode PostalCode { get; set; } = null!;
 
-    public IReadOnlyList<PersonEntity> Neighbours { get; set; }
+    public List<PersonEntity> Neighbours { get; set; }
 
 }
