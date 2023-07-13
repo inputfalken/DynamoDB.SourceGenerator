@@ -44,8 +44,9 @@ internal static class Program
             var stopwatch = Stopwatch.StartNew();
 
             var lazy = new Lazy<string>("");
-            var update = repo.PersonEntityDocument.CreatePutItemRequest(person, BuildConditionExpression);
+            PutItemRequest update = repo.PersonEntityDocument.ToPutItemRequest(person, BuildConditionExpression);
             Console.WriteLine(stopwatch.Elapsed);
+            repo.PersonEntityDocument.ToPutItemRequest()
             stopwatch.Restart();
         }
     }

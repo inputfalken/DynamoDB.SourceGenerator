@@ -5,7 +5,7 @@ namespace DynamoDBGenerator.Extensions;
 
 public static class DynamoDbDocumentExtensions
 {
-    public static PutItemRequest CreatePutItemRequest<T, TReferences>(
+    public static PutItemRequest ToPutItemRequest<T, TReferences>(
         this IDynamoDbDocument<T, TReferences> item,
         T entity, Func<TReferences, string>? conditionExpression = null)
     {
