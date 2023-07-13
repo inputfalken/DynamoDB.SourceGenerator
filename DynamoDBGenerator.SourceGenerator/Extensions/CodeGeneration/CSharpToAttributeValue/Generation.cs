@@ -241,8 +241,18 @@ public class DynamoDbDocumentGenerator
                     $@"    public {x.AttributeReference} {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;"
                 };
             })
-            .Prepend($"    public const int {constAttributeReferenceCount} = {dataMembers.Count(x => x.IsKnown)};");
+            .Prepend($"    public const int {constAttributeReferenceCount} = {dataMembers.Select(x => KnownTypeCount(x.IsKnown, x.DDB)).Sum()};");
 
+        static int KnownTypeCount(bool isKnown, DynamoDbDataMember typeSymbol)
+        {
+            return isKnown
+                ? 1
+                : typeSymbol.DataMember.Type.GetDynamoDbProperties()
+                    .Select(x => (isKnown: x.DataMember.Type.GetKnownType() is not null, dynamoDbDataMember: x))
+                    .Select(x => KnownTypeCount(x.isKnown, x.dynamoDbDataMember))
+                    .Sum();
+
+        }
         const string constructorAttributeName = "nameRef";
         const string constructorParamCounter = "paramCount";
         var fieldAssignments = dataMembers

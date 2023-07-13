@@ -6,8 +6,7 @@ public partial class AttributeExpressionTests
     [Fact]
     public void Value_References_AreDeterministic()
     {
-        var i = 0;
-        var references = new MainClass_Document.MainClassReferences(default, ref i);
+        var references = new MainClass_Document.MainClassReferences(default, default);
 
         references.ThreeToSix.FiveToSix.Five.Value.Should().Be(":p5");
         references.SevenToEight.Seven.Value.Should().Be(":p7");
@@ -20,7 +19,7 @@ public partial class AttributeExpressionTests
         MainClassDocument
             .ConditionExpression(x => $"{x.SevenToEight.Seven.Value} <> {x.SevenToEight.Seven.Name}").Expression
             .Should()
-            .Be($":p5 <> #{nameof(MainClass.SevenToEight)}.#{nameof(MainClass.SubClassTwo.Seven)}");
+            .Be($":p7 <> #{nameof(MainClass.SevenToEight)}.#{nameof(MainClass.SubClassTwo.Seven)}");
     }
 
 }
