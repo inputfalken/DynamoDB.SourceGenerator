@@ -8,10 +8,10 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 public static class TypeExtensions
 {
 
-    public static Func<ITypeSymbol, string> CachedTypeStringificationFactory(string suffix)
+    public static Func<ITypeSymbol, string> CachedTypeStringificationFactory(string suffix, IEqualityComparer<ITypeSymbol> comparer)
     {
         return x => Execution(
-            new Dictionary<ITypeSymbol, string>(SymbolEqualityComparer.IncludeNullability),
+            new Dictionary<ITypeSymbol, string>(comparer),
             x,
             false,
             suffix

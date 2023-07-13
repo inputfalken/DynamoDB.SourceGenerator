@@ -8,12 +8,17 @@ public class DynamoDbDocumentGenerator
 
 
     private readonly ITypeSymbol _rootTypeSymbol;
-    private readonly Func<ITypeSymbol, string> _createMethodName = TypeExtensions.CachedTypeStringificationFactory("Factory");
-    private readonly Func<ITypeSymbol, string> _createTypeName = TypeExtensions.CachedTypeStringificationFactory("References");
+    private readonly IEqualityComparer<ITypeSymbol> _comparer;
+    private readonly Func<ITypeSymbol, string> _createMethodName;
+    private readonly Func<ITypeSymbol, string> _createTypeName;
 
-    public DynamoDbDocumentGenerator(in ITypeSymbol typeSymbol)
+    public DynamoDbDocumentGenerator(in ITypeSymbol typeSymbol, IEqualityComparer<ITypeSymbol> comparer)
     {
         _rootTypeSymbol = typeSymbol;
+        _createMethodName = TypeExtensions.CachedTypeStringificationFactory("Factory", comparer);
+        _createTypeName = TypeExtensions.CachedTypeStringificationFactory("References", comparer);
+        _createTypeName  = TypeExtensions.CachedTypeStringificationFactory("References", comparer);
+        _comparer = comparer;
     }
 
     private static string AttributeInterfaceName(ITypeSymbol typeSymbol)
@@ -57,7 +62,7 @@ public class DynamoDbDocumentGenerator
     private Assignment BuildList(in ITypeSymbol elementType, in string accessPattern)
     {
         var attributeValue = AttributeValueAssignment(elementType, "x");
-        var select = $"Select(x => {attributeValue.ToAttributeValue(true)}))";
+        var select = $"Select(x => {attributeValue.ToAttributeValue()}))";
         var assignment = elementType.NotNullLambdaExpression() is { } whereBody
             ? $"L = new List<AttributeValue>({accessPattern}.Where({whereBody}).{select}"
             : $"L = new List<AttributeValue>({accessPattern}.{select}";
@@ -104,7 +109,7 @@ public class DynamoDbDocumentGenerator
         var enumerable = Conversion.ConversionMethods(
                 _rootTypeSymbol,
                 x => StaticAttributeValueDictionaryFactory(x, keyStrategy),
-                new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability)
+                new HashSet<ITypeSymbol>(_comparer)
             )
             .Select(static x => x.Code);
 
@@ -141,7 +146,7 @@ public class DynamoDbDocumentGenerator
         var enumerable = Conversion.ConversionMethods(
                 _rootTypeSymbol,
                 ExpressionAttributeReferencesClassGenerator,
-                new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability)
+                new HashSet<ITypeSymbol>(_comparer)
             )
             .Select(static x => x.Code);
 
@@ -294,7 +299,7 @@ public class DynamoDbDocumentGenerator
             {
                 var accessPattern = $"entity.{x.DDB.DataMember.Name}";
                 return x.IsKnown
-                    ? $@"       if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {AttributeValueAssignment(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}").ToAttributeValue(true)});")}"
+                    ? $@"       if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {AttributeValueAssignment(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}").ToAttributeValue()});")}"
                     : $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{valueEnumerableMethodName}({accessPattern})) {{ yield return x; }}")}";
             });
 
@@ -377,7 +382,7 @@ public class DynamoDbDocumentGenerator
 
                 var dictionaryAssignment = x.DataMember.Type.NotNullIfStatement(
                     in accessPattern,
-                    @$"{dictionaryName}.Add(""{x.AttributeName}"", {attributeValue.ToAttributeValue(true)});"
+                    @$"{dictionaryName}.Add(""{x.AttributeName}"", {attributeValue.ToAttributeValue()});"
                 );
 
                 var capacityTernaries = x.DataMember.Type.NotNullTernaryExpression(in accessPattern, "1", "0");
@@ -409,21 +414,21 @@ public class DynamoDbDocumentGenerator
             case {Type: KeyValueGeneric.SupportedType.LookUp}:
                 var lookupValueAssignment = BuildList(keyValueGeneric.TValue, "x");
                 return new Assignment(
-                    $"M = {accessPattern}.ToDictionary(x => x.Key, x => {lookupValueAssignment.ToAttributeValue(true)})",
+                    $"M = {accessPattern}.ToDictionary(x => x.Key, x => {lookupValueAssignment.ToAttributeValue()})",
                     keyValueGeneric.TValue,
                     lookupValueAssignment.HasExternalDependency
                 );
             case {Type: KeyValueGeneric.SupportedType.Grouping}:
                 var groupingValueAssignment = BuildList(keyValueGeneric.TValue, accessPattern);
                 return new Assignment(
-                    $@"M = new Dictionary<string, AttributeValue>{{ {{ {accessPattern}.Key, {groupingValueAssignment.ToAttributeValue(true)}}} }}",
+                    $@"M = new Dictionary<string, AttributeValue>{{ {{ {accessPattern}.Key, {groupingValueAssignment.ToAttributeValue()}}} }}",
                     keyValueGeneric.TValue,
                     groupingValueAssignment.HasExternalDependency
                 );
             case {Type: KeyValueGeneric.SupportedType.Dictionary}:
                 var dictionaryValueAssignment = AttributeValueAssignment(keyValueGeneric.TValue, "x.Value");
                 return new Assignment(
-                    $@"M = {accessPattern}.ToDictionary(x => x.Key, x => {dictionaryValueAssignment.ToAttributeValue(true)})",
+                    $@"M = {accessPattern}.ToDictionary(x => x.Key, x => {dictionaryValueAssignment.ToAttributeValue()})",
                     keyValueGeneric.TValue,
                     dictionaryValueAssignment.HasExternalDependency
                 );

@@ -10,7 +10,7 @@ public static class CodeGenerationExtensions
     /// </summary>
     public static string GeneratePocoToAttributeValueFactory(this ITypeSymbol type)
     {
-        return new DynamoDbDocumentGenerator(in type)
+        return new DynamoDbDocumentGenerator(in type, SymbolEqualityComparer.IncludeNullability)
             .ImplementDynamoDbDocument();
     }
 

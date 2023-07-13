@@ -2,8 +2,8 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 
 public static class AssignmentExtensions
 {
-    public static string ToAttributeValue(this Assignment assignment, bool isImplicit = false)
+    public static string ToAttributeValue(this Assignment assignment)
     {
-        return isImplicit ? $"new {{ {assignment.Value} }}" : $"new AttributeValue {{ {assignment.Value} }}";
+        return $"new AttributeValue {{ {assignment.Value} }}";
     }
 }

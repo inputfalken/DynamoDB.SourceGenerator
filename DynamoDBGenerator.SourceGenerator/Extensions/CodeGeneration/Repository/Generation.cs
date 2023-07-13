@@ -25,7 +25,7 @@ public static class Generation
             if (namedTypeSymbol is null)
                 continue;
 
-            yield return new DynamoDbDocumentGenerator(namedTypeSymbol).DynamoDbDocumentProperty();
+            yield return new DynamoDbDocumentGenerator(namedTypeSymbol, SymbolEqualityComparer.IncludeNullability).DynamoDbDocumentProperty();
         }
     }
 }

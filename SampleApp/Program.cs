@@ -17,7 +17,6 @@ internal static class Program
     public static void Main()
     {
         BenchmarkRunner.Run<ExpressionBuilder>();
-        return;
 
         var person = new PersonEntity()
         {
