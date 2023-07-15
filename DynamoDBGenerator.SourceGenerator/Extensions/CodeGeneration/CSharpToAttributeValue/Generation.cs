@@ -5,12 +5,11 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAt
 
 public class DynamoDbDocumentGenerator
 {
-    private const string DeserializeName = nameof(IDynamoDbDocument<object, object>.Deserialize);
-    private const string UpdateExpressionName = nameof(IDynamoDbDocument<object, object>.UpdateExpression);
-    private const string KeysName = nameof(IDynamoDbDocument<object, object>.Keys);
-    private const string SerializeName = nameof(IDynamoDbDocument<object, object>.Serialize);
-    private const string ConditionExpressionName = nameof(IDynamoDbDocument<object, object>.ConditionExpression);
-    private const string DynamoDbDocumentName = nameof(IDynamoDbDocument<object, object>);
+    private const string DeserializeName = "Deserialize";
+    private const string KeysName = "Keys";
+    private const string SerializeName = "Serialize";
+    private const string ReferenceTrackerName = "ExpressionAttributeTracker";
+    private const string DynamoDbDocumentName = "IDynamoDbDocument";
 
 
     private readonly ITypeSymbol _rootTypeSymbol;
@@ -177,15 +176,9 @@ public class DynamoDbDocumentGenerator
             public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({fullyQualifiedName} entity) => {marshalMethods.MethodName}(entity);
             public {fullyQualifiedName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => throw new NotImplementedException();
             public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {KeysName}({fullyQualifiedName} entity) => KeysClass.{keysMethod.MethodName}(entity);
-            public {nameof(AttributeExpression<object>)}<{fullyQualifiedName}> {UpdateExpressionName}(Func<{expressionAttributeName}, string> selector)
+            public {className}.{expressionAttributeName} {ReferenceTrackerName}()
             {{
-                var reference = new {className}.{expressionAttributeName}(null, 0);
-                return new {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}>(reference, selector(reference));
-            }}
-            public {nameof(AttributeExpression<object>)}<{fullyQualifiedName}> {ConditionExpressionName}(Func<{expressionAttributeName}, string> selector)
-            {{
-                var reference = new {className}.{expressionAttributeName}(null, 0);
-                return new {nameof(AttributeExpression<object>)}<{fullyQualifiedName}>(reference, selector(reference));
+                return new {className}.{expressionAttributeName}(null, 0);
             }}
 {marshalMethods.Code}
 {keysClass}
@@ -332,7 +325,7 @@ public class DynamoDbDocumentGenerator
     {
         var dynamoDbDocumentProperty = CreateDynamoDbDocumentProperty(Accessibility.Private);
 
-        return $@"public Dictionary<string, AttributeValue> BuildAttributeValues() => {dynamoDbDocumentProperty.PropertyAccess}.{nameof(IDynamoDbDocument<int, int>.Serialize)}(this);
+        return $@"public Dictionary<string, AttributeValue> BuildAttributeValues() => {dynamoDbDocumentProperty.PropertyAccess}.{SerializeName}(this);
 {dynamoDbDocumentProperty.Code}";
 
     }
