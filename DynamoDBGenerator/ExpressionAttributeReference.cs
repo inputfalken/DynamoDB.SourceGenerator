@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.Model;
 
 namespace DynamoDBGenerator;
@@ -29,7 +30,7 @@ public readonly record struct AttributeReference
 public interface IDynamoDbDocument<TEntity, out TEntityReferences>
 {
     /// <summary>
-    /// Contains the keys for <see cref="TEntity"/>.
+    /// Creates <see cref="Dictionary{TKey,TValue}"/> from the fields attributed with <see cref="DynamoDBHashKeyAttribute"/> and <see cref="DynamoDBRangeKeyAttribute"/> from <see cref="TEntity"/>.
     /// </summary>
     public Dictionary<string, AttributeValue> Keys(TEntity entity);
 
@@ -39,9 +40,9 @@ public interface IDynamoDbDocument<TEntity, out TEntityReferences>
     public Dictionary<string, AttributeValue> Serialize(TEntity entity);
 
     /// <summary>
-    /// Deserializes the provided AttributeValues into an <typeparamref name="TEntity"/>.
+    /// Deserializes the <paramref name="attributes"/> into an <typeparamref name="TEntity"/>.
     /// </summary>
-    public TEntity Deserialize(Dictionary<string, AttributeValue> document);
+    public TEntity Deserialize(Dictionary<string, AttributeValue> attributes);
 
     /// <summary>
     ///  Creates a <see cref="AttributeExpression{T}"/> to build an 'UpdateExpression'.
