@@ -5,6 +5,12 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAt
 
 public class DynamoDbDocumentGenerator
 {
+    private const string DeserializeName = nameof(IDynamoDbDocument<object, object>.Deserialize);
+    private const string UpdateExpressionName = nameof(IDynamoDbDocument<object, object>.UpdateExpression);
+    private const string KeysName = nameof(IDynamoDbDocument<object, object>.Keys);
+    private const string SerializeName = nameof(IDynamoDbDocument<object, object>.Serialize);
+    private const string ConditionExpressionName = nameof(IDynamoDbDocument<object, object>.ConditionExpression);
+    private const string DynamoDbDocumentName = nameof(IDynamoDbDocument<object, object>);
 
 
     private readonly ITypeSymbol _rootTypeSymbol;
@@ -168,15 +174,15 @@ public class DynamoDbDocumentGenerator
         var fullyQualifiedName = _rootTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var expressionAttributeName = CreateExpressionAttributeNamesClass(_rootTypeSymbol);
         var implementInterface = $@"
-            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<object, object>.Serialize)}({fullyQualifiedName} entity) => {marshalMethods.MethodName}(entity);
-            public {fullyQualifiedName} {nameof(IDynamoDbDocument<object, object>.Deserialize)}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => throw new NotImplementedException();
-            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {nameof(IDynamoDbDocument<object, object>.Keys)}({fullyQualifiedName} entity) => KeysClass.{keysMethod.MethodName}(entity);
-            public {nameof(AttributeExpression<object>)}<{fullyQualifiedName}> {nameof(IDynamoDbDocument<object, object>.UpdateExpression)}(Func<{expressionAttributeName}, string> selector)
+            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({fullyQualifiedName} entity) => {marshalMethods.MethodName}(entity);
+            public {fullyQualifiedName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => throw new NotImplementedException();
+            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {KeysName}({fullyQualifiedName} entity) => KeysClass.{keysMethod.MethodName}(entity);
+            public {nameof(AttributeExpression<object>)}<{fullyQualifiedName}> {UpdateExpressionName}(Func<{expressionAttributeName}, string> selector)
             {{
                 var reference = new {className}.{expressionAttributeName}(null, 0);
                 return new {nameof(AttributeExpression<object>)}<{_rootTypeSymbol.Name}>(reference, selector(reference));
             }}
-            public {nameof(AttributeExpression<object>)}<{fullyQualifiedName}> {nameof(IDynamoDbDocument<object, object>.ConditionExpression)}(Func<{expressionAttributeName}, string> selector)
+            public {nameof(AttributeExpression<object>)}<{fullyQualifiedName}> {ConditionExpressionName}(Func<{expressionAttributeName}, string> selector)
             {{
                 var reference = new {className}.{expressionAttributeName}(null, 0);
                 return new {nameof(AttributeExpression<object>)}<{fullyQualifiedName}>(reference, selector(reference));
@@ -189,13 +195,13 @@ public class DynamoDbDocumentGenerator
 
         var @class = CodeGenerationExtensions.CreateClass(
             Accessibility.Public,
-            $"{className}: {nameof(IDynamoDbDocument<object, object>)}<{_rootTypeSymbol.Name}, {className}.{expressionAttributeName}>",
+            $"{className}: {DynamoDbDocumentName}<{_rootTypeSymbol.Name}, {className}.{expressionAttributeName}>",
             in sourceGeneratedCode,
             2
         );
 
         var propertyName = $"{_rootTypeSymbol.Name}Document";
-        return ($@"{accessibility.ToCode()} {nameof(IDynamoDbDocument<object, object>)}<{fullyQualifiedName}, {className}.{expressionAttributeName}> {propertyName} {{ get; }} = new {className}();
+        return ($@"{accessibility.ToCode()} {DynamoDbDocumentName}<{fullyQualifiedName}, {className}.{expressionAttributeName}> {propertyName} {{ get; }} = new {className}();
 {@class}", propertyName);
     }
 
