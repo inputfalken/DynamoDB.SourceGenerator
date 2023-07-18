@@ -22,7 +22,7 @@ public class DynamoDbDocumentGenerator
         _rootTypeSymbol = typeSymbol;
         _createMethodName = TypeExtensions.CachedTypeStringificationFactory("Factory", comparer);
         _createTypeName = TypeExtensions.CachedTypeStringificationFactory("References", comparer);
-        _createTypeName  = TypeExtensions.CachedTypeStringificationFactory("References", comparer);
+        _createTypeName = TypeExtensions.CachedTypeStringificationFactory("References", comparer);
         _comparer = comparer;
     }
 
@@ -211,8 +211,8 @@ public class DynamoDbDocumentGenerator
 
     private Conversion ExpressionAttributeReferencesClassGenerator(ITypeSymbol typeSymbol)
     {
-        const string valueEnumerableMethodName = nameof(IExpressionAttributeReferences<int>.AccessedValues);
-        const string nameEnumerableMethodName = nameof(IExpressionAttributeReferences<int>.AccessedNames);
+        const string accessedValues = nameof(IExpressionAttributeReferences<int>.AccessedValues);
+        const string accessedNames = nameof(IExpressionAttributeReferences<int>.AccessedNames);
 
         var dataMembers = typeSymbol
             .GetDynamoDbProperties()
@@ -222,41 +222,27 @@ public class DynamoDbDocumentGenerator
                 DDB: x,
                 NameRef: $"_{x.DataMember.Name}NameRef",
                 ValueRef: $"_{x.DataMember.Name}ValueRef",
-                CountRef: $"capturedParamRefFor{x.DataMember.Name}",
+                CountRef: $"cntRef{x.DataMember.Name}",
                 AttributeReference: CreateExpressionAttributeNamesClass(x.DataMember.Type),
                 AttributeInterfaceName: AttributeInterfaceName(x.DataMember.Type)))
             .ToArray();
 
-        const string constAttributeReferenceCount = "AttributeReferenceCount";
+        const string nestedCount = "InclusiveRefCount";
         var fieldDeclarations = dataMembers
-            .SelectMany(static x =>
+            .Select(static x =>
             {
                 if (x.IsKnown)
-                    return new[]
-                    {
-                        $@"    private readonly Lazy<string> {x.ValueRef};",
-                        $@"    private readonly Lazy<string> {x.NameRef};",
-                        $@"    public AttributeReference {x.DDB.DataMember.Name} {{ get; }}"
-                    };
-
-                return new[]
                 {
-                    $@"    private readonly Lazy<{x.AttributeReference}> _{x.DDB.DataMember.Name};",
-                    $@"    public {x.AttributeReference} {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;"
-                };
+                    return $@"    private readonly Lazy<string> {x.ValueRef};
+    private readonly Lazy<string> {x.NameRef};
+    public AttributeReference {x.DDB.DataMember.Name} {{ get; }}
+";
+                }
+                return $@"    private readonly Lazy<{x.AttributeReference}> _{x.DDB.DataMember.Name};
+    public {x.AttributeReference} {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;";
             })
-            .Prepend($"    public const int {constAttributeReferenceCount} = {dataMembers.Select(x => KnownTypeCount(x.IsKnown, x.DDB)).Sum()};");
+            .Prepend(NestedCount());
 
-        static int KnownTypeCount(bool isKnown, DynamoDbDataMember typeSymbol)
-        {
-            return isKnown
-                ? 1
-                : typeSymbol.DataMember.Type.GetDynamoDbProperties()
-                    .Select(x => (isKnown: x.DataMember.Type.GetKnownType() is not null, dynamoDbDataMember: x))
-                    .Select(x => KnownTypeCount(x.isKnown, x.dynamoDbDataMember))
-                    .Sum();
-
-        }
         const string constructorAttributeName = "nameRef";
         const string constructorParamCounter = "paramCount";
         var fieldAssignments = dataMembers
@@ -278,7 +264,8 @@ public class DynamoDbDocumentGenerator
                     assignment =
                         $@"         var {x.CountRef} = {constructorParamCounter};
         _{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({ternaryExpressionName}, {x.CountRef}));
-        {constructorParamCounter} += {x.AttributeReference}.{constAttributeReferenceCount};"; }
+        {constructorParamCounter} += {x.AttributeReference}.{nestedCount};";
+                }
 
                 return new Assignment(assignment, x.DDB.DataMember.Type, x.IsKnown is false);
             })
@@ -292,14 +279,14 @@ public class DynamoDbDocumentGenerator
 
         var expressionAttributeNameYields = dataMembers.Select(static x => x.IsKnown
             ? $@"       if ({x.NameRef}.IsValueCreated) yield return new ({x.NameRef}.Value, ""{x.DDB.AttributeName}"");"
-            : $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{nameEnumerableMethodName}()) {{ yield return x; }}");
+            : $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{accessedNames}()) {{ yield return x; }}");
         var expressionAttributeValueYields = dataMembers
             .Select(x =>
             {
                 var accessPattern = $"entity.{x.DDB.DataMember.Name}";
                 return x.IsKnown
                     ? $@"       if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {AttributeValueAssignment(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}").ToAttributeValue()});")}"
-                    : $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{valueEnumerableMethodName}({accessPattern})) {{ yield return x; }}")}";
+                    : $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{accessedValues}({accessPattern})) {{ yield return x; }}")}";
             });
 
         var interfaceName = AttributeInterfaceName(typeSymbol);
@@ -308,17 +295,31 @@ public class DynamoDbDocumentGenerator
             $"{className} : {interfaceName}",
             $@"{constructor}
 {string.Join(Constants.NewLine, fieldDeclarations)}
-    IEnumerable<KeyValuePair<string, string>> {interfaceName}.{nameEnumerableMethodName}()
+    IEnumerable<KeyValuePair<string, string>> {interfaceName}.{accessedNames}()
     {{
 {(string.Join(Constants.NewLine, expressionAttributeNameYields) is var joinedNames && joinedNames != string.Empty ? joinedNames : "return Enumerable.Empty<KeyValuePair<string, string>>();")}
     }}
-    IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{valueEnumerableMethodName}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} entity)
+    IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{accessedValues}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} entity)
     {{
 {(string.Join(Constants.NewLine, expressionAttributeValueYields) is var joinedValues && joinedValues != string.Empty ? joinedValues : "return Enumerable.Empty<KeyValuePair<string, AttributeValue>>();")}
     }}",
             0
         );
         return new Conversion(@class, fieldAssignments.Where(x => x.HasExternalDependency));
+
+        string NestedCount()
+        {
+            var assignments = dataMembers
+                .Where(x => x.IsKnown is false)
+                .Where(x => _comparer.Equals(typeSymbol, x.DDB.DataMember.Type) is false)
+                .Select(x => $"{x.AttributeReference}.{nestedCount}")
+                .Append(dataMembers.Count(x => x.IsKnown).ToString());
+
+            return string.Join(" + ", assignments) switch
+            {
+                var a => $"    public const int {nestedCount} = {a};"
+            };
+        }
     }
 
     public string ImplementDynamoDbDocument()
