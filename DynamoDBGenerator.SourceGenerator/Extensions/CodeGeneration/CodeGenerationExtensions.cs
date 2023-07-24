@@ -44,14 +44,23 @@ using DynamoDBGenerator;
     /// </summary>
     public static string CreateClass(this ITypeSymbol type, in string content, in int indentLevel = 1)
     {
-        return CreateClass(Accessibility.Public, type.Name, in content, in indentLevel, isPartial:true);
+        return CreateClass(Accessibility.Public, type.Name, in content, in indentLevel, isPartial: true);
     }
 
     public static string CreateClass(in Accessibility accessibility, in string className, in string content, in int indentLevel, in bool isPartial = false)
     {
         var indent = StringExtensions.Indent(indentLevel);
         var indent2 = StringExtensions.Indent(indentLevel + 1);
-        return $@"{accessibility.ToCode()}{(isPartial ? " partial": null)} class {className}
+        return $@"{accessibility.ToCode()}{(isPartial ? " partial" : null)} class {className}
+{indent}{{
+{indent2}{content}
+{indent}}}";
+    }
+    public static string CreateStruct(in Accessibility accessibility, in string structName, in string content, in int indentLevel, in bool isPartial = false, in bool isReadonly = false, bool isRecord = false)
+    {
+        var indent = StringExtensions.Indent(indentLevel);
+        var indent2 = StringExtensions.Indent(indentLevel + 1);
+        return $@"{accessibility.ToCode()}{(isPartial ? " partial" : null)}{(isReadonly ? " readonly" : null)}{(isRecord? " record" : null)} struct {structName}
 {indent}{{
 {indent2}{content}
 {indent}}}";

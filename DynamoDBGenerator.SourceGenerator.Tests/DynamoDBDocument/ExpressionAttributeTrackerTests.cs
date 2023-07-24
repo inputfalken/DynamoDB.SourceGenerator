@@ -1,103 +1,80 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument;
 
-/// <summary>
-/// NOTE the order of the assertions are intended to prove that the order you access the properties should not change their underlying value.
-/// </summary>
-[DynamoDbDocumentProperty(typeof(TripleNestedClass))]
-[DynamoDbDocumentProperty(typeof(FlatClass))]
+[DynamoDbDocumentProperty(typeof(Person))]
 [DynamoDbDocumentProperty(typeof(SelfReferencingClass))]
-[DynamoDbDocumentProperty(typeof(NestedClass))]
+[DynamoDbDocumentProperty(typeof(ClassWithOverriddenAttributeName))]
 public partial class ExpressionAttributeTrackerTests
 {
     [Fact]
-    public void TripleNestedClass_AttributeReferences_ShouldBeCorrectlySet()
+    public void Person_AttributeReferences_ShouldBeCorrectlySet()
     {
-        var references = TripleNestedClassDocument.ExpressionAttributeTracker();
+        var references = PersonDocument.ExpressionAttributeTracker();
 
-        references.ThreeToSix.FiveToSix.Five.Value.Should().Be(":p5");
-        references.ThreeToSix.FiveToSix.Five.Name.Should().Be("#ThreeToSix.#FiveToSix.#Five");
+        references.FirstName.Name.Should().Be("#FirstName");
+        references.CreatedAt.Name.Should().Be("#CreatedAt");
 
-        references.SevenToEight.Seven.Value.Should().Be(":p7");
-        references.SevenToEight.Seven.Name.Should().Be("#SevenToEight.#Seven");
+        references.FirstName.Value.Should().Be(":p1");
+        references.CreatedAt.Value.Should().Be(":p2");
 
-        references.Nine.Value.Should().Be(":p9");
-        references.Nine.Name.Should().Be("#Nine");
+        references.Address.Name.Value.Should().Be(":p3");
+        references.Address.Name.Name.Should().Be("#Address.#Name");
 
-        references.Two.Value.Should().Be(":p2");
-        references.Two.Name.Should().Be("#Two");
-
-        references.One.Value.Should().Be(":p1");
-        references.One.Name.Should().Be("#One");
-
-        references.ThreeToSix.Three.Value.Should().Be(":p3");
-        references.ThreeToSix.Three.Name.Should().Be("#ThreeToSix.#Three");
-    }
-
-
-    [Fact]
-    public void NestedClass_AttributeReferences_ShouldBeCorrectlySet()
-    {
-        var references = NestedClassDocument.ExpressionAttributeTracker();
-
-        references.One.Value.Should().Be(":p1");
-        references.One.Name.Should().Be("#One");
-        references.Three.Value.Should().Be(":p3");
-        references.Three.Name.Should().Be("#Three");
-        references.Nested.Two.Value.Should().Be(":p2");
-        references.Nested.Two.Name.Should().Be("#Nested.#Two");
+        references.Address.Street.Name.Value.Should().Be(":p4");
+        references.Address.Street.Name.Name.Should().Be("#Address.#Street.#Name");
     }
 
     [Fact]
-    public void FlatClass_AttributeReferences_ShouldBeCorrectlySet()
+    public void ClassWithOverriddenAttributeName_AttributeReferences_ShouldChangeNameValue()
     {
-        var references = FlatClassDocument.ExpressionAttributeTracker();
+        var references = ClassWithOverriddenAttributeNameDocument.ExpressionAttributeTracker();
 
-        references.Two.Value.Should().Be(":p2");
-        references.Two.Name.Should().Be("#Two");
-
-        references.One.Value.Should().Be(":p1");
-        references.One.Name.Should().Be("#One");
-
-        references.Three.Value.Should().Be(":p3");
-        references.Three.Name.Should().Be("#Three");
-    }
-
-    [Fact]
-    public void SelfReference_AttributeReferences_ShouldBeCorrectlySet()
-    {
-        var references = SelfReferencingClassDocument.ExpressionAttributeTracker();
-        references.PlusOne.Value.Should().Be(":p1");
-        references.PlusOne.Name.Should().Be("#PlusOne");
-
-        // One would expect that this should be 3
-        references.PlusAnotherOne.Value.Should().Be(":p4");
-        references.PlusAnotherOne.Name.Should().Be("#PlusAnotherOne");
-
-        references.Self.PlusOne.Value.Should().Be(":p2");
-        references.Self.PlusOne.Name.Should().Be("#Self.#PlusOne");
-
-        // One would expect that this should be 4
-        references.Self.PlusAnotherOne.Value.Should().Be(":p5");
-        references.Self.PlusAnotherOne.Name.Should().Be("#Self.#PlusAnotherOne");
+        references.Foo.Name.Should().Be("#SomethingElse");
+        references.Foo.Value.Should().Be(":p1");
 
     }
 
     [Fact]
-    public void SelfReference_AttributeReferences_EnsureUniqueness()
+    public void Person_AttributeReferences_ValueAreSetDynamicallySample1()
     {
-        const int count = 5;
+        var references = PersonDocument.ExpressionAttributeTracker();
+
+        references.Address.Street.Name.Value.Should().Be(":p1");
+        references.FirstName.Value.Should().Be(":p2");
+        references.CreatedAt.Value.Should().Be(":p3");
+    }
+
+    [Fact]
+    public void Person_AttributeReferences_ValueAreSetDynamicallySample2()
+    {
+        var references = PersonDocument.ExpressionAttributeTracker();
+
+        references.Address.Name.Value.Should().Be(":p1");
+        references.CreatedAt.Value.Should().Be(":p2");
+        references.FirstName.Value.Should().Be(":p3");
+    }
+
+
+    [Theory]
+    [InlineData(5)]
+    [InlineData(10)]
+    [InlineData(20)]
+    [InlineData(100)]
+    [InlineData(1000)]
+    [InlineData(10000)]
+    public void SelfReference_AttributeReferences_EnsureUniqueness(int count)
+    {
         var traversed = SelfReferencingClassDocument.TraverseBy(x => x.Self, count).ToArray();
 
         traversed
-            .Select(x => x.PlusOne.Name)
-            .Concat(traversed.Select(x => x.PlusAnotherOne.Name))
+            .Select(x => x.Field1.Name)
+            .Concat(traversed.Select(x => x.Field2.Name))
             .Distinct()
             .Should()
             .HaveCount(count * 2);
 
         traversed
-            .Select(x => x.PlusOne.Value)
-            .Concat(traversed.Select(x => x.PlusAnotherOne.Value))
+            .Select(x => x.Field1.Value)
+            .Concat(traversed.Select(x => x.Field2.Value))
             .Distinct()
             .Should()
             .HaveCount(count * 2);
@@ -121,60 +98,36 @@ public static class AssertionExtensions
     }
 }
 
-public class NestedClass
+public class ClassWithOverriddenAttributeName
 {
-    public string One { get; set; }
-    public NestedClass2 Nested { get; set; }
-    public string Three { get; set; }
-
-    public class NestedClass2
-    {
-        public string Two { get; set; }
-    }
+    [DynamoDBProperty("SomethingElse")]
+    public string Foo { get; set; } = null!;
 }
 
 public class SelfReferencingClass
 {
-    public string PlusOne { get; set; }
-    public SelfReferencingClass Self { get; set; }
-    public string PlusAnotherOne { get; set; }
+    public string Field1 { get; set; } = null!;
+    public SelfReferencingClass Self { get; set; } = null!;
+    public string Field2 { get; set; } = null!;
 }
 
-public class FlatClass
+public class Person
 {
-    public string One { get; set; }
-    public string Two { get; set; }
-    public string Three { get; set; }
-}
+    public string FirstName { get; set; } = null!;
+    public DateTime CreatedAt { get; set; }
+    public AddressModel Address { get; set; } = null!;
 
-public class TripleNestedClass
-{
-    public string One { get; set; }
-    public string Two { get; set; }
-    public SubClassOne ThreeToSix { get; set; }
-    public SubClassTwo SevenToEight { get; set; }
-
-    public class SubClassOne
+    public class AddressModel
     {
-        public string Three { get; set; }
-        public string Four { get; set; }
-        public SubSubClass FiveToSix { get; set; }
+        public string Name { get; set; } = null!;
+        public StreetModel Street { get; set; } = null!;
 
-        public class SubSubClass
+        public class StreetModel
         {
-            public string Five { get; set; }
-            public string Six { get; set; }
+            public string Name { get; set; } = null!;
+
         }
 
     }
-
-    public class SubClassTwo
-    {
-        public string Seven { get; set; }
-        public string Eight { get; set; }
-
-    }
-
-    public string Nine { get; set; }
 
 }
