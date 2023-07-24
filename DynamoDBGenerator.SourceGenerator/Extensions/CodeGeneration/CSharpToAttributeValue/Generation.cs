@@ -179,8 +179,8 @@ public class DynamoDbDocumentGenerator
             public {className}.{expressionAttributeName} {ReferenceTrackerName}()
             {{
                 var number = 0;
-                Func<int> incrementer = () => ++number;
-                return new {className}.{expressionAttributeName}(null, incrementer);
+                Func<string> valueIdProvider = () => $""p:{{++number}}"";
+                return new {className}.{expressionAttributeName}(null, valueIdProvider);
             }}
 {marshalMethods.Code}
 {keysClass}
@@ -235,15 +235,14 @@ public class DynamoDbDocumentGenerator
                 {
                     return $@"    private readonly Lazy<string> {x.ValueRef};
     private readonly Lazy<string> {x.NameRef};
-    public AttributeReference {x.DDB.DataMember.Name} {{ get; }}
-";
+    public AttributeReference {x.DDB.DataMember.Name} {{ get; }}";
                 }
                 return $@"    private readonly Lazy<{x.AttributeReference}> _{x.DDB.DataMember.Name};
     public {x.AttributeReference} {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;";
             });
 
         const string constructorAttributeName = "nameRef";
-        const string ctorIncrementer = "incrementer";
+        const string valueProvider = "valueIdProvider";
         var fieldAssignments = dataMembers
             .Select(static x =>
             {
@@ -253,14 +252,14 @@ public class DynamoDbDocumentGenerator
                 if (x.IsKnown)
                 {
                     assignment =
-                        $@"        {x.ValueRef} = new (() => $"":p{{{ctorIncrementer}()}}"");
+                        $@"        {x.ValueRef} = new ({valueProvider});
         {x.NameRef} = new (() => {ternaryExpressionName});
         {x.DDB.DataMember.Name} = new (in {x.NameRef}, in {x.ValueRef});";
                 }
                 else
                 {
                     assignment =
-                        $@"        _{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({ternaryExpressionName}, {ctorIncrementer}));";
+                        $@"        _{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({ternaryExpressionName}, {valueProvider}));";
                 }
 
                 return new Assignment(assignment, x.DDB.DataMember.Type, x.IsKnown is false);
@@ -268,7 +267,7 @@ public class DynamoDbDocumentGenerator
             .ToArray();
 
         var className = CreateExpressionAttributeNamesClass(typeSymbol);
-        var constructor = $@"public {className}(string? {constructorAttributeName}, Func<int> {ctorIncrementer})
+        var constructor = $@"public {className}(string? {constructorAttributeName}, Func<string> {valueProvider})
     {{
 {string.Join(Constants.NewLine, fieldAssignments.Select(x => x.Value))}
     }}";
