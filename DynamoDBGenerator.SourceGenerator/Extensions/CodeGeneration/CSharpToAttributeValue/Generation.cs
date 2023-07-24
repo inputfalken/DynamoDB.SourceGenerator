@@ -176,7 +176,7 @@ public class DynamoDbDocumentGenerator
             public {className}.{expressionAttributeName} {ReferenceTrackerName}()
             {{
                 var number = 0;
-                Func<string> valueIdProvider = () => $""p:{{++number}}"";
+                Func<string> valueIdProvider = () => $"":p{{++number}}"";
                 return new {className}.{expressionAttributeName}(null, valueIdProvider);
             }}
 {marshalMethods.Code}
