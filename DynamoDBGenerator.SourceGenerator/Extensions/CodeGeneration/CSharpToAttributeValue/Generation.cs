@@ -106,7 +106,6 @@ public class DynamoDbDocumentGenerator
     {
         var consumerMethod = CreateMethod(
             _rootTypeSymbol,
-            "Dictionary<string, AttributeValue>",
             _createMethodName(_rootTypeSymbol),
             methodConfiguration
         );
@@ -126,7 +125,6 @@ public class DynamoDbDocumentGenerator
 
         static string CreateMethod(
             ITypeSymbol typeSymbol,
-            string returnType,
             string methodName,
             MethodConfiguration config)
         {
@@ -134,11 +132,11 @@ public class DynamoDbDocumentGenerator
             var signature = config.MethodParameterization switch
             {
                 MethodConfiguration.Parameterization.UnparameterizedInstance =>
-                    $"{accessModifier} {returnType} {config.Name}() => {methodName}(this);",
+                    $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}() => {methodName}(this);",
                 MethodConfiguration.Parameterization.ParameterizedStatic =>
-                    $"{accessModifier} static {returnType} {config.Name}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} item) => {methodName}(item);",
+                    $"{accessModifier} static Dictionary<string, AttributeValue> {config.Name}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} item) => {methodName}(item);",
                 MethodConfiguration.Parameterization.ParameterizedInstance =>
-                    $"{accessModifier} {returnType} {config.Name}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} item) => {methodName}(item);",
+                    $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} item) => {methodName}(item);",
                 _ => throw new NotSupportedException($"Config of '{config.MethodParameterization}'.")
             };
 
@@ -172,8 +170,7 @@ public class DynamoDbDocumentGenerator
 
         var fullyQualifiedName = _rootTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var expressionAttributeName = CreateExpressionAttributeNamesClass(_rootTypeSymbol);
-        var implementInterface = $@"
-            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({fullyQualifiedName} entity) => {marshalMethods.MethodName}(entity);
+        var implementInterface = $@"public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({fullyQualifiedName} entity) => {marshalMethods.MethodName}(entity);
             public {fullyQualifiedName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => throw new NotImplementedException();
             public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {KeysName}({fullyQualifiedName} entity) => KeysClass.{keysMethod.MethodName}(entity);
             public {className}.{expressionAttributeName} {ReferenceTrackerName}()
@@ -183,8 +180,7 @@ public class DynamoDbDocumentGenerator
                 return new {className}.{expressionAttributeName}(null, valueIdProvider);
             }}
 {marshalMethods.Code}
-{keysClass}
-";
+{keysClass}";
 
         var sourceGeneratedCode = string.Join(Constants.NewLine, enumerable.Prepend(implementInterface));
 
@@ -323,8 +319,7 @@ public class DynamoDbDocumentGenerator
 
         const string indent = "                ";
         var dictionary =
-            @$"        
-            public static Dictionary<string, AttributeValue> {_createMethodName(type)}({type.ToDisplayString(NullableFlowState.None, SymbolDisplayFormat.FullyQualifiedFormat)} {paramReference})
+            @$"            public static Dictionary<string, AttributeValue> {_createMethodName(type)}({type.ToDisplayString(NullableFlowState.None, SymbolDisplayFormat.FullyQualifiedFormat)} {paramReference})
             {{ 
                 {InitializeDictionary(dictionaryName, properties.Select(static x => x.capacityTernary))}
                 {string.Join(Constants.NewLine + indent, properties.Select(static x => x.dictionaryPopulation))}
