@@ -95,25 +95,16 @@ public class DynamoDbDocumentGenerator
             );
     }
 
-    /// <summary>
-    ///     Creates an Dictionary with string as key and AttributeValue as value.
-    /// </summary>
-    private (string Code, string MethodName) CreateAttributeValueFactory(
-        in MethodConfiguration methodConfiguration,
-        KeyStrategy keyStrategy)
+    private string CreateAttributeValueFactory(KeyStrategy keyStrategy)
     {
-
-        var consumerMethod =
-            $"            {methodConfiguration.AccessModifier.ToCode()} static Dictionary<string, AttributeValue> {methodConfiguration.Name}({_rootTypeName} item) => {_createMethodName(_rootTypeSymbol)}(item);";
         var enumerable = Conversion.ConversionMethods(
                 _rootTypeSymbol,
                 x => StaticAttributeValueDictionaryFactory(x, keyStrategy),
                 new HashSet<ITypeSymbol>(_comparer)
             )
-            .Select(static x => x.Code)
-            .Prepend(consumerMethod);
+            .Select(static x => x.Code);
 
-        return (string.Join(Constants.NewLine, enumerable), methodConfiguration.Name);
+        return string.Join(Constants.NewLine, enumerable);
 
     }
 
@@ -127,21 +118,21 @@ public class DynamoDbDocumentGenerator
             .Select(static x => x.Code);
 
         var className = $"{_rootTypeSymbol.Name}_Document";
-        var marshalMethods = CreateAttributeValueFactory(new MethodConfiguration($"{_rootTypeSymbol.Name}Values") {AccessModifier = Accessibility.Private,}, KeyStrategy.Include);
-        var keysMethod = CreateAttributeValueFactory(new MethodConfiguration($"{_rootTypeSymbol.Name}Keys") {AccessModifier = Accessibility.Public,}, KeyStrategy.Only);
-        var keysClass = CodeGenerationExtensions.CreateClass(Accessibility.Private, "KeysClass", keysMethod.Code, 2);
+        var marshalMethods = CreateAttributeValueFactory(KeyStrategy.Include);
+        var keysMethod = CreateAttributeValueFactory(KeyStrategy.Only);
+        var keysClass = CodeGenerationExtensions.CreateClass(Accessibility.Private, "KeysClass", keysMethod, 2);
 
         var expressionAttributeName = _createTypeName(_rootTypeSymbol);
-        var implementInterface = $@"public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({_rootTypeName} entity) => {marshalMethods.MethodName}(entity);
+        var implementInterface = $@"public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({_rootTypeName} entity) => {_createMethodName(_rootTypeSymbol)}(entity);
             public {_rootTypeName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => throw new NotImplementedException();
-            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {KeysName}({_rootTypeName} entity) => KeysClass.{keysMethod.MethodName}(entity);
+            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {KeysName}({_rootTypeName} entity) => KeysClass.{_createMethodName(_rootTypeSymbol)}(entity);
             public {className}.{expressionAttributeName} {ReferenceTrackerName}()
             {{
                 var number = 0;
                 Func<string> valueIdProvider = () => $"":p{{++number}}"";
                 return new {className}.{expressionAttributeName}(null, valueIdProvider);
             }}
-{marshalMethods.Code}
+{marshalMethods}
 {keysClass}";
 
         var sourceGeneratedCode = string.Join(Constants.NewLine, referenceTrackers.Prepend(implementInterface));
