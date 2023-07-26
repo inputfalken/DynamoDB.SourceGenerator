@@ -42,8 +42,8 @@ public class DynamoDbDocumentGenerator
                 BaseType.SupportedType.Bool => typeSymbol.ToInlineAssignment($"BOOL = {accessPattern}"),
                 BaseType.SupportedType.Number => typeSymbol.ToInlineAssignment($"N = {accessPattern}.ToString()"),
                 BaseType.SupportedType.Char => typeSymbol.ToInlineAssignment($"S = {accessPattern}.ToString()"),
-                BaseType.SupportedType.Temporal => typeSymbol.ToInlineAssignment(
-                    $@"S = {accessPattern}.ToString(""O"")"),
+                BaseType.SupportedType.Temporal => typeSymbol.ToInlineAssignment($@"S = {accessPattern}.ToString(""O"")"),
+                BaseType.SupportedType.Enum => typeSymbol.ToInlineAssignment($"N = ((int){accessPattern}).ToString()"),
                 _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
             },
             SingleGeneric singleGeneric => singleGeneric.Type switch
@@ -294,8 +294,8 @@ public class DynamoDbDocumentGenerator
 {(string.Join(Constants.NewLine, expressionAttributeValueYields) is var joinedValues && joinedValues != string.Empty ? joinedValues : "return Enumerable.Empty<KeyValuePair<string, AttributeValue>>();")}
     }}",
             0,
-            isReadonly:true,
-            isRecord:true
+            isReadonly: true,
+            isRecord: true
         );
         return new Conversion(@class, fieldAssignments.Where(x => x.HasExternalDependency));
     }

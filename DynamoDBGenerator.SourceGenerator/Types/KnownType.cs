@@ -113,6 +113,7 @@ public record BaseType : KnownType
             {SpecialType: SpecialType.System_String} => SupportedType.String,
             {SpecialType: SpecialType.System_Boolean} => SupportedType.Bool,
             {SpecialType: SpecialType.System_Char} => SupportedType.Char,
+            {TypeKind: TypeKind.Enum} => SupportedType.Enum,
             _ when type.IsNumeric() => SupportedType.Number,
             _ when type.IsTemporal() => SupportedType.Temporal,
             _ => null
@@ -127,6 +128,7 @@ public record BaseType : KnownType
         Bool = 2,
         Char = 3,
         Temporal = 4,
-        Number = 5
+        Number = 5,
+        Enum = 6
     }
 }
