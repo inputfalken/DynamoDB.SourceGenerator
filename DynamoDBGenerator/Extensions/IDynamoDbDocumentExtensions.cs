@@ -7,7 +7,7 @@ namespace DynamoDBGenerator.Extensions;
 public static class DynamoDbDocumentExtensions
 {
     public static PutItemRequest ToPutItemRequest<T, TReferences>(
-        this IDynamoDbDocument<T, TReferences> item,
+        this IDynamoDBDocument<T, TReferences> item,
         T entity,
         string tableName,
         Func<TReferences, string>? conditionExpressionBuilder = null) where TReferences : IExpressionAttributeReferences<T>

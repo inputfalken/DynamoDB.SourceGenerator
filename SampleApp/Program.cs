@@ -17,8 +17,8 @@ internal static class Program
 
 }
 
-[DynamoDbDocumentProperty(typeof(PersonEntity))]
-[DynamoDbDocumentProperty(typeof(Address))]
+[DynamoDBDocument(typeof(PersonEntity))]
+[DynamoDBDocument(typeof(Address))]
 public partial class Repository
 {
     public Repository()

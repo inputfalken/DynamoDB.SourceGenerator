@@ -1,14 +1,14 @@
 ﻿using System;
 
-namespace DynamoDBGenerator
+namespace DynamoDBGenerator;
+
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
+public class DynamoDBDocument : Attribute
 {
-
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-    public class DynamoDbDocumentProperty : Attribute
+    private readonly Type _type;
+    public DynamoDBDocument(Type type)
     {
-        public DynamoDbDocumentProperty(Type type)
-        {
+        _type = type;
 
-        }
     }
 }

@@ -27,4 +27,8 @@
       <ProjectReference Include="..\DynamoDBGenerator\DynamoDBGenerator.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="AttributeValueConversion\" />
+    </ItemGroup>
+
 </Project>

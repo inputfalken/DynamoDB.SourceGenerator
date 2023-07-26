@@ -1,19 +1,9 @@
-using DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.CSharpToAttributeValue;
 using Microsoft.CodeAnalysis;
 
 namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 
 public static class CodeGenerationExtensions
 {
-    /// <summary>
-    ///     Generated attribute value conversion.
-    /// </summary>
-    public static string GeneratePocoToAttributeValueFactory(this ITypeSymbol type)
-    {
-        return new DynamoDbDocumentGenerator(in type, SymbolEqualityComparer.IncludeNullability)
-            .ImplementDynamoDbDocument();
-    }
-
     /// <summary>
     ///     Creates a namespace based on the type.
     /// </summary>

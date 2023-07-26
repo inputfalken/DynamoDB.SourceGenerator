@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using Amazon.DynamoDBv2.DataModel;
-using DynamoDBGenerator;
-
+﻿using Amazon.DynamoDBv2.DataModel;
 namespace SampleApp;
 
-public partial class PersonEntity
+public class PersonEntity
 {
     [DynamoDBHashKey]
     public string Id { get; set; }

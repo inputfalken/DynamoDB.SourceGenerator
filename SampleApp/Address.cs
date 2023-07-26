@@ -1,10 +1,6 @@
-﻿using Amazon.DynamoDBv2.DataModel;
-using DynamoDBGenerator;
+﻿namespace SampleApp;
 
-namespace SampleApp;
-
-[DynamoDbDocument]
-public partial class Address
+public class Address
 {
     public string Id { get; set; } = null!;
 

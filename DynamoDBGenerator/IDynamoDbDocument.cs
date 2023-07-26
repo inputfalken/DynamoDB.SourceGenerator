@@ -3,7 +3,7 @@ using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator;
 
-public interface IDynamoDbDocument<TEntity, out TEntityReferences> where TEntityReferences : IExpressionAttributeReferences<TEntity>
+public interface IDynamoDBDocument<TEntity, out TEntityReferences> where TEntityReferences : IExpressionAttributeReferences<TEntity>
 {
     /// <summary>
     /// Creates <see cref="Dictionary{TKey,TValue}"/> from the fields attributed with <see cref="DynamoDBHashKeyAttribute"/> and <see cref="DynamoDBRangeKeyAttribute"/> from <see cref="TEntity"/>.
