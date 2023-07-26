@@ -22,7 +22,7 @@ public class DynamoDbDocumentGenerator
         _rootTypeSymbol = typeSymbol;
         _createMethodName = TypeExtensions.CachedTypeStringificationFactory("Factory", comparer);
         _createTypeName = TypeExtensions.CachedTypeStringificationFactory("References", comparer);
-        _createTypeName  = TypeExtensions.CachedTypeStringificationFactory("References", comparer);
+        _createTypeName = TypeExtensions.CachedTypeStringificationFactory("References", comparer);
         _comparer = comparer;
     }
 
@@ -106,7 +106,6 @@ public class DynamoDbDocumentGenerator
     {
         var consumerMethod = CreateMethod(
             _rootTypeSymbol,
-            "Dictionary<string, AttributeValue>",
             _createMethodName(_rootTypeSymbol),
             methodConfiguration
         );
@@ -126,7 +125,6 @@ public class DynamoDbDocumentGenerator
 
         static string CreateMethod(
             ITypeSymbol typeSymbol,
-            string returnType,
             string methodName,
             MethodConfiguration config)
         {
@@ -134,11 +132,11 @@ public class DynamoDbDocumentGenerator
             var signature = config.MethodParameterization switch
             {
                 MethodConfiguration.Parameterization.UnparameterizedInstance =>
-                    $"{accessModifier} {returnType} {config.Name}() => {methodName}(this);",
+                    $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}() => {methodName}(this);",
                 MethodConfiguration.Parameterization.ParameterizedStatic =>
-                    $"{accessModifier} static {returnType} {config.Name}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} item) => {methodName}(item);",
+                    $"{accessModifier} static Dictionary<string, AttributeValue> {config.Name}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} item) => {methodName}(item);",
                 MethodConfiguration.Parameterization.ParameterizedInstance =>
-                    $"{accessModifier} {returnType} {config.Name}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} item) => {methodName}(item);",
+                    $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} item) => {methodName}(item);",
                 _ => throw new NotSupportedException($"Config of '{config.MethodParameterization}'.")
             };
 
@@ -172,17 +170,17 @@ public class DynamoDbDocumentGenerator
 
         var fullyQualifiedName = _rootTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var expressionAttributeName = CreateExpressionAttributeNamesClass(_rootTypeSymbol);
-        var implementInterface = $@"
-            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({fullyQualifiedName} entity) => {marshalMethods.MethodName}(entity);
+        var implementInterface = $@"public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({fullyQualifiedName} entity) => {marshalMethods.MethodName}(entity);
             public {fullyQualifiedName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => throw new NotImplementedException();
             public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {KeysName}({fullyQualifiedName} entity) => KeysClass.{keysMethod.MethodName}(entity);
             public {className}.{expressionAttributeName} {ReferenceTrackerName}()
             {{
-                return new {className}.{expressionAttributeName}(null, 0);
+                var number = 0;
+                Func<string> valueIdProvider = () => $"":p{{++number}}"";
+                return new {className}.{expressionAttributeName}(null, valueIdProvider);
             }}
 {marshalMethods.Code}
-{keysClass}
-";
+{keysClass}";
 
         var sourceGeneratedCode = string.Join(Constants.NewLine, enumerable.Prepend(implementInterface));
 
@@ -211,8 +209,8 @@ public class DynamoDbDocumentGenerator
 
     private Conversion ExpressionAttributeReferencesClassGenerator(ITypeSymbol typeSymbol)
     {
-        const string valueEnumerableMethodName = nameof(IExpressionAttributeReferences<int>.AccessedValues);
-        const string nameEnumerableMethodName = nameof(IExpressionAttributeReferences<int>.AccessedNames);
+        const string accessedValues = nameof(IExpressionAttributeReferences<int>.AccessedValues);
+        const string accessedNames = nameof(IExpressionAttributeReferences<int>.AccessedNames);
 
         var dataMembers = typeSymbol
             .GetDynamoDbProperties()
@@ -222,43 +220,25 @@ public class DynamoDbDocumentGenerator
                 DDB: x,
                 NameRef: $"_{x.DataMember.Name}NameRef",
                 ValueRef: $"_{x.DataMember.Name}ValueRef",
-                CountRef: $"capturedParamRefFor{x.DataMember.Name}",
                 AttributeReference: CreateExpressionAttributeNamesClass(x.DataMember.Type),
                 AttributeInterfaceName: AttributeInterfaceName(x.DataMember.Type)))
             .ToArray();
 
-        const string constAttributeReferenceCount = "AttributeReferenceCount";
         var fieldDeclarations = dataMembers
-            .SelectMany(static x =>
+            .Select(static x =>
             {
                 if (x.IsKnown)
-                    return new[]
-                    {
-                        $@"    private readonly Lazy<string> {x.ValueRef};",
-                        $@"    private readonly Lazy<string> {x.NameRef};",
-                        $@"    public AttributeReference {x.DDB.DataMember.Name} {{ get; }}"
-                    };
-
-                return new[]
                 {
-                    $@"    private readonly Lazy<{x.AttributeReference}> _{x.DDB.DataMember.Name};",
-                    $@"    public {x.AttributeReference} {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;"
-                };
-            })
-            .Prepend($"    public const int {constAttributeReferenceCount} = {dataMembers.Select(x => KnownTypeCount(x.IsKnown, x.DDB)).Sum()};");
+                    return $@"    private readonly Lazy<string> {x.ValueRef};
+    private readonly Lazy<string> {x.NameRef};
+    public AttributeReference {x.DDB.DataMember.Name} {{ get; }}";
+                }
+                return $@"    private readonly Lazy<{x.AttributeReference}> _{x.DDB.DataMember.Name};
+    public {x.AttributeReference} {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;";
+            });
 
-        static int KnownTypeCount(bool isKnown, DynamoDbDataMember typeSymbol)
-        {
-            return isKnown
-                ? 1
-                : typeSymbol.DataMember.Type.GetDynamoDbProperties()
-                    .Select(x => (isKnown: x.DataMember.Type.GetKnownType() is not null, dynamoDbDataMember: x))
-                    .Select(x => KnownTypeCount(x.isKnown, x.dynamoDbDataMember))
-                    .Sum();
-
-        }
         const string constructorAttributeName = "nameRef";
-        const string constructorParamCounter = "paramCount";
+        const string valueProvider = "valueIdProvider";
         var fieldAssignments = dataMembers
             .Select(static x =>
             {
@@ -268,55 +248,55 @@ public class DynamoDbDocumentGenerator
                 if (x.IsKnown)
                 {
                     assignment =
-                        $@"        var {x.CountRef} = {constructorParamCounter} += 1;
-        {x.ValueRef} = new (() => $"":p{{{x.CountRef}}}"");
+                        $@"        {x.ValueRef} = new ({valueProvider});
         {x.NameRef} = new (() => {ternaryExpressionName});
         {x.DDB.DataMember.Name} = new (in {x.NameRef}, in {x.ValueRef});";
                 }
                 else
                 {
                     assignment =
-                        $@"         var {x.CountRef} = {constructorParamCounter};
-        _{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({ternaryExpressionName}, {x.CountRef}));
-        {constructorParamCounter} += {x.AttributeReference}.{constAttributeReferenceCount};"; }
+                        $@"        _{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({ternaryExpressionName}, {valueProvider}));";
+                }
 
                 return new Assignment(assignment, x.DDB.DataMember.Type, x.IsKnown is false);
             })
             .ToArray();
 
         var className = CreateExpressionAttributeNamesClass(typeSymbol);
-        var constructor = $@"public {className}(string? {constructorAttributeName}, int {constructorParamCounter})
+        var constructor = $@"public {className}(string? {constructorAttributeName}, Func<string> {valueProvider})
     {{
 {string.Join(Constants.NewLine, fieldAssignments.Select(x => x.Value))}
     }}";
 
         var expressionAttributeNameYields = dataMembers.Select(static x => x.IsKnown
             ? $@"       if ({x.NameRef}.IsValueCreated) yield return new ({x.NameRef}.Value, ""{x.DDB.AttributeName}"");"
-            : $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{nameEnumerableMethodName}()) {{ yield return x; }}");
+            : $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{accessedNames}()) {{ yield return x; }}");
         var expressionAttributeValueYields = dataMembers
             .Select(x =>
             {
                 var accessPattern = $"entity.{x.DDB.DataMember.Name}";
                 return x.IsKnown
                     ? $@"       if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {AttributeValueAssignment(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}").ToAttributeValue()});")}"
-                    : $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{valueEnumerableMethodName}({accessPattern})) {{ yield return x; }}")}";
+                    : $@"       if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{accessedValues}({accessPattern})) {{ yield return x; }}")}";
             });
 
         var interfaceName = AttributeInterfaceName(typeSymbol);
-        var @class = CodeGenerationExtensions.CreateClass(
+        var @class = CodeGenerationExtensions.CreateStruct(
             Accessibility.Public,
             $"{className} : {interfaceName}",
             $@"{constructor}
 {string.Join(Constants.NewLine, fieldDeclarations)}
-    IEnumerable<KeyValuePair<string, string>> {interfaceName}.{nameEnumerableMethodName}()
+    IEnumerable<KeyValuePair<string, string>> {interfaceName}.{accessedNames}()
     {{
 {(string.Join(Constants.NewLine, expressionAttributeNameYields) is var joinedNames && joinedNames != string.Empty ? joinedNames : "return Enumerable.Empty<KeyValuePair<string, string>>();")}
     }}
-    IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{valueEnumerableMethodName}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} entity)
+    IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{accessedValues}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} entity)
     {{
 {(string.Join(Constants.NewLine, expressionAttributeValueYields) is var joinedValues && joinedValues != string.Empty ? joinedValues : "return Enumerable.Empty<KeyValuePair<string, AttributeValue>>();")}
     }}",
-            0
+            0,
+            isReadonly:true,
+            isRecord:true
         );
         return new Conversion(@class, fieldAssignments.Where(x => x.HasExternalDependency));
     }
@@ -339,8 +319,7 @@ public class DynamoDbDocumentGenerator
 
         const string indent = "                ";
         var dictionary =
-            @$"        
-            public static Dictionary<string, AttributeValue> {_createMethodName(type)}({type.ToDisplayString(NullableFlowState.None, SymbolDisplayFormat.FullyQualifiedFormat)} {paramReference})
+            @$"            public static Dictionary<string, AttributeValue> {_createMethodName(type)}({type.ToDisplayString(NullableFlowState.None, SymbolDisplayFormat.FullyQualifiedFormat)} {paramReference})
             {{ 
                 {InitializeDictionary(dictionaryName, properties.Select(static x => x.capacityTernary))}
                 {string.Join(Constants.NewLine + indent, properties.Select(static x => x.dictionaryPopulation))}
