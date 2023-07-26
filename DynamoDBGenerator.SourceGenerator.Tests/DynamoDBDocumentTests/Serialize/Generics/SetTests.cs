@@ -1,7 +1,7 @@
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument.Serialize.Generics;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBGenerator.DynamoDBDocument(typeof(StringSetClass))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(Int32SetClass))]
+[DynamoDBDocument(typeof(StringSetClass))]
+[DynamoDBDocument(typeof(Int32SetClass))]
 public partial class SetTests
 {
 
@@ -51,7 +51,7 @@ public partial class SetTests
             .And
             .ContainKey(nameof(Int32SetClass.IntSet))
             .And
-            .AllSatisfy(x => ((IEnumerable<string>)x.Value.NS).Should()
+            .AllSatisfy(x => x.Value.NS.Should()
                 .SatisfyRespectively(
                     y => y.Should().Be("1"),
                     y => y.Should().Be("2"),
@@ -103,7 +103,7 @@ public partial class SetTests
             .And
             .ContainKey(nameof(StringSetClass.StringSet))
             .And
-            .AllSatisfy(x => ((IEnumerable<string>)x.Value.SS).Should()
+            .AllSatisfy(x => x.Value.SS.Should()
                 .SatisfyRespectively(
                     y => y.Should().Be("1"),
                     y => y.Should().Be("2"),

@@ -1,8 +1,8 @@
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 
-[DynamoDBGenerator.DynamoDBDocument(typeof(Person))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(SelfReferencingClass))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(ClassWithOverriddenAttributeName))]
+[DynamoDBDocument(typeof(Person))]
+[DynamoDBDocument(typeof(SelfReferencingClass))]
+[DynamoDBDocument(typeof(ClassWithOverriddenAttributeName))]
 public partial class ExpressionAttributeTrackerTests
 {
     [Theory]

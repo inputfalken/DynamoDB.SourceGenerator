@@ -1,7 +1,7 @@
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument.Serialize.Types;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Types;
 
-[DynamoDBGenerator.DynamoDBDocument(typeof(WeekDayClass))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(OptionalWeekDayClass))]
+[DynamoDBDocument(typeof(WeekDayClass))]
+[DynamoDBDocument(typeof(OptionalWeekDayClass))]
 public partial class EnumTests
 {
     [Theory]
@@ -20,7 +20,7 @@ public partial class EnumTests
             .SatisfyRespectively(x =>
             {
                 x.Key.Should().Be(nameof(WeekDayClass.DayOfWeek));
-                x.Value.N.Should().Be($"{(int)dayOfWeek}");
+                ((string)x.Value.N).Should().Be($"{(int)dayOfWeek}");
             });
     }
 
@@ -40,7 +40,7 @@ public partial class EnumTests
             .SatisfyRespectively(x =>
             {
                 x.Key.Should().Be(nameof(WeekDayClass.DayOfWeek));
-                x.Value.N.Should().Be($"{(int)dayOfWeek}");
+                ((string)x.Value.N).Should().Be($"{(int)dayOfWeek}");
             });
     }
 
@@ -57,7 +57,8 @@ public partial class EnumTests
     public void Serialize_OptionalWeekDayClass_ValueExplicitlySetToNull()
     {
         OptionalWeekDayClassDocument
-            .Serialize(new OptionalWeekDayClass() {DayOfWeek = null})
+            .Serialize(new OptionalWeekDayClass
+                {DayOfWeek = null})
             .Should()
             .BeEmpty();
     }

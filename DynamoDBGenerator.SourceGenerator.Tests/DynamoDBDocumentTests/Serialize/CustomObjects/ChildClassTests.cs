@@ -1,6 +1,6 @@
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument.Serialize.CustomObjects;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.CustomObjects;
 
-[DynamoDBGenerator.DynamoDBDocument(typeof(ParentClass))]
+[DynamoDBDocument(typeof(ParentClass))]
 public partial class ChildClassTests
 {
     [Fact]
@@ -24,7 +24,7 @@ public partial class ChildClassTests
             .SatisfyRespectively(
                 x =>
                 {
-                    ((string)x.Key).Should().Be(nameof(ParentClass.Id));
+                    x.Key.Should().Be(nameof(ParentClass.Id));
                     ((string)x.Value.S).Should().Be("I am the root");
                 },
                 x =>
@@ -62,7 +62,7 @@ public partial class ChildClassTests
             .SatisfyRespectively(
                 x =>
                 {
-                    ((string)x.Key).Should().Be(nameof(ParentClass.Id));
+                    x.Key.Should().Be(nameof(ParentClass.Id));
                     ((string)x.Value.S).Should().Be("I am the root");
                 }
             );
@@ -82,7 +82,7 @@ public partial class ChildClassTests
             .SatisfyRespectively(
                 x =>
                 {
-                    ((string)x.Key).Should().Be(nameof(ParentClass.Id));
+                    x.Key.Should().Be(nameof(ParentClass.Id));
                     ((string)x.Value.S).Should().Be("I am the root");
                 },
                 x =>
@@ -110,7 +110,7 @@ public partial class ChildClassTests
             .SatisfyRespectively(
                 x =>
                 {
-                    ((string)x.Key).Should().Be(nameof(ParentClass.Id));
+                    x.Key.Should().Be(nameof(ParentClass.Id));
                     ((string)x.Value.S).Should().Be("I am the root");
                 },
                 x =>
@@ -143,7 +143,7 @@ public partial class ChildClassTests
             .SatisfyRespectively(
                 x =>
                 {
-                    ((string)x.Key).Should().Be(nameof(ParentClass.Id));
+                    x.Key.Should().Be(nameof(ParentClass.Id));
                     ((string)x.Value.S).Should().Be("I am the root");
                 },
                 x =>

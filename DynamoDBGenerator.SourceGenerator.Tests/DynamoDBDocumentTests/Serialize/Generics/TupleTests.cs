@@ -1,6 +1,6 @@
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument.Serialize.Generics;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBGenerator.DynamoDBDocument(typeof(TupleClass))]
+[DynamoDBDocument(typeof(TupleClass))]
 public partial class TupleTests
 {
 
@@ -19,7 +19,7 @@ public partial class TupleTests
             .SatisfyRespectively(
                 x =>
                 {
-                    ((string)x.Key).Should().Be(nameof(TupleClass.XYCoordinate));
+                    x.Key.Should().Be(nameof(TupleClass.XYCoordinate));
                     x.Value.M.Should().SatisfyRespectively(y =>
                         {
                             ((string)y.Key).Should().Be("X");
@@ -69,7 +69,7 @@ public partial class TupleTests
             .SatisfyRespectively(
                 x =>
                 {
-                    ((string)x.Key).Should().Be(nameof(TupleClass.XYCoordinate));
+                    x.Key.Should().Be(nameof(TupleClass.XYCoordinate));
                     x.Value.M.Should().SatisfyRespectively(y =>
                         {
                             ((string)y.Key).Should().Be("X");
@@ -99,7 +99,7 @@ public partial class TupleTests
             .SatisfyRespectively(
                 x =>
                 {
-                    ((string)x.Key).Should().Be(nameof(TupleClass.XYZCoordinate));
+                    x.Key.Should().Be(nameof(TupleClass.XYZCoordinate));
                     x.Value.M.Should().SatisfyRespectively(
                         y =>
                         {

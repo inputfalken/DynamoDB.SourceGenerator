@@ -1,6 +1,6 @@
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument.Serialize;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
-[DynamoDBGenerator.DynamoDBDocument(typeof(PropertyWithMixedNames))]
+[DynamoDBDocument(typeof(PropertyWithMixedNames))]
 public partial class PropertyRenamingTests
 {
     [Fact]
@@ -21,7 +21,7 @@ public partial class PropertyRenamingTests
             .Serialize(@class)
             .Should()
             .SatisfyRespectively(
-                x => { ((string)x.Key).Should().Be(nameof(PropertyWithMixedNames.PlainProperty)); },
+                x => { x.Key.Should().Be(nameof(PropertyWithMixedNames.PlainProperty)); },
                 x => { ((string)x.Key).Should().Be(nameof(PropertyWithMixedNames.PropertyWithDdbPropertyAttribute)); },
                 x => { ((string)x.Key).Should().Be("AnotherName"); },
                 x => { ((string)x.Key).Should().Be(nameof(PropertyWithMixedNames.PropertyWithDdbHashKeyAttribute)); },

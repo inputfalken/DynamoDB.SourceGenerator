@@ -1,6 +1,6 @@
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument.Serialize.Generics;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBGenerator.DynamoDBDocument(typeof(ListClass))]
+[DynamoDBDocument(typeof(ListClass))]
 public partial class ListTests
 {
 
@@ -22,7 +22,7 @@ public partial class ListTests
             .AllSatisfy(x => x.Value.L
                 .Should()
                 .SatisfyRespectively(
-                    y => ((string)y.S).Should().Be("1"),
+                    y => y.S.Should().Be("1"),
                     y => ((string)y.S).Should().Be("2"),
                     y => ((string)y.S).Should().Be("3")
                 )
@@ -118,7 +118,7 @@ public partial class ListTests
             .AllSatisfy(x => x.Value.L
                 .Should()
                 .SatisfyRespectively(
-                    y => ((string)y.S).Should().Be("1"),
+                    y => y.S.Should().Be("1"),
                     y => ((string)y.S).Should().Be("2"),
                     y => ((string)y.S).Should().Be("3")
                 )
@@ -138,7 +138,7 @@ public partial class ListTests
             .Should()
             .AllSatisfy(x =>
             {
-                ((string)x.Key).Should().Be(nameof(ListClass.KeyValuePairs));
+                x.Key.Should().Be(nameof(ListClass.KeyValuePairs));
                 x.Value.L.Should().SatisfyRespectively(
                     y => y.M.Should().SatisfyRespectively(
                         z =>
@@ -189,7 +189,7 @@ public partial class ListTests
             .AllSatisfy(x => x.Value.L
                 .Should()
                 .SatisfyRespectively(
-                    y => ((string)y.S).Should().Be("1"),
+                    y => y.S.Should().Be("1"),
                     y => ((string)y.S).Should().Be("2"),
                     y => ((string)y.S).Should().Be("3")
                 )
@@ -214,7 +214,7 @@ public partial class ListTests
             .AllSatisfy(x => x.Value.L
                 .Should()
                 .SatisfyRespectively(
-                    y => ((string)y.S).Should().Be("1"),
+                    y => y.S.Should().Be("1"),
                     y => ((string)y.S).Should().Be("2"),
                     y => ((string)y.S).Should().Be("3")
                 )

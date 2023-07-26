@@ -1,6 +1,6 @@
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument.Serialize.Types;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Types;
 
-[DynamoDBGenerator.DynamoDBDocument(typeof(CharClass))]
+[DynamoDBDocument(typeof(CharClass))]
 public partial class CharTests
 {
     [Fact]
@@ -16,9 +16,9 @@ public partial class CharTests
             .Should()
             .SatisfyRespectively(x =>
             {
-                ((string)x.Key).Should().Be(nameof(CharClass.Letter));
+                x.Key.Should().Be(nameof(CharClass.Letter));
 
-                ((string)x.Value.S).Should().Be("L");
+                x.Value.S.Should().Be("L");
 
             });
     }

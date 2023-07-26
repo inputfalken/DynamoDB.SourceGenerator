@@ -1,8 +1,8 @@
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument.Serialize;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
-[DynamoDBGenerator.DynamoDBDocument(typeof(NullableAnnotationTests))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(NestedNullableAnnotationTestClass))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(NullableAnnotationTestClass))]
+[DynamoDBDocument(typeof(NullableAnnotationTests))]
+[DynamoDBDocument(typeof(NestedNullableAnnotationTestClass))]
+[DynamoDBDocument(typeof(NullableAnnotationTestClass))]
 public partial class NullableAnnotationTests
 {
 

@@ -1,6 +1,6 @@
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument.Serialize.Types;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Types;
 
-[DynamoDBGenerator.DynamoDBDocument(typeof(DateOnlyClass))]
+[DynamoDBDocument(typeof(DateOnlyClass))]
 public partial class DateOnlyTests
 {
 
@@ -40,7 +40,7 @@ public partial class DateOnlyTests
             .And
             .ContainKey(nameof(DateOnlyClass.TimeStamp))
             .And
-            .ContainSingle(x => DateOnly.Parse((string)x.Value.S) == timeStamp);
+            .ContainSingle(x => DateOnly.Parse(x.Value.S) == timeStamp);
     }
 }
 

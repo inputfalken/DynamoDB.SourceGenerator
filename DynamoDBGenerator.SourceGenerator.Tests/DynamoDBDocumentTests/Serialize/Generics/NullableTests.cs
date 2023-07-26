@@ -1,6 +1,6 @@
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument.Serialize.Generics;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBGenerator.DynamoDBDocument(typeof(NullableValueTypeClass))]
+[DynamoDBDocument(typeof(NullableValueTypeClass))]
 public partial class NullableTests
 {
     [Fact]

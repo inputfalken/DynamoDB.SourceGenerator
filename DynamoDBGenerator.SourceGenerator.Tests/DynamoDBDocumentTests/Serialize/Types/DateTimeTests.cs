@@ -1,6 +1,6 @@
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument.Serialize.Types;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Types;
 
-[DynamoDBGenerator.DynamoDBDocument(typeof(DateTimeClass))]
+[DynamoDBDocument(typeof(DateTimeClass))]
 public partial class DateTimeTests
 {
 
@@ -40,7 +40,7 @@ public partial class DateTimeTests
             .And
             .ContainKey(nameof(DateTimeClass.TimeStamp))
             .And
-            .ContainSingle(x => DateTime.Parse((string)x.Value.S) == timeStamp);
+            .ContainSingle(x => DateTime.Parse(x.Value.S) == timeStamp);
     }
 }
 

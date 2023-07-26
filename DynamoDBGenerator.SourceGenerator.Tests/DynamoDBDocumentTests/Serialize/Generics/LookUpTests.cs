@@ -1,6 +1,6 @@
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument.Serialize.Generics;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBGenerator.DynamoDBDocument(typeof(LookUpClass))]
+[DynamoDBDocument(typeof(LookUpClass))]
 public partial class LookUpTests
 {
     [Fact]
@@ -42,7 +42,7 @@ public partial class LookUpTests
             {
                 x.Value.M.Should().SatisfyRespectively(y =>
                     {
-                        ((string)y.Key).Should().Be("first");
+                        y.Key.Should().Be("first");
                         y.Value.L.Should().SatisfyRespectively(z => { ((string)z.N).Should().Be("1"); },
                             z => { ((string)z.N).Should().Be("2"); });
                     },

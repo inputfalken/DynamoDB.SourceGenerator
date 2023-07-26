@@ -1,9 +1,9 @@
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument.Serialize;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
-[DynamoDBGenerator.DynamoDBDocument(typeof(EmptyClass))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(ClassWithIgnoredProperty))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(ClassWithOneProperty))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(ClassWithOneDDBProperty))]
+[DynamoDBDocument(typeof(EmptyClass))]
+[DynamoDBDocument(typeof(ClassWithIgnoredProperty))]
+[DynamoDBDocument(typeof(ClassWithOneProperty))]
+[DynamoDBDocument(typeof(ClassWithOneDDBProperty))]
 public partial class PropertyInclusionTests
 {
 

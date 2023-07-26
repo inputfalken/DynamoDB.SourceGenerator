@@ -1,9 +1,9 @@
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument.Serialize;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
-[DynamoDBGenerator.DynamoDBDocument(typeof(EmptyClass))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(ClassWithIgnoredField))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(ClassWithOneField))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(ClassWithOneDDBField))]
+[DynamoDBDocument(typeof(EmptyClass))]
+[DynamoDBDocument(typeof(ClassWithIgnoredField))]
+[DynamoDBDocument(typeof(ClassWithOneField))]
+[DynamoDBDocument(typeof(ClassWithOneDDBField))]
 public partial class FieldInclusionTests
 {
 

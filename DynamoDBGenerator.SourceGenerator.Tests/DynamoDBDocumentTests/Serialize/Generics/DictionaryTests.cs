@@ -1,6 +1,6 @@
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument.Serialize.Generics;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBGenerator.DynamoDBDocument(typeof(DictionaryClass))]
+[DynamoDBDocument(typeof(DictionaryClass))]
 public partial class DictionaryTests
 {
 
@@ -27,7 +27,7 @@ public partial class DictionaryTests
             {
                 x.Value.M.Should().SatisfyRespectively(y =>
                 {
-                    ((string)y.Key).Should().Be("two");
+                    y.Key.Should().Be("two");
                     ((string)y.Value.N).Should().Be("2");
                 }, y =>
                 {

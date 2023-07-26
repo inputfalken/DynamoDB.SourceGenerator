@@ -1,6 +1,6 @@
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument.Serialize;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
-[DynamoDBGenerator.DynamoDBDocument(typeof(ValueTypeClass))]
+[DynamoDBDocument(typeof(ValueTypeClass))]
 public partial class ValueTypeTests
 {
     [Fact]

@@ -1,6 +1,6 @@
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument.Serialize.Types;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Types;
 
-[DynamoDBGenerator.DynamoDBDocument(typeof(DateTimeOffsetClass))]
+[DynamoDBDocument(typeof(DateTimeOffsetClass))]
 public partial class DateTimeOffsetTests
 {
 
@@ -40,7 +40,7 @@ public partial class DateTimeOffsetTests
             .And
             .ContainKey(nameof(DateTimeOffsetClass.TimeStamp))
             .And
-            .ContainSingle(x => DateTimeOffset.Parse((string)x.Value.S) == timeStamp);
+            .ContainSingle(x => DateTimeOffset.Parse(x.Value.S) == timeStamp);
     }
 }
 

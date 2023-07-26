@@ -1,6 +1,6 @@
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument.Serialize.CustomObjects;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.CustomObjects;
 
-[DynamoDBGenerator.DynamoDBDocument(typeof(SiblingClassOne))]
+[DynamoDBDocument(typeof(SiblingClassOne))]
 public partial class SiblingClassTests
 {
     [Fact]
@@ -20,16 +20,16 @@ public partial class SiblingClassTests
             .SatisfyRespectively(
                 x =>
                 {
-                    ((string)x.Key).Should().Be(nameof(SiblingClassOne.Id));
-                    ((string)x.Value.S).Should().Be("I am the root");
+                    x.Key.Should().Be(nameof(SiblingClassOne.Id));
+                    x.Value.S.Should().Be("I am the root");
                 },
                 x =>
                 {
-                    ((string)x.Key).Should().Be(nameof(SiblingClassOne.CustomClass));
+                    x.Key.Should().Be(nameof(SiblingClassOne.CustomClass));
                     x.Value.M.Should().SatisfyRespectively(y =>
                     {
-                        ((string)y.Key).Should().Be(nameof(SiblingClassTwo.PropertyId));
-                        ((string)y.Value.S).Should().Be("I am the property");
+                        y.Key.Should().Be(nameof(SiblingClassTwo.PropertyId));
+                        y.Value.S.Should().Be("I am the property");
                     });
                 }
             );
@@ -48,8 +48,8 @@ public partial class SiblingClassTests
             .SatisfyRespectively(
                 x =>
                 {
-                    ((string)x.Key).Should().Be(nameof(SiblingClassOne.Id));
-                    ((string)x.Value.S).Should().Be("I am the root");
+                    x.Key.Should().Be(nameof(SiblingClassOne.Id));
+                    x.Value.S.Should().Be("I am the root");
                 }
             );
     }
@@ -68,12 +68,12 @@ public partial class SiblingClassTests
             .SatisfyRespectively(
                 x =>
                 {
-                    ((string)x.Key).Should().Be(nameof(SiblingClassOne.Id));
-                    ((string)x.Value.S).Should().Be("I am the root");
+                    x.Key.Should().Be(nameof(SiblingClassOne.Id));
+                    x.Value.S.Should().Be("I am the root");
                 },
                 x =>
                 {
-                    ((string)x.Key).Should().Be(nameof(SiblingClassOne.CustomClass));
+                    x.Key.Should().Be(nameof(SiblingClassOne.CustomClass));
                     x.Value.M.Should().BeEmpty();
                 }
             );

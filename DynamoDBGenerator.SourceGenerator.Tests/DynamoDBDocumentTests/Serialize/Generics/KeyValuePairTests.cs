@@ -1,6 +1,6 @@
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument.Serialize.Generics;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBGenerator.DynamoDBDocument(typeof(KeyValuePairClass))]
+[DynamoDBDocument(typeof(KeyValuePairClass))]
 public partial class KeyValuePairTests
 {
     [Fact]
@@ -17,7 +17,7 @@ public partial class KeyValuePairTests
             .SatisfyRespectively(
                 x =>
                 {
-                    ((string)x.Key).Should().Be(nameof(KeyValuePairClass.KeyValuePair));
+                    x.Key.Should().Be(nameof(KeyValuePairClass.KeyValuePair));
                     x.Value.M.Should().SatisfyRespectively(y =>
                         {
                             ((string)y.Key).Should().Be("Key");
@@ -47,7 +47,7 @@ public partial class KeyValuePairTests
             .SatisfyRespectively(
                 x =>
                 {
-                    ((string)x.Key).Should().Be(nameof(KeyValuePairClass.KeyValuePair));
+                    x.Key.Should().Be(nameof(KeyValuePairClass.KeyValuePair));
                     x.Value.M.Should().SatisfyRespectively(
                         y =>
                         {
@@ -73,7 +73,7 @@ public partial class KeyValuePairTests
             .SatisfyRespectively(
                 x =>
                 {
-                    ((string)x.Key).Should().Be(nameof(KeyValuePairClass.KeyValuePair));
+                    x.Key.Should().Be(nameof(KeyValuePairClass.KeyValuePair));
                     x.Value.M.Should().SatisfyRespectively(
                         y =>
                         {

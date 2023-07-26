@@ -1,16 +1,16 @@
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocument.Serialize.Types;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Types;
 
-[DynamoDBGenerator.DynamoDBDocument(typeof(DecimalClass))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(DoubleClass))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(FloatClass))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(Int16Class))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(Int32Class))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(Int64Class))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(Int8Class))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(UInt16Class))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(UInt32Class))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(UInt64Class))]
-[DynamoDBGenerator.DynamoDBDocument(typeof(UInt8Class))]
+[DynamoDBDocument(typeof(DecimalClass))]
+[DynamoDBDocument(typeof(DoubleClass))]
+[DynamoDBDocument(typeof(FloatClass))]
+[DynamoDBDocument(typeof(Int16Class))]
+[DynamoDBDocument(typeof(Int32Class))]
+[DynamoDBDocument(typeof(Int64Class))]
+[DynamoDBDocument(typeof(Int8Class))]
+[DynamoDBDocument(typeof(UInt16Class))]
+[DynamoDBDocument(typeof(UInt32Class))]
+[DynamoDBDocument(typeof(UInt64Class))]
+[DynamoDBDocument(typeof(UInt8Class))]
 public partial class NumberTests
 {
 
