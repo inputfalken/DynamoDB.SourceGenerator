@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
@@ -99,49 +102,24 @@ public class DynamoDbDocumentGenerator
         in MethodConfiguration methodConfiguration,
         KeyStrategy keyStrategy)
     {
-        var consumerMethod = CreateMethod(
-            _rootTypeSymbol,
-            _createMethodName(_rootTypeSymbol),
-            methodConfiguration
-        );
 
+        var consumerMethod =
+            $"            {methodConfiguration.AccessModifier.ToCode()} static Dictionary<string, AttributeValue> {methodConfiguration.Name}({_rootTypeName} item) => {_createMethodName(_rootTypeSymbol)}(item);";
         var enumerable = Conversion.ConversionMethods(
                 _rootTypeSymbol,
                 x => StaticAttributeValueDictionaryFactory(x, keyStrategy),
                 new HashSet<ITypeSymbol>(_comparer)
             )
-            .Select(static x => x.Code);
+            .Select(static x => x.Code)
+            .Prepend(consumerMethod);
 
-        var sourceGeneratedCode = string.Join(Constants.NewLine, enumerable);
+        return (string.Join(Constants.NewLine, enumerable), methodConfiguration.Name);
 
-        var code = $@"{consumerMethod}
-{sourceGeneratedCode}";
-        return (code, methodConfiguration.Name);
-
-        static string CreateMethod(
-            ITypeSymbol typeSymbol,
-            string methodName,
-            MethodConfiguration config)
-        {
-            var accessModifier = config.AccessModifier.ToCode();
-            var signature = config.MethodParameterization switch
-            {
-                MethodConfiguration.Parameterization.UnparameterizedInstance =>
-                    $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}() => {methodName}(this);",
-                MethodConfiguration.Parameterization.ParameterizedStatic =>
-                    $"{accessModifier} static Dictionary<string, AttributeValue> {config.Name}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} item) => {methodName}(item);",
-                MethodConfiguration.Parameterization.ParameterizedInstance =>
-                    $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} item) => {methodName}(item);",
-                _ => throw new NotSupportedException($"Config of '{config.MethodParameterization}'.")
-            };
-
-            return $@"            {signature}";
-        }
     }
 
     public string CreateDynamoDbDocumentProperty(Accessibility accessibility)
     {
-        var enumerable = Conversion.ConversionMethods(
+        var referenceTrackers = Conversion.ConversionMethods(
                 _rootTypeSymbol,
                 ExpressionAttributeReferencesClassGenerator,
                 new HashSet<ITypeSymbol>(_comparer)
@@ -149,18 +127,8 @@ public class DynamoDbDocumentGenerator
             .Select(static x => x.Code);
 
         var className = $"{_rootTypeSymbol.Name}_Document";
-        var marshalMethods = CreateAttributeValueFactory(new MethodConfiguration($"{_rootTypeSymbol.Name}Values")
-        {
-            AccessModifier = Accessibility.Private,
-            MethodParameterization = MethodConfiguration.Parameterization.ParameterizedInstance
-        }, KeyStrategy.Include);
-
-        var keysMethod = CreateAttributeValueFactory(new MethodConfiguration($"{_rootTypeSymbol.Name}Keys")
-        {
-            AccessModifier = Accessibility.Public,
-            MethodParameterization = MethodConfiguration.Parameterization.ParameterizedStatic
-        }, KeyStrategy.Only);
-
+        var marshalMethods = CreateAttributeValueFactory(new MethodConfiguration($"{_rootTypeSymbol.Name}Values") {AccessModifier = Accessibility.Private,}, KeyStrategy.Include);
+        var keysMethod = CreateAttributeValueFactory(new MethodConfiguration($"{_rootTypeSymbol.Name}Keys") {AccessModifier = Accessibility.Public,}, KeyStrategy.Only);
         var keysClass = CodeGenerationExtensions.CreateClass(Accessibility.Private, "KeysClass", keysMethod.Code, 2);
 
         var expressionAttributeName = _createTypeName(_rootTypeSymbol);
@@ -176,7 +144,7 @@ public class DynamoDbDocumentGenerator
 {marshalMethods.Code}
 {keysClass}";
 
-        var sourceGeneratedCode = string.Join(Constants.NewLine, enumerable.Prepend(implementInterface));
+        var sourceGeneratedCode = string.Join(Constants.NewLine, referenceTrackers.Prepend(implementInterface));
 
         var @class = CodeGenerationExtensions.CreateClass(
             Accessibility.Public,
