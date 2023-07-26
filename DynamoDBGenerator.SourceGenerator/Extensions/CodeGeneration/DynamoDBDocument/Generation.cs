@@ -15,19 +15,15 @@ public class DynamoDbDocumentGenerator
     private readonly IEqualityComparer<ITypeSymbol> _comparer;
     private readonly Func<ITypeSymbol, string> _createMethodName;
     private readonly Func<ITypeSymbol, string> _createTypeName;
+    private readonly string _rootTypeName;
 
     public DynamoDbDocumentGenerator(in ITypeSymbol typeSymbol, IEqualityComparer<ITypeSymbol> comparer)
     {
         _rootTypeSymbol = typeSymbol;
         _createMethodName = TypeExtensions.CachedTypeStringificationFactory("Factory", comparer);
         _createTypeName = TypeExtensions.CachedTypeStringificationFactory("References", comparer);
-        _createTypeName = TypeExtensions.CachedTypeStringificationFactory("References", comparer);
         _comparer = comparer;
-    }
-
-    private static string AttributeInterfaceName(ITypeSymbol typeSymbol)
-    {
-        return $"{nameof(IExpressionAttributeReferences<object>)}<{typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}>";
+        _rootTypeName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
     }
 
     private Assignment AttributeValueAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
@@ -143,7 +139,7 @@ public class DynamoDbDocumentGenerator
         }
     }
 
-    private (string Code, string PropertyAccess) CreateDynamoDbDocumentProperty(Accessibility accessibility)
+    public string CreateDynamoDbDocumentProperty(Accessibility accessibility)
     {
         var enumerable = Conversion.ConversionMethods(
                 _rootTypeSymbol,
@@ -167,11 +163,10 @@ public class DynamoDbDocumentGenerator
 
         var keysClass = CodeGenerationExtensions.CreateClass(Accessibility.Private, "KeysClass", keysMethod.Code, 2);
 
-        var fullyQualifiedName = _rootTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var expressionAttributeName = CreateExpressionAttributeNamesClass(_rootTypeSymbol);
-        var implementInterface = $@"public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({fullyQualifiedName} entity) => {marshalMethods.MethodName}(entity);
-            public {fullyQualifiedName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => throw new NotImplementedException();
-            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {KeysName}({fullyQualifiedName} entity) => KeysClass.{keysMethod.MethodName}(entity);
+        var expressionAttributeName = _createTypeName(_rootTypeSymbol);
+        var implementInterface = $@"public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({_rootTypeName} entity) => {marshalMethods.MethodName}(entity);
+            public {_rootTypeName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => throw new NotImplementedException();
+            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {KeysName}({_rootTypeName} entity) => KeysClass.{keysMethod.MethodName}(entity);
             public {className}.{expressionAttributeName} {ReferenceTrackerName}()
             {{
                 var number = 0;
@@ -191,19 +186,8 @@ public class DynamoDbDocumentGenerator
         );
 
         var propertyName = $"{_rootTypeSymbol.Name}Document";
-        return ($@"{accessibility.ToCode()} {DynamoDbDocumentName}<{fullyQualifiedName}, {className}.{expressionAttributeName}> {propertyName} {{ get; }} = new {className}();
-{@class}", propertyName);
-    }
-
-    private string CreateExpressionAttributeNamesClass(ITypeSymbol typeSymbol)
-    {
-        return _createTypeName(typeSymbol);
-    }
-
-
-    public string DynamoDbDocumentProperty()
-    {
-        return CreateDynamoDbDocumentProperty(Accessibility.Public).Code;
+        return ($@"{accessibility.ToCode()} {DynamoDbDocumentName}<{_rootTypeName}, {className}.{expressionAttributeName}> {propertyName} {{ get; }} = new {className}();
+{@class}");
     }
 
     private Conversion ExpressionAttributeReferencesClassGenerator(ITypeSymbol typeSymbol)
@@ -219,7 +203,7 @@ public class DynamoDbDocumentGenerator
                 DDB: x,
                 NameRef: $"_{x.DataMember.Name}NameRef",
                 ValueRef: $"_{x.DataMember.Name}ValueRef",
-                AttributeReference: CreateExpressionAttributeNamesClass(x.DataMember.Type),
+                AttributeReference: _createTypeName(x.DataMember.Type),
                 AttributeInterfaceName: AttributeInterfaceName(x.DataMember.Type)))
             .ToArray();
 
@@ -261,7 +245,7 @@ public class DynamoDbDocumentGenerator
             })
             .ToArray();
 
-        var className = CreateExpressionAttributeNamesClass(typeSymbol);
+        var className = _createTypeName(typeSymbol);
         var constructor = $@"public {className}(string? {constructorAttributeName}, Func<string> {valueProvider})
     {{
 {string.Join(Constants.NewLine, fieldAssignments.Select(x => x.Value))}
@@ -298,6 +282,8 @@ public class DynamoDbDocumentGenerator
             isRecord: true
         );
         return new Conversion(@class, fieldAssignments.Where(x => x.HasExternalDependency));
+
+        static string AttributeInterfaceName(ITypeSymbol typeSymbol) => $"{nameof(IExpressionAttributeReferences<object>)}<{typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}>";
     }
 
     private Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type, KeyStrategy keyStrategy)

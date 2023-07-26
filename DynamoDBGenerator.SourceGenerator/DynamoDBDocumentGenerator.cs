@@ -56,7 +56,7 @@ public class DynamoDBDocumentGenerator : IIncrementalGenerator
                 continue;
 
             yield return new DynamoDbDocumentGenerator(namedTypeSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated), SymbolEqualityComparer.IncludeNullability)
-                .DynamoDbDocumentProperty();
+                .CreateDynamoDbDocumentProperty(Accessibility.Public);
         }
     }
 
