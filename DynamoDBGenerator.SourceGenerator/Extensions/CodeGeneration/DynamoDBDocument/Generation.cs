@@ -11,14 +11,14 @@ public class DynamoDbDocumentGenerator
     private const string ReferenceTrackerName = "ExpressionAttributeTracker";
     private const string DynamoDbDocumentName = "IDynamoDBDocument";
 
-    private readonly ITypeSymbol _rootTypeSymbol;
+    private readonly INamedTypeSymbol _rootTypeSymbol;
     private readonly IEqualityComparer<ITypeSymbol> _comparer;
     private readonly Func<ITypeSymbol, string> _attributeValueFactoryMethodNameFactory;
     private readonly Func<ITypeSymbol, string> _pocoMethodNameFactory;
     private readonly Func<ITypeSymbol, string> _createTypeName;
     private readonly string _rootTypeName;
 
-    public DynamoDbDocumentGenerator(in ITypeSymbol typeSymbol, IEqualityComparer<ITypeSymbol> comparer)
+    public DynamoDbDocumentGenerator(in INamedTypeSymbol typeSymbol, IEqualityComparer<ITypeSymbol> comparer)
     {
         _rootTypeSymbol = typeSymbol;
         _attributeValueFactoryMethodNameFactory = TypeExtensions.CachedTypeStringificationFactory("Factory", comparer);
@@ -28,6 +28,42 @@ public class DynamoDbDocumentGenerator
         _rootTypeName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
     }
 
+    private Assignment DataMemberAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
+    {
+        if (typeSymbol.GetKnownType() is not { } knownType) return ExternalAssignment(typeSymbol, accessPattern);
+
+        // TODO do null check properly on GetValueOrDefault. Switch expression will scope variables.
+        Assignment? assignemnt = knownType switch
+        {
+            
+            BaseType baseType => baseType.Type switch
+            {
+                BaseType.SupportedType.String => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{S: var x }}  => x}}"),
+                BaseType.SupportedType.Bool => typeSymbol.ToInlineAssignment($"{accessPattern}.BOOL"),
+                BaseType.SupportedType.Char => typeSymbol.ToInlineAssignment($"{accessPattern}.S[0]"),
+                // TODO we need to be aware of Datetime, DateOnly etc here.
+                BaseType.SupportedType.Temporal => typeSymbol.ToInlineAssignment($"{accessPattern}.S"),
+                BaseType.SupportedType.Number => typeSymbol.ToInlineAssignment($"int.Parse({accessPattern}.N)"),
+                BaseType.SupportedType.Enum => typeSymbol.ToInlineAssignment($"({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})int.Parse({accessPattern}.N)"),
+                _ => throw new ArgumentOutOfRangeException()
+            },
+            SingleGeneric singleGeneric => singleGeneric.Type switch
+            {
+                SingleGeneric.SupportedType.Nullable => DataMemberAssignment(singleGeneric.T, accessPattern),
+                
+                _ => null,
+//                SingleGeneric.SupportedType.Set => expr,
+//                SingleGeneric.SupportedType.Collection => expr,
+//                _ => throw new ArgumentOutOfRangeException()
+            },
+            _ => null
+        };
+
+        return assignemnt ?? ExternalAssignment(in typeSymbol, in accessPattern);
+
+        Assignment ExternalAssignment(in ITypeSymbol typeSymbol, in string accessPattern) =>
+            typeSymbol.ToExternalDependencyAssignment($"M = {_pocoMethodNameFactory(typeSymbol)}({accessPattern})");
+    }
     private Assignment AttributeValueAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
     {
         if (typeSymbol.GetKnownType() is not { } knownType) return ExternalAssignment(in typeSymbol, in accessPattern);
@@ -106,7 +142,7 @@ public class DynamoDbDocumentGenerator
         return string.Join(Constants.NewLine, enumerable);
 
     }
-    private string CreateAttributePocoFactory(KeyStrategy keyStrategy)
+    private string CreateAttributePocoFactory()
     {
         var enumerable = Conversion.ConversionMethods(
                 _rootTypeSymbol,
@@ -118,11 +154,7 @@ public class DynamoDbDocumentGenerator
         return string.Join(Constants.NewLine, enumerable);
 
     }
-    
-    private Conversion StaticPocoFactory(ITypeSymbol typeSymbol)
-    {
-        throw new NotImplementedException();
-    }
+
 
     public string CreateDynamoDbDocumentProperty(Accessibility accessibility)
     {
@@ -137,11 +169,12 @@ public class DynamoDbDocumentGenerator
         var marshalMethods = CreateAttributeValueFactory(KeyStrategy.Include);
         var keysMethod = CreateAttributeValueFactory(KeyStrategy.Only);
         var keysClass = CodeGenerationExtensions.CreateClass(Accessibility.Private, "KeysClass", keysMethod, 2);
+        var unMarshalMethods = CreateAttributePocoFactory();
 
         var expressionAttributeName = _createTypeName(_rootTypeSymbol);
         var implementInterface =
             $@"public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({_rootTypeName} entity) => {_attributeValueFactoryMethodNameFactory(_rootTypeSymbol)}(entity);
-            public {_rootTypeName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => throw new NotImplementedException();
+            public {_rootTypeName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => {_pocoMethodNameFactory(_rootTypeSymbol)}(entity);
             public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {KeysName}({_rootTypeName} entity) => KeysClass.{_attributeValueFactoryMethodNameFactory(_rootTypeSymbol)}(entity);
             public {className}.{expressionAttributeName} {ReferenceTrackerName}()
             {{
@@ -150,7 +183,8 @@ public class DynamoDbDocumentGenerator
                 return new {className}.{expressionAttributeName}(null, valueIdProvider);
             }}
 {marshalMethods}
-{keysClass}";
+{keysClass}
+{unMarshalMethods}";
 
         var sourceGeneratedCode = string.Join(Constants.NewLine, referenceTrackers.Prepend(implementInterface));
 
@@ -262,6 +296,43 @@ public class DynamoDbDocumentGenerator
         static string AttributeInterfaceName(ITypeSymbol typeSymbol) => $"{nameof(IExpressionAttributeReferences<object>)}<{typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}>";
     }
 
+    private Conversion StaticPocoFactory(ITypeSymbol type)
+    {
+
+        var assignments = GetAssignments(type).ToArray();
+        const string elementName = "element";
+        var declaration = $"var {elementName} = new {type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}()";
+        const string paramReference = "entity";
+        var method =
+            @$"            public static {type.ToDisplayString(NullableFlowState.None, SymbolDisplayFormat.FullyQualifiedFormat)} {_pocoMethodNameFactory(type)}(Dictionary<string, AttributeValue> {paramReference})
+            {{ 
+                {declaration};
+{string.Join(Constants.NewLine, assignments.Select(x => x.pocoAssignment))}
+                return {elementName};
+            }}";
+
+        return new Conversion(method, assignments.Select(x => x.assignment).Where(x => x.HasExternalDependency));
+
+        IEnumerable<(string pocoAssignment, Assignment assignment)> GetAssignments(
+            INamespaceOrTypeSymbol typeSymbol
+        )
+        {
+            foreach (var x in typeSymbol.GetDynamoDbProperties())
+            {
+                if (x.IsIgnored)
+                    continue;
+
+                var accessPattern =  @$"{paramReference}.GetValueOrDefault(""{x.AttributeName}"")";
+
+                
+                var assignment = DataMemberAssignment(x.DataMember.Type, accessPattern);
+                var dictionaryAssignment = @$"                {elementName}.{x.DataMember.Name} = {assignment.Value};";
+
+                yield return (dictionaryAssignment, assignment);
+            }
+        }
+
+    }
     private Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type, KeyStrategy keyStrategy)
     {
         const string paramReference = "entity";
@@ -269,7 +340,7 @@ public class DynamoDbDocumentGenerator
         var properties = GetAssignments(type, keyStrategy).ToArray();
 
         const string indent = "                ";
-        var dictionary =
+        var method =
             @$"            public static Dictionary<string, AttributeValue> {_attributeValueFactoryMethodNameFactory(type)}({type.ToDisplayString(NullableFlowState.None, SymbolDisplayFormat.FullyQualifiedFormat)} {paramReference})
             {{ 
                 {InitializeDictionary(dictionaryName, properties.Select(static x => x.capacityTernary))}
@@ -278,7 +349,7 @@ public class DynamoDbDocumentGenerator
             }}";
 
         return new Conversion(
-            in dictionary,
+            in method,
             properties
                 .Select(static x => x.assignment)
                 .Where(static x => x.HasExternalDependency)

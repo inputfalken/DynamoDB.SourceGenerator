@@ -14,6 +14,16 @@ public static class NotNullEvaluationExtensions
         return $"({result})";
     }
 
+    public static bool IsNullable(ITypeSymbol typeSymbol)
+    {
+        return typeSymbol.NullableAnnotation switch
+        {
+            NullableAnnotation.Annotated => true,
+            NullableAnnotation.NotAnnotated => false,
+            NullableAnnotation.None => true,
+            _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
+        };
+    }
     public static string? NotNullLambdaExpression(this ITypeSymbol typeSymbol)
     {
         return Expression(in typeSymbol, "x") is { } expression
@@ -25,6 +35,7 @@ public static class NotNullEvaluationExtensions
     {
         return @$"throw new ArgumentNullException(nameof({accessPattern}), ""The value is not supposed to be null, to allow this; make the property nullable."");";
     }
+    
     public static string NotNullIfStatement(this ITypeSymbol typeSymbol, in string accessPattern, in string truthy)
     {
         if (Expression(typeSymbol, accessPattern) is not { } expression)

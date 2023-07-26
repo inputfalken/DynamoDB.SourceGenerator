@@ -55,7 +55,7 @@ public class DynamoDBDocumentGenerator : IIncrementalGenerator
             if (namedTypeSymbol is null)
                 continue;
 
-            yield return new DynamoDbDocumentGenerator(namedTypeSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated), SymbolEqualityComparer.IncludeNullability)
+            yield return new DynamoDbDocumentGenerator((INamedTypeSymbol)namedTypeSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated), SymbolEqualityComparer.IncludeNullability)
                 .CreateDynamoDbDocumentProperty(Accessibility.Public);
         }
     }
