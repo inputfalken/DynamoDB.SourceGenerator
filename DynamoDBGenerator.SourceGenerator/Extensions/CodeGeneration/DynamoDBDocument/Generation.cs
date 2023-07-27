@@ -31,7 +31,7 @@ public class DynamoDbDocumentGenerator
     private Assignment DataMemberAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
     {
         var defaultCause = typeSymbol.IsNullable() ? "_ => null" : "_ => throw new ArgumentNullException()";
-        if (typeSymbol.GetKnownType() is not { } knownType) return ExternalAssignment(typeSymbol, accessPattern, defaultCause);
+        if (typeSymbol.GetKnownType() is not { } knownType) return ExternalAssignment(typeSymbol, accessPattern);
 
         Assignment? assignment = knownType switch
         {
@@ -40,7 +40,8 @@ public class DynamoDbDocumentGenerator
                 BaseType.SupportedType.String => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: var x }} => x, {defaultCause} }}"),
                 BaseType.SupportedType.Bool => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ BOOL: var x }} => x, {defaultCause} }}"),
                 BaseType.SupportedType.Char => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: var x }} => x[0], {defaultCause} }}"),
-                BaseType.SupportedType.Enum => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: var x }} when Int32.Parse(x) is var y =>({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})y, {defaultCause} }}"),
+                BaseType.SupportedType.Enum => typeSymbol.ToInlineAssignment(
+                    $"{accessPattern} switch {{ {{ N: var x }} when Int32.Parse(x) is var y =>({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})y, {defaultCause} }}"),
                 BaseType.SupportedType.System_Int16 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: var x }} => Int16.Parse(x), {defaultCause} }}"),
                 BaseType.SupportedType.System_Byte => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: var x }} => Byte.Parse(x), {defaultCause} }}"),
                 BaseType.SupportedType.System_Int32 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: var x }} => Int32.Parse(x), {defaultCause} }}"),
@@ -60,19 +61,18 @@ public class DynamoDbDocumentGenerator
             SingleGeneric singleGeneric => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => DataMemberAssignment(singleGeneric.T, accessPattern),
-
-                _ => null,
-//                SingleGeneric.SupportedType.Set => expr,
-//                SingleGeneric.SupportedType.Collection => expr,
-//                _ => throw new ArgumentOutOfRangeException()
+                SingleGeneric.SupportedType.Collection => BuildPocoList(singleGeneric, accessPattern, defaultCause),
+                SingleGeneric.SupportedType.Set  => BuildPocoSet(singleGeneric.T, accessPattern, defaultCause),
+                _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
             },
             _ => null
         };
 
-        return assignment ?? ExternalAssignment(in typeSymbol, in accessPattern, in defaultCause);
+        return assignment ?? ExternalAssignment(in typeSymbol, in accessPattern);
 
-        Assignment ExternalAssignment(in ITypeSymbol typeSymbol, in string accessPattern, in string defaultCause) =>
+        Assignment ExternalAssignment(in ITypeSymbol typeSymbol, in string accessPattern) =>
             typeSymbol.ToExternalDependencyAssignment($"{accessPattern} switch {{ {{ M: var x }} => {_pocoMethodNameFactory(typeSymbol)}(x), {defaultCause} }}");
+
     }
     private Assignment AttributeValueAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
     {
@@ -120,15 +120,33 @@ public class DynamoDbDocumentGenerator
 
     private Assignment BuildList(in ITypeSymbol elementType, in string accessPattern)
     {
-        var attributeValue = AttributeValueAssignment(elementType, "x");
-        var select = $"Select(x => {attributeValue.ToAttributeValue()}))";
-        var assignment = elementType.NotNullLambdaExpression() is { } whereBody
+        var innerAssignment = AttributeValueAssignment(elementType, "x");
+        var select = $"Select(x => {innerAssignment.ToAttributeValue()}))";
+        var outerAssignment = elementType.NotNullLambdaExpression() is { } whereBody
             ? $"L = new List<AttributeValue>({accessPattern}.Where({whereBody}).{select}"
             : $"L = new List<AttributeValue>({accessPattern}.{select}";
 
-        return new Assignment(in assignment, in elementType, attributeValue.HasExternalDependency);
+        return new Assignment(in outerAssignment, in elementType, innerAssignment.HasExternalDependency);
+    }
+    
+    private Assignment BuildPocoList(SingleGeneric singleGeneric, string accessPattern, string defaultCause)
+    {
+        var innerAssignment = DataMemberAssignment(singleGeneric.T, "y");
+        var outerAssignment = $"{accessPattern} switch {{ {{ L: var x }} => x.Select(y => {innerAssignment.Value}).ToArray(), {defaultCause} }}";
+
+        return new Assignment(in outerAssignment, singleGeneric.T, innerAssignment.HasExternalDependency);
     }
 
+    private static Assignment? BuildPocoSet(in ITypeSymbol elementType, in string accessPattern, in string defaultCase)
+    {
+        if (elementType.IsNumeric())
+            return elementType.ToInlineAssignment($"{accessPattern} switch {{ {{ NS: var x }} =>  new HashSet<{elementType.Name}>(x.Select(y => {elementType.Name}.Parse(y))), {defaultCase} }}");
+
+        if (elementType.SpecialType is SpecialType.System_String)
+            return elementType.ToInlineAssignment($"{accessPattern} switch {{ {{ SS: var x }} =>  new HashSet<string>(x), {defaultCase} }}");
+
+        return null;
+    }
     private static Assignment? BuildSet(in ITypeSymbol elementType, in string accessPattern)
     {
         var newAccessPattern = elementType.NotNullLambdaExpression() is { } expression
