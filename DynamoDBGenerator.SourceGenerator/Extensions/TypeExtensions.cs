@@ -94,7 +94,6 @@ public static class TypeExtensions
 
         return null;
     }
-
     public static bool IsNumeric(this ITypeSymbol typeSymbol)
     {
         return typeSymbol.SpecialType
@@ -109,12 +108,5 @@ public static class TypeExtensions
             or SpecialType.System_Decimal
             or SpecialType.System_Double
             or SpecialType.System_Single;
-    }
-
-    public static bool IsTemporal(this ITypeSymbol typeSymbol)
-    {
-        return typeSymbol
-            is {SpecialType: SpecialType.System_DateTime}
-            or {Name: nameof(DateTimeOffset) or "DateOnly"};
     }
 }

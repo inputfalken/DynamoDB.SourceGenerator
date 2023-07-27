@@ -83,7 +83,7 @@ public record SingleGeneric : KnownType
             _ when type.AllInterfaces.Any(x => x is {Name: "IEnumerable"}) => SupportedType.Collection,
             _ => null
         };
-        
+
         return supported is null ? null : new SingleGeneric(type.TypeArguments[0], supported.Value);
     }
 
@@ -113,9 +113,21 @@ public record BaseType : KnownType
             {SpecialType: SpecialType.System_String} => SupportedType.String,
             {SpecialType: SpecialType.System_Boolean} => SupportedType.Bool,
             {SpecialType: SpecialType.System_Char} => SupportedType.Char,
+            {SpecialType: SpecialType.System_Int16} => SupportedType.System_Int16,
+            {SpecialType: SpecialType.System_Int32} => SupportedType.System_Int32,
+            {SpecialType: SpecialType.System_Int64} => SupportedType.System_Int64,
+            {SpecialType: SpecialType.System_UInt16} => SupportedType.System_UInt16,
+            {SpecialType: SpecialType.System_UInt32} => SupportedType.System_UInt32,
+            {SpecialType: SpecialType.System_UInt64} => SupportedType.System_UInt64,
+            {SpecialType: SpecialType.System_Decimal} => SupportedType.System_Decimal,
+            {SpecialType: SpecialType.System_Double} => SupportedType.System_Double,
+            {SpecialType: SpecialType.System_Single} => SupportedType.System_Single,
+            {SpecialType: SpecialType.System_Byte} => SupportedType.System_Byte,
+            {SpecialType: SpecialType.System_SByte} => SupportedType.System_SByte,
             {TypeKind: TypeKind.Enum} => SupportedType.Enum,
-            _ when type.IsNumeric() => SupportedType.Number,
-            _ when type.IsTemporal() => SupportedType.Temporal,
+            {SpecialType: SpecialType.System_DateTime} => SupportedType.System_DateTime,
+            {Name:nameof(DateTimeOffset)} => SupportedType.System_DateTimeOffset,
+            {Name:"DateOnly"} => SupportedType.System_DateOnly,
             _ => null
         };
 
@@ -127,8 +139,20 @@ public record BaseType : KnownType
         String = 1,
         Bool = 2,
         Char = 3,
-        Temporal = 4,
-        Number = 5,
-        Enum = 6
+        Enum = 4,
+        System_Int16 = 5,
+        System_Byte = 6,
+        System_Int32 = 7,
+        System_Int64 = 8,
+        System_SByte = 9,
+        System_UInt16 = 10,
+        System_UInt32 = 11,
+        System_UInt64 = 12,
+        System_Decimal = 13,
+        System_Double = 14,
+        System_Single = 15,
+        System_DateTime = 16,
+        System_DateTimeOffset = 17,
+        System_DateOnly = 18
     }
 }

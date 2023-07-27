@@ -30,27 +30,37 @@ public class DynamoDbDocumentGenerator
 
     private Assignment DataMemberAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
     {
-        if (typeSymbol.GetKnownType() is not { } knownType) return ExternalAssignment(typeSymbol, accessPattern);
+        var defaultCause = typeSymbol.IsNullable() ? "_ => null" : "_ => throw new ArgumentNullException()";
+        if (typeSymbol.GetKnownType() is not { } knownType) return ExternalAssignment(typeSymbol, accessPattern, defaultCause);
 
-        // TODO do null check properly on GetValueOrDefault. Switch expression will scope variables.
-        Assignment? assignemnt = knownType switch
+        Assignment? assignment = knownType switch
         {
-            
             BaseType baseType => baseType.Type switch
             {
-                BaseType.SupportedType.String => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{S: var x }}  => x}}"),
-                BaseType.SupportedType.Bool => typeSymbol.ToInlineAssignment($"{accessPattern}.BOOL"),
-                BaseType.SupportedType.Char => typeSymbol.ToInlineAssignment($"{accessPattern}.S[0]"),
-                // TODO we need to be aware of Datetime, DateOnly etc here.
-                BaseType.SupportedType.Temporal => typeSymbol.ToInlineAssignment($"{accessPattern}.S"),
-                BaseType.SupportedType.Number => typeSymbol.ToInlineAssignment($"int.Parse({accessPattern}.N)"),
-                BaseType.SupportedType.Enum => typeSymbol.ToInlineAssignment($"({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})int.Parse({accessPattern}.N)"),
+                BaseType.SupportedType.String => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: var x }} => x, {defaultCause} }}"),
+                BaseType.SupportedType.Bool => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ BOOL: var x }} => x, {defaultCause} }}"),
+                BaseType.SupportedType.Char => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: var x }} => x[0], {defaultCause} }}"),
+                BaseType.SupportedType.Enum => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: var x }} when Int32.Parse(x) is var y =>({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})y, {defaultCause} }}"),
+                BaseType.SupportedType.System_Int16 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: var x }} => Int16.Parse(x), {defaultCause} }}"),
+                BaseType.SupportedType.System_Byte => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: var x }} => Byte.Parse(x), {defaultCause} }}"),
+                BaseType.SupportedType.System_Int32 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: var x }} => Int32.Parse(x), {defaultCause} }}"),
+                BaseType.SupportedType.System_Int64 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: var x }} => Int64.Parse(x), {defaultCause} }}"),
+                BaseType.SupportedType.System_SByte => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: var x }} => SByte.Parse(x), {defaultCause} }}"),
+                BaseType.SupportedType.System_UInt16 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: var x }} => UInt16.Parse(x), {defaultCause} }}"),
+                BaseType.SupportedType.System_UInt32 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: var x }} => UInt32.Parse(x), {defaultCause} }}"),
+                BaseType.SupportedType.System_UInt64 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{  {{ N: var x }} => UInt64.Parse(x), {defaultCause} }}"),
+                BaseType.SupportedType.System_Decimal => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: var x }} => Decimal.Parse(x), {defaultCause} }}"),
+                BaseType.SupportedType.System_Double => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: var x }} => Double.Parse(x), {defaultCause} }}"),
+                BaseType.SupportedType.System_Single => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: var x }} => Single.Parse(x), {defaultCause} }}"),
+                BaseType.SupportedType.System_DateTime => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: var x }} => DateTime.Parse(x), {defaultCause} }}"),
+                BaseType.SupportedType.System_DateTimeOffset => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: var x }} => DateTimeOffset.Parse(x), {defaultCause} }}"),
+                BaseType.SupportedType.System_DateOnly => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: var x }} => DateOnly.Parse(x), {defaultCause} }}"),
                 _ => throw new ArgumentOutOfRangeException()
             },
             SingleGeneric singleGeneric => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => DataMemberAssignment(singleGeneric.T, accessPattern),
-                
+
                 _ => null,
 //                SingleGeneric.SupportedType.Set => expr,
 //                SingleGeneric.SupportedType.Collection => expr,
@@ -59,10 +69,10 @@ public class DynamoDbDocumentGenerator
             _ => null
         };
 
-        return assignemnt ?? ExternalAssignment(in typeSymbol, in accessPattern);
+        return assignment ?? ExternalAssignment(in typeSymbol, in accessPattern, in defaultCause);
 
-        Assignment ExternalAssignment(in ITypeSymbol typeSymbol, in string accessPattern) =>
-            typeSymbol.ToExternalDependencyAssignment($"M = {_pocoMethodNameFactory(typeSymbol)}({accessPattern})");
+        Assignment ExternalAssignment(in ITypeSymbol typeSymbol, in string accessPattern, in string defaultCause) =>
+            typeSymbol.ToExternalDependencyAssignment($"{accessPattern} switch {{ {{ M: var x }} => {_pocoMethodNameFactory(typeSymbol)}(x), {defaultCause} }}");
     }
     private Assignment AttributeValueAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
     {
@@ -74,9 +84,20 @@ public class DynamoDbDocumentGenerator
             {
                 BaseType.SupportedType.String => typeSymbol.ToInlineAssignment($"S = {accessPattern}"),
                 BaseType.SupportedType.Bool => typeSymbol.ToInlineAssignment($"BOOL = {accessPattern}"),
-                BaseType.SupportedType.Number => typeSymbol.ToInlineAssignment($"N = {accessPattern}.ToString()"),
+                BaseType.SupportedType.System_Int16
+                    or BaseType.SupportedType.System_Int32
+                    or BaseType.SupportedType.System_Int64
+                    or BaseType.SupportedType.System_UInt16
+                    or BaseType.SupportedType.System_UInt32
+                    or BaseType.SupportedType.System_UInt64
+                    or BaseType.SupportedType.System_Double
+                    or BaseType.SupportedType.System_Decimal
+                    or BaseType.SupportedType.System_Single
+                    or BaseType.SupportedType.System_SByte
+                    or BaseType.SupportedType.System_Byte
+                    => typeSymbol.ToInlineAssignment($"N = {accessPattern}.ToString()"),
                 BaseType.SupportedType.Char => typeSymbol.ToInlineAssignment($"S = {accessPattern}.ToString()"),
-                BaseType.SupportedType.Temporal => typeSymbol.ToInlineAssignment($@"S = {accessPattern}.ToString(""O"")"),
+                BaseType.SupportedType.System_DateOnly or BaseType.SupportedType.System_DateTimeOffset or BaseType.SupportedType.System_DateTime => typeSymbol.ToInlineAssignment($@"S = {accessPattern}.ToString(""O"")"),
                 BaseType.SupportedType.Enum => typeSymbol.ToInlineAssignment($"N = ((int){accessPattern}).ToString()"),
                 _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
             },
@@ -322,13 +343,13 @@ public class DynamoDbDocumentGenerator
                 if (x.IsIgnored)
                     continue;
 
-                var accessPattern =  @$"{paramReference}.GetValueOrDefault(""{x.AttributeName}"")";
+                var accessPattern = @$"{paramReference}.GetValueOrDefault(""{x.AttributeName}"")";
 
-                
                 var assignment = DataMemberAssignment(x.DataMember.Type, accessPattern);
                 var dictionaryAssignment = @$"                {elementName}.{x.DataMember.Name} = {assignment.Value};";
 
                 yield return (dictionaryAssignment, assignment);
+
             }
         }
 

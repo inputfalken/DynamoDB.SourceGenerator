@@ -14,13 +14,13 @@ public static class NotNullEvaluationExtensions
         return $"({result})";
     }
 
-    public static bool IsNullable(ITypeSymbol typeSymbol)
+    public static bool IsNullable(this ITypeSymbol typeSymbol)
     {
         return typeSymbol.NullableAnnotation switch
         {
-            NullableAnnotation.Annotated => true,
-            NullableAnnotation.NotAnnotated => false,
             NullableAnnotation.None => true,
+            NullableAnnotation.NotAnnotated => false,
+            NullableAnnotation.Annotated => true,
             _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
         };
     }
