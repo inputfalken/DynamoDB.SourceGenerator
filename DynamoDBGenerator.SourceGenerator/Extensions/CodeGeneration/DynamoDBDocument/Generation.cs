@@ -61,10 +61,11 @@ public class DynamoDbDocumentGenerator
             SingleGeneric singleGeneric => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => DataMemberAssignment(singleGeneric.T, accessPattern),
-                SingleGeneric.SupportedType.Collection => BuildPocoList(singleGeneric, accessPattern, defaultCause),
-                SingleGeneric.SupportedType.Set  => BuildPocoSet(singleGeneric.T, accessPattern, defaultCause),
+                SingleGeneric.SupportedType.Collection => BuildPocoList(singleGeneric.T, accessPattern, defaultCause),
+                SingleGeneric.SupportedType.Set => BuildPocoSet(singleGeneric.T, accessPattern, defaultCause),
                 _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
             },
+            KeyValueGeneric keyValueGeneric => StringKeyedPocoGeneric(in keyValueGeneric, in accessPattern, in defaultCause),
             _ => null
         };
 
@@ -128,13 +129,13 @@ public class DynamoDbDocumentGenerator
 
         return new Assignment(in outerAssignment, in elementType, innerAssignment.HasExternalDependency);
     }
-    
-    private Assignment BuildPocoList(SingleGeneric singleGeneric, string accessPattern, string defaultCause)
+
+    private Assignment BuildPocoList(ITypeSymbol T, string accessPattern, string defaultCause)
     {
-        var innerAssignment = DataMemberAssignment(singleGeneric.T, "y");
+        var innerAssignment = DataMemberAssignment(T, "y");
         var outerAssignment = $"{accessPattern} switch {{ {{ L: var x }} => x.Select(y => {innerAssignment.Value}).ToArray(), {defaultCause} }}";
 
-        return new Assignment(in outerAssignment, singleGeneric.T, innerAssignment.HasExternalDependency);
+        return new Assignment(in outerAssignment, T, innerAssignment.HasExternalDependency);
     }
 
     private static Assignment? BuildPocoSet(in ITypeSymbol elementType, in string accessPattern, in string defaultCase)
@@ -154,19 +155,11 @@ public class DynamoDbDocumentGenerator
             : accessPattern;
 
         if (elementType.SpecialType is SpecialType.System_String)
-            return new Assignment(
-                $"SS = new List<string>({newAccessPattern})",
-                in elementType,
-                false
-            );
+            return elementType.ToInlineAssignment($"SS = new List<string>({newAccessPattern})");
 
         return elementType.IsNumeric() is false
             ? null
-            : new Assignment(
-                $"NS = new List<string>({newAccessPattern}.Select(x => x.ToString()))",
-                in elementType,
-                false
-            );
+            : elementType.ToInlineAssignment($"NS = new List<string>({newAccessPattern}.Select(x => x.ToString()))");
     }
 
     private string CreateAttributeValueFactory(KeyStrategy keyStrategy)
@@ -444,6 +437,30 @@ public class DynamoDbDocumentGenerator
         }
     }
 
+    private Assignment? StringKeyedPocoGeneric(in KeyValueGeneric keyValueGeneric, in string accessPattern, in string defaultCase)
+    {
+        switch (keyValueGeneric)
+        {
+            case {TKey: not {SpecialType: SpecialType.System_String}}:
+                return null;
+            case {Type: KeyValueGeneric.SupportedType.LookUp}:
+                var lookupValueAssignment = DataMemberAssignment(keyValueGeneric.TValue, "y.z");
+                return new Assignment(
+                    $"{accessPattern} switch {{ {{ M: var x }} => x.SelectMany(y => y.Value.L, (y, z) => (y.Key, z)).ToLookup(y => y.Key, y => {lookupValueAssignment.Value}), {defaultCase} }}",
+                    keyValueGeneric.TValue,
+                    lookupValueAssignment.HasExternalDependency
+                );
+            case {Type: KeyValueGeneric.SupportedType.Dictionary}:
+                var dictionaryValueAssignment = DataMemberAssignment(keyValueGeneric.TValue, "y.Value");
+                return new Assignment(
+                    $@"{accessPattern} switch {{ {{ M: var x }} => x.ToDictionary(y => y.Key, y => {dictionaryValueAssignment.Value}), {defaultCase} }}",
+                    keyValueGeneric.TValue,
+                    dictionaryValueAssignment.HasExternalDependency
+                );
+            default:
+                return null;
+        }
+    }
     private Assignment? StringKeyedValuedGeneric(in KeyValueGeneric keyValueGeneric, in string accessPattern)
     {
         switch (keyValueGeneric)
@@ -456,13 +473,6 @@ public class DynamoDbDocumentGenerator
                     $"M = {accessPattern}.ToDictionary(x => x.Key, x => {lookupValueAssignment.ToAttributeValue()})",
                     keyValueGeneric.TValue,
                     lookupValueAssignment.HasExternalDependency
-                );
-            case {Type: KeyValueGeneric.SupportedType.Grouping}:
-                var groupingValueAssignment = BuildList(keyValueGeneric.TValue, accessPattern);
-                return new Assignment(
-                    $@"M = new Dictionary<string, AttributeValue>{{ {{ {accessPattern}.Key, {groupingValueAssignment.ToAttributeValue()}}} }}",
-                    keyValueGeneric.TValue,
-                    groupingValueAssignment.HasExternalDependency
                 );
             case {Type: KeyValueGeneric.SupportedType.Dictionary}:
                 var dictionaryValueAssignment = AttributeValueAssignment(keyValueGeneric.TValue, "x.Value");

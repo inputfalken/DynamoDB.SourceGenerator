@@ -1,4 +1,3 @@
-using DynamoDBGenerator.SourceGenerator.Extensions;
 using Microsoft.CodeAnalysis;
 
 namespace DynamoDBGenerator.SourceGenerator.Types;
@@ -33,7 +32,6 @@ public record KeyValueGeneric : KnownType
         SupportedType? supported = type switch
         {
             {Name: "ILookup"} => SupportedType.LookUp,
-            {Name: "IGrouping"} => SupportedType.Grouping,
             {Name: "Dictionary" or "IReadOnlyDictionary" or "IDictionary"} => SupportedType.Dictionary,
             _ => null
         };
@@ -45,8 +43,7 @@ public record KeyValueGeneric : KnownType
     public enum SupportedType
     {
         LookUp = 1,
-        Grouping = 2,
-        Dictionary = 3
+        Dictionary = 2
     }
 }
 
