@@ -337,37 +337,59 @@ public class DynamoDbDocumentGenerator
     private Conversion StaticPocoFactory(ITypeSymbol type)
     {
 
-        var assignments = GetAssignments(type).ToArray();
+        var values = GetAssignments(type);
         const string elementName = "element";
-        var declaration = $"var {elementName} = new {type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}()";
+        var declaration = $"var {elementName} = {values.objectInitialization}";
         const string paramReference = "entity";
         var method =
             @$"            public static {type.ToDisplayString(NullableFlowState.None, SymbolDisplayFormat.FullyQualifiedFormat)} {_pocoMethodNameFactory(type)}(Dictionary<string, AttributeValue> {paramReference})
             {{ 
                 {declaration};
-{string.Join(Constants.NewLine, assignments.Select(x => x.pocoAssignment))}
                 return {elementName};
             }}";
 
-        return new Conversion(method, assignments.Select(x => x.assignment).Where(x => x.HasExternalDependency));
+        return new Conversion(method, values.Item1.Where(x => x.HasExternalDependency));
 
-        IEnumerable<(string pocoAssignment, Assignment assignment)> GetAssignments(
+        (IEnumerable<Assignment>, string objectInitialization) GetAssignments(
             INamespaceOrTypeSymbol typeSymbol
         )
         {
-            foreach (var x in typeSymbol.GetDynamoDbProperties())
+            // ObjectINitia
+            var properties = typeSymbol.GetDynamoDbProperties().ToArray();
+
+            var assigneableMembers = properties.Where(x => x.DataMember.IsAssignable).ToArray();
+            var noneAssignableMember = properties.Where(x => x.DataMember.IsAssignable is false).ToArray();
+            var assignments = properties
+                .Select(x => DataMemberAssignment(x.DataMember.Type, @$"{paramReference}.GetValueOrDefault(""{x.AttributeName}"")"))
+                .ToArray();
+
+            // Can do full object init
+            if (assigneableMembers.Length == properties.Length)
             {
-                if (x.IsIgnored)
-                    continue;
+                var propertyAssignment = string.Join(",", properties.Zip(assignments, (x, y) => $"{x.DataMember.Name} = {y.Value}"));
 
-                var accessPattern = @$"{paramReference}.GetValueOrDefault(""{x.AttributeName}"")";
-
-                var assignment = DataMemberAssignment(x.DataMember.Type, accessPattern);
-                var dictionaryAssignment = @$"                {elementName}.{x.DataMember.Name} = {assignment.Value};";
-
-                yield return (dictionaryAssignment, assignment);
+                var objectInit = $"new {typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}{{ {propertyAssignment} }}";
+                return (assignments, objectInit);
 
             }
+            if (typeSymbol is INamedTypeSymbol {Constructors.Length: > 0} namedTypeSymbol)
+            {
+                var constructor = namedTypeSymbol.Constructors[0];
+                if (constructor.TypeArguments.Length == properties.Length)
+                {
+                    var propertyAssignment = string.Join(",", constructor.TypeArguments.Zip(assignments, (x, y) => $"{x.Name} : {y.Value}"));
+                    var objectInit = $"new {typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}({propertyAssignment})";
+                    return (assignments, objectInit);
+                }
+            }
+            
+            // Check constructor
+            if (noneAssignableMember.Length == properties.Length)
+            {
+                return (assignments, $"new {typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}");
+            }
+            return (assignments, $"new {typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}");
+
         }
 
     }

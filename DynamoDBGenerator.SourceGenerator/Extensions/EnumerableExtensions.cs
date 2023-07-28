@@ -26,7 +26,7 @@ public static class EnumerableExtensions
         if (symbol is INamedTypeSymbol {IsTupleType: true} namedTypeSymbol)
         {
             foreach (var tupleElement in namedTypeSymbol.TupleElements)
-                yield return DataMember.FromField(in tupleElement);
+                yield return DataMember.FromTuple(in tupleElement);
 
             yield break;
         }

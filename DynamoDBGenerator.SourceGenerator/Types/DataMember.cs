@@ -10,14 +10,15 @@ public readonly struct DataMember
     private readonly bool _isField;
     private readonly bool _isProperty;
 
-    private DataMember(in ISymbol symbol, in string fieldName, in ITypeSymbol type)
+    private DataMember(in ISymbol symbol, in string fieldName, in ITypeSymbol type, in bool isAssignable, bool requiresNewKeyword)
     {
         Name = fieldName;
         Type = type;
         BaseSymbol = symbol;
-
         _isField = symbol is IFieldSymbol;
         _isProperty = symbol is IPropertySymbol;
+        IsAssignable = isAssignable;
+        RequiresNewKeyWord = requiresNewKeyword;
     }
 
     public static DataMember FromField(in IFieldSymbol fieldSymbol)
@@ -26,7 +27,17 @@ public readonly struct DataMember
         var name = fieldSymbol.Name;
         var type = fieldSymbol.Type;
 
-        return new DataMember(in symbol, in name, in type);
+        return new DataMember(in symbol, in name, in type, fieldSymbol.IsReadOnly is false, true);
+    }
+
+    public static DataMember FromTuple(in IFieldSymbol fieldSymbol)
+    {
+        
+        var symbol = (ISymbol) fieldSymbol;
+        var name = fieldSymbol.Name;
+        var type = fieldSymbol.Type;
+
+        return new DataMember(in symbol, in name, in type, fieldSymbol.IsReadOnly is false, false);
     }
 
     public static DataMember FromProperty(in IPropertySymbol property)
@@ -35,7 +46,7 @@ public readonly struct DataMember
         var name = property.Name;
         var type = property.Type;
 
-        return new DataMember(in symbol, in name, in type);
+        return new DataMember(in symbol, in name, in type, property.SetMethod is not null, true);
     }
 
     /// <summary>
@@ -66,4 +77,6 @@ public readonly struct DataMember
     ///     The type of the data member.
     /// </summary>
     public ITypeSymbol Type { get; }
+    public bool IsAssignable { get; }
+    public bool RequiresNewKeyWord { get; }
 }
