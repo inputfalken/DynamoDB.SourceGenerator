@@ -23,7 +23,7 @@ public partial class ListTests
                 .Should()
                 .SatisfyRespectively(
                     y => y.S.Should().Be("1"),
-                    y => ((string)y.S).Should().Be("2"),
+                    y => y.S.Should().Be("2"),
                     y => ((string)y.S).Should().Be("3")
                 )
             );
@@ -65,6 +65,48 @@ public partial class ListTests
             .ContainSingle(x => x.Value.L.Count == 0);
     }
 
+    [Fact]
+    public void Serialize_EmptyArray_IsIncluded()
+    {
+        var @class = new ListClass
+        {
+            Array = Array.Empty<string>()
+        };
+
+        ListClassDocument
+            .Serialize(@class)
+            .Should()
+            .NotBeEmpty()
+            .And
+            .ContainKey(nameof(ListClass.Array))
+            .And
+            .ContainSingle(x => x.Value.L.Count == 0);
+    }
+    [Fact]
+    public void Serialize_ArrayWithValues_IsIncluded()
+    {
+        var @class = new ListClass
+        {
+            Array = new[] {"1", "2", "3"}
+        };
+
+        ListClassDocument
+            .Serialize(@class)
+            .Should()
+            .NotBeEmpty()
+            .And
+            .ContainKey(nameof(ListClass.Array))
+            .And
+            .AllSatisfy(x => x.Value.L
+                .Should()
+                .SatisfyRespectively(
+                    y => y.S.Should().Be("1"),
+                    y => y.S.Should().Be("2"),
+                    y => y.S.Should().Be("3")
+                )
+            );
+    }
+    
     [Fact]
     public void Serialize_EmptyList_IsIncluded()
     {
@@ -119,7 +161,7 @@ public partial class ListTests
                 .Should()
                 .SatisfyRespectively(
                     y => y.S.Should().Be("1"),
-                    y => ((string)y.S).Should().Be("2"),
+                    y => y.S.Should().Be("2"),
                     y => ((string)y.S).Should().Be("3")
                 )
             );
@@ -143,7 +185,7 @@ public partial class ListTests
                     y => y.M.Should().SatisfyRespectively(
                         z =>
                         {
-                            ((string)z.Key).Should().Be("Key");
+                            z.Key.Should().Be("Key");
                             ((string)z.Value.S).Should().Be("2");
                         },
                         z =>
@@ -190,8 +232,8 @@ public partial class ListTests
                 .Should()
                 .SatisfyRespectively(
                     y => y.S.Should().Be("1"),
-                    y => ((string)y.S).Should().Be("2"),
-                    y => ((string)y.S).Should().Be("3")
+                    y => y.S.Should().Be("2"),
+                    y => y.S.Should().Be("3")
                 )
             );
     }
@@ -215,7 +257,7 @@ public partial class ListTests
                 .Should()
                 .SatisfyRespectively(
                     y => y.S.Should().Be("1"),
-                    y => ((string)y.S).Should().Be("2"),
+                    y => y.S.Should().Be("2"),
                     y => ((string)y.S).Should().Be("3")
                 )
             );
@@ -238,4 +280,6 @@ public class ListClass
 
     [DynamoDBProperty]
     public IReadOnlyList<KeyValuePair<string, int>>? KeyValuePairs { get; set; }
+    
+    public string[]? Array { get; set; }
 }

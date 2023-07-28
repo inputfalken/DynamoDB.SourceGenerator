@@ -61,8 +61,11 @@ public class DynamoDbDocumentGenerator
             SingleGeneric singleGeneric => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => DataMemberAssignment(singleGeneric.T, accessPattern),
-                SingleGeneric.SupportedType.Collection => BuildPocoList(singleGeneric.T, accessPattern, defaultCause),
                 SingleGeneric.SupportedType.Set => BuildPocoSet(singleGeneric.T, accessPattern, defaultCause),
+                SingleGeneric.SupportedType.Array => BuildPocoList(singleGeneric, ".ToArray()", accessPattern, defaultCause),
+                SingleGeneric.SupportedType.ICollection => BuildPocoList(singleGeneric, ".ToList()", accessPattern, defaultCause),
+                SingleGeneric.SupportedType.IReadOnlyCollection => BuildPocoList(singleGeneric, ".ToArray()", accessPattern, defaultCause),
+                SingleGeneric.SupportedType.IEnumerable => BuildPocoList(singleGeneric, null, accessPattern, defaultCause),
                 _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
             },
             KeyValueGeneric keyValueGeneric => StringKeyedPocoGeneric(in keyValueGeneric, in accessPattern, in defaultCause),
@@ -104,8 +107,11 @@ public class DynamoDbDocumentGenerator
             },
             SingleGeneric singleGeneric => singleGeneric.Type switch
             {
-                SingleGeneric.SupportedType.Collection => BuildList(singleGeneric.T, in accessPattern),
                 SingleGeneric.SupportedType.Nullable => AttributeValueAssignment(singleGeneric.T, $"{accessPattern}.Value"),
+                SingleGeneric.SupportedType.IReadOnlyCollection
+                    or SingleGeneric.SupportedType.Array
+                    or SingleGeneric.SupportedType.IEnumerable
+                    or SingleGeneric.SupportedType.ICollection => BuildList(singleGeneric.T, in accessPattern),
                 SingleGeneric.SupportedType.Set => BuildSet(singleGeneric.T, accessPattern),
                 _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
             },
@@ -130,12 +136,12 @@ public class DynamoDbDocumentGenerator
         return new Assignment(in outerAssignment, in elementType, innerAssignment.HasExternalDependency);
     }
 
-    private Assignment BuildPocoList(ITypeSymbol T, string accessPattern, string defaultCause)
+    private Assignment BuildPocoList(SingleGeneric singleGeneric, string? operation, string accessPattern, string defaultCause)
     {
-        var innerAssignment = DataMemberAssignment(T, "y");
-        var outerAssignment = $"{accessPattern} switch {{ {{ L: var x }} => x.Select(y => {innerAssignment.Value}).ToArray(), {defaultCause} }}";
+        var innerAssignment = DataMemberAssignment(singleGeneric.T, "y");
+        var outerAssignment = $"{accessPattern} switch {{ {{ L: var x }} => x.Select(y => {innerAssignment.Value}){operation}, {defaultCause} }}";
 
-        return new Assignment(in outerAssignment, T, innerAssignment.HasExternalDependency);
+        return new Assignment(in outerAssignment, singleGeneric.T, innerAssignment.HasExternalDependency);
     }
 
     private static Assignment? BuildPocoSet(in ITypeSymbol elementType, in string accessPattern, in string defaultCase)

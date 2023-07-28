@@ -63,7 +63,7 @@ public record SingleGeneric : KnownType
     public static SingleGeneric? CreateInstance(in ITypeSymbol typeSymbol)
     {
         if (typeSymbol is IArrayTypeSymbol arrayTypeSymbol)
-            return new SingleGeneric(arrayTypeSymbol.ElementType, SupportedType.Collection);
+            return new SingleGeneric(arrayTypeSymbol.ElementType, SupportedType.Array);
 
         if (typeSymbol is not INamedTypeSymbol type)
             return null;
@@ -75,9 +75,12 @@ public record SingleGeneric : KnownType
         {
             {Name: "Nullable"} => SupportedType.Nullable,
             {Name: "ISet"} => SupportedType.Set,
-            {Name: "IEnumerable"} => SupportedType.Collection,
             _ when type.AllInterfaces.Any(x => x is {Name: "ISet"}) => SupportedType.Set,
-            _ when type.AllInterfaces.Any(x => x is {Name: "IEnumerable"}) => SupportedType.Collection,
+            {Name:"ICollection"} => SupportedType.ICollection,
+            _ when type.AllInterfaces.Any(x => x is {Name: "ICollection"}) => SupportedType.ICollection,
+            {Name:"IReadOnlyCollection"} => SupportedType.IReadOnlyCollection,
+            _ when type.AllInterfaces.Any(x => x is {Name: "IReadOnlyCollection"}) => SupportedType.IReadOnlyCollection,
+            {Name: "IEnumerable"} => SupportedType.IEnumerable,
             _ => null
         };
 
@@ -88,7 +91,10 @@ public record SingleGeneric : KnownType
     {
         Nullable = 1,
         Set = 2,
-        Collection = 3
+        Array = 3,
+        ICollection = 4,
+        IReadOnlyCollection = 5,
+        IEnumerable = 6
     }
 }
 
