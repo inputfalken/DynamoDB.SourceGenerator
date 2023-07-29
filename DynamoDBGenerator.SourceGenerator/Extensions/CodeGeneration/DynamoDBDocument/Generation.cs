@@ -357,12 +357,11 @@ public class DynamoDbDocumentGenerator
                 .ToArray();
 
             if (typeSymbol.IsTupleType)
-            {
                 return (assignments.Select(x => x.Assignment), $"({string.Join(", ", assignments.Select(x => $"{x.DDB.DataMember.Name}: {x.Assignment.Value}"))})");
 
-            }
             // Right now we either take a constructor path or object initialization path. But they could co-exist.
             // We do expect the constructor arguments to be 1-1 with case insensitive comparison for data member names.
+            var constructorArgs = string.Empty;
             if (typeSymbol is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.InstanceConstructors.Any(x => x.Parameters.Length > 0))
             {
                 var unAssignable = assignments.Where(x => x.DDB.DataMember.IsAssignable is false).ToArray();
@@ -374,7 +373,7 @@ public class DynamoDbDocumentGenerator
                             unAssignable,
                             y => y.Name,
                             y => y.DDB.DataMember.Name,
-                            (x, y) => (constructurArgument: x, y.DDB, y.Assignment),
+                            (y, z) => (constructurArgument: y, z.DDB, z.Assignment),
                             StringComparer.OrdinalIgnoreCase
                         ).ToArray()
                     ).FirstOrDefault(x => x.Length == unAssignable.Length);
@@ -382,11 +381,11 @@ public class DynamoDbDocumentGenerator
                 if (constructor is null)
                     throw new Exception($"Could not find constructor for {typeSymbol.ToDisplayString()}");
 
-                return (assignments.Select(x => x.Assignment),
-                    $"new {typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}({string.Join(", ", constructor.Select(x => $"{x.constructurArgument.Name}: {x.Assignment.Value}"))})");
+                constructorArgs = string.Join(", ", constructor.Select(x => $"{x.constructurArgument.Name}: {x.Assignment.Value}"));
             }
-            return (assignments.Select(x => x.Assignment),
-                $"new {typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} () {{{string.Join(", ", assignments.Select(x => $"{x.DDB.DataMember.Name} = {x.Assignment.Value}"))}}}");
+
+            var objectInitializer = string.Join(", ", assignments.Where(x => x.DDB.DataMember.IsAssignable).Select(x => $"{x.DDB.DataMember.Name} = {x.Assignment.Value}"));
+            return (assignments.Select(x => x.Assignment), $"new {typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} ({constructorArgs}) {{{objectInitializer}}}");
 
         }
 

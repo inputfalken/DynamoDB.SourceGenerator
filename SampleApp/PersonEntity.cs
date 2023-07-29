@@ -10,5 +10,4 @@ public class PersonEntity
     public string Lastname { get; set; }
     public Address Address { get; set; }
 
-
 }
