@@ -184,7 +184,7 @@ public class DynamoDbDocumentGenerator
 
         var propertyName = $"{_rootTypeSymbol.Name}Document";
         return $@"{accessibility.ToCode()} {DynamoDbDocumentName}<{rootTypeName}, {className}.{expressionAttributeName}> {propertyName} {{ get; }} = new {className}();
-{@class}";
+        {@class}";
     }
 
     private Assignment DataMemberAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
