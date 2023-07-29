@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
@@ -340,16 +343,14 @@ public class DynamoDbDocumentGenerator
         var values = GetAssignments(type);
         const string paramReference = "entity";
         var method =
-            @$"            public static {type.ToDisplayString(NullableFlowState.None, SymbolDisplayFormat.FullyQualifiedFormat)} {_pocoMethodNameFactory(type)}(Dictionary<string, AttributeValue> {paramReference})
+            @$"            public static {type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} {_pocoMethodNameFactory(type)}(Dictionary<string, AttributeValue> {paramReference})
             {{ 
                 return {values.objectInitialization};
             }}";
 
         return new Conversion(method, values.Item1.Where(x => x.HasExternalDependency));
 
-        (IEnumerable<Assignment>, string objectInitialization) GetAssignments(
-            ITypeSymbol typeSymbol
-        )
+        (IEnumerable<Assignment>, string objectInitialization) GetAssignments(ITypeSymbol typeSymbol)
         {
             var assignments = typeSymbol
                 .GetDynamoDbProperties()
@@ -364,29 +365,40 @@ public class DynamoDbDocumentGenerator
             var constructorArgs = string.Empty;
             if (typeSymbol is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.InstanceConstructors.Any(x => x.Parameters.Length > 0))
             {
-                var unAssignable = assignments.Where(x => x.DDB.DataMember.IsAssignable is false).ToArray();
+                var ctor = namedTypeSymbol.InstanceConstructors
+                    .OrderByDescending(x => x.Parameters.Length)
+                    .First();
 
-                // TODO optimize this.
-                var constructor = namedTypeSymbol.InstanceConstructors
-                    .Where(x => x.Parameters.Length == unAssignable.Length)
-                    .Select(x => x.Parameters.Join(
-                            unAssignable,
-                            y => y.Name,
-                            y => y.DDB.DataMember.Name,
-                            (y, z) => (constructurArgument: y, z.DDB, z.Assignment),
-                            StringComparer.OrdinalIgnoreCase
-                        ).ToArray()
-                    ).FirstOrDefault(x => x.Length == unAssignable.Length);
+                var ctorInitialization = ctor.Parameters
+                    .GroupJoin(
+                        assignments,
+                        y => y.Name,
+                        y => y.DDB.DataMember.Name,
+                        (y, z) => (constructurArgument: y, Items: z),
+                        StringComparer.OrdinalIgnoreCase
+                    )
+                    .SelectMany(y => y.Items.Cast<(DynamoDbDataMember DynamoDbDataMember, Assignment assignment)?>().DefaultIfEmpty(), (y, z) => (y.constructurArgument, Item: z))
+                    .Select(x =>
+                    {
+                        if (x.Item is { } item)
+                            return $"{x.constructurArgument.Name} : {item.assignment.Value}";
 
-                if (constructor is null)
-                    throw new Exception($"Could not find constructor for {typeSymbol.ToDisplayString()}");
+                        // TODO might be worth considering to throw exception in the source generator for this in order to give faster feedback.
+                        return
+                            $@"{x.constructurArgument.Name} : true ? throw new ArgumentException(""Unable to determine the corresponding data member for constructor argument '{x.constructurArgument.Name}' in '{namedTypeSymbol.Name}'; make sure the names are consistent."") : default";
+                    });
 
-                constructorArgs = string.Join(", ", constructor.Select(x => $"{x.constructurArgument.Name}: {x.Assignment.Value}"));
+                constructorArgs = string.Join(", ", ctorInitialization);
             }
 
-            var objectInitializer = string.Join(", ", assignments.Where(x => x.DDB.DataMember.IsAssignable).Select(x => $"{x.DDB.DataMember.Name} = {x.Assignment.Value}"));
-            return (assignments.Select(x => x.Assignment), $"new {typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} ({constructorArgs}) {{{objectInitializer}}}");
+            var objInitialization = assignments
+                .Where(x => x.DDB.DataMember.IsAssignable)
+                .Select(x => $"{x.DDB.DataMember.Name} = {x.Assignment.Value}");
 
+            return (
+                assignments.Select(x => x.Assignment),
+                $"new {typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} ({constructorArgs}) {{{string.Join(", ", objInitialization)}}}"
+            );
         }
 
     }
@@ -398,7 +410,7 @@ public class DynamoDbDocumentGenerator
 
         const string indent = "                ";
         var method =
-            @$"            public static Dictionary<string, AttributeValue> {_attributeValueFactoryMethodNameFactory(type)}({type.ToDisplayString(NullableFlowState.None, SymbolDisplayFormat.FullyQualifiedFormat)} {paramReference})
+            @$"            public static Dictionary<string, AttributeValue> {_attributeValueFactoryMethodNameFactory(type)}({type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} {paramReference})
             {{ 
                 {InitializeDictionary(dictionaryName, properties.Select(static x => x.capacityTernary))}
                 {string.Join(Constants.NewLine + indent, properties.Select(static x => x.dictionaryPopulation))}

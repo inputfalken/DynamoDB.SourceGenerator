@@ -7,16 +7,11 @@ namespace DynamoDBGenerator.SourceGenerator.Types;
 /// </summary>
 public readonly struct DataMember
 {
-    private readonly bool _isField;
-    private readonly bool _isProperty;
-
     private DataMember(in ISymbol symbol, in string fieldName, in ITypeSymbol type, in bool isAssignable)
     {
         Name = fieldName;
         Type = type;
         BaseSymbol = symbol;
-        _isField = symbol is IFieldSymbol;
-        _isProperty = symbol is IPropertySymbol;
         IsAssignable = isAssignable;
     }
 
@@ -36,20 +31,6 @@ public readonly struct DataMember
         var type = property.Type;
 
         return new DataMember(in symbol, in name, in type, property.SetMethod?.DeclaredAccessibility is Accessibility.Public);
-    }
-
-    /// <summary>
-    ///     Performs matching based on the possible types that <see cref="DataMember" /> can consist of.
-    /// </summary>
-    public T Match<T>(Func<IPropertySymbol, T> propertySelector, Func<IFieldSymbol, T> fieldSelector)
-    {
-        if (_isProperty)
-            return propertySelector((IPropertySymbol) BaseSymbol);
-
-        if (_isField)
-            return fieldSelector((IFieldSymbol) BaseSymbol);
-
-        throw new Exception("Can never happen");
     }
 
     /// <summary>
