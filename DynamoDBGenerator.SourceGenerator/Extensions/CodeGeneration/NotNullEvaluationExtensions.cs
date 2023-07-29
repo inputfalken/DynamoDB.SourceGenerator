@@ -33,7 +33,7 @@ public static class NotNullEvaluationExtensions
 
     private static string CreateException(in string accessPattern)
     {
-        return @$"throw new ArgumentNullException(nameof({accessPattern}), ""The value is not supposed to be null, to allow this; make the property nullable."");";
+        return @$"throw new ArgumentNullException(nameof({accessPattern}), ""{Constants.NotNullErrorMessage}"");";
     }
     
     public static string NotNullIfStatement(this ITypeSymbol typeSymbol, in string accessPattern, in string truthy)

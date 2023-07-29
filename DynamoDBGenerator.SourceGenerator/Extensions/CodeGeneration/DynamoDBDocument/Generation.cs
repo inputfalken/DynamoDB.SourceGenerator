@@ -33,18 +33,17 @@ public class DynamoDbDocumentGenerator
 
     private Assignment DataMemberAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
     {
-        var defaultCause = typeSymbol.IsNullable() ? "_ => null" : "_ => throw new ArgumentNullException()";
+        var defaultCause = typeSymbol.IsNullable() ? "_ => null" : @$"_ => throw new ArgumentNullException(""{Constants.NotNullErrorMessage}"")";
         if (typeSymbol.GetKnownType() is not { } knownType) return ExternalAssignment(typeSymbol, accessPattern);
 
-        Assignment? assignment = knownType switch
+        var assignment = knownType switch
         {
             BaseType baseType => baseType.Type switch
             {
                 BaseType.SupportedType.String => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: var x }} => x, {defaultCause} }}"),
                 BaseType.SupportedType.Bool => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ BOOL: var x }} => x, {defaultCause} }}"),
                 BaseType.SupportedType.Char => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: var x }} => x[0], {defaultCause} }}"),
-                BaseType.SupportedType.Enum => typeSymbol.ToInlineAssignment(
-                    $"{accessPattern} switch {{ {{ N: var x }} when Int32.Parse(x) is var y =>({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})y, {defaultCause} }}"),
+                BaseType.SupportedType.Enum => typeSymbol.ToInlineAssignment( $"{accessPattern} switch {{ {{ N: var x }} when Int32.Parse(x) is var y =>({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})y, {defaultCause} }}"),
                 BaseType.SupportedType.System_Int16 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: var x }} => Int16.Parse(x), {defaultCause} }}"),
                 BaseType.SupportedType.System_Byte => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: var x }} => Byte.Parse(x), {defaultCause} }}"),
                 BaseType.SupportedType.System_Int32 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: var x }} => Int32.Parse(x), {defaultCause} }}"),
