@@ -12,11 +12,10 @@ public class DynamoDbDocumentGenerator
     private const string SerializeName = "Serialize";
     private readonly IEqualityComparer<ITypeSymbol> _comparer;
     private readonly Func<ITypeSymbol, string> _deserializationMethodNameFactory;
-    private readonly Func<ISymbol, string> _fullTypeNameFactory;
+    private readonly Func<ITypeSymbol, string> _fullTypeNameFactory;
     private readonly Func<ITypeSymbol, string> _refTrackerTypeNameFactory;
-
-    private readonly INamedTypeSymbol _rootTypeSymbol;
     private readonly Func<ITypeSymbol, string> _serializationMethodNameFactory;
+    private readonly INamedTypeSymbol _rootTypeSymbol;
 
     public DynamoDbDocumentGenerator(in INamedTypeSymbol typeSymbol, IEqualityComparer<ISymbol> comparer)
     {
@@ -330,7 +329,7 @@ public class DynamoDbDocumentGenerator
         );
         return new Conversion(@class, fieldAssignments.Where(x => x.HasExternalDependency));
 
-        string AttributeInterfaceName(ISymbol symbol) => $"{nameof(IExpressionAttributeReferences<object>)}<{_fullTypeNameFactory(symbol)}>";
+        string AttributeInterfaceName(ITypeSymbol symbol) => $"{nameof(IExpressionAttributeReferences<object>)}<{_fullTypeNameFactory(symbol)}>";
     }
     private Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type, KeyStrategy keyStrategy)
     {
