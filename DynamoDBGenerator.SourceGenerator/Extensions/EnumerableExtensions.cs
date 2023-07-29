@@ -11,7 +11,6 @@ public static class EnumerableExtensions
         foreach (var publicInstanceProperty in type.GetPublicInstanceProperties())
             yield return new DynamoDbDataMember(publicInstanceProperty);
     }
-
     private static IEnumerable<DataMember> GetPublicInstanceProperties(this INamespaceOrTypeSymbol symbol)
     {
         var publicInstanceDataMembers = symbol
@@ -26,7 +25,7 @@ public static class EnumerableExtensions
         if (symbol is INamedTypeSymbol {IsTupleType: true} namedTypeSymbol)
         {
             foreach (var tupleElement in namedTypeSymbol.TupleElements)
-                yield return DataMember.FromTuple(in tupleElement);
+                yield return DataMember.FromField(in tupleElement);
 
             yield break;
         }

@@ -351,44 +351,18 @@ public class DynamoDbDocumentGenerator
         return new Conversion(method, values.Item1.Where(x => x.HasExternalDependency));
 
         (IEnumerable<Assignment>, string objectInitialization) GetAssignments(
-            INamespaceOrTypeSymbol typeSymbol
+            ITypeSymbol typeSymbol
         )
         {
-            // ObjectINitia
-            var properties = typeSymbol.GetDynamoDbProperties().ToArray();
-
-            var assigneableMembers = properties.Where(x => x.DataMember.IsAssignable).ToArray();
-            var noneAssignableMember = properties.Where(x => x.DataMember.IsAssignable is false).ToArray();
-            var assignments = properties
-                .Select(x => DataMemberAssignment(x.DataMember.Type, @$"{paramReference}.GetValueOrDefault(""{x.AttributeName}"")"))
+            var assignments = typeSymbol
+                .GetDynamoDbProperties()
+                .Select(x => (DDB: x, Assignment: DataMemberAssignment(x.DataMember.Type, @$"{paramReference}.GetValueOrDefault(""{x.AttributeName}"")")))
                 .ToArray();
 
-            // Can do full object init
-            if (assigneableMembers.Length == properties.Length)
-            {
-                var propertyAssignment = string.Join(",", properties.Zip(assignments, (x, y) => $"{x.DataMember.Name} = {y.Value}"));
-
-                var objectInit = $"new {typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}{{ {propertyAssignment} }}";
-                return (assignments, objectInit);
-
-            }
-            if (typeSymbol is INamedTypeSymbol {Constructors.Length: > 0} namedTypeSymbol)
-            {
-                var constructor = namedTypeSymbol.Constructors[0];
-                if (constructor.TypeArguments.Length == properties.Length)
-                {
-                    var propertyAssignment = string.Join(",", constructor.TypeArguments.Zip(assignments, (x, y) => $"{x.Name} : {y.Value}"));
-                    var objectInit = $"new {typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}({propertyAssignment})";
-                    return (assignments, objectInit);
-                }
-            }
-            
-            // Check constructor
-            if (noneAssignableMember.Length == properties.Length)
-            {
-                return (assignments, $"new {typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}");
-            }
-            return (assignments, $"new {typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}");
+            var test = typeSymbol.IsTupleType 
+                ? $"({string.Join(", ", assignments.Select(x => $"{x.DDB.DataMember.Name}: {x.Assignment.Value}"))})"
+                : $"new {typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} () {{{string.Join(", ", assignments.Select(x => $"{x.DDB.DataMember.Name} = {x.Assignment.Value}"))}}}";
+            return (assignments.Select(x => x.Assignment), test);
 
         }
 
