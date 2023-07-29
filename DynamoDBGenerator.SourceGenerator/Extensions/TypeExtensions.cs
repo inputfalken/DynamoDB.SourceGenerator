@@ -8,7 +8,23 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 public static class TypeExtensions
 {
 
-    public static Func<ITypeSymbol, string> CachedTypeStringificationFactory(string suffix, IEqualityComparer<ITypeSymbol> comparer)
+    public static Func<ISymbol, string> NameCache(SymbolDisplayFormat symbolDisplayFormat ,IEqualityComparer<ISymbol> comparer)
+    {
+        var dictionary = new Dictionary<ISymbol, string>(comparer);
+
+        return x =>
+        {
+            if (dictionary.TryGetValue(x, out var name))
+                return name;
+
+            name = x.ToDisplayString(symbolDisplayFormat);
+            
+            dictionary.Add(x, name);
+            return name;
+        };
+
+    }
+    public static Func<ITypeSymbol, string> TypeSymbolStringCache(string suffix, IEqualityComparer<ISymbol> comparer)
     {
         return x => Execution(
             new Dictionary<ITypeSymbol, string>(comparer),
