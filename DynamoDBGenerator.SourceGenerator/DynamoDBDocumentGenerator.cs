@@ -36,7 +36,10 @@ public class DynamoDBDocumentGenerator : IIncrementalGenerator
         {
             var repository = string.Join(Constants.NewLine, GetMethods(typeSymbol, compilation));
             var code = typeSymbol.CreateNamespace(typeSymbol.CreateClass(repository));
-            context.AddSource(typeSymbol.Name, code);
+            var typeNamespace = typeSymbol.ContainingNamespace.IsGlobalNamespace
+                ? null
+                : $"{typeSymbol.ContainingNamespace}.";
+            context.AddSource($"{typeNamespace}{typeSymbol.Name}", code);
         }
     }
 
