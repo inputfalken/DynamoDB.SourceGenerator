@@ -1,3 +1,4 @@
+using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize;
 
 [DynamoDBDocument(typeof(ConstructorOnlyClass))]
@@ -10,12 +11,17 @@ public partial class InitializationTests
     [Fact]
     public void ConstructorOnlyClass_CanBe_Deserialized()
     {
-        var @class = new ConstructorOnlyClass("Hello");
-        var serializedClass = ConstructorOnlyClassDocument.Serialize(@class);
-        var deserializeClass = ConstructorOnlyClassDocument.Deserialize(serializedClass);
+        var deserializeClass = ConstructorOnlyClassDocument.Deserialize(
+            new Dictionary<string, AttributeValue>
+            {
+                {
+                    "Prop1", new AttributeValue {S = "Hello"}
+                }
+            }
+        );
 
         deserializeClass.Should().NotBeNull();
-        deserializeClass.Prop1.Should().Be(@class.Prop1);
+        deserializeClass.Prop1.Should().Be(@"Hello");
     }
 
     [Fact]
@@ -32,21 +38,25 @@ public partial class InitializationTests
     [Fact]
     public void ObjectInitializerMixedWithConstructorClass_CanBe_Deserialized()
     {
-        var @class = new ObjectInitializerMixedWithConstructorClass("Hello") {Prop4 = "Hello2"};
-        var serializedClass = ObjectInitializerMixedWithConstructorClassDocument.Serialize(@class);
-        var deserializeClass = ObjectInitializerMixedWithConstructorClassDocument.Deserialize(serializedClass);
+        var deserializeClass = ObjectInitializerMixedWithConstructorClassDocument.Deserialize(new Dictionary<string, AttributeValue>
+        {
+            {"Prop3", new AttributeValue {S = "Hello"}},
+            {"Prop4", new AttributeValue {S = "Hello2"}}
+
+        });
 
         deserializeClass.Should().NotBeNull();
-        deserializeClass.Prop3.Should().Be(@class.Prop3);
-        deserializeClass.Prop4.Should().Be(@class.Prop4);
+        deserializeClass.Prop3.Should().Be("Hello");
+        deserializeClass.Prop4.Should().Be("Hello2");
     }
 
     [Fact]
     public void ConstructorClassWithMixedName_UnableToFindCorrespondingDataMember_ShouldThrow()
     {
-        var @class = new ConstructorClassWithMixedName("Hello");
-        var serializedClass = ConstructorClassWithMixedNameDocument.Serialize(@class);
-        var act = () => ConstructorClassWithMixedNameDocument.Deserialize(serializedClass);
+        var act = () => ConstructorClassWithMixedNameDocument.Deserialize(new Dictionary<string, AttributeValue>
+        {
+            {"SomethingElse", new AttributeValue {S = "Hello"}}
+        });
 
         act.Should()
             .Throw<ArgumentException>()
