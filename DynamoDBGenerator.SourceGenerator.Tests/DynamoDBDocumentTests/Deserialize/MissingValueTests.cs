@@ -10,7 +10,6 @@ public partial class MissingValueTests
     public void Deserialize_RequiredReferenceTypeValueMissingClass_NoKeyValueProvidedShouldThrow()
     {
         var act = () => RequiredReferenceTypeValueMissingClassDocument.Deserialize(new Dictionary<string, AttributeValue>());
-
         act.Should().Throw<ArgumentNullException>();
     }
 
@@ -37,18 +36,17 @@ public partial class MissingValueTests
     }
 
     [Fact]
-    public void Deserialize_RequiredValueTypeValueMissingClass_KeyWithoutValueProvidedShouldNotThrow()
+    public void Deserialize_RequiredValueTypeValueMissingClass_KeyWithoutValueProvidedShouldThrow()
     {
         var act = () => RequiredValueTypeValueMissingClassDocument.Deserialize(new Dictionary<string, AttributeValue> {{"RequiredProperty", new AttributeValue {N = null}}});
-        act.Should().NotThrow();
+        act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
     public void Deserialize_RequiredValueTypeValueMissingClass_NoKeyValueProvidedShouldThrow()
     {
         var act = () => RequiredValueTypeValueMissingClassDocument.Deserialize(new Dictionary<string, AttributeValue>());
-
-        act.Should().NotThrow();
+        act.Should().Throw<ArgumentNullException>();
     }
 }
 
