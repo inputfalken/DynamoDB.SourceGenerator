@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize;
 
