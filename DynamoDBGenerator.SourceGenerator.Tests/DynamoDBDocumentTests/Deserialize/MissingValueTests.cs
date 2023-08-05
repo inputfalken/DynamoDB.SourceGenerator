@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize;
 
@@ -19,7 +21,7 @@ public partial class MissingValueTests
         var act = () => RequiredReferenceTypeValueMissingClassDocument.Deserialize(new Dictionary<string, AttributeValue> {{"RequiredProperty", new AttributeValue {S = null}}});
         act.Should().Throw<ArgumentNullException>();
     }
-
+    
     [Fact]
     public void Deserialize_OptionalReferenceTypeValueMissingClass_KeyWithoutValueProvidedShouldNotThrow()
     {
@@ -28,13 +30,12 @@ public partial class MissingValueTests
     }
 
     [Fact]
-    public void Deserialize_OptionalReferenceTypeValueMissingClass_NoKeyValueProvidedShouldThrow()
+    public void Deserialize_OptionalReferenceTypeValueMissingClass_NoKeyValueProvidedShouldNotThrow()
     {
         var act = () => OptionalReferenceTypeValueMissingClassDocument.Deserialize(new Dictionary<string, AttributeValue>());
 
         act.Should().NotThrow();
     }
-
     [Fact]
     public void Deserialize_RequiredValueTypeValueMissingClass_KeyWithoutValueProvidedShouldThrow()
     {
