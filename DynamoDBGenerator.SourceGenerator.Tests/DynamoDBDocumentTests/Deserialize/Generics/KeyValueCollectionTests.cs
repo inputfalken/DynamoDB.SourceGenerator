@@ -1,8 +1,249 @@
+using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Generics;
 
 [DynamoDBDocument(typeof(KeyValueCollectionClass))]
 public partial class KeyValueCollectionTests
 {
+
+    [Fact]
+    public void Deserialize_ICollection_ShouldBeListWithCorrectElements()
+    {
+        KeyValueCollectionClassDocument
+            .Deserialize(new Dictionary<string, AttributeValue>
+            {
+                {
+                    nameof(KeyValueCollectionClass.CollectionInterface), new AttributeValue
+                    {
+                        L = new List<AttributeValue>
+                        {
+                            new()
+                            {
+                                M = new Dictionary<string, AttributeValue>
+                                {
+                                    {"Key", new AttributeValue {S = "ABC"}},
+                                    {"Value", new AttributeValue {N = "1"}}
+                                }
+                            },
+                            new()
+                            {
+
+                                M = new Dictionary<string, AttributeValue>
+                                {
+                                    {"Key", new AttributeValue {S = "Foo"}},
+                                    {"Value", new AttributeValue {N = "2"}}
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+            .CollectionInterface
+            .Should()
+            .BeOfType<List<KeyValuePair<string, int>>>()
+            .Which
+            .Should()
+            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("ABC", 1)), x => x.Should().Be(new KeyValuePair<string, int>("Foo", 2)));
+    }
+
+    [Fact]
+    public void Deserialize_IReadOnlyCollection_ShouldBeOfArrayWithCorrectElements()
+    {
+        KeyValueCollectionClassDocument
+            .Deserialize(new Dictionary<string, AttributeValue>
+            {
+                {
+                    nameof(KeyValueCollectionClass.ReadOnlyCollectionInterface), new AttributeValue
+                    {
+                        L = new List<AttributeValue>
+                        {
+                            new()
+                            {
+                                M = new Dictionary<string, AttributeValue>
+                                {
+                                    {"Key", new AttributeValue {S = "ABC"}},
+                                    {"Value", new AttributeValue {N = "1"}}
+                                }
+                            },
+                            new()
+                            {
+
+                                M = new Dictionary<string, AttributeValue>
+                                {
+                                    {"Key", new AttributeValue {S = "Foo"}},
+                                    {"Value", new AttributeValue {N = "2"}}
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+            .ReadOnlyCollectionInterface
+            .Should()
+            .BeOfType<KeyValuePair<string, int>[]>()
+            .Which
+            .Should()
+            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("ABC", 1)), x => x.Should().Be(new KeyValuePair<string, int>("Foo", 2)));
+    }
+
+    [Fact]
+    public void Deserialize_IList_ShouldBeListWithCorrectElements()
+    {
+        KeyValueCollectionClassDocument
+            .Deserialize(new Dictionary<string, AttributeValue>
+            {
+                {
+                    nameof(KeyValueCollectionClass.ListInterface), new AttributeValue
+                    {
+                        L = new List<AttributeValue>
+                        {
+                            new()
+                            {
+                                M = new Dictionary<string, AttributeValue>
+                                {
+                                    {"Key", new AttributeValue {S = "ABC"}},
+                                    {"Value", new AttributeValue {N = "1"}}
+                                }
+                            },
+                            new()
+                            {
+
+                                M = new Dictionary<string, AttributeValue>
+                                {
+                                    {"Key", new AttributeValue {S = "Foo"}},
+                                    {"Value", new AttributeValue {N = "2"}}
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+            .ListInterface
+            .Should()
+            .BeOfType<List<KeyValuePair<string, int>>>()
+            .Which
+            .Should()
+            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("ABC", 1)), x => x.Should().Be(new KeyValuePair<string, int>("Foo", 2)));
+    }
+
+    [Fact]
+    public void Deserialize_IReadOnlyList_ShouldBeOfArrayWithCorrectElements()
+    {
+        KeyValueCollectionClassDocument
+            .Deserialize(new Dictionary<string, AttributeValue>
+            {
+                {
+                    nameof(KeyValueCollectionClass.ReadOnlyListInterface), new AttributeValue
+                    {
+                        L = new List<AttributeValue>
+                        {
+                            new()
+                            {
+                                M = new Dictionary<string, AttributeValue>
+                                {
+                                    {"Key", new AttributeValue {S = "ABC"}},
+                                    {"Value", new AttributeValue {N = "1"}}
+                                }
+                            },
+                            new()
+                            {
+
+                                M = new Dictionary<string, AttributeValue>
+                                {
+                                    {"Key", new AttributeValue {S = "Foo"}},
+                                    {"Value", new AttributeValue {N = "2"}}
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+            .ReadOnlyListInterface
+            .Should()
+            .BeOfType<KeyValuePair<string, int>[]>()
+            .Which
+            .Should()
+            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("ABC", 1)), x => x.Should().Be(new KeyValuePair<string, int>("Foo", 2)));
+    }
+
+    [Fact]
+    public void Deserialize_List_ShouldBeOfListWithCorrectElements()
+    {
+        KeyValueCollectionClassDocument
+            .Deserialize(new Dictionary<string, AttributeValue>
+            {
+                {
+                    nameof(KeyValueCollectionClass.List), new AttributeValue
+                    {
+                        L = new List<AttributeValue>
+                        {
+                            new()
+                            {
+                                M = new Dictionary<string, AttributeValue>
+                                {
+                                    {"Key", new AttributeValue {S = "ABC"}},
+                                    {"Value", new AttributeValue {N = "1"}}
+                                }
+                            },
+                            new()
+                            {
+
+                                M = new Dictionary<string, AttributeValue>
+                                {
+                                    {"Key", new AttributeValue {S = "Foo"}},
+                                    {"Value", new AttributeValue {N = "2"}}
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+            .List
+            .Should()
+            .BeOfType<List<KeyValuePair<string, int>>>()
+            .Which
+            .Should()
+            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("ABC", 1)), x => x.Should().Be(new KeyValuePair<string, int>("Foo", 2)));
+    }
+
+    [Fact]
+    public void Deserialize_Array_ShouldBeOfArrayWithCorrectElements()
+    {
+        KeyValueCollectionClassDocument
+            .Deserialize(new Dictionary<string, AttributeValue>
+            {
+                {
+                    nameof(KeyValueCollectionClass.Array), new AttributeValue
+                    {
+                        L = new List<AttributeValue>
+                        {
+                            new()
+                            {
+                                M = new Dictionary<string, AttributeValue>
+                                {
+                                    {"Key", new AttributeValue {S = "ABC"}},
+                                    {"Value", new AttributeValue {N = "1"}}
+                                }
+                            },
+                            new()
+                            {
+
+                                M = new Dictionary<string, AttributeValue>
+                                {
+                                    {"Key", new AttributeValue {S = "Foo"}},
+                                    {"Value", new AttributeValue {N = "2"}}
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+            .Array
+            .Should()
+            .BeOfType<KeyValuePair<string, int>[]>()
+            .Which
+            .Should()
+            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("ABC", 1)), x => x.Should().Be(new KeyValuePair<string, int>("Foo", 2)));
+    }
 
 }
 

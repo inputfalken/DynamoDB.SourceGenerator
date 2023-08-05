@@ -1,3 +1,4 @@
+using DynamoDBGenerator.SourceGenerator.Extensions;
 using Microsoft.CodeAnalysis;
 
 namespace DynamoDBGenerator.SourceGenerator.Types;
@@ -73,12 +74,12 @@ public record SingleGeneric : KnownType
 
         SupportedType? supported = type switch
         {
-            {Name: "Nullable"} => SupportedType.Nullable,
+            _ when type.TryGetNullableValueType() is not null => SupportedType.Nullable,
             {Name: "ISet"} => SupportedType.Set,
             _ when type.AllInterfaces.Any(x => x is {Name: "ISet"}) => SupportedType.Set,
-            {Name:"ICollection"} => SupportedType.ICollection,
+            {Name: "ICollection"} => SupportedType.ICollection,
             _ when type.AllInterfaces.Any(x => x is {Name: "ICollection"}) => SupportedType.ICollection,
-            {Name:"IReadOnlyCollection"} => SupportedType.IReadOnlyCollection,
+            {Name: "IReadOnlyCollection"} => SupportedType.IReadOnlyCollection,
             _ when type.AllInterfaces.Any(x => x is {Name: "IReadOnlyCollection"}) => SupportedType.IReadOnlyCollection,
             {Name: "IEnumerable"} => SupportedType.IEnumerable,
             _ => null
@@ -116,21 +117,21 @@ public record BaseType : KnownType
             {SpecialType: SpecialType.System_String} => SupportedType.String,
             {SpecialType: SpecialType.System_Boolean} => SupportedType.Bool,
             {SpecialType: SpecialType.System_Char} => SupportedType.Char,
-            {SpecialType: SpecialType.System_Int16} => SupportedType.System_Int16,
-            {SpecialType: SpecialType.System_Int32} => SupportedType.System_Int32,
-            {SpecialType: SpecialType.System_Int64} => SupportedType.System_Int64,
-            {SpecialType: SpecialType.System_UInt16} => SupportedType.System_UInt16,
-            {SpecialType: SpecialType.System_UInt32} => SupportedType.System_UInt32,
-            {SpecialType: SpecialType.System_UInt64} => SupportedType.System_UInt64,
-            {SpecialType: SpecialType.System_Decimal} => SupportedType.System_Decimal,
-            {SpecialType: SpecialType.System_Double} => SupportedType.System_Double,
-            {SpecialType: SpecialType.System_Single} => SupportedType.System_Single,
-            {SpecialType: SpecialType.System_Byte} => SupportedType.System_Byte,
-            {SpecialType: SpecialType.System_SByte} => SupportedType.System_SByte,
+            {SpecialType: SpecialType.System_Int16} => SupportedType.Int16,
+            {SpecialType: SpecialType.System_Int32} => SupportedType.Int32,
+            {SpecialType: SpecialType.System_Int64} => SupportedType.Int64,
+            {SpecialType: SpecialType.System_UInt16} => SupportedType.UInt16,
+            {SpecialType: SpecialType.System_UInt32} => SupportedType.UInt32,
+            {SpecialType: SpecialType.System_UInt64} => SupportedType.UInt64,
+            {SpecialType: SpecialType.System_Decimal} => SupportedType.Decimal,
+            {SpecialType: SpecialType.System_Double} => SupportedType.Double,
+            {SpecialType: SpecialType.System_Single} => SupportedType.Single,
+            {SpecialType: SpecialType.System_Byte} => SupportedType.Byte,
+            {SpecialType: SpecialType.System_SByte} => SupportedType.SByte,
             {TypeKind: TypeKind.Enum} => SupportedType.Enum,
-            {SpecialType: SpecialType.System_DateTime} => SupportedType.System_DateTime,
-            {Name:nameof(DateTimeOffset)} => SupportedType.System_DateTimeOffset,
-            {Name:"DateOnly"} => SupportedType.System_DateOnly,
+            {SpecialType: SpecialType.System_DateTime} => SupportedType.DateTime,
+            {Name: nameof(DateTimeOffset)} => SupportedType.DateTimeOffset,
+            {Name: "DateOnly"} => SupportedType.DateOnly,
             _ => null
         };
 
@@ -143,19 +144,19 @@ public record BaseType : KnownType
         Bool = 2,
         Char = 3,
         Enum = 4,
-        System_Int16 = 5,
-        System_Byte = 6,
-        System_Int32 = 7,
-        System_Int64 = 8,
-        System_SByte = 9,
-        System_UInt16 = 10,
-        System_UInt32 = 11,
-        System_UInt64 = 12,
-        System_Decimal = 13,
-        System_Double = 14,
-        System_Single = 15,
-        System_DateTime = 16,
-        System_DateTimeOffset = 17,
-        System_DateOnly = 18
+        Int16 = 5,
+        Byte = 6,
+        Int32 = 7,
+        Int64 = 8,
+        SByte = 9,
+        UInt16 = 10,
+        UInt32 = 11,
+        UInt64 = 12,
+        Decimal = 13,
+        Double = 14,
+        Single = 15,
+        DateTime = 16,
+        DateTimeOffset = 17,
+        DateOnly = 18
     }
 }

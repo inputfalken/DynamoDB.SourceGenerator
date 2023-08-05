@@ -8,7 +8,7 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 public static class TypeExtensions
 {
 
-    public static Func<ITypeSymbol, string> NameCache(SymbolDisplayFormat symbolDisplayFormat ,IEqualityComparer<ISymbol> comparer)
+    public static Func<ITypeSymbol, string> NameCache(SymbolDisplayFormat symbolDisplayFormat, IEqualityComparer<ISymbol> comparer)
     {
         var dictionary = new Dictionary<ISymbol, string>(comparer);
 
@@ -18,7 +18,7 @@ public static class TypeExtensions
                 return name;
 
             name = x.ToDisplayString(symbolDisplayFormat);
-            
+
             dictionary.Add(x, name);
             return name;
         };
@@ -84,6 +84,12 @@ public static class TypeExtensions
     {
         return new Assignment(in value, in typeSymbol, true);
     }
+
+    public static INamedTypeSymbol? TryGetNullableValueType(this ITypeSymbol type)
+    {
+        return type.IsValueType && type is INamedTypeSymbol {OriginalDefinition.SpecialType: SpecialType.System_Nullable_T} symbol ? symbol : null;
+    }
+    
 
     public static string ToXmlComment(this ITypeSymbol typeSymbol)
     {

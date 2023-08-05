@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
@@ -39,20 +36,20 @@ public class DynamoDbDocumentGenerator
             {
                 BaseType.SupportedType.String => typeSymbol.ToInlineAssignment($"S = {accessPattern}"),
                 BaseType.SupportedType.Bool => typeSymbol.ToInlineAssignment($"BOOL = {accessPattern}"),
-                BaseType.SupportedType.System_Int16
-                    or BaseType.SupportedType.System_Int32
-                    or BaseType.SupportedType.System_Int64
-                    or BaseType.SupportedType.System_UInt16
-                    or BaseType.SupportedType.System_UInt32
-                    or BaseType.SupportedType.System_UInt64
-                    or BaseType.SupportedType.System_Double
-                    or BaseType.SupportedType.System_Decimal
-                    or BaseType.SupportedType.System_Single
-                    or BaseType.SupportedType.System_SByte
-                    or BaseType.SupportedType.System_Byte
+                BaseType.SupportedType.Int16
+                    or BaseType.SupportedType.Int32
+                    or BaseType.SupportedType.Int64
+                    or BaseType.SupportedType.UInt16
+                    or BaseType.SupportedType.UInt32
+                    or BaseType.SupportedType.UInt64
+                    or BaseType.SupportedType.Double
+                    or BaseType.SupportedType.Decimal
+                    or BaseType.SupportedType.Single
+                    or BaseType.SupportedType.SByte
+                    or BaseType.SupportedType.Byte
                     => typeSymbol.ToInlineAssignment($"N = {accessPattern}.ToString()"),
                 BaseType.SupportedType.Char => typeSymbol.ToInlineAssignment($"S = {accessPattern}.ToString()"),
-                BaseType.SupportedType.System_DateOnly or BaseType.SupportedType.System_DateTimeOffset or BaseType.SupportedType.System_DateTime => typeSymbol.ToInlineAssignment($@"S = {accessPattern}.ToString(""O"")"),
+                BaseType.SupportedType.DateOnly or BaseType.SupportedType.DateTimeOffset or BaseType.SupportedType.DateTime => typeSymbol.ToInlineAssignment($@"S = {accessPattern}.ToString(""O"")"),
                 BaseType.SupportedType.Enum => typeSymbol.ToInlineAssignment($"N = ((int){accessPattern}).ToString()"),
                 _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
             },
@@ -87,7 +84,7 @@ public class DynamoDbDocumentGenerator
         return new Assignment(in outerAssignment, in elementType, innerAssignment.HasExternalDependency);
     }
 
-    private Assignment BuildPocoList(SingleGeneric singleGeneric, string? operation, string accessPattern, string defaultCause)
+    private Assignment BuildPocoList(in SingleGeneric singleGeneric, in string? operation, in string accessPattern, in string defaultCause)
     {
         var innerAssignment = DataMemberAssignment(singleGeneric.T, "y");
         var outerAssignment = $"{accessPattern} switch {{ {{ L: {{ }} x }} => x.Select(y => {innerAssignment.Value}){operation}, {defaultCause} }}";
@@ -189,53 +186,58 @@ public class DynamoDbDocumentGenerator
         {@class}";
     }
 
-    private Assignment DataMemberAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
+    private Assignment DataMemberAssignment(in ITypeSymbol type, in string pattern)
     {
-        var defaultCause = typeSymbol.IsNullable() ? "_ => null" : @$"_ => throw new ArgumentNullException(""{Constants.NotNullErrorMessage}"")";
-        if (typeSymbol.GetKnownType() is not { } knownType) return ExternalAssignment(typeSymbol, accessPattern);
+        var defaultCase = type.IsNullable() ? "_ => null" : @$"_ => throw new ArgumentNullException(""{Constants.NotNullErrorMessage}"")";
+        return Execution(in type, in pattern, defaultCase);
 
-        var assignment = knownType switch
+        Assignment Execution(in ITypeSymbol typeSymbol, in string accessPattern, string @default)
         {
-            BaseType baseType => baseType.Type switch
+            if (typeSymbol.GetKnownType() is not { } knownType) return ExternalAssignment(in typeSymbol, in accessPattern);
+            
+            var assignment = knownType switch
             {
-                BaseType.SupportedType.String => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => x, {defaultCause} }}"),
-                BaseType.SupportedType.Bool => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ BOOL: var x }} => x, {defaultCause} }}"),
-                BaseType.SupportedType.Char => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => x[0], {defaultCause} }}"),
-                BaseType.SupportedType.Enum => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} when Int32.Parse(x) is var y =>({_fullTypeNameFactory(typeSymbol)})y, {defaultCause} }}"),
-                BaseType.SupportedType.System_Int16 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Int16.Parse(x), {defaultCause} }}"),
-                BaseType.SupportedType.System_Byte => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Byte.Parse(x), {defaultCause} }}"),
-                BaseType.SupportedType.System_Int32 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Int32.Parse(x), {defaultCause} }}"),
-                BaseType.SupportedType.System_Int64 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Int64.Parse(x), {defaultCause} }}"),
-                BaseType.SupportedType.System_SByte => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => SByte.Parse(x), {defaultCause} }}"),
-                BaseType.SupportedType.System_UInt16 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => UInt16.Parse(x), {defaultCause} }}"),
-                BaseType.SupportedType.System_UInt32 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => UInt32.Parse(x), {defaultCause} }}"),
-                BaseType.SupportedType.System_UInt64 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{  {{ N: {{ }} x }} => UInt64.Parse(x), {defaultCause} }}"),
-                BaseType.SupportedType.System_Decimal => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Decimal.Parse(x), {defaultCause} }}"),
-                BaseType.SupportedType.System_Double => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Double.Parse(x), {defaultCause} }}"),
-                BaseType.SupportedType.System_Single => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Single.Parse(x), {defaultCause} }}"),
-                BaseType.SupportedType.System_DateTime => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => DateTime.Parse(x), {defaultCause} }}"),
-                BaseType.SupportedType.System_DateTimeOffset => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => DateTimeOffset.Parse(x), {defaultCause} }}"),
-                BaseType.SupportedType.System_DateOnly => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => DateOnly.Parse(x), {defaultCause} }}"),
-                _ => throw new ArgumentOutOfRangeException()
-            },
-            SingleGeneric singleGeneric => singleGeneric.Type switch
-            {
-                SingleGeneric.SupportedType.Nullable => DataMemberAssignment(singleGeneric.T, accessPattern),
-                SingleGeneric.SupportedType.Set => BuildPocoSet(singleGeneric.T, accessPattern, defaultCause),
-                SingleGeneric.SupportedType.Array => BuildPocoList(singleGeneric, ".ToArray()", accessPattern, defaultCause),
-                SingleGeneric.SupportedType.ICollection => BuildPocoList(singleGeneric, ".ToList()", accessPattern, defaultCause),
-                SingleGeneric.SupportedType.IReadOnlyCollection => BuildPocoList(singleGeneric, ".ToArray()", accessPattern, defaultCause),
-                SingleGeneric.SupportedType.IEnumerable => BuildPocoList(singleGeneric, null, accessPattern, defaultCause),
-                _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
-            },
-            KeyValueGeneric keyValueGeneric => StringKeyedPocoGeneric(in keyValueGeneric, in accessPattern, in defaultCause),
-            _ => null
-        };
+                BaseType baseType => baseType.Type switch
+                {
+                    BaseType.SupportedType.String => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => x, {@default} }}"),
+                    BaseType.SupportedType.Bool => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ BOOL: var x }} => x, {@default} }}"),
+                    BaseType.SupportedType.Char => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => x[0], {@default} }}"),
+                    BaseType.SupportedType.Enum => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} when Int32.Parse(x) is var y =>({_fullTypeNameFactory(typeSymbol)})y, {@default} }}"),
+                    BaseType.SupportedType.Int16 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Int16.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.Byte => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Byte.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.Int32 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Int32.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.Int64 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Int64.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.SByte => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => SByte.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.UInt16 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => UInt16.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.UInt32 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => UInt32.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.UInt64 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{  {{ N: {{ }} x }} => UInt64.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.Decimal => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Decimal.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.Double => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Double.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.Single => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Single.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.DateTime => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => DateTime.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.DateTimeOffset => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => DateTimeOffset.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.DateOnly => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => DateOnly.Parse(x), {@default} }}"),
+                    _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
+                },
+                SingleGeneric singleGeneric => singleGeneric.Type switch
+                {
+                    SingleGeneric.SupportedType.Nullable => Execution(singleGeneric.T, in accessPattern, @default),
+                    SingleGeneric.SupportedType.Set => BuildPocoSet(singleGeneric.T, in accessPattern, in @default),
+                    SingleGeneric.SupportedType.Array => BuildPocoList(in singleGeneric, ".ToArray()", in accessPattern, in @default),
+                    SingleGeneric.SupportedType.ICollection => BuildPocoList(in singleGeneric, ".ToList()", in accessPattern, in @default),
+                    SingleGeneric.SupportedType.IReadOnlyCollection => BuildPocoList(in singleGeneric, ".ToArray()", in accessPattern, in @default),
+                    SingleGeneric.SupportedType.IEnumerable => BuildPocoList(in singleGeneric, null, in accessPattern, in @default),
+                    _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
+                },
+                KeyValueGeneric keyValueGeneric => StringKeyedPocoGeneric(in keyValueGeneric, in accessPattern, @default),
+                _ => null
+            };
 
-        return assignment ?? ExternalAssignment(in typeSymbol, in accessPattern);
+            return assignment ?? ExternalAssignment(in typeSymbol, in accessPattern);
 
-        Assignment ExternalAssignment(in ITypeSymbol typeSymbol, in string accessPattern) =>
-            typeSymbol.ToExternalDependencyAssignment($"{accessPattern} switch {{ {{ M: {{ }} x }} => {_deserializationMethodNameFactory(typeSymbol)}(x), {defaultCause} }}");
+            Assignment ExternalAssignment(in ITypeSymbol typeSymbol, in string accessPattern) =>
+                typeSymbol.ToExternalDependencyAssignment($"{accessPattern} switch {{ {{ M: {{ }} x }} => {_deserializationMethodNameFactory(typeSymbol)}(x), {@default} }}");
+        }
 
     }
 
@@ -466,13 +468,13 @@ public class DynamoDbDocumentGenerator
 
             return (
                 assignments.Select(x => x.Assignment),
-                $"new {_fullTypeNameFactory(typeSymbol)} ({constructorArgs}) {{{string.Join(", ", objInitialization)}}}"
+                $"new {_fullTypeNameFactory(typeSymbol)}({constructorArgs}) {{{string.Join(", ", objInitialization)}}}"
             );
         }
 
     }
 
-    private Assignment? StringKeyedPocoGeneric(in KeyValueGeneric keyValueGeneric, in string accessPattern, in string defaultCase)
+    private Assignment? StringKeyedPocoGeneric(in KeyValueGeneric keyValueGeneric, in string accessPattern, string defaultCase)
     {
         switch (keyValueGeneric)
         {
