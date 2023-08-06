@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using Microsoft.CodeAnalysis;
 
@@ -77,11 +79,11 @@ public record SingleGeneric : KnownType
             _ when type.TryGetNullableValueType() is not null => SupportedType.Nullable,
             {Name: "ISet"} => SupportedType.Set,
             _ when type.AllInterfaces.Any(x => x is {Name: "ISet"}) => SupportedType.Set,
-            {Name: "ICollection"} => SupportedType.ICollection,
-            _ when type.AllInterfaces.Any(x => x is {Name: "ICollection"}) => SupportedType.ICollection,
-            {Name: "IReadOnlyCollection"} => SupportedType.IReadOnlyCollection,
-            _ when type.AllInterfaces.Any(x => x is {Name: "IReadOnlyCollection"}) => SupportedType.IReadOnlyCollection,
-            {Name: "IEnumerable"} => SupportedType.IEnumerable,
+            {OriginalDefinition.SpecialType: SpecialType.System_Collections_Generic_ICollection_T} => SupportedType.ICollection,
+            _ when type.AllInterfaces.Any(x => x is {OriginalDefinition.SpecialType: SpecialType.System_Collections_Generic_ICollection_T}) => SupportedType.ICollection,
+            {OriginalDefinition.SpecialType: SpecialType.System_Collections_Generic_IReadOnlyCollection_T} => SupportedType.IReadOnlyCollection,
+            _ when type.AllInterfaces.Any(x => x is {OriginalDefinition.SpecialType: SpecialType.System_Collections_Generic_IReadOnlyCollection_T}) => SupportedType.IReadOnlyCollection,
+            {OriginalDefinition.SpecialType: SpecialType.System_Collections_Generic_IEnumerable_T} => SupportedType.IEnumerable,
             _ => null
         };
 
