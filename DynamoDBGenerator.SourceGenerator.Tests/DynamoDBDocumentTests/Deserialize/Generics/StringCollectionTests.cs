@@ -19,7 +19,7 @@ public partial class StringCollectionTests
     }
 
     [Fact]
-    public void Deserialize_IReadOnlyCollection_ShouldBeOfArrayWithCorrectElements()
+    public void Deserialize_IReadOnlyCollection_ShouldBeArrayWithCorrectElements()
     {
         StringedCollectionClassDocument
             .Deserialize(new Dictionary<string, AttributeValue> {{nameof(StringedCollectionClass.ReadOnlyCollectionInterface), new AttributeValue {L = new List<AttributeValue> {new() {S = "ABC"}, new() {S = "Foo"}}}}})
@@ -82,10 +82,21 @@ public partial class StringCollectionTests
             .Should()
             .SatisfyRespectively(x => x.Should().Be("ABC"), x => x.Should().Be("Foo"));
     }
+
+    [Fact]
+    public void Deserialize_IEnumerable_ShouldContainCorrectElements()
+    {
+        StringedCollectionClassDocument
+            .Deserialize(new Dictionary<string, AttributeValue> {{nameof(StringedCollectionClass.EnumerableInterface), new AttributeValue {L = new List<AttributeValue> {new() {S = "ABC"}, new() {S = "Foo"}}}}})
+            .EnumerableInterface
+            .Should()
+            .SatisfyRespectively(x => x.Should().Be("ABC"), x => x.Should().Be("Foo"));
+    }
 }
 
 public class StringedCollectionClass
 {
+    public IEnumerable<string>? EnumerableInterface { get; set; }
     public List<string>? List { get; set; }
     public string[]? Array { get; set; }
     public IList<string>? ListInterface { get; set; }
