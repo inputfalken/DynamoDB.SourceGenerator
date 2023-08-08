@@ -87,6 +87,6 @@ public class Person
         public string Email { get; set;}
     }
 }
-[DynamoDbDocumentProperty(typeof(Person))]
+[DynamoDBDocument(typeof(Person))]
 public class Repository { }
 ```
