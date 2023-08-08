@@ -8,6 +8,7 @@ using BenchmarkDotNet.Running;
 using DynamoDBGenerator;
 using DynamoDBGenerator.Extensions;
 using Document = Amazon.Runtime.Documents.Document;
+using PutItemRequest = Amazon.DynamoDBv2.Model.PutItemRequest;
 
 namespace SampleApp;
 
@@ -24,9 +25,6 @@ internal static class Program
 [DynamoDBDocument(typeof(Address))]
 public partial class Repository
 {
-    public Repository()
-    {
-    }
 }
 
 [SimpleJob]

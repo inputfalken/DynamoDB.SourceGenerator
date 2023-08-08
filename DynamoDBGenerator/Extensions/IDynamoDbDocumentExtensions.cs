@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.Extensions;
 
@@ -23,7 +24,7 @@ public static class DynamoDbDocumentExtensions
             names = tracker.AccessedNames().ToDictionary(x => x.Key, x => x.Value);
             values = tracker.AccessedValues(entity).ToDictionary(x => x.Key, x => x.Value);
         }
-        
+
         return new PutItemRequest
         {
             TableName = tableName,
