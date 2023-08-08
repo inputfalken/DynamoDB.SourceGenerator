@@ -10,6 +10,7 @@ public class Constants
 
     public const int MaxMethodNameLenght = 511;
 
+    public const string NotNullErrorMessage = "The value is not supposed to be null, to allow this; make the property nullable.";
 
 }
 

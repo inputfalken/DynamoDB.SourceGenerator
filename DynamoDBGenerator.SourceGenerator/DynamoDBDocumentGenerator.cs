@@ -36,7 +36,10 @@ public class DynamoDBDocumentGenerator : IIncrementalGenerator
         {
             var repository = string.Join(Constants.NewLine, GetMethods(typeSymbol, compilation));
             var code = typeSymbol.CreateNamespace(typeSymbol.CreateClass(repository));
-            context.AddSource(typeSymbol.Name, code);
+            var typeNamespace = typeSymbol.ContainingNamespace.IsGlobalNamespace
+                ? null
+                : $"{typeSymbol.ContainingNamespace}.";
+            context.AddSource($"{typeNamespace}{typeSymbol.Name}", code);
         }
     }
 
@@ -55,8 +58,8 @@ public class DynamoDBDocumentGenerator : IIncrementalGenerator
             if (namedTypeSymbol is null)
                 continue;
 
-            yield return new DynamoDbDocumentGenerator(namedTypeSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated), SymbolEqualityComparer.IncludeNullability)
-                .DynamoDbDocumentProperty();
+            yield return new DynamoDbDocumentGenerator((INamedTypeSymbol)namedTypeSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated), SymbolEqualityComparer.IncludeNullability)
+                .CreateDynamoDbDocumentProperty(Accessibility.Public);
         }
     }
 

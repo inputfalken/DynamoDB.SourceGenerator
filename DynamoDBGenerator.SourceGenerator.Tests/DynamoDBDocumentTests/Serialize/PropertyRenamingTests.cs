@@ -8,26 +8,54 @@ public partial class PropertyRenamingTests
     {
         var @class = new PropertyWithMixedNames
         {
-            PlainProperty = "N/A",
-            PropertyWithDdbPropertyAttribute = "N/A",
-            PropertyWithDdbPropertyAttributeWithOverridenName = "N/A",
-            PropertyWithDdbHashKeyAttribute = "N/A",
-            PropertyWithDdbHashKeyAttributeWithOverridenName = "N/A",
-            PropertyWithDdbRangeKeyAttribute = "N/A",
-            PropertyWithDdbRangeKeyAttributeWithOverridenName = "N/A"
+            PlainProperty = "1",
+            PropertyWithDdbPropertyAttribute = "2",
+            PropertyWithDdbPropertyAttributeWithOverridenName = "3",
+            PropertyWithDdbHashKeyAttribute = "4",
+            PropertyWithDdbHashKeyAttributeWithOverridenName = "5",
+            PropertyWithDdbRangeKeyAttribute = "6",
+            PropertyWithDdbRangeKeyAttributeWithOverridenName = "7"
         };
 
         PropertyWithMixedNamesDocument
             .Serialize(@class)
             .Should()
             .SatisfyRespectively(
-                x => { x.Key.Should().Be(nameof(PropertyWithMixedNames.PlainProperty)); },
-                x => { ((string)x.Key).Should().Be(nameof(PropertyWithMixedNames.PropertyWithDdbPropertyAttribute)); },
-                x => { ((string)x.Key).Should().Be("AnotherName"); },
-                x => { ((string)x.Key).Should().Be(nameof(PropertyWithMixedNames.PropertyWithDdbHashKeyAttribute)); },
-                x => { ((string)x.Key).Should().Be("AnotherHashKey"); },
-                x => { ((string)x.Key).Should().Be(nameof(PropertyWithMixedNames.PropertyWithDdbRangeKeyAttribute)); },
-                x => { ((string)x.Key).Should().Be("AnotherRangeKey"); }
+                x =>
+                {
+                    x.Key.Should().Be(nameof(PropertyWithMixedNames.PlainProperty));
+                    x.Value.S.Should().Be("1");
+                },
+                x =>
+                {
+                    x.Key.Should().Be(nameof(PropertyWithMixedNames.PropertyWithDdbPropertyAttribute));
+                    x.Value.S.Should().Be("2");
+                },
+                x =>
+                {
+                    x.Key.Should().Be("AnotherName");
+                    x.Value.S.Should().Be("3");
+                },
+                x =>
+                {
+                    x.Key.Should().Be(nameof(PropertyWithMixedNames.PropertyWithDdbHashKeyAttribute));
+                    x.Value.S.Should().Be("4");
+                },
+                x =>
+                {
+                    x.Key.Should().Be("AnotherHashKey");
+                    x.Value.S.Should().Be("5");
+                },
+                x =>
+                {
+                    x.Key.Should().Be(nameof(PropertyWithMixedNames.PropertyWithDdbRangeKeyAttribute));
+                    x.Value.S.Should().Be("6");
+                },
+                x =>
+                {
+                    x.Key.Should().Be("AnotherRangeKey");
+                    x.Value.S.Should().Be("7");
+                }
             );
     }
 }

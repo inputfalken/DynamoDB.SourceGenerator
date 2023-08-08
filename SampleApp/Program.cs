@@ -1,10 +1,14 @@
 ﻿using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
+using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.DynamoDBv2.Model;
+using Amazon.Runtime.Documents;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using DynamoDBGenerator;
 using DynamoDBGenerator.Extensions;
+using Document = Amazon.Runtime.Documents.Document;
+using PutItemRequest = Amazon.DynamoDBv2.Model.PutItemRequest;
 
 namespace SampleApp;
 
@@ -21,9 +25,6 @@ internal static class Program
 [DynamoDBDocument(typeof(Address))]
 public partial class Repository
 {
-    public Repository()
-    {
-    }
 }
 
 [SimpleJob]
@@ -34,6 +35,7 @@ public class Marshalling
     private readonly DynamoDBContext _context;
     private readonly DynamoDBOperationConfig _dynamoDbOperationConfig;
     private readonly PersonEntity _singleElement;
+    private readonly Dictionary<string, AttributeValue> _attributeValues;
 
     public Marshalling()
     {
@@ -61,40 +63,26 @@ public class Marshalling
                 Neighbours = new List<PersonEntity>()
             }
         };
+        _attributeValues = _context.ToDocument(_singleElement).ToAttributeMap();
     }
 
 
     [Benchmark]
-    public PutItemRequest AwsDocumentApi()
+    public PutItemRequest PutByAws()
     {
         return new PutItemRequest("TABLE", _context.ToDocument(_singleElement, _dynamoDbOperationConfig).ToAttributeMap(_dynamoDbOperationConfig.Conversion));
     }
 
     [Benchmark]
-    public PutItemRequest SourceGenerationDocumentApi()
+    public PutItemRequest PutBySourceGeneration()
     {
         return _repository.PersonEntityDocument.ToPutItemRequest(_singleElement, "TABLE");
     }
 
     [Benchmark]
-    public PutItemRequest AwsDocumentApiWithConditionExpression()
+    public PersonEntity DeserializeBySourceGeneration()
     {
-        return new PutItemRequest(
-            "TABLE",
-            _context.ToDocument(_singleElement, _dynamoDbOperationConfig).ToAttributeMap(_dynamoDbOperationConfig.Conversion)
-        )
-        {
-            ConditionExpression = "#Id <> :p1",
-            ExpressionAttributeValues = new Dictionary<string, AttributeValue>
-            {
-                {":p1", new AttributeValue {S = _singleElement.Id}}
-            }
-        };
+        return _repository.PersonEntityDocument.Deserialize(_attributeValues);
     }
 
-    [Benchmark]
-    public PutItemRequest SourceGenerationDocumentApiWithConditionExpression()
-    {
-        return _repository.PersonEntityDocument.ToPutItemRequest(_singleElement, "TABLE", x => $"{x.Id.Name} <> {x.Id.Value}");
-    }
 }

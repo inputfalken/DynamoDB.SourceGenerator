@@ -20,7 +20,7 @@ public partial class EnumTests
             .SatisfyRespectively(x =>
             {
                 x.Key.Should().Be(nameof(WeekDayClass.DayOfWeek));
-                ((string)x.Value.N).Should().Be($"{(int)dayOfWeek}");
+                x.Value.N.Should().Be($"{(int)dayOfWeek}");
             });
     }
 
@@ -40,8 +40,19 @@ public partial class EnumTests
             .SatisfyRespectively(x =>
             {
                 x.Key.Should().Be(nameof(WeekDayClass.DayOfWeek));
-                ((string)x.Value.N).Should().Be($"{(int)dayOfWeek}");
+                x.Value.N.Should().Be($"{(int)dayOfWeek}");
             });
+    }
+
+    [Fact(Skip = "Due to missing the following check: https://learn.microsoft.com/en-us/dotnet/api/system.enum.isdefined?view=net-7.0")]
+    public void Serialize_WeekDayClass_NoKeyValueProvidedShouldThrow()
+    {
+        var act = () => WeekDayClassDocument
+            .Serialize(new WeekDayClass())
+            .Should();
+
+        act.Should().Throw<ArgumentNullException>();
+
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using System;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
 [DynamoDBDocument(typeof(NullableAnnotationTests))]

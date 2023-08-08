@@ -7,17 +7,12 @@ namespace DynamoDBGenerator.SourceGenerator.Types;
 /// </summary>
 public readonly struct DataMember
 {
-    private readonly bool _isField;
-    private readonly bool _isProperty;
-
-    private DataMember(in ISymbol symbol, in string fieldName, in ITypeSymbol type)
+    private DataMember(in ISymbol symbol, in string fieldName, in ITypeSymbol type, in bool isAssignable)
     {
         Name = fieldName;
         Type = type;
         BaseSymbol = symbol;
-
-        _isField = symbol is IFieldSymbol;
-        _isProperty = symbol is IPropertySymbol;
+        IsAssignable = isAssignable;
     }
 
     public static DataMember FromField(in IFieldSymbol fieldSymbol)
@@ -26,7 +21,7 @@ public readonly struct DataMember
         var name = fieldSymbol.Name;
         var type = fieldSymbol.Type;
 
-        return new DataMember(in symbol, in name, in type);
+        return new DataMember(in symbol, in name, in type, fieldSymbol.IsReadOnly is false);
     }
 
     public static DataMember FromProperty(in IPropertySymbol property)
@@ -35,21 +30,7 @@ public readonly struct DataMember
         var name = property.Name;
         var type = property.Type;
 
-        return new DataMember(in symbol, in name, in type);
-    }
-
-    /// <summary>
-    ///     Performs matching based on the possible types that <see cref="DataMember" /> can consist of.
-    /// </summary>
-    public T Match<T>(Func<IPropertySymbol, T> propertySelector, Func<IFieldSymbol, T> fieldSelector)
-    {
-        if (_isProperty)
-            return propertySelector((IPropertySymbol) BaseSymbol);
-
-        if (_isField)
-            return fieldSelector((IFieldSymbol) BaseSymbol);
-
-        throw new Exception("Can never happen");
+        return new DataMember(in symbol, in name, in type, property.SetMethod?.DeclaredAccessibility is Accessibility.Public);
     }
 
     /// <summary>
@@ -66,4 +47,5 @@ public readonly struct DataMember
     ///     The type of the data member.
     /// </summary>
     public ITypeSymbol Type { get; }
+    public bool IsAssignable { get; }
 }

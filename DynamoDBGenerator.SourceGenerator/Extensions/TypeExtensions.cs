@@ -8,7 +8,22 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 public static class TypeExtensions
 {
 
-    public static Func<ITypeSymbol, string> CachedTypeStringificationFactory(string suffix, IEqualityComparer<ITypeSymbol> comparer)
+    public static Func<ITypeSymbol, string> NameCache(SymbolDisplayFormat symbolDisplayFormat, IEqualityComparer<ISymbol> comparer)
+    {
+        var dictionary = new Dictionary<ISymbol, string>(comparer);
+
+        return x =>
+        {
+            if (dictionary.TryGetValue(x, out var name))
+                return name;
+
+            name = x.ToDisplayString(symbolDisplayFormat);
+
+            dictionary.Add(x, name);
+            return name;
+        };
+    }
+    public static Func<ITypeSymbol, string> TypeSymbolStringCache(string suffix, IEqualityComparer<ISymbol> comparer)
     {
         return x => Execution(
             new Dictionary<ITypeSymbol, string>(comparer),
@@ -70,6 +85,12 @@ public static class TypeExtensions
         return new Assignment(in value, in typeSymbol, true);
     }
 
+    public static INamedTypeSymbol? TryGetNullableValueType(this ITypeSymbol type)
+    {
+        return type.IsValueType && type is INamedTypeSymbol {OriginalDefinition.SpecialType: SpecialType.System_Nullable_T} symbol ? symbol : null;
+    }
+    
+
     public static string ToXmlComment(this ITypeSymbol typeSymbol)
     {
         if (typeSymbol is not INamedTypeSymbol {IsGenericType: true} namedTypeSymbol)
@@ -94,7 +115,6 @@ public static class TypeExtensions
 
         return null;
     }
-
     public static bool IsNumeric(this ITypeSymbol typeSymbol)
     {
         return typeSymbol.SpecialType
@@ -109,12 +129,5 @@ public static class TypeExtensions
             or SpecialType.System_Decimal
             or SpecialType.System_Double
             or SpecialType.System_Single;
-    }
-
-    public static bool IsTemporal(this ITypeSymbol typeSymbol)
-    {
-        return typeSymbol
-            is {SpecialType: SpecialType.System_DateTime}
-            or {Name: nameof(DateTimeOffset) or "DateOnly"};
     }
 }

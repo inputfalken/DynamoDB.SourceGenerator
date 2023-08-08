@@ -6,30 +6,26 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.DynamoDBDo
 public class DynamoDbDocumentGenerator
 {
     private const string DeserializeName = "Deserialize";
-    private const string KeysName = "Keys";
-    private const string SerializeName = "Serialize";
-    private const string ReferenceTrackerName = "ExpressionAttributeTracker";
     private const string DynamoDbDocumentName = "IDynamoDBDocument";
-
-    private readonly ITypeSymbol _rootTypeSymbol;
+    private const string KeysName = "Keys";
+    private const string ReferenceTrackerName = "ExpressionAttributeTracker";
+    private const string SerializeName = "Serialize";
     private readonly IEqualityComparer<ITypeSymbol> _comparer;
-    private readonly Func<ITypeSymbol, string> _createMethodName;
-    private readonly Func<ITypeSymbol, string> _createTypeName;
+    private readonly Func<ITypeSymbol, string> _deserializationMethodNameFactory;
+    private readonly Func<ITypeSymbol, string> _fullTypeNameFactory;
+    private readonly Func<ITypeSymbol, string> _refTrackerTypeNameFactory;
+    private readonly Func<ITypeSymbol, string> _serializationMethodNameFactory;
+    private readonly INamedTypeSymbol _rootTypeSymbol;
 
-    public DynamoDbDocumentGenerator(in ITypeSymbol typeSymbol, IEqualityComparer<ITypeSymbol> comparer)
+    public DynamoDbDocumentGenerator(in INamedTypeSymbol typeSymbol, IEqualityComparer<ISymbol> comparer)
     {
         _rootTypeSymbol = typeSymbol;
-        _createMethodName = TypeExtensions.CachedTypeStringificationFactory("Factory", comparer);
-        _createTypeName = TypeExtensions.CachedTypeStringificationFactory("References", comparer);
-        _createTypeName = TypeExtensions.CachedTypeStringificationFactory("References", comparer);
+        _serializationMethodNameFactory = TypeExtensions.TypeSymbolStringCache("Ser", comparer);
+        _deserializationMethodNameFactory = TypeExtensions.TypeSymbolStringCache("Des", comparer);
+        _refTrackerTypeNameFactory = TypeExtensions.TypeSymbolStringCache("Ref", comparer);
+        _fullTypeNameFactory = TypeExtensions.NameCache(SymbolDisplayFormat.FullyQualifiedFormat, comparer);
         _comparer = comparer;
     }
-
-    private static string AttributeInterfaceName(ITypeSymbol typeSymbol)
-    {
-        return $"{nameof(IExpressionAttributeReferences<object>)}<{typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}>";
-    }
-
     private Assignment AttributeValueAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
     {
         if (typeSymbol.GetKnownType() is not { } knownType) return ExternalAssignment(in typeSymbol, in accessPattern);
@@ -40,16 +36,30 @@ public class DynamoDbDocumentGenerator
             {
                 BaseType.SupportedType.String => typeSymbol.ToInlineAssignment($"S = {accessPattern}"),
                 BaseType.SupportedType.Bool => typeSymbol.ToInlineAssignment($"BOOL = {accessPattern}"),
-                BaseType.SupportedType.Number => typeSymbol.ToInlineAssignment($"N = {accessPattern}.ToString()"),
+                BaseType.SupportedType.Int16
+                    or BaseType.SupportedType.Int32
+                    or BaseType.SupportedType.Int64
+                    or BaseType.SupportedType.UInt16
+                    or BaseType.SupportedType.UInt32
+                    or BaseType.SupportedType.UInt64
+                    or BaseType.SupportedType.Double
+                    or BaseType.SupportedType.Decimal
+                    or BaseType.SupportedType.Single
+                    or BaseType.SupportedType.SByte
+                    or BaseType.SupportedType.Byte
+                    => typeSymbol.ToInlineAssignment($"N = {accessPattern}.ToString()"),
                 BaseType.SupportedType.Char => typeSymbol.ToInlineAssignment($"S = {accessPattern}.ToString()"),
-                BaseType.SupportedType.Temporal => typeSymbol.ToInlineAssignment($@"S = {accessPattern}.ToString(""O"")"),
+                BaseType.SupportedType.DateOnly or BaseType.SupportedType.DateTimeOffset or BaseType.SupportedType.DateTime => typeSymbol.ToInlineAssignment($@"S = {accessPattern}.ToString(""O"")"),
                 BaseType.SupportedType.Enum => typeSymbol.ToInlineAssignment($"N = ((int){accessPattern}).ToString()"),
                 _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
             },
             SingleGeneric singleGeneric => singleGeneric.Type switch
             {
-                SingleGeneric.SupportedType.Collection => BuildList(singleGeneric.T, in accessPattern),
                 SingleGeneric.SupportedType.Nullable => AttributeValueAssignment(singleGeneric.T, $"{accessPattern}.Value"),
+                SingleGeneric.SupportedType.IReadOnlyCollection
+                    or SingleGeneric.SupportedType.Array
+                    or SingleGeneric.SupportedType.IEnumerable
+                    or SingleGeneric.SupportedType.ICollection => BuildList(singleGeneric.T, in accessPattern),
                 SingleGeneric.SupportedType.Set => BuildSet(singleGeneric.T, accessPattern),
                 _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
             },
@@ -60,20 +70,38 @@ public class DynamoDbDocumentGenerator
         return assignment ?? ExternalAssignment(in typeSymbol, in accessPattern);
 
         Assignment ExternalAssignment(in ITypeSymbol typeSymbol, in string accessPattern) =>
-            typeSymbol.ToExternalDependencyAssignment($"M = {_createMethodName(typeSymbol)}({accessPattern})");
+            typeSymbol.ToExternalDependencyAssignment($"M = {_serializationMethodNameFactory(typeSymbol)}({accessPattern})");
     }
 
     private Assignment BuildList(in ITypeSymbol elementType, in string accessPattern)
     {
-        var attributeValue = AttributeValueAssignment(elementType, "x");
-        var select = $"Select(x => {attributeValue.ToAttributeValue()}))";
-        var assignment = elementType.NotNullLambdaExpression() is { } whereBody
+        var innerAssignment = AttributeValueAssignment(elementType, "x");
+        var select = $"Select(x => {innerAssignment.ToAttributeValue()}))";
+        var outerAssignment = elementType.NotNullLambdaExpression() is { } whereBody
             ? $"L = new List<AttributeValue>({accessPattern}.Where({whereBody}).{select}"
             : $"L = new List<AttributeValue>({accessPattern}.{select}";
 
-        return new Assignment(in assignment, in elementType, attributeValue.HasExternalDependency);
+        return new Assignment(in outerAssignment, in elementType, innerAssignment.HasExternalDependency);
     }
 
+    private Assignment BuildPocoList(in SingleGeneric singleGeneric, in string? operation, in string accessPattern, in string defaultCause)
+    {
+        var innerAssignment = DataMemberAssignment(singleGeneric.T, "y");
+        var outerAssignment = $"{accessPattern} switch {{ {{ L: {{ }} x }} => x.Select(y => {innerAssignment.Value}){operation}, {defaultCause} }}";
+
+        return new Assignment(in outerAssignment, singleGeneric.T, innerAssignment.HasExternalDependency);
+    }
+
+    private static Assignment? BuildPocoSet(in ITypeSymbol elementType, in string accessPattern, in string defaultCase)
+    {
+        if (elementType.IsNumeric())
+            return elementType.ToInlineAssignment($"{accessPattern} switch {{ {{ NS: {{ }} x }} =>  new HashSet<{elementType.Name}>(x.Select(y => {elementType.Name}.Parse(y))), {defaultCase} }}");
+
+        if (elementType.SpecialType is SpecialType.System_String)
+            return elementType.ToInlineAssignment($"{accessPattern} switch {{ {{ SS: {{ }} x }} =>  new HashSet<string>(x), {defaultCase} }}");
+
+        return null;
+    }
     private static Assignment? BuildSet(in ITypeSymbol elementType, in string accessPattern)
     {
         var newAccessPattern = elementType.NotNullLambdaExpression() is { } expression
@@ -81,34 +109,26 @@ public class DynamoDbDocumentGenerator
             : accessPattern;
 
         if (elementType.SpecialType is SpecialType.System_String)
-            return new Assignment(
-                $"SS = new List<string>({newAccessPattern})",
-                in elementType,
-                false
-            );
+            return elementType.ToInlineAssignment($"SS = new List<string>({newAccessPattern})");
 
         return elementType.IsNumeric() is false
             ? null
-            : new Assignment(
-                $"NS = new List<string>({newAccessPattern}.Select(x => x.ToString()))",
-                in elementType,
-                false
-            );
+            : elementType.ToInlineAssignment($"NS = new List<string>({newAccessPattern}.Select(x => x.ToString()))");
+    }
+    private string CreateAttributePocoFactory()
+    {
+        var enumerable = Conversion.ConversionMethods(
+                _rootTypeSymbol,
+                StaticPocoFactory,
+                new HashSet<ITypeSymbol>(_comparer)
+            )
+            .Select(static x => x.Code);
+
+        return string.Join(Constants.NewLine, enumerable);
     }
 
-    /// <summary>
-    ///     Creates an Dictionary with string as key and AttributeValue as value.
-    /// </summary>
-    private (string Code, string MethodName) CreateAttributeValueFactory(
-        in MethodConfiguration methodConfiguration,
-        KeyStrategy keyStrategy)
+    private string CreateAttributeValueFactory(KeyStrategy keyStrategy)
     {
-        var consumerMethod = CreateMethod(
-            _rootTypeSymbol,
-            _createMethodName(_rootTypeSymbol),
-            methodConfiguration
-        );
-
         var enumerable = Conversion.ConversionMethods(
                 _rootTypeSymbol,
                 x => StaticAttributeValueDictionaryFactory(x, keyStrategy),
@@ -116,36 +136,14 @@ public class DynamoDbDocumentGenerator
             )
             .Select(static x => x.Code);
 
-        var sourceGeneratedCode = string.Join(Constants.NewLine, enumerable);
+        return string.Join(Constants.NewLine, enumerable);
 
-        var code = $@"{consumerMethod}
-{sourceGeneratedCode}";
-        return (code, methodConfiguration.Name);
-
-        static string CreateMethod(
-            ITypeSymbol typeSymbol,
-            string methodName,
-            MethodConfiguration config)
-        {
-            var accessModifier = config.AccessModifier.ToCode();
-            var signature = config.MethodParameterization switch
-            {
-                MethodConfiguration.Parameterization.UnparameterizedInstance =>
-                    $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}() => {methodName}(this);",
-                MethodConfiguration.Parameterization.ParameterizedStatic =>
-                    $"{accessModifier} static Dictionary<string, AttributeValue> {config.Name}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} item) => {methodName}(item);",
-                MethodConfiguration.Parameterization.ParameterizedInstance =>
-                    $"{accessModifier} Dictionary<string, AttributeValue> {config.Name}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} item) => {methodName}(item);",
-                _ => throw new NotSupportedException($"Config of '{config.MethodParameterization}'.")
-            };
-
-            return $@"            {signature}";
-        }
     }
 
-    private (string Code, string PropertyAccess) CreateDynamoDbDocumentProperty(Accessibility accessibility)
+
+    public string CreateDynamoDbDocumentProperty(Accessibility accessibility)
     {
-        var enumerable = Conversion.ConversionMethods(
+        var referenceTrackers = Conversion.ConversionMethods(
                 _rootTypeSymbol,
                 ExpressionAttributeReferencesClassGenerator,
                 new HashSet<ITypeSymbol>(_comparer)
@@ -153,35 +151,28 @@ public class DynamoDbDocumentGenerator
             .Select(static x => x.Code);
 
         var className = $"{_rootTypeSymbol.Name}_Document";
-        var marshalMethods = CreateAttributeValueFactory(new MethodConfiguration($"{_rootTypeSymbol.Name}Values")
-        {
-            AccessModifier = Accessibility.Private,
-            MethodParameterization = MethodConfiguration.Parameterization.ParameterizedInstance
-        }, KeyStrategy.Include);
+        var marshalMethods = CreateAttributeValueFactory(KeyStrategy.Include);
+        var keysMethod = CreateAttributeValueFactory(KeyStrategy.Only);
+        var keysClass = CodeGenerationExtensions.CreateClass(Accessibility.Private, "KeysClass", keysMethod, 2);
+        var unMarshalMethods = CreateAttributePocoFactory();
 
-        var keysMethod = CreateAttributeValueFactory(new MethodConfiguration($"{_rootTypeSymbol.Name}Keys")
-        {
-            AccessModifier = Accessibility.Public,
-            MethodParameterization = MethodConfiguration.Parameterization.ParameterizedStatic
-        }, KeyStrategy.Only);
-
-        var keysClass = CodeGenerationExtensions.CreateClass(Accessibility.Private, "KeysClass", keysMethod.Code, 2);
-
-        var fullyQualifiedName = _rootTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var expressionAttributeName = CreateExpressionAttributeNamesClass(_rootTypeSymbol);
-        var implementInterface = $@"public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({fullyQualifiedName} entity) => {marshalMethods.MethodName}(entity);
-            public {fullyQualifiedName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => throw new NotImplementedException();
-            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {KeysName}({fullyQualifiedName} entity) => KeysClass.{keysMethod.MethodName}(entity);
+        var rootTypeName = _fullTypeNameFactory(_rootTypeSymbol);
+        var expressionAttributeName = _refTrackerTypeNameFactory(_rootTypeSymbol);
+        var implementInterface =
+            $@"public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({rootTypeName} entity) => {_serializationMethodNameFactory(_rootTypeSymbol)}(entity);
+            public {rootTypeName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => {_deserializationMethodNameFactory(_rootTypeSymbol)}(entity);
+            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {KeysName}({rootTypeName} entity) => KeysClass.{_serializationMethodNameFactory(_rootTypeSymbol)}(entity);
             public {className}.{expressionAttributeName} {ReferenceTrackerName}()
             {{
                 var number = 0;
                 Func<string> valueIdProvider = () => $"":p{{++number}}"";
                 return new {className}.{expressionAttributeName}(null, valueIdProvider);
             }}
-{marshalMethods.Code}
-{keysClass}";
+{marshalMethods}
+{keysClass}
+{unMarshalMethods}";
 
-        var sourceGeneratedCode = string.Join(Constants.NewLine, enumerable.Prepend(implementInterface));
+        var sourceGeneratedCode = string.Join(Constants.NewLine, referenceTrackers.Prepend(implementInterface));
 
         var @class = CodeGenerationExtensions.CreateClass(
             Accessibility.Public,
@@ -191,19 +182,63 @@ public class DynamoDbDocumentGenerator
         );
 
         var propertyName = $"{_rootTypeSymbol.Name}Document";
-        return ($@"{accessibility.ToCode()} {DynamoDbDocumentName}<{fullyQualifiedName}, {className}.{expressionAttributeName}> {propertyName} {{ get; }} = new {className}();
-{@class}", propertyName);
+        return $@"{accessibility.ToCode()} {DynamoDbDocumentName}<{rootTypeName}, {className}.{expressionAttributeName}> {propertyName} {{ get; }} = new {className}();
+        {@class}";
     }
 
-    private string CreateExpressionAttributeNamesClass(ITypeSymbol typeSymbol)
+    private Assignment DataMemberAssignment(in ITypeSymbol type, in string pattern)
     {
-        return _createTypeName(typeSymbol);
-    }
+        var defaultCase = type.IsNullable() ? "_ => null" : @$"_ => throw new ArgumentNullException(""{Constants.NotNullErrorMessage}"")";
+        return Execution(in type, in pattern, defaultCase);
 
+        Assignment Execution(in ITypeSymbol typeSymbol, in string accessPattern, string @default)
+        {
+            if (typeSymbol.GetKnownType() is not { } knownType) return ExternalAssignment(in typeSymbol, in accessPattern);
+            
+            var assignment = knownType switch
+            {
+                BaseType baseType => baseType.Type switch
+                {
+                    BaseType.SupportedType.String => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => x, {@default} }}"),
+                    BaseType.SupportedType.Bool => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ BOOL: var x }} => x, {@default} }}"),
+                    BaseType.SupportedType.Char => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => x[0], {@default} }}"),
+                    BaseType.SupportedType.Enum => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} when Int32.Parse(x) is var y =>({_fullTypeNameFactory(typeSymbol)})y, {@default} }}"),
+                    BaseType.SupportedType.Int16 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Int16.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.Byte => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Byte.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.Int32 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Int32.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.Int64 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Int64.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.SByte => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => SByte.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.UInt16 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => UInt16.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.UInt32 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => UInt32.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.UInt64 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{  {{ N: {{ }} x }} => UInt64.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.Decimal => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Decimal.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.Double => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Double.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.Single => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Single.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.DateTime => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => DateTime.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.DateTimeOffset => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => DateTimeOffset.Parse(x), {@default} }}"),
+                    BaseType.SupportedType.DateOnly => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => DateOnly.Parse(x), {@default} }}"),
+                    _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
+                },
+                SingleGeneric singleGeneric => singleGeneric.Type switch
+                {
+                    SingleGeneric.SupportedType.Nullable => Execution(singleGeneric.T, in accessPattern, @default),
+                    SingleGeneric.SupportedType.Set => BuildPocoSet(singleGeneric.T, in accessPattern, in @default),
+                    SingleGeneric.SupportedType.Array => BuildPocoList(in singleGeneric, ".ToArray()", in accessPattern, in @default),
+                    SingleGeneric.SupportedType.ICollection => BuildPocoList(in singleGeneric, ".ToList()", in accessPattern, in @default),
+                    SingleGeneric.SupportedType.IReadOnlyCollection => BuildPocoList(in singleGeneric, ".ToArray()", in accessPattern, in @default),
+                    SingleGeneric.SupportedType.IEnumerable => BuildPocoList(in singleGeneric, null, in accessPattern, in @default),
+                    _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
+                },
+                KeyValueGeneric keyValueGeneric => StringKeyedPocoGeneric(in keyValueGeneric, in accessPattern, @default),
+                _ => null
+            };
 
-    public string DynamoDbDocumentProperty()
-    {
-        return CreateDynamoDbDocumentProperty(Accessibility.Public).Code;
+            return assignment ?? ExternalAssignment(in typeSymbol, in accessPattern);
+
+            Assignment ExternalAssignment(in ITypeSymbol typeSymbol, in string accessPattern) =>
+                typeSymbol.ToExternalDependencyAssignment($"{accessPattern} switch {{ {{ M: {{ }} x }} => {_deserializationMethodNameFactory(typeSymbol)}(x), {@default} }}");
+        }
+
     }
 
     private Conversion ExpressionAttributeReferencesClassGenerator(ITypeSymbol typeSymbol)
@@ -219,7 +254,7 @@ public class DynamoDbDocumentGenerator
                 DDB: x,
                 NameRef: $"_{x.DataMember.Name}NameRef",
                 ValueRef: $"_{x.DataMember.Name}ValueRef",
-                AttributeReference: CreateExpressionAttributeNamesClass(x.DataMember.Type),
+                AttributeReference: _refTrackerTypeNameFactory(x.DataMember.Type),
                 AttributeInterfaceName: AttributeInterfaceName(x.DataMember.Type)))
             .ToArray();
 
@@ -261,7 +296,7 @@ public class DynamoDbDocumentGenerator
             })
             .ToArray();
 
-        var className = CreateExpressionAttributeNamesClass(typeSymbol);
+        var className = _refTrackerTypeNameFactory(typeSymbol);
         var constructor = $@"public {className}(string? {constructorAttributeName}, Func<string> {valueProvider})
     {{
 {string.Join(Constants.NewLine, fieldAssignments.Select(x => x.Value))}
@@ -289,7 +324,7 @@ public class DynamoDbDocumentGenerator
     {{
 {(string.Join(Constants.NewLine, expressionAttributeNameYields) is var joinedNames && joinedNames != string.Empty ? joinedNames : "return Enumerable.Empty<KeyValuePair<string, string>>();")}
     }}
-    IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{accessedValues}({typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} entity)
+    IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{accessedValues}({_fullTypeNameFactory(typeSymbol)} entity)
     {{
 {(string.Join(Constants.NewLine, expressionAttributeValueYields) is var joinedValues && joinedValues != string.Empty ? joinedValues : "return Enumerable.Empty<KeyValuePair<string, AttributeValue>>();")}
     }}",
@@ -298,8 +333,9 @@ public class DynamoDbDocumentGenerator
             isRecord: true
         );
         return new Conversion(@class, fieldAssignments.Where(x => x.HasExternalDependency));
-    }
 
+        string AttributeInterfaceName(ITypeSymbol symbol) => $"{nameof(IExpressionAttributeReferences<object>)}<{_fullTypeNameFactory(symbol)}>";
+    }
     private Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type, KeyStrategy keyStrategy)
     {
         const string paramReference = "entity";
@@ -307,16 +343,16 @@ public class DynamoDbDocumentGenerator
         var properties = GetAssignments(type, keyStrategy).ToArray();
 
         const string indent = "                ";
-        var dictionary =
-            @$"            public static Dictionary<string, AttributeValue> {_createMethodName(type)}({type.ToDisplayString(NullableFlowState.None, SymbolDisplayFormat.FullyQualifiedFormat)} {paramReference})
-            {{ 
+        var method =
+            @$"            public static Dictionary<string, AttributeValue> {_serializationMethodNameFactory(type)}({_fullTypeNameFactory(type)} {paramReference})
+            {{
                 {InitializeDictionary(dictionaryName, properties.Select(static x => x.capacityTernary))}
                 {string.Join(Constants.NewLine + indent, properties.Select(static x => x.dictionaryPopulation))}
                 return {dictionaryName};
             }}";
 
         return new Conversion(
-            in dictionary,
+            in method,
             properties
                 .Select(static x => x.assignment)
                 .Where(static x => x.HasExternalDependency)
@@ -372,6 +408,96 @@ public class DynamoDbDocumentGenerator
         }
     }
 
+    private Conversion StaticPocoFactory(ITypeSymbol type)
+    {
+
+        var values = GetAssignments(type);
+        const string paramReference = "entity";
+        var method =
+            @$"            public static {_fullTypeNameFactory(type)} {_deserializationMethodNameFactory(type)}(Dictionary<string, AttributeValue> {paramReference})
+            {{ 
+                return {values.objectInitialization};
+            }}";
+
+        return new Conversion(method, values.Item1.Where(x => x.HasExternalDependency));
+
+        (IEnumerable<Assignment>, string objectInitialization) GetAssignments(ITypeSymbol typeSymbol)
+        {
+            var assignments = typeSymbol
+                .GetDynamoDbProperties()
+                .Select(x => (DDB: x, Assignment: DataMemberAssignment(x.DataMember.Type, @$"{paramReference}.GetValueOrDefault(""{x.AttributeName}"")")))
+                .ToArray();
+
+            if (typeSymbol.IsTupleType)
+                return (assignments.Select(x => x.Assignment), $"({string.Join(", ", assignments.Select(x => $"{x.DDB.DataMember.Name}: {x.Assignment.Value}"))})");
+
+            // Right now we either take a constructor path or object initialization path. But they could co-exist.
+            // We do expect the constructor arguments to be 1-1 with case insensitive comparison for data member names.
+            var constructorArgs = string.Empty;
+            if (typeSymbol is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.InstanceConstructors.Any(x => x.Parameters.Length > 0))
+            {
+                var ctor = namedTypeSymbol.InstanceConstructors
+                    .OrderByDescending(x => x.Parameters.Length)
+                    .First();
+
+                var ctorInitialization = ctor.Parameters
+                    .GroupJoin(
+                        assignments,
+                        y => y.Name,
+                        y => y.DDB.DataMember.Name,
+                        (y, z) => (constructurArgument: y, Items: z),
+                        StringComparer.OrdinalIgnoreCase
+                    )
+                    .SelectMany(y => y.Items.Cast<(DynamoDbDataMember DynamoDbDataMember, Assignment assignment)?>().DefaultIfEmpty(), (y, z) => (y.constructurArgument, Item: z))
+                    .Select(x =>
+                    {
+                        if (x.Item is { } item)
+                            return $"{x.constructurArgument.Name} : {item.assignment.Value}";
+
+                        // TODO might be worth considering to throw exception in the source generator for this in order to give faster feedback.
+                        return
+                            $@"{x.constructurArgument.Name} : true ? throw new ArgumentException(""Unable to determine the corresponding data member for constructor argument '{x.constructurArgument.Name}' in '{namedTypeSymbol.Name}'; make sure the names are consistent."") : default";
+                    });
+
+                constructorArgs = string.Join(", ", ctorInitialization);
+            }
+
+            var objInitialization = assignments
+                .Where(x => x.DDB.DataMember.IsAssignable)
+                .Select(x => $"{x.DDB.DataMember.Name} = {x.Assignment.Value}");
+
+            return (
+                assignments.Select(x => x.Assignment),
+                $"new {_fullTypeNameFactory(typeSymbol)}({constructorArgs}) {{{string.Join(", ", objInitialization)}}}"
+            );
+        }
+
+    }
+
+    private Assignment? StringKeyedPocoGeneric(in KeyValueGeneric keyValueGeneric, in string accessPattern, string defaultCase)
+    {
+        switch (keyValueGeneric)
+        {
+            case {TKey: not {SpecialType: SpecialType.System_String}}:
+                return null;
+            case {Type: KeyValueGeneric.SupportedType.LookUp}:
+                var lookupValueAssignment = DataMemberAssignment(keyValueGeneric.TValue, "y.z");
+                return new Assignment(
+                    $"{accessPattern} switch {{ {{ M: {{ }} x }} => x.SelectMany(y => y.Value.L, (y, z) => (y.Key, z)).ToLookup(y => y.Key, y => {lookupValueAssignment.Value}), {defaultCase} }}",
+                    keyValueGeneric.TValue,
+                    lookupValueAssignment.HasExternalDependency
+                );
+            case {Type: KeyValueGeneric.SupportedType.Dictionary}:
+                var dictionaryValueAssignment = DataMemberAssignment(keyValueGeneric.TValue, "y.Value");
+                return new Assignment(
+                    $@"{accessPattern} switch {{ {{ M: {{ }} x }} => x.ToDictionary(y => y.Key, y => {dictionaryValueAssignment.Value}), {defaultCase} }}",
+                    keyValueGeneric.TValue,
+                    dictionaryValueAssignment.HasExternalDependency
+                );
+            default:
+                return null;
+        }
+    }
     private Assignment? StringKeyedValuedGeneric(in KeyValueGeneric keyValueGeneric, in string accessPattern)
     {
         switch (keyValueGeneric)
@@ -384,13 +510,6 @@ public class DynamoDbDocumentGenerator
                     $"M = {accessPattern}.ToDictionary(x => x.Key, x => {lookupValueAssignment.ToAttributeValue()})",
                     keyValueGeneric.TValue,
                     lookupValueAssignment.HasExternalDependency
-                );
-            case {Type: KeyValueGeneric.SupportedType.Grouping}:
-                var groupingValueAssignment = BuildList(keyValueGeneric.TValue, accessPattern);
-                return new Assignment(
-                    $@"M = new Dictionary<string, AttributeValue>{{ {{ {accessPattern}.Key, {groupingValueAssignment.ToAttributeValue()}}} }}",
-                    keyValueGeneric.TValue,
-                    groupingValueAssignment.HasExternalDependency
                 );
             case {Type: KeyValueGeneric.SupportedType.Dictionary}:
                 var dictionaryValueAssignment = AttributeValueAssignment(keyValueGeneric.TValue, "x.Value");
