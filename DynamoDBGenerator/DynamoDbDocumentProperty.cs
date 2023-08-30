@@ -3,10 +3,10 @@
 namespace DynamoDBGenerator;
 
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-public class DynamoDBDocument : Attribute
+public class DynamoDBDocumentAttribute : Attribute
 {
     private readonly Type _type;
-    public DynamoDBDocument(Type type)
+    public DynamoDBDocumentAttribute(Type type)
     {
         _type = type;
 

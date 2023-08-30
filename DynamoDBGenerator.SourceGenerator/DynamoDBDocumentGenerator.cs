@@ -48,7 +48,7 @@ public class DynamoDBDocumentGenerator : IIncrementalGenerator
         var typeNames = typeSymbol
             .GetAttributes()
             .Where(x => x.AttributeClass?.ContainingNamespace is {Name: nameof(DynamoDBGenerator)})
-            .Where(x => x.AttributeClass!.Name is nameof(DynamoDBDocument))
+            .Where(x => x.AttributeClass!.Name is nameof(DynamoDBDocumentAttribute))
             .SelectMany(x => x.ConstructorArguments, (x, y) => (AttributeData: x, TypeConstant: y))
             .Where(x => x.TypeConstant.Kind is TypedConstantKind.Type);
 
