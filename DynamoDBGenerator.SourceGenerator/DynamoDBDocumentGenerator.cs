@@ -43,25 +43,51 @@ public class DynamoDBDocumentGenerator : IIncrementalGenerator
         }
     }
 
+
     private static IEnumerable<string> GetMethods(ISymbol typeSymbol, Compilation compilation)
     {
-        var typeNames = typeSymbol
+        DynamoDBDocumentArguments? ResultSelector(AttributeData attributeData)
+        {
+            var entityType = attributeData.ConstructorArguments
+                .FirstOrDefault(x => x is {Kind: TypedConstantKind.Type, Value: not null});
+
+            if (entityType.IsNull)
+                return null;
+
+            var compiledTypeSymbol = compilation.GetBestTypeByMetadataName(entityType.Value!.ToString());
+            if (compiledTypeSymbol is null)
+                return null;
+
+            var propertyName = attributeData.NamedArguments.FirstOrDefault(x => x.Key is "PropertyName").Value;
+
+            return new DynamoDBDocumentArguments(compiledTypeSymbol, propertyName.Value?.ToString() ?? $"{compiledTypeSymbol.Name}Document");
+        }
+
+        var arguments = typeSymbol
             .GetAttributes()
             .Where(x => x.AttributeClass?.ContainingNamespace is {Name: nameof(DynamoDBGenerator)})
             .Where(x => x.AttributeClass!.Name is nameof(DynamoDBDocumentAttribute))
-            .SelectMany(x => x.ConstructorArguments, (x, y) => (AttributeData: x, TypeConstant: y))
-            .Where(x => x.TypeConstant.Kind is TypedConstantKind.Type);
+            .Select(ResultSelector);
 
-        foreach (var typeName in typeNames)
+        foreach (var argument in arguments)
         {
-            var namedTypeSymbol = compilation.GetBestTypeByMetadataName(typeName.TypeConstant.Value!.ToString());
-            if (namedTypeSymbol is null)
+            if (argument is null)
                 continue;
 
-            yield return new DynamoDbDocumentGenerator((INamedTypeSymbol)namedTypeSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated), SymbolEqualityComparer.IncludeNullability)
-                .CreateDynamoDbDocumentProperty(Accessibility.Public);
+            yield return new DynamoDbDocumentGenerator(argument.Value, SymbolEqualityComparer.IncludeNullability).CreateDynamoDbDocumentProperty(Accessibility.Public);
         }
     }
 
 
+}
+
+public readonly struct DynamoDBDocumentArguments
+{
+    public DynamoDBDocumentArguments(INamedTypeSymbol entityTypeSymbol, string propertyName)
+    {
+        EntityTypeSymbol = entityTypeSymbol;
+        PropertyName = propertyName;
+    }
+    public INamedTypeSymbol EntityTypeSymbol { get; }
+    public string PropertyName { get; }
 }

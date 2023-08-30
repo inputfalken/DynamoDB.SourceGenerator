@@ -16,10 +16,12 @@ public class DynamoDbDocumentGenerator
     private readonly Func<ITypeSymbol, string> _refTrackerTypeNameFactory;
     private readonly Func<ITypeSymbol, string> _serializationMethodNameFactory;
     private readonly INamedTypeSymbol _rootTypeSymbol;
+    private readonly string _publicAccessPropertyName;
 
-    public DynamoDbDocumentGenerator(in INamedTypeSymbol typeSymbol, IEqualityComparer<ISymbol> comparer)
+    public DynamoDbDocumentGenerator(in DynamoDBDocumentArguments arguments, IEqualityComparer<ISymbol> comparer)
     {
-        _rootTypeSymbol = typeSymbol;
+        _rootTypeSymbol = (INamedTypeSymbol)arguments.EntityTypeSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
+        _publicAccessPropertyName = arguments.PropertyName;
         _serializationMethodNameFactory = TypeExtensions.TypeSymbolStringCache("Ser", comparer);
         _deserializationMethodNameFactory = TypeExtensions.TypeSymbolStringCache("Des", comparer);
         _refTrackerTypeNameFactory = TypeExtensions.TypeSymbolStringCache("Ref", comparer);
@@ -181,8 +183,7 @@ public class DynamoDbDocumentGenerator
             2
         );
 
-        var propertyName = $"{_rootTypeSymbol.Name}Document";
-        return $@"{accessibility.ToCode()} {DynamoDbDocumentName}<{rootTypeName}, {className}.{expressionAttributeName}> {propertyName} {{ get; }} = new {className}();
+        return $@"{accessibility.ToCode()} {DynamoDbDocumentName}<{rootTypeName}, {className}.{expressionAttributeName}> {_publicAccessPropertyName} {{ get; }} = new {className}();
         {@class}";
     }
 
