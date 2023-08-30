@@ -108,8 +108,16 @@ internal static class Program
 
 public class Person
 {
+    // Will be included as 'Firstname' in DynamoDB.
     public string Firstname { get; set; }
+    
+    // Will be included as 'Contact' in DynamoDB.
+    [DynamoDBProperty("Contact")]
     public Contact ContactInfo { get; set; }
+    
+    // Wont be included in DynamoDB.
+    [DynamoDBIgnore]
+    public string FirstNameLowercase => Firstname.ToLower();
 
     public class Contact
     {
@@ -117,7 +125,7 @@ public class Person
     }
 }
 // This DynamoDBDocumentAttribute is what will casuse the source generation to kick in.
-// The type provided to the DynamoDBDocumentAttribute is what will get functinality. 
+// The type provided to the DynamoDBDocumentAttribute is what will get functionality. 
 // It is possible to provide multiple DynamoDBDocumentAttributes in order to have multiple types source generated.
 [DynamoDBDocument(typeof(Person))]
 public partial class Repository { }
