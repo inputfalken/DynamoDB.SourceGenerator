@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using Amazon.DynamoDBv2;
+﻿using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.DynamoDBv2.Model;
@@ -17,18 +16,6 @@ internal static class Program
 {
     public static void Main()
     {
-        var personDocument = new Testing_1();
-        new Testing_2().ToPutItemRequest(new PersonEntity(), "", (db, argument) => db.Address.Street);
-        var setAddress = personDocument.ToUpdateItemRequest(
-            new Address(),
-            "",
-            (db, argument) => $"{db.IsResident} = true AND {argument.Name} IS NOT NULL",
-            (db, argument) => $"SET {db.Address.Street} = {argument.Name}"
-        );
-        UpdateItemResponse response = null;
-
-        personDocument.Deserialize(response.Attributes);
-
         BenchmarkRunner.Run<Marshalling>();
     }
 
@@ -38,99 +25,6 @@ internal static class Program
 [DynamoDBDocument(typeof(Address))]
 public partial class Repository
 {
-}
-
-public class Testing_2 : IDynamoDBDocument<PersonEntity, PersonEntity, Testing_2.PersonNameTracker, Testing_2.PersonValueTracker>
-{
-
-    public class PersonNameTracker : IExpressionAttributeNameTracker
-    {
-
-        public Address Address { get; set; }
-        public string IsResident { get; set; }
-        public IEnumerable<KeyValuePair<string, string>> AccessedNames()
-        {
-            throw new NotImplementedException();
-        }
-    }
-    public class PersonValueTracker : IExpressionAttributeValueTracker<PersonEntity>
-    {
-
-        public Address Address { get; set; }
-        public string IsResident { get; set; }
-        public IEnumerable<KeyValuePair<string, AttributeValue>> AccessedValues(PersonEntity arg)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    public Dictionary<string, AttributeValue> Keys(PersonEntity entity)
-    {
-
-        throw new NotImplementedException();
-    }
-    public Dictionary<string, AttributeValue> Serialize(PersonEntity entity)
-    {
-        throw new NotImplementedException();
-    }
-    public PersonEntity Deserialize(Dictionary<string, AttributeValue> attributes)
-    {
-        throw new NotImplementedException();
-    }
-    public PersonNameTracker AttributeNameExpressionTracker()
-    {
-        throw new NotImplementedException();
-    }
-    public AddressValueTracker AttributeExpressionValueTracker()
-    {
-        throw new NotImplementedException();
-    }
-}
-
-public class Testing_1 : IDynamoDBDocument<PersonEntity, Address, Testing_1.PersonNameTracker, Testing_1.AddressValueTracker>
-{
-    public class AddressValueTracker : IExpressionAttributeValueTracker<Address>
-    {
-
-        public string Name { get; set; }
-        public IEnumerable<KeyValuePair<string, AttributeValue>> AccessedValues(Address arg)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    public class PersonNameTracker : IExpressionAttributeNameTracker
-    {
-
-        public Address Address { get; set; }
-        public string IsResident { get; set; }
-        public IEnumerable<KeyValuePair<string, string>> AccessedNames()
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    public Dictionary<string, AttributeValue> Keys(PersonEntity entity)
-    {
-
-        throw new NotImplementedException();
-    }
-    public Dictionary<string, AttributeValue> Serialize(PersonEntity entity)
-    {
-        throw new NotImplementedException();
-    }
-    public PersonEntity Deserialize(Dictionary<string, AttributeValue> attributes)
-    {
-        throw new NotImplementedException();
-    }
-    public PersonNameTracker AttributeNameExpressionTracker()
-    {
-        throw new NotImplementedException();
-    }
-    public AddressValueTracker AttributeExpressionValueTracker()
-    {
-        throw new NotImplementedException();
-    }
 }
 
 [SimpleJob]

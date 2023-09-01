@@ -1,8 +1,7 @@
 ﻿using Amazon.DynamoDBv2.DataModel;
-using Amazon.DynamoDBv2.Model;
 namespace SampleApp;
 
-public class PersonEntity 
+public class PersonEntity
 {
     [DynamoDBHashKey]
     public string Id { get; set; }

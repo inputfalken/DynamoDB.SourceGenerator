@@ -64,7 +64,9 @@ public class DynamoDBDocumentGenerator : IIncrementalGenerator
             return new DynamoDBDocumentArguments(
                 compiledTypeSymbol,
                 propertyName.Value?.ToString() ?? $"{compiledTypeSymbol.Name}Document",
-                argumentType is {IsNull: false, Value: not null} ? compilation.GetBestTypeByMetadataName(argumentType.Value.ToString()) : null
+                argumentType is {IsNull: false, Value: not null}
+                    ? compilation.GetBestTypeByMetadataName(argumentType.Value.ToString()) ?? compiledTypeSymbol
+                    : compiledTypeSymbol
             );
         }
 
@@ -88,13 +90,13 @@ public class DynamoDBDocumentGenerator : IIncrementalGenerator
 
 public readonly struct DynamoDBDocumentArguments
 {
-    public DynamoDBDocumentArguments(INamedTypeSymbol entityTypeSymbol, string propertyName, INamedTypeSymbol? argumentType)
+    public DynamoDBDocumentArguments(INamedTypeSymbol entityTypeSymbol, string propertyName, INamedTypeSymbol argumentType)
     {
         EntityTypeSymbol = entityTypeSymbol;
         PropertyName = propertyName;
         ArgumentType = argumentType;
     }
     public INamedTypeSymbol EntityTypeSymbol { get; }
-    public INamedTypeSymbol? ArgumentType { get; }
+    public INamedTypeSymbol ArgumentType { get; }
     public string PropertyName { get; }
 }
