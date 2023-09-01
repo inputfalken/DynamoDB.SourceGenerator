@@ -7,11 +7,39 @@ namespace DynamoDBGenerator.Extensions;
 
 public static class DynamoDbDocumentExtensions
 {
-    public static PutItemRequest ToPutItemRequest<T, TReferences>(
-        this IDynamoDBDocument<T, TReferences> item,
-        T entity,
+    public static UpdateItemRequest ToUpdateItemRequest<T, TArg, TReferences, TArgumentReferences>(
+        this IDynamoDBDocument<T, TArg, TReferences, TArgumentReferences> item,
+        TArg argument,
         string tableName,
-        Func<TReferences, string>? conditionExpressionBuilder = null) where TReferences : IExpressionAttributeReferences<T>
+        Func<TReferences, TArgumentReferences, string> updateExpressionBuilder,
+        Func<TReferences, TArgumentReferences, string>? conditionExpressionBuilder = null
+    )
+        where TReferences : IExpressionAttributeNameTracker
+        where TArgumentReferences : IExpressionAttributeValueTracker<TArg>
+    {
+
+        var nameTracker = item.AttributeNameExpressionTracker();
+        var argumentTracker = item.AttributeExpressionValueTracker();
+        var updateExpression = updateExpressionBuilder(nameTracker, argumentTracker);
+        var conditionExpression = conditionExpressionBuilder?.Invoke(nameTracker, argumentTracker);
+
+        return new UpdateItemRequest
+        {
+            TableName = tableName,
+            ExpressionAttributeNames = nameTracker.AccessedNames().ToDictionary(x => x.Key, x => x.Value),
+            ExpressionAttributeValues = argumentTracker.AccessedValues(argument).ToDictionary(x => x.Key, x => x.Value),
+            ConditionExpression = conditionExpression,
+            UpdateExpression = updateExpression
+        };
+    }
+    public static PutItemRequest ToPutItemRequest<T, TArg, TReferences, TArgumentReferences>(
+        this IDynamoDBDocument<T, TArg, TReferences, TArgumentReferences> item,
+        TArg entity,
+        string tableName,
+        Func<TReferences, TArgumentReferences, string>? conditionExpressionBuilder = null)
+        where TReferences : IExpressionAttributeNameTracker
+        where TArgumentReferences : IExpressionAttributeValueTracker<TArg>
+        where TArg : T
     {
 
         Dictionary<string, string>? names = null;
@@ -19,10 +47,11 @@ public static class DynamoDbDocumentExtensions
         string? expression = null;
         if (conditionExpressionBuilder is not null)
         {
-            var tracker = item.ExpressionAttributeTracker();
-            expression = conditionExpressionBuilder(tracker);
-            names = tracker.AccessedNames().ToDictionary(x => x.Key, x => x.Value);
-            values = tracker.AccessedValues(entity).ToDictionary(x => x.Key, x => x.Value);
+            var nameTracker = item.AttributeNameExpressionTracker();
+            var argumentTracker = item.AttributeExpressionValueTracker();
+            expression = conditionExpressionBuilder(nameTracker, argumentTracker);
+            names = nameTracker.AccessedNames().ToDictionary(x => x.Key, x => x.Value);
+            values = argumentTracker.AccessedValues(entity).ToDictionary(x => x.Key, x => x.Value);
         }
 
         return new PutItemRequest
