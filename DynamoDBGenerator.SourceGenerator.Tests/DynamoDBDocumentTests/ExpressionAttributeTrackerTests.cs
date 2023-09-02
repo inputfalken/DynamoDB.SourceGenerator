@@ -53,10 +53,10 @@ public partial class ExpressionAttributeTrackerTests
         valueTracker.FirstName.Should().Be(":p1");
         valueTracker.CreatedAt.Should().Be(":p2");
 
-        valueTracker.Address.Should().Be(":p3");
+        valueTracker.Address.Name.Should().Be(":p3");
         nameTracker.Address.Name.Should().Be("#Address.#Name");
 
-        valueTracker.Address.Street.Should().Be(":p4");
+        valueTracker.Address.Street.Name.Should().Be(":p4");
         nameTracker.Address.Street.Name.Should().Be("#Address.#Street.#Name");
     }
 
