@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 
-[DynamoDBDocument(typeof(WillHaveChangedPropertyName), PropertyName = "SomethingElse")]
+[DynamoDBMarshallert(typeof(WillHaveChangedPropertyName), PropertyName = "SomethingElse")]
 public partial class RenameSourceGeneratedPropertyTests
 {
 

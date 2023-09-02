@@ -1,10 +1,10 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize;
 
-[DynamoDBDocument(typeof(ConstructorOnlyClass))]
-[DynamoDBDocument(typeof(ObjectInitializerOnlyClass))]
-[DynamoDBDocument(typeof(ObjectInitializerMixedWithConstructorClass))]
-[DynamoDBDocument(typeof(ConstructorClassWithMixedName))]
+[DynamoDBMarshallert(typeof(ConstructorOnlyClass))]
+[DynamoDBMarshallert(typeof(ObjectInitializerOnlyClass))]
+[DynamoDBMarshallert(typeof(ObjectInitializerMixedWithConstructorClass))]
+[DynamoDBMarshallert(typeof(ConstructorClassWithMixedName))]
 public partial class InitializationTests
 {
 

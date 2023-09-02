@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
-[DynamoDBDocument(typeof(PropertyWithMixedNames))]
+[DynamoDBMarshallert(typeof(PropertyWithMixedNames))]
 public partial class PropertyRenamingTests
 {
     [Fact]

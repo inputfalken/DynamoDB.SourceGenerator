@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBDocument(typeof(LookUpClass))]
+[DynamoDBMarshallert(typeof(LookUpClass))]
 public partial class LookUpTests
 {
     [Fact]

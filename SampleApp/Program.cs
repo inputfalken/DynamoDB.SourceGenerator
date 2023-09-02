@@ -21,7 +21,7 @@ internal static class Program
 
 }
 
-[DynamoDBDocument(typeof(PersonEntity))]
+[DynamoDBMarshallert(typeof(PersonEntity))]
 public partial class Repository
 {
 }

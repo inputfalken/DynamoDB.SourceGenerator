@@ -1,8 +1,8 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Types;
 
-[DynamoDBDocument(typeof(WeekDayClass))]
-[DynamoDBDocument(typeof(OptionalWeekDayClass))]
+[DynamoDBMarshallert(typeof(WeekDayClass))]
+[DynamoDBMarshallert(typeof(OptionalWeekDayClass))]
 public partial class EnumTests
 {
     [Theory]

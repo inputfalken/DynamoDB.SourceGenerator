@@ -1,8 +1,8 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Generics;
 
-[DynamoDBDocument(typeof(StringSetClass))]
-[DynamoDBDocument(typeof(Int32SetClass))]
+[DynamoDBMarshallert(typeof(StringSetClass))]
+[DynamoDBMarshallert(typeof(Int32SetClass))]
 public partial class SetTests
 {
 

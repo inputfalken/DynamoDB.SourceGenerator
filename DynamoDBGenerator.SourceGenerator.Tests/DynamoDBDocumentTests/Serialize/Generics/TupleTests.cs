@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBDocument(typeof(TupleClass))]
+[DynamoDBMarshallert(typeof(TupleClass))]
 public partial class TupleTests
 {
 

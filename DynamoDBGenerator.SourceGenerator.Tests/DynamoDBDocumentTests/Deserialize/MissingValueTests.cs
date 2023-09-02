@@ -1,9 +1,9 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize;
 
-[DynamoDBDocument(typeof(RequiredReferenceTypeValueMissingClass))]
-[DynamoDBDocument(typeof(OptionalReferenceTypeValueMissingClass))]
-[DynamoDBDocument(typeof(RequiredValueTypeValueMissingClass))]
+[DynamoDBMarshallert(typeof(RequiredReferenceTypeValueMissingClass))]
+[DynamoDBMarshallert(typeof(OptionalReferenceTypeValueMissingClass))]
+[DynamoDBMarshallert(typeof(RequiredValueTypeValueMissingClass))]
 public partial class MissingValueTests
 {
     [Fact]

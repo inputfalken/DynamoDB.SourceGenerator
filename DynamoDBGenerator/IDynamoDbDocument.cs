@@ -3,7 +3,7 @@ using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator;
 
-public interface IDynamoDBDocument<TEntity, TArg, out TEntityAttributeNameTracker, out TArgumentAttributeValueTracker>
+public interface IDynamoDBMarshaller<TEntity, TArg, out TEntityAttributeNameTracker, out TArgumentAttributeValueTracker>
     where TEntityAttributeNameTracker : IExpressionAttributeNameTracker
     where TArgumentAttributeValueTracker : IExpressionAttributeValueTracker<TArg>
 {

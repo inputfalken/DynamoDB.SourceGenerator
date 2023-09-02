@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
-[DynamoDBDocument(typeof(ValueTypeClass))]
+[DynamoDBMarshallert(typeof(ValueTypeClass))]
 public partial class ValueTypeTests
 {
     [Fact]

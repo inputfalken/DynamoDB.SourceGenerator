@@ -3,10 +3,10 @@ using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.DynamoDBDocument;
 
-public class DynamoDbDocumentGenerator
+public class DynamoDbMarshaller
 {
     private const string DeserializeName = "Deserialize";
-    private const string DynamoDbDocumentName = "IDynamoDBDocument";
+    private const string DynamoDbDocumentName = "IDynamoDBMarshaller";
     private const string KeysName = "Keys";
     private const string ValueTrackerName = "AttributeExpressionValueTracker";
     private const string NameTrackerName = "AttributeNameExpressionTracker";
@@ -21,7 +21,7 @@ public class DynamoDbDocumentGenerator
     private readonly INamedTypeSymbol _argumentTypeSymbol;
     private readonly string _publicAccessPropertyName;
 
-    public DynamoDbDocumentGenerator(in DynamoDBDocumentArguments arguments, IEqualityComparer<ISymbol> comparer)
+    public DynamoDbMarshaller(in DynamoDBMarshallerArguments arguments, IEqualityComparer<ISymbol> comparer)
     {
         _entityTypeSymbol = (INamedTypeSymbol)arguments.EntityTypeSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
         _argumentTypeSymbol = (INamedTypeSymbol)arguments.ArgumentType.WithNullableAnnotation(NullableAnnotation.NotAnnotated);

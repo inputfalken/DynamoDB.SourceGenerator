@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.CustomObjects;
 
-[DynamoDBDocument(typeof(SiblingClassOne))]
+[DynamoDBMarshallert(typeof(SiblingClassOne))]
 public partial class SiblingClassTests
 {
     [Fact]

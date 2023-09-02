@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBDocument(typeof(CollectionClass))]
+[DynamoDBMarshallert(typeof(CollectionClass))]
 public partial class CollectionTests
 {
 

@@ -1,14 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.Extensions;
 
 public static class DynamoDbDocumentExtensions
 {
     public static UpdateItemRequest ToUpdateItemRequest<T, TArg, TReferences, TArgumentReferences>(
-        this IDynamoDBDocument<T, TArg, TReferences, TArgumentReferences> item,
+        this IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> item,
         TArg argument,
         string tableName,
         Func<TReferences, TArgumentReferences, string> updateExpressionBuilder,
@@ -33,7 +32,7 @@ public static class DynamoDbDocumentExtensions
         };
     }
     public static PutItemRequest ToPutItemRequest<T, TArg, TReferences, TArgumentReferences>(
-        this IDynamoDBDocument<T, TArg, TReferences, TArgumentReferences> item,
+        this IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> item,
         TArg entity,
         string tableName,
         Func<TReferences, TArgumentReferences, string>? conditionExpressionBuilder = null)

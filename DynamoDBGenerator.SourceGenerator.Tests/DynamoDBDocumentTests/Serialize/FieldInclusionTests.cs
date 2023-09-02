@@ -1,9 +1,9 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
-[DynamoDBDocument(typeof(EmptyClass))]
-[DynamoDBDocument(typeof(ClassWithIgnoredField))]
-[DynamoDBDocument(typeof(ClassWithOneField))]
-[DynamoDBDocument(typeof(ClassWithOneDDBField))]
+[DynamoDBMarshallert(typeof(EmptyClass))]
+[DynamoDBMarshallert(typeof(ClassWithIgnoredField))]
+[DynamoDBMarshallert(typeof(ClassWithOneField))]
+[DynamoDBMarshallert(typeof(ClassWithOneDDBField))]
 public partial class FieldInclusionTests
 {
 

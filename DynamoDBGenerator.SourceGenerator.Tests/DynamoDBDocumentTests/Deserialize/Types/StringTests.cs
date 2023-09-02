@@ -1,7 +1,7 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Types;
 
-[DynamoDBDocument(typeof(StringClass))]
+[DynamoDBMarshallert(typeof(StringClass))]
 public partial class StringTests
 {
     [Fact]

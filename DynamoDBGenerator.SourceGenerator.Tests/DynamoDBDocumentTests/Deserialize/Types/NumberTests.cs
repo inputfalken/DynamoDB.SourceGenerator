@@ -1,17 +1,17 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Types;
 
-[DynamoDBDocument(typeof(DecimalClass))]
-[DynamoDBDocument(typeof(DoubleClass))]
-[DynamoDBDocument(typeof(FloatClass))]
-[DynamoDBDocument(typeof(Int16Class))]
-[DynamoDBDocument(typeof(Int32Class))]
-[DynamoDBDocument(typeof(Int64Class))]
-[DynamoDBDocument(typeof(Int8Class))]
-[DynamoDBDocument(typeof(UInt16Class))]
-[DynamoDBDocument(typeof(UInt32Class))]
-[DynamoDBDocument(typeof(UInt64Class))]
-[DynamoDBDocument(typeof(UInt8Class))]
+[DynamoDBMarshallert(typeof(DecimalClass))]
+[DynamoDBMarshallert(typeof(DoubleClass))]
+[DynamoDBMarshallert(typeof(FloatClass))]
+[DynamoDBMarshallert(typeof(Int16Class))]
+[DynamoDBMarshallert(typeof(Int32Class))]
+[DynamoDBMarshallert(typeof(Int64Class))]
+[DynamoDBMarshallert(typeof(Int8Class))]
+[DynamoDBMarshallert(typeof(UInt16Class))]
+[DynamoDBMarshallert(typeof(UInt32Class))]
+[DynamoDBMarshallert(typeof(UInt64Class))]
+[DynamoDBMarshallert(typeof(UInt8Class))]
 public partial class NumberTests
 {
 

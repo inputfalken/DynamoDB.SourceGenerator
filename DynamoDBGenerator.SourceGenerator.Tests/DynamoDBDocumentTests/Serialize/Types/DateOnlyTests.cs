@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Types;
 
-[DynamoDBDocument(typeof(DateOnlyClass))]
+[DynamoDBMarshallert(typeof(DateOnlyClass))]
 public partial class DateOnlyTests
 {
 

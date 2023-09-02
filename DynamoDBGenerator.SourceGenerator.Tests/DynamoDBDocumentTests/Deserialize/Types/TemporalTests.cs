@@ -1,9 +1,9 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Types;
 
-[DynamoDBDocument(typeof(DateOnlyClass))]
-[DynamoDBDocument(typeof(DateTimeClass))]
-[DynamoDBDocument(typeof(DateTimeOffsetClass))]
+[DynamoDBMarshallert(typeof(DateOnlyClass))]
+[DynamoDBMarshallert(typeof(DateTimeClass))]
+[DynamoDBMarshallert(typeof(DateTimeOffsetClass))]
 public partial class TemporalTests
 {
     [Fact]

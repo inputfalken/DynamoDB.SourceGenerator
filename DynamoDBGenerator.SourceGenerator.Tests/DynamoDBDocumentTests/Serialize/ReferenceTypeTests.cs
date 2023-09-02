@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
-[DynamoDBDocument(typeof(ReferenceTypeClass))]
+[DynamoDBMarshallert(typeof(ReferenceTypeClass))]
 public partial class ReferenceTypeTests
 {
     [Fact]

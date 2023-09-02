@@ -3,7 +3,7 @@
 namespace DynamoDBGenerator;
 
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-public class DynamoDBDocumentAttribute : Attribute
+public class DynamoDBMarshallertAttribute : Attribute
 {
     private readonly Type _entityType;
 
@@ -16,7 +16,7 @@ public class DynamoDBDocumentAttribute : Attribute
     /// TODO
     /// </summary>
     public Type? ArgumentType { get; set; }
-    public DynamoDBDocumentAttribute(Type entityType)
+    public DynamoDBMarshallertAttribute(Type entityType)
     {
         _entityType = entityType;
     }

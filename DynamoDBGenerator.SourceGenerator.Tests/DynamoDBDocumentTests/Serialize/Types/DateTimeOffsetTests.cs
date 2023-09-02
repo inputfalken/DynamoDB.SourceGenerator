@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Types;
 
-[DynamoDBDocument(typeof(DateTimeOffsetClass))]
+[DynamoDBMarshallert(typeof(DateTimeOffsetClass))]
 public partial class DateTimeOffsetTests
 {
 

@@ -1,7 +1,7 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Types;
 
-[DynamoDBDocument(typeof(WeekDayClass))]
-[DynamoDBDocument(typeof(OptionalWeekDayClass))]
+[DynamoDBMarshallert(typeof(WeekDayClass))]
+[DynamoDBMarshallert(typeof(OptionalWeekDayClass))]
 public partial class EnumTests
 {
     [Theory]

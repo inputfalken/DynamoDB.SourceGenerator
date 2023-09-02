@@ -1,7 +1,7 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.CustomObjects;
 
-[DynamoDBDocument(typeof(ParentClass))]
+[DynamoDBMarshallert(typeof(ParentClass))]
 public partial class ChildClassTests
 {
     [Fact]

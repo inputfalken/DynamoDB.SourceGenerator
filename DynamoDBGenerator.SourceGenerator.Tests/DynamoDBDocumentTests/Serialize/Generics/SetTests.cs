@@ -1,7 +1,7 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBDocument(typeof(StringSetClass))]
-[DynamoDBDocument(typeof(Int32SetClass))]
+[DynamoDBMarshallert(typeof(StringSetClass))]
+[DynamoDBMarshallert(typeof(Int32SetClass))]
 public partial class SetTests
 {
 

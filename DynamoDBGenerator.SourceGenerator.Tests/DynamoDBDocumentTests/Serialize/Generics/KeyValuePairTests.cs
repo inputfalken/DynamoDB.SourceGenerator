@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBDocument(typeof(KeyValuePairClass))]
+[DynamoDBMarshallert(typeof(KeyValuePairClass))]
 public partial class KeyValuePairTests
 {
     [Fact]

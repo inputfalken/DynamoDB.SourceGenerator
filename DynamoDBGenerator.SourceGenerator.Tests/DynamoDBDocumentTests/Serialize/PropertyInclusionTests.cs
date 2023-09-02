@@ -1,9 +1,9 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
-[DynamoDBDocument(typeof(EmptyClass))]
-[DynamoDBDocument(typeof(ClassWithIgnoredProperty))]
-[DynamoDBDocument(typeof(ClassWithOneProperty))]
-[DynamoDBDocument(typeof(ClassWithOneDDBProperty))]
+[DynamoDBMarshallert(typeof(EmptyClass))]
+[DynamoDBMarshallert(typeof(ClassWithIgnoredProperty))]
+[DynamoDBMarshallert(typeof(ClassWithOneProperty))]
+[DynamoDBMarshallert(typeof(ClassWithOneDDBProperty))]
 public partial class PropertyInclusionTests
 {
 

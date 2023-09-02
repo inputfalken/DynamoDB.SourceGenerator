@@ -1,8 +1,8 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 
-[DynamoDBDocument(typeof(Person))]
-[DynamoDBDocument(typeof(SelfReferencingClass))]
-[DynamoDBDocument(typeof(ClassWithOverriddenAttributeName))]
+[DynamoDBMarshallert(typeof(Person))]
+[DynamoDBMarshallert(typeof(SelfReferencingClass))]
+[DynamoDBMarshallert(typeof(ClassWithOverriddenAttributeName))]
 public partial class ExpressionAttributeTrackerTests
 {
     [Theory]
@@ -84,7 +84,7 @@ public partial class ExpressionAttributeTrackerTests
 public static class AssertionExtensions
 {
 
-    public static IEnumerable<T4> TraverseByValueTracker<T, T2, T3, T4>(this IDynamoDBDocument<T, T2, T3, T4> source, Func<T4, T4> recursiveSelector, int count)
+    public static IEnumerable<T4> TraverseByValueTracker<T, T2, T3, T4>(this IDynamoDBMarshaller<T, T2, T3, T4> source, Func<T4, T4> recursiveSelector, int count)
         where T3 : IExpressionAttributeNameTracker
         where T4 : IExpressionAttributeValueTracker<T2>
     {
@@ -98,7 +98,7 @@ public static class AssertionExtensions
         }
     }
     public static IEnumerable<T3> TraverseByNameTracker<T, T2, T3, T4>(
-        this IDynamoDBDocument<T, T2, T3, T4> source,
+        this IDynamoDBMarshaller<T, T2, T3, T4> source,
         Func<T3, T3> recursiveSelector,
         int count
     )
