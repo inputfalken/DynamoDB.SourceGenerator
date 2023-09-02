@@ -8,7 +8,7 @@ public partial class SiblingClassTests
     public void Serialize_AllFieldsSet_AllIncluded()
     {
         var result = SiblingClassOneMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue>
+            .Unmarshall(new Dictionary<string, AttributeValue>
         {
             {nameof(SiblingClassOne.Id), new AttributeValue {S = "I am the root"}},
 
@@ -35,7 +35,7 @@ public partial class SiblingClassTests
     public void Serialize_CustomProperty_NotIncluded()
     {
 
-        var result = SiblingClassOneMarshaller.Deserialize(new Dictionary<string, AttributeValue>
+        var result = SiblingClassOneMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
             {nameof(SiblingClassOne.Id), new AttributeValue {S = "I am the root"}}
 
@@ -49,7 +49,7 @@ public partial class SiblingClassTests
     public void Serialize_CustomPropertyField_NotIncluded()
     {
 
-        var result = SiblingClassOneMarshaller.Deserialize(new Dictionary<string, AttributeValue>
+        var result = SiblingClassOneMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
             {nameof(SiblingClassOne.Id), new AttributeValue {S = "I am the root"}},
 

@@ -15,7 +15,7 @@ public partial class SiblingClassTests
             }
         };
 
-        SiblingClassOneMarshaller.Serialize(@class)
+        SiblingClassOneMarshaller.Marshall(@class)
             .Should()
             .SatisfyRespectively(
                 x =>
@@ -43,7 +43,7 @@ public partial class SiblingClassTests
             Id = "I am the root"
         };
 
-        SiblingClassOneMarshaller.Serialize(@class)
+        SiblingClassOneMarshaller.Marshall(@class)
             .Should()
             .SatisfyRespectively(
                 x =>
@@ -63,7 +63,7 @@ public partial class SiblingClassTests
             CustomClass = new SiblingClassTwo()
         };
 
-        SiblingClassOneMarshaller.Serialize(@class)
+        SiblingClassOneMarshaller.Marshall(@class)
             .Should()
             .SatisfyRespectively(
                 x =>

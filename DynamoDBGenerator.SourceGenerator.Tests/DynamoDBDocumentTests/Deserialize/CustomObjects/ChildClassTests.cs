@@ -7,7 +7,7 @@ public partial class ChildClassTests
     [Fact]
     public void Deserialize_AllFieldsSet_AllIncluded()
     {
-        var result = ParentClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>
+        var result = ParentClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
             {nameof(ParentClass.Id), new AttributeValue {S = "I am the root"}},
             {
@@ -41,7 +41,7 @@ public partial class ChildClassTests
     [Fact]
     public void Deserialize_ChildClass_NotIncluded()
     {
-        var result = ParentClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>
+        var result = ParentClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
             {nameof(ParentClass.Id), new AttributeValue {S = "I am the root"}},
         });
@@ -53,7 +53,7 @@ public partial class ChildClassTests
     [Fact]
     public void Deserialize_ChildClassField_NotIncluded()
     {
-        var result = ParentClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>
+        var result = ParentClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
             {nameof(ParentClass.Id), new AttributeValue {S = "I am the root"}},
             {
@@ -73,7 +73,7 @@ public partial class ChildClassTests
     [Fact]
     public void Deserialize_GrandChildClass_NotIncluded()
     {
-        var result = ParentClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>
+        var result = ParentClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
             {nameof(ParentClass.Id), new AttributeValue {S = "I am the root"}},
             {
@@ -97,7 +97,7 @@ public partial class ChildClassTests
     [Fact]
     public void Deserialize_GrandChildClassField_NotIncluded()
     {
-        var result = ParentClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>
+        var result = ParentClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
             {nameof(ParentClass.Id), new AttributeValue {S = "I am the root"}},
             {

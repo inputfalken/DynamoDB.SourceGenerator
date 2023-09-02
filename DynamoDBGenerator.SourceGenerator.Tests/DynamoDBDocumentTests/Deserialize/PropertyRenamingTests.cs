@@ -9,7 +9,7 @@ public partial class PropertyRenamingTests
     {
 
         var propertyAssertion = PropertyWithMixedNamesMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue>
+            .Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {nameof(PropertyWithMixedNames.PlainProperty), new AttributeValue {S = "1"}},
                 {nameof(PropertyWithMixedNames.PropertyWithDdbPropertyAttribute), new AttributeValue {S = "2"}},

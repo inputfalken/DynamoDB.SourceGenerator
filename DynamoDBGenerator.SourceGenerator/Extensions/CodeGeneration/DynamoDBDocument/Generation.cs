@@ -5,12 +5,12 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.DynamoDBDo
 
 public class DynamoDbMarshaller
 {
-    private const string DeserializeName = "Deserialize";
+    private const string DeserializeName = "Unmarshall";
     private const string InterfaceName = "IDynamoDBMarshaller";
     private const string KeysName = "Keys";
     private const string ValueTrackerName = "AttributeExpressionValueTracker";
     private const string NameTrackerName = "AttributeNameExpressionTracker";
-    private const string SerializeName = "Serialize";
+    private const string SerializeName = "Marshall";
     private readonly IEqualityComparer<ITypeSymbol> _comparer;
     private readonly Func<ITypeSymbol, string> _deserializationMethodNameFactory;
     private readonly Func<ITypeSymbol, string> _fullTypeNameFactory;

@@ -13,7 +13,7 @@ public partial class PropertyInclusionTests
         var @class = new ClassWithOneDDBProperty {Id = "I should be included"};
 
         ClassWithOneDDBPropertyMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .ContainKey(nameof(ClassWithOneDDBProperty.Id));
     }
@@ -25,7 +25,7 @@ public partial class PropertyInclusionTests
             {Id = "I should not be exists in attribute values"};
 
         ClassWithIgnoredPropertyMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .BeEmpty();
     }
@@ -36,7 +36,7 @@ public partial class PropertyInclusionTests
         var @class = new ClassWithOneProperty {Id = "I should be included"};
 
         ClassWithOnePropertyMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .ContainKey(nameof(ClassWithOneProperty.Id));
     }
@@ -46,7 +46,7 @@ public partial class PropertyInclusionTests
         var @class = new EmptyClass();
 
         EmptyClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .BeEmpty();
     }

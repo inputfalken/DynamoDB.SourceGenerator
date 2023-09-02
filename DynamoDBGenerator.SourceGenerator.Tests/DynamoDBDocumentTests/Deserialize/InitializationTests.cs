@@ -11,7 +11,7 @@ public partial class InitializationTests
     [Fact]
     public void ConstructorOnlyClass_CanBe_Deserialized()
     {
-        var deserializeClass = ConstructorOnlyClassMarshaller.Deserialize(
+        var deserializeClass = ConstructorOnlyClassMarshaller.Unmarshall(
             new Dictionary<string, AttributeValue>
             {
                 {
@@ -28,8 +28,8 @@ public partial class InitializationTests
     public void ObjectInitializerOnlyClass_CanBe_Deserialized()
     {
         var @class = new ObjectInitializerOnlyClass {Prop2 = "Hello"};
-        var serializedClass = ObjectInitializerOnlyClassMarshaller.Serialize(@class);
-        var deserializeClass = ObjectInitializerOnlyClassMarshaller.Deserialize(serializedClass);
+        var serializedClass = ObjectInitializerOnlyClassMarshaller.Marshall(@class);
+        var deserializeClass = ObjectInitializerOnlyClassMarshaller.Unmarshall(serializedClass);
 
         deserializeClass.Should().NotBeNull();
         deserializeClass.Prop2.Should().Be(@class.Prop2);
@@ -38,7 +38,7 @@ public partial class InitializationTests
     [Fact]
     public void ObjectInitializerMixedWithConstructorClass_CanBe_Deserialized()
     {
-        var deserializeClass = ObjectInitializerMixedWithConstructorClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>
+        var deserializeClass = ObjectInitializerMixedWithConstructorClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
             {"Prop3", new AttributeValue {S = "Hello"}},
             {"Prop4", new AttributeValue {S = "Hello2"}}
@@ -53,7 +53,7 @@ public partial class InitializationTests
     [Fact]
     public void ConstructorClassWithMixedName_UnableToFindCorrespondingDataMember_ShouldThrow()
     {
-        var act = () => ConstructorClassWithMixedNameMarshaller.Deserialize(new Dictionary<string, AttributeValue>
+        var act = () => ConstructorClassWithMixedNameMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
             {"SomethingElse", new AttributeValue {S = "Hello"}}
         });

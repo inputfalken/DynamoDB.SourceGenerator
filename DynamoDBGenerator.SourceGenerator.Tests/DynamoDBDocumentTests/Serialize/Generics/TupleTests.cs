@@ -14,7 +14,7 @@ public partial class TupleTests
         };
 
         TupleClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .SatisfyRespectively(
                 x =>
@@ -64,7 +64,7 @@ public partial class TupleTests
         };
 
         TupleClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .SatisfyRespectively(
                 x =>
@@ -94,7 +94,7 @@ public partial class TupleTests
         };
 
         TupleClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .SatisfyRespectively(
                 x =>

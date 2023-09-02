@@ -12,7 +12,7 @@ public partial class KeyValuePairTests
         };
 
         KeyValuePairClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .SatisfyRespectively(
                 x =>
@@ -42,7 +42,7 @@ public partial class KeyValuePairTests
         };
 
         KeyValuePairClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .SatisfyRespectively(
                 x =>
@@ -68,7 +68,7 @@ public partial class KeyValuePairTests
         };
 
         KeyValuePairClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .SatisfyRespectively(
                 x =>

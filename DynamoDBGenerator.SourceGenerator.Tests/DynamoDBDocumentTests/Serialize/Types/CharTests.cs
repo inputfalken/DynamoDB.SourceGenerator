@@ -12,7 +12,7 @@ public partial class CharTests
         };
 
         CharClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .SatisfyRespectively(x =>
             {

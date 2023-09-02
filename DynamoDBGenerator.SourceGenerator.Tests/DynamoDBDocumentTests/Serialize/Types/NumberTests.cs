@@ -24,7 +24,7 @@ public partial class NumberTests
         };
 
         DecimalClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -43,7 +43,7 @@ public partial class NumberTests
         };
 
         DoubleClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -62,7 +62,7 @@ public partial class NumberTests
         };
 
         FloatClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -81,7 +81,7 @@ public partial class NumberTests
         };
 
         Int64ClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -100,7 +100,7 @@ public partial class NumberTests
         };
 
         Int16ClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -119,7 +119,7 @@ public partial class NumberTests
         };
 
         Int32ClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -138,7 +138,7 @@ public partial class NumberTests
         };
 
         Int8ClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -157,7 +157,7 @@ public partial class NumberTests
         };
 
         UInt64ClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -176,7 +176,7 @@ public partial class NumberTests
         };
 
         UInt16ClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -195,7 +195,7 @@ public partial class NumberTests
         };
 
         UInt32ClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -213,7 +213,7 @@ public partial class NumberTests
         };
 
         UInt8ClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And

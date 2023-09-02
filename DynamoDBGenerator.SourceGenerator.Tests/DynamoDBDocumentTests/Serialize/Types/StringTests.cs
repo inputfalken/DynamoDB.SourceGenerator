@@ -13,7 +13,7 @@ public partial class StringTests
         };
 
         StringClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And

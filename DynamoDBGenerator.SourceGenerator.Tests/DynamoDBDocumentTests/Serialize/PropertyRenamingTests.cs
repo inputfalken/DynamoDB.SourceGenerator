@@ -18,7 +18,7 @@ public partial class PropertyRenamingTests
         };
 
         PropertyWithMixedNamesMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .SatisfyRespectively(
                 x =>

@@ -9,7 +9,7 @@ public partial class ReferenceTypeTests
         var @class = new ReferenceTypeClass();
 
         ReferenceTypeClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .BeEmpty();
     }

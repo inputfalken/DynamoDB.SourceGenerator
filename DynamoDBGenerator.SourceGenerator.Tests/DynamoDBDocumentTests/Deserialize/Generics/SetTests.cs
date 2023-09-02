@@ -10,7 +10,7 @@ public partial class SetTests
     public void Deserialize_EmptyIntSet_IsIncluded()
     {
         Int32SetClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue> {{nameof(Int32SetClass.IntSet), new AttributeValue()}})
+            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(Int32SetClass.IntSet), new AttributeValue()}})
             .Should()
             .BeOfType<Int32SetClass>()
             .Which
@@ -23,7 +23,7 @@ public partial class SetTests
     public void Deserialize_ExplicitlyEmptyIntSet_IsIncluded()
     {
         Int32SetClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue> {{nameof(Int32SetClass.IntSet), new AttributeValue {NS = new List<string>()}}})
+            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(Int32SetClass.IntSet), new AttributeValue {NS = new List<string>()}}})
             .Should()
             .BeOfType<Int32SetClass>()
             .Which
@@ -36,7 +36,7 @@ public partial class SetTests
     public void Serialize_EmptyStringSet_IsIncluded()
     {
         StringSetClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue> {{nameof(StringSetClass.StringSet), new AttributeValue()}})
+            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(StringSetClass.StringSet), new AttributeValue()}})
             .Should()
             .BeOfType<StringSetClass>()
             .Which
@@ -49,7 +49,7 @@ public partial class SetTests
     public void Deserialize_ExplicitlyEmptyStringSet_IsIncluded()
     {
         StringSetClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue> {{nameof(StringSetClass.StringSet), new AttributeValue {SS = new List<string>()}}})
+            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(StringSetClass.StringSet), new AttributeValue {SS = new List<string>()}}})
             .Should()
             .BeOfType<StringSetClass>()
             .Which
@@ -62,7 +62,7 @@ public partial class SetTests
     public void Deserialize_IntSetWithValues_IsIncluded()
     {
         Int32SetClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue> {{nameof(Int32SetClass.IntSet), new AttributeValue {NS = new List<string> {"1", "2", "3"}}}})
+            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(Int32SetClass.IntSet), new AttributeValue {NS = new List<string> {"1", "2", "3"}}}})
             .Should()
             .BeOfType<Int32SetClass>()
             .Which
@@ -74,7 +74,7 @@ public partial class SetTests
     public void Deserialize_NullIntSet_IsSkipped()
     {
         Int32SetClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue>())
+            .Unmarshall(new Dictionary<string, AttributeValue>())
             .Should()
             .BeOfType<Int32SetClass>()
             .Which
@@ -87,7 +87,7 @@ public partial class SetTests
     public void Deserialize_NullStringSet_IsSkipped()
     {
         StringSetClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue>())
+            .Unmarshall(new Dictionary<string, AttributeValue>())
             .Should()
             .BeOfType<StringSetClass>()
             .Which
@@ -101,7 +101,7 @@ public partial class SetTests
     {
 
         StringSetClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue> {{nameof(StringSetClass.StringSet), new AttributeValue {SS = new List<string> {"1", "2", "3"}}}})
+            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(StringSetClass.StringSet), new AttributeValue {SS = new List<string> {"1", "2", "3"}}}})
             .Should()
             .BeOfType<StringSetClass>()
             .Which

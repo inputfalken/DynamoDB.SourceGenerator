@@ -15,7 +15,7 @@ public partial class DateTimeTests
         };
 
         DateTimeClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -34,7 +34,7 @@ public partial class DateTimeTests
         };
 
         DateTimeClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And

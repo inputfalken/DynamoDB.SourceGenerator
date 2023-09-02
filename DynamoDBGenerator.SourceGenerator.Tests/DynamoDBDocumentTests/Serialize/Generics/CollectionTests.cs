@@ -13,7 +13,7 @@ public partial class CollectionTests
         };
 
         CollectionClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -38,7 +38,7 @@ public partial class CollectionTests
         };
 
         CollectionClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -56,7 +56,7 @@ public partial class CollectionTests
         };
 
         CollectionClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -74,7 +74,7 @@ public partial class CollectionTests
         };
 
         CollectionClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -91,7 +91,7 @@ public partial class CollectionTests
         };
 
         CollectionClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -116,7 +116,7 @@ public partial class CollectionTests
         };
 
         CollectionClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -133,7 +133,7 @@ public partial class CollectionTests
         };
 
         CollectionClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -151,7 +151,7 @@ public partial class CollectionTests
         };
 
         CollectionClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -176,7 +176,7 @@ public partial class CollectionTests
         };
 
         CollectionClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .AllSatisfy(x =>
             {
@@ -222,7 +222,7 @@ public partial class CollectionTests
         };
 
         CollectionClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -247,7 +247,7 @@ public partial class CollectionTests
         };
 
         CollectionClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And

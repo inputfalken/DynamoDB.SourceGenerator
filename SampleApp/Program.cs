@@ -81,7 +81,7 @@ public class Marshalling
     [Benchmark]
     public PersonEntity DeserializeBySourceGeneration()
     {
-        return _repository.PersonEntityMarshaller.Deserialize(_attributeValues);
+        return _repository.PersonEntityMarshaller.Unmarshall(_attributeValues);
     }
 
 }

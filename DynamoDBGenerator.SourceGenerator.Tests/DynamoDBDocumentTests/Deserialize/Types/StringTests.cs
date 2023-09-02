@@ -8,7 +8,7 @@ public partial class StringTests
     public void Serialize_StringProperty_Included()
     {
         StringClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue>()
+            .Unmarshall(new Dictionary<string, AttributeValue>()
             {
                 {nameof(StringClass.Name), new AttributeValue {S = "John Doe"}}
             })

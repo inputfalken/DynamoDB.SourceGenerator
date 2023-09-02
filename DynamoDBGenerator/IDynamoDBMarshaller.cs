@@ -15,12 +15,12 @@ public interface IDynamoDBMarshaller<TEntity, TArg, out TEntityAttributeNameTrac
     /// <summary>
     ///  Serializes the <typeparamref name="TEntity"/> into AttributeValues.
     /// </summary>
-    public Dictionary<string, AttributeValue> Serialize(TEntity entity);
+    public Dictionary<string, AttributeValue> Marshall(TEntity entity);
 
     /// <summary>
     /// Deserializes the <paramref name="attributes"/> into an <typeparamref name="TEntity"/>.
     /// </summary>
-    public TEntity Deserialize(Dictionary<string, AttributeValue> attributes);
+    public TEntity Unmarshall(Dictionary<string, AttributeValue> attributes);
 
     public TEntityAttributeNameTracker AttributeNameExpressionTracker();
     public TArgumentAttributeValueTracker AttributeExpressionValueTracker();

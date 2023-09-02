@@ -12,7 +12,7 @@ public partial class LookUpTests
         };
 
         LookUpClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .ContainKey(nameof(LookUpClass.Lookup))
             .And
@@ -34,7 +34,7 @@ public partial class LookUpTests
         };
 
         LookUpClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .ContainKey(nameof(LookUpClass.Lookup))
             .And

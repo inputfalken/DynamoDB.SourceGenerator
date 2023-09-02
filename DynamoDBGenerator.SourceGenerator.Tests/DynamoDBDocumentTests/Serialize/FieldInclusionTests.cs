@@ -13,7 +13,7 @@ public partial class FieldInclusionTests
         var @class = new ClassWithOneDDBField {Id = "I should be included"};
 
         ClassWithOneDDBFieldMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .ContainKey(nameof(ClassWithOneDDBField.Id));
     }
@@ -24,7 +24,7 @@ public partial class FieldInclusionTests
         var @class = new ClassWithOneField {Id = "I should be included"};
 
         ClassWithOneFieldMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .ContainKey(nameof(ClassWithOneField.Id));
     }
@@ -36,7 +36,7 @@ public partial class FieldInclusionTests
             {Id = "I should not be exists in attribute values"};
 
         ClassWithIgnoredFieldMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .BeEmpty();
     }
@@ -46,7 +46,7 @@ public partial class FieldInclusionTests
         var @class = new EmptyClass();
 
         EmptyClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .BeEmpty();
     }

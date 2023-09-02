@@ -24,7 +24,7 @@ public partial class NullableAnnotationTests
             EnabledNoneNullableReferenceType = (1, enabledNoneNullableReferenceType)
         };
 
-        var result = () => NestedNullableAnnotationTestClassMarshaller.Serialize(@class);
+        var result = () => NestedNullableAnnotationTestClassMarshaller.Marshall(@class);
 
         result.Should().NotThrow();
     }
@@ -45,7 +45,7 @@ public partial class NullableAnnotationTests
             EnabledNoneNullableReferenceType = (1, enabledNoneNullableReferenceType)
         };
 
-        var result = () => NestedNullableAnnotationTestClassMarshaller.Serialize(@class);
+        var result = () => NestedNullableAnnotationTestClassMarshaller.Marshall(@class);
 
         result.Should()
             .ThrowExactly<ArgumentNullException>()
@@ -76,7 +76,7 @@ public partial class NullableAnnotationTests
             EnabledNoneNullableReferenceType = enabledNoneNullableReferenceType
         };
 
-        var result = () => NullableAnnotationTestClassMarshaller.Serialize(@class);
+        var result = () => NullableAnnotationTestClassMarshaller.Marshall(@class);
 
         if (shouldThrow)
             result.Should()

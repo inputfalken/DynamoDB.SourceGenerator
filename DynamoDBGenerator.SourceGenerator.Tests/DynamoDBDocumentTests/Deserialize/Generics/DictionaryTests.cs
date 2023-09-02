@@ -7,7 +7,7 @@ public partial class DictionaryTests
     [Fact]
     public void Deserialize_CustomValuedDictionary_ShouldContainCorrectKeyValues()
     {
-        DictionaryClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>
+        DictionaryClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(DictionaryClass.CustomValuedDictionary), new AttributeValue
@@ -62,7 +62,7 @@ public partial class DictionaryTests
     [Fact]
     public void Deserialize_Dictionary_ShouldContainCorrectKeyValues()
     {
-        DictionaryClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>
+        DictionaryClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(DictionaryClass.Dictionary), new AttributeValue
@@ -86,7 +86,7 @@ public partial class DictionaryTests
     [Fact]
     public void Deserialize_IReadOnlyDictionary_ShouldBeDictionaryAndContainCorrectKeyValues()
     {
-        DictionaryClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>
+        DictionaryClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(DictionaryClass.ReadOnlyDictionaryInterface), new AttributeValue
@@ -109,7 +109,7 @@ public partial class DictionaryTests
     [Fact]
     public void Deserialize_IDictionary_ShouldBeDictionaryAndContainCorrectKeyValues()
     {
-        DictionaryClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>
+        DictionaryClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(DictionaryClass.DictionaryInterface), new AttributeValue

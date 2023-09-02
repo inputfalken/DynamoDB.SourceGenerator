@@ -9,42 +9,42 @@ public partial class MissingValueTests
     [Fact]
     public void Deserialize_RequiredReferenceTypeValueMissingClass_NoKeyValueProvidedShouldThrow()
     {
-        var act = () => RequiredReferenceTypeValueMissingClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>());
+        var act = () => RequiredReferenceTypeValueMissingClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>());
         act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
     public void Deserialize_RequiredReferenceTypeValueMissingClass_KeyWithoutValueProvidedShouldThrow()
     {
-        var act = () => RequiredReferenceTypeValueMissingClassMarshaller.Deserialize(new Dictionary<string, AttributeValue> {{"RequiredProperty", new AttributeValue {S = null}}});
+        var act = () => RequiredReferenceTypeValueMissingClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue> {{"RequiredProperty", new AttributeValue {S = null}}});
         act.Should().Throw<ArgumentNullException>();
     }
     
     [Fact]
     public void Deserialize_OptionalReferenceTypeValueMissingClass_KeyWithoutValueProvidedShouldNotThrow()
     {
-        var act = () => OptionalReferenceTypeValueMissingClassMarshaller.Deserialize(new Dictionary<string, AttributeValue> {{"OptionalProperty", new AttributeValue {S = null}}});
+        var act = () => OptionalReferenceTypeValueMissingClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue> {{"OptionalProperty", new AttributeValue {S = null}}});
         act.Should().NotThrow();
     }
 
     [Fact]
     public void Deserialize_OptionalReferenceTypeValueMissingClass_NoKeyValueProvidedShouldNotThrow()
     {
-        var act = () => OptionalReferenceTypeValueMissingClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>());
+        var act = () => OptionalReferenceTypeValueMissingClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>());
 
         act.Should().NotThrow();
     }
     [Fact]
     public void Deserialize_RequiredValueTypeValueMissingClass_KeyWithoutValueProvidedShouldThrow()
     {
-        var act = () => RequiredValueTypeValueMissingClassMarshaller.Deserialize(new Dictionary<string, AttributeValue> {{"RequiredProperty", new AttributeValue {N = null}}});
+        var act = () => RequiredValueTypeValueMissingClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue> {{"RequiredProperty", new AttributeValue {N = null}}});
         act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
     public void Deserialize_RequiredValueTypeValueMissingClass_NoKeyValueProvidedShouldThrow()
     {
-        var act = () => RequiredValueTypeValueMissingClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>());
+        var act = () => RequiredValueTypeValueMissingClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>());
         act.Should().Throw<ArgumentNullException>();
     }
 }

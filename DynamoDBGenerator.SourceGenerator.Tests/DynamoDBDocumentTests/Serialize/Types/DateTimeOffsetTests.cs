@@ -15,7 +15,7 @@ public partial class DateTimeOffsetTests
         };
 
         DateTimeOffsetClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -34,7 +34,7 @@ public partial class DateTimeOffsetTests
         };
 
         DateTimeOffsetClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And

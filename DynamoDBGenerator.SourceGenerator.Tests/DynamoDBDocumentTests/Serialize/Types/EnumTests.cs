@@ -15,7 +15,7 @@ public partial class EnumTests
     public void Serialize_WeekDayClass_ShouldBeNumber(DayOfWeek dayOfWeek)
     {
         WeekDayClassMarshaller
-            .Serialize(new WeekDayClass {DayOfWeek = dayOfWeek})
+            .Marshall(new WeekDayClass {DayOfWeek = dayOfWeek})
             .Should()
             .SatisfyRespectively(x =>
             {
@@ -35,7 +35,7 @@ public partial class EnumTests
     public void Serialize_OptionalWeekDayClass_ShouldBeNumber(DayOfWeek dayOfWeek)
     {
         OptionalWeekDayClassMarshaller
-            .Serialize(new OptionalWeekDayClass {DayOfWeek = dayOfWeek})
+            .Marshall(new OptionalWeekDayClass {DayOfWeek = dayOfWeek})
             .Should()
             .SatisfyRespectively(x =>
             {
@@ -48,7 +48,7 @@ public partial class EnumTests
     public void Serialize_WeekDayClass_NoKeyValueProvidedShouldThrow()
     {
         var act = () => WeekDayClassMarshaller
-            .Serialize(new WeekDayClass())
+            .Marshall(new WeekDayClass())
             .Should();
 
         act.Should().Throw<ArgumentNullException>();
@@ -59,7 +59,7 @@ public partial class EnumTests
     public void Serialize_OptionalWeekDayClass_NoValueProvided()
     {
         OptionalWeekDayClassMarshaller
-            .Serialize(new OptionalWeekDayClass())
+            .Marshall(new OptionalWeekDayClass())
             .Should()
             .BeEmpty();
     }
@@ -68,7 +68,7 @@ public partial class EnumTests
     public void Serialize_OptionalWeekDayClass_ValueExplicitlySetToNull()
     {
         OptionalWeekDayClassMarshaller
-            .Serialize(new OptionalWeekDayClass
+            .Marshall(new OptionalWeekDayClass
                 {DayOfWeek = null})
             .Should()
             .BeEmpty();

@@ -7,14 +7,14 @@ public partial class NullableTests
     [Fact]
     public void Deserialize_NoValueProvided_ShouldNotThrow()
     {
-        var act = () => OptionalIntegerClassMarshaller.Deserialize(new Dictionary<string, AttributeValue> {{"OptionalProperty", new AttributeValue {N = null}}});
+        var act = () => OptionalIntegerClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue> {{"OptionalProperty", new AttributeValue {N = null}}});
         act.Should().NotThrow();
     }
 
     [Fact]
     public void Deserialize_NoKeyValueProvided_ShouldNotThrow()
     {
-        var act = () => OptionalIntegerClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>());
+        var act = () => OptionalIntegerClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>());
         act.Should().NotThrow();
     }
 
@@ -22,7 +22,7 @@ public partial class NullableTests
     public void Deserialize_KeyValueProvided_ShouldNotThrow()
     {
         OptionalIntegerClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue> {{"OptionalProperty", new AttributeValue {N = "2"}}})
+            .Unmarshall(new Dictionary<string, AttributeValue> {{"OptionalProperty", new AttributeValue {N = "2"}}})
             .OptionalProperty
             .Should()
             .Be(2);

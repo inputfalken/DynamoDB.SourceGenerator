@@ -9,7 +9,7 @@ public partial class KeyValueCollectionTests
     public void Deserialize_ICollection_ShouldBeListWithCorrectElements()
     {
         KeyValueCollectionClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue>
+            .Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(KeyValueCollectionClass.CollectionInterface), new AttributeValue
@@ -49,7 +49,7 @@ public partial class KeyValueCollectionTests
     public void Deserialize_IReadOnlyCollection_ShouldBeArrayWithCorrectElements()
     {
         KeyValueCollectionClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue>
+            .Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(KeyValueCollectionClass.ReadOnlyCollectionInterface), new AttributeValue
@@ -89,7 +89,7 @@ public partial class KeyValueCollectionTests
     public void Deserialize_IList_ShouldBeListWithCorrectElements()
     {
         KeyValueCollectionClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue>
+            .Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(KeyValueCollectionClass.ListInterface), new AttributeValue
@@ -129,7 +129,7 @@ public partial class KeyValueCollectionTests
     public void Deserialize_IReadOnlyList_ShouldBeArrayWithCorrectElements()
     {
         KeyValueCollectionClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue>
+            .Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(KeyValueCollectionClass.ReadOnlyListInterface), new AttributeValue
@@ -169,7 +169,7 @@ public partial class KeyValueCollectionTests
     public void Deserialize_List_ShouldBeListWithCorrectElements()
     {
         KeyValueCollectionClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue>
+            .Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(KeyValueCollectionClass.List), new AttributeValue
@@ -209,7 +209,7 @@ public partial class KeyValueCollectionTests
     public void Deserialize_Array_ShouldBeArrayWithCorrectElements()
     {
         KeyValueCollectionClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue>
+            .Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(KeyValueCollectionClass.Array), new AttributeValue
@@ -249,7 +249,7 @@ public partial class KeyValueCollectionTests
     public void Deserialize_IEnumerable_ShouldContainCorrectValues()
     {
         KeyValueCollectionClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue>
+            .Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(KeyValueCollectionClass.EnumerableInterface), new AttributeValue

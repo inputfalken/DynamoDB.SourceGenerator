@@ -9,7 +9,7 @@ public partial class NullableTests
         var @class = new NullableValueTypeClass();
 
         NullableValueTypeClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .BeEmpty();
     }
@@ -23,7 +23,7 @@ public partial class NullableTests
         };
 
         NullableValueTypeClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And

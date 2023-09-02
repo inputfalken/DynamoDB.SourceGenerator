@@ -19,7 +19,7 @@ public partial class ChildClassTests
             }
         };
 
-        ParentClassMarshaller.Serialize(@class)
+        ParentClassMarshaller.Marshall(@class)
             .Should()
             .SatisfyRespectively(
                 x =>
@@ -57,7 +57,7 @@ public partial class ChildClassTests
             Id = "I am the root"
         };
 
-        ParentClassMarshaller.Serialize(@class)
+        ParentClassMarshaller.Marshall(@class)
             .Should()
             .SatisfyRespectively(
                 x =>
@@ -77,7 +77,7 @@ public partial class ChildClassTests
             CustomClass = new ParentClass.ChildClass()
         };
 
-        ParentClassMarshaller.Serialize(@class)
+        ParentClassMarshaller.Marshall(@class)
             .Should()
             .SatisfyRespectively(
                 x =>
@@ -105,7 +105,7 @@ public partial class ChildClassTests
             }
         };
 
-        ParentClassMarshaller.Serialize(@class)
+        ParentClassMarshaller.Marshall(@class)
             .Should()
             .SatisfyRespectively(
                 x =>
@@ -138,7 +138,7 @@ public partial class ChildClassTests
             }
         };
 
-        ParentClassMarshaller.Serialize(@class)
+        ParentClassMarshaller.Marshall(@class)
             .Should()
             .SatisfyRespectively(
                 x =>

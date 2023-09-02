@@ -14,7 +14,7 @@ public partial class SetTests
         };
 
         Int32SetClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -29,7 +29,7 @@ public partial class SetTests
         };
 
         StringSetClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -45,7 +45,7 @@ public partial class SetTests
         };
 
         Int32SetClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -69,7 +69,7 @@ public partial class SetTests
         };
 
         Int32SetClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .BeEmpty();
     }
@@ -83,7 +83,7 @@ public partial class SetTests
         };
 
         StringSetClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .BeEmpty();
     }
@@ -97,7 +97,7 @@ public partial class SetTests
         };
 
         StringSetClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And

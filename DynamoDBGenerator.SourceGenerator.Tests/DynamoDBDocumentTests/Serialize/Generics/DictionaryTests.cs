@@ -17,7 +17,7 @@ public partial class DictionaryTests
         };
 
         DictionaryClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -46,7 +46,7 @@ public partial class DictionaryTests
         };
 
         DictionaryClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And

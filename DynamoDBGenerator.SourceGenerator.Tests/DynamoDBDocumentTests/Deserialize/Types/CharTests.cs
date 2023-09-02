@@ -8,7 +8,7 @@ public partial class CharTests
     public void Deserialize_CharProperty_IsIncluded()
     {
         CharClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue> {{nameof(CharClass.Letter), new AttributeValue {S = "A"}}})
+            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(CharClass.Letter), new AttributeValue {S = "A"}}})
             .Should()
             .BeOfType<CharClass>()
             .Which
@@ -21,7 +21,7 @@ public partial class CharTests
     public void Deserialize_StringProperty_ShouldThrow()
     {
         var act = () => CharClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue> {{nameof(CharClass.Letter), new AttributeValue {S = "AAA"}}});
+            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(CharClass.Letter), new AttributeValue {S = "AAA"}}});
 
         act.Should().Throw<ArgumentOutOfRangeException>();
     }

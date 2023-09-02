@@ -9,7 +9,7 @@ public partial class ValueTypeTests
         var @class = new ValueTypeClass();
 
         ValueTypeClassMarshaller
-            .Serialize(@class)
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And

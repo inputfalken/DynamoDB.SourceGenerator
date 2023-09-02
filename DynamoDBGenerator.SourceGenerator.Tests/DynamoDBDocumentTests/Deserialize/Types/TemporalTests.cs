@@ -11,7 +11,7 @@ public partial class TemporalTests
     {
         var timeStamp = DateOnly.FromDateTime(DateTime.Now);
 
-        DateOnlyClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>
+        DateOnlyClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(DateOnlyClass.TimeStamp), new AttributeValue
@@ -33,7 +33,7 @@ public partial class TemporalTests
     {
         var timeStamp = DateTime.Now;
 
-        DateTimeClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>
+        DateTimeClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(DateTimeClass.TimeStamp), new AttributeValue
@@ -55,7 +55,7 @@ public partial class TemporalTests
     {
         var timeStamp = DateTimeOffset.Now;
 
-        DateTimeOffsetClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>
+        DateTimeOffsetClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(DateTimeOffsetClass.TimeStamp), new AttributeValue

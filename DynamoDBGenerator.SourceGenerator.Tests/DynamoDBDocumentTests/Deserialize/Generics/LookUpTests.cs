@@ -8,7 +8,7 @@ public partial class LookUpTests
     public void Deserialize_EmptyLookup_IsIncluded()
     {
         LookUpClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue> {{nameof(LookUpClass.Lookup), new AttributeValue {M = new Dictionary<string, AttributeValue>()}}})
+            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(LookUpClass.Lookup), new AttributeValue {M = new Dictionary<string, AttributeValue>()}}})
             .Should()
             .BeOfType<LookUpClass>()
             .Which
@@ -21,7 +21,7 @@ public partial class LookUpTests
     public void Deserialize_LookupWithValues_IsIncluded()
     {
         LookUpClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue>
+            .Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(LookUpClass.Lookup), new AttributeValue

@@ -19,7 +19,7 @@ public partial class NumberTests
     public void Deserialize_DecimalProperty_Included()
     {
         DecimalClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue> {{nameof(DecimalClass.Count), new AttributeValue {N = "2.1"}}})
+            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(DecimalClass.Count), new AttributeValue {N = "2.1"}}})
             .Should()
             .BeOfType<DecimalClass>()
             .Which
@@ -32,7 +32,7 @@ public partial class NumberTests
     public void Deserialize_DoubleProperty_Included()
     {
         DoubleClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue> {{nameof(DoubleClass.Count), new AttributeValue {N = "2.1"}}})
+            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(DoubleClass.Count), new AttributeValue {N = "2.1"}}})
             .Should()
             .BeOfType<DoubleClass>()
             .Which
@@ -45,7 +45,7 @@ public partial class NumberTests
     public void Deserialize_FloatProperty_Included()
     {
         FloatClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue> {{nameof(FloatClass.Count), new AttributeValue {N = "2.1"}}})
+            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(FloatClass.Count), new AttributeValue {N = "2.1"}}})
             .Should()
             .BeOfType<FloatClass>()
             .Which
@@ -58,7 +58,7 @@ public partial class NumberTests
     public void Deserialize_In64Property_Included()
     {
         Int64ClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue> {{nameof(Int64Class.Count), new AttributeValue {N = "2"}}})
+            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(Int64Class.Count), new AttributeValue {N = "2"}}})
             .Should()
             .BeOfType<Int64Class>()
             .Which
@@ -71,7 +71,7 @@ public partial class NumberTests
     public void Deserialize_Int16Property_Included()
     {
         Int16ClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue> {{nameof(Int16Class.Count), new AttributeValue {N = "2"}}})
+            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(Int16Class.Count), new AttributeValue {N = "2"}}})
             .Should()
             .BeOfType<Int16Class>()
             .Which
@@ -84,7 +84,7 @@ public partial class NumberTests
     public void Deserialize_Int32Property_Included()
     {
         Int32ClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue> {{nameof(Int32Class.Count), new AttributeValue {N = "2"}}})
+            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(Int32Class.Count), new AttributeValue {N = "2"}}})
             .Should()
             .BeOfType<Int32Class>()
             .Which
@@ -97,7 +97,7 @@ public partial class NumberTests
     public void Deserialize_Int8Property_Included()
     {
         Int8ClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue> {{nameof(Int8Class.Count), new AttributeValue {N = "2"}}})
+            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(Int8Class.Count), new AttributeValue {N = "2"}}})
             .Should()
             .BeOfType<Int8Class>()
             .Which
@@ -110,7 +110,7 @@ public partial class NumberTests
     public void Deserialize_UIn64Property_Included()
     {
         UInt64ClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue> {{nameof(UInt64Class.Count), new AttributeValue {N = "2"}}})
+            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(UInt64Class.Count), new AttributeValue {N = "2"}}})
             .Should()
             .BeOfType<UInt64Class>()
             .Which
@@ -123,7 +123,7 @@ public partial class NumberTests
     public void Deserialize_UInt16Property_Included()
     {
         UInt16ClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue> {{nameof(UInt16Class.Count), new AttributeValue {N = "2"}}})
+            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(UInt16Class.Count), new AttributeValue {N = "2"}}})
             .Should()
             .BeOfType<UInt16Class>()
             .Which
@@ -136,7 +136,7 @@ public partial class NumberTests
     public void Deserialize_UInt32Property_Included()
     {
         UInt32ClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue> {{nameof(UInt32Class.Count), new AttributeValue {N = "2"}}})
+            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(UInt32Class.Count), new AttributeValue {N = "2"}}})
             .Should()
             .BeOfType<UInt32Class>()
             .Which
@@ -148,7 +148,7 @@ public partial class NumberTests
     public void Deserialize_UInt8Property_Included()
     {
         UInt8ClassMarshaller
-            .Deserialize(new Dictionary<string, AttributeValue> {{nameof(UInt8Class.Count), new AttributeValue {N = "2"}}})
+            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(UInt8Class.Count), new AttributeValue {N = "2"}}})
             .Should()
             .BeOfType<UInt8Class>()
             .Which

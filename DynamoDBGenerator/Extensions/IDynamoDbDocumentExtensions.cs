@@ -4,7 +4,8 @@ using System.Linq;
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.Extensions;
 
-public static class DynamoDbDocumentExtensions
+// DynamoDB
+public static class DynamoDBMarshallerExtensions
 {
     public static UpdateItemRequest ToUpdateItemRequest<T, TArg, TReferences, TArgumentReferences>(
         this IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> item,
@@ -57,7 +58,7 @@ public static class DynamoDbDocumentExtensions
         return new PutItemRequest
         {
             TableName = tableName,
-            Item = item.Serialize(entity),
+            Item = item.Marshall(entity),
             ExpressionAttributeNames = names,
             ExpressionAttributeValues = values,
             ConditionExpression = expression
