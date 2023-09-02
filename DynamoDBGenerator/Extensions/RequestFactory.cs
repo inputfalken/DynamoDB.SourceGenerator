@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.Extensions;
 
@@ -37,6 +38,7 @@ internal static class RequestFactory
         T entity,
         TArg argument,
         Func<TReferences, TArgumentReferences, string>? conditionExpressionBuilder,
+        ReturnValue returnValue,
         string tableName
     )
         where TReferences : IExpressionAttributeNameTracker
@@ -62,7 +64,8 @@ internal static class RequestFactory
             ExpressionAttributeNames = expressionAttributeNames,
             ExpressionAttributeValues = expressionAttributeValues,
             ConditionExpression = conditionExpression,
-            Item = item.Marshall(entity)
+            Item = item.Marshall(entity),
+            ReturnValues = returnValue
         };
     }
 }

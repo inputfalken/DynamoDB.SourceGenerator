@@ -11,8 +11,7 @@ public static class DynamoDBMarshallerExtensions
         this IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> item,
         string tableName,
         IAmazonDynamoDB dynamoDB
-        
-        )
+    )
         where TReferences : IExpressionAttributeNameTracker
         where TArgumentReferences : IExpressionAttributeValueTracker<TArg>
     {
@@ -48,20 +47,22 @@ public static class DynamoDBMarshallerExtensions
     public static PutItemRequest ToPutItemRequest<T, TArg, TReferences, TArgumentReferences>(
         this IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> item,
         T entity,
+        ReturnValue returnValue,
         string tableName)
         where TReferences : IExpressionAttributeNameTracker
         where TArgumentReferences : IExpressionAttributeValueTracker<TArg>
-        where T : TArg => item.ToPutItemRequestInternal(entity, entity, null, tableName);
+        where T : TArg => item.ToPutItemRequestInternal(entity, entity, null, returnValue, tableName);
 
     public static PutItemRequest ToPutItemRequest<T, TArg, TReferences, TArgumentReferences>(
         this IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> item,
         T entity,
         Func<TReferences, TArgumentReferences, string> conditionExpressionBuilder,
+        ReturnValue returnValue,
         string tableName
     )
         where TReferences : IExpressionAttributeNameTracker
         where TArgumentReferences : IExpressionAttributeValueTracker<TArg>
-        where T : TArg => item.ToPutItemRequestInternal(entity, entity, conditionExpressionBuilder, tableName);
+        where T : TArg => item.ToPutItemRequestInternal(entity, entity, conditionExpressionBuilder, returnValue, tableName);
 
 
 }

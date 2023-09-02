@@ -29,14 +29,14 @@ internal class DynamoDBClient<T, TArg, TReferences, TArgumentReferences> : IDyna
 
     public Task PutItemAsync<T1>(T1 entity, Func<TReferences, TArgumentReferences, string> conditionExpressionBuilder, CancellationToken cancellationToken = default) where T1 : T, TArg
     {
-        var putRequest = _marshaller.ToPutItemRequestInternal(entity, entity, conditionExpressionBuilder, _tableName);
+        var putRequest = _marshaller.ToPutItemRequestInternal(entity, entity, conditionExpressionBuilder, ReturnValue.NONE, _tableName);
 
         return _amazonDynamoDB.PutItemAsync(putRequest, cancellationToken);
     }
 
     public Task PutItemAsync<T1>(T1 entity, CancellationToken cancellationToken = default) where T1 : T, TArg
     {
-        var putRequest = _marshaller.ToPutItemRequestInternal(entity, entity, null, _tableName);
+        var putRequest = _marshaller.ToPutItemRequestInternal(entity, entity, null, ReturnValue.NONE, _tableName);
 
         return _amazonDynamoDB.PutItemAsync(putRequest, cancellationToken);
     }
