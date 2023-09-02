@@ -165,7 +165,7 @@ public class DynamoDbMarshaller
             )
             .Select(static x => x.Code);
 
-        var className = $"{_entityTypeSymbol.Name}_Document";
+        var className = $"{_publicAccessPropertyName}Implementation";
         var (marshalMethods, supported) = CreateAttributeValueFactory(_entityTypeSymbol, KeyStrategy.Include);
         var (argumentMarshallMethods, _) = CreateAttributeValueFactory(_argumentTypeSymbol, KeyStrategy.Include, supported);
         
