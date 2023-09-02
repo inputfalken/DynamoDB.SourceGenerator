@@ -166,8 +166,9 @@ public class DynamoDbDocumentGenerator
             .Select(static x => x.Code);
 
         var className = $"{_entityTypeSymbol.Name}_Document";
-        //TODO If `_argumentTypeSymbol` would differ from `_entityTypeSymbol` we would need to avoid duplicated methods from being generated.
-        var (marshalMethods, _) = CreateAttributeValueFactory(_entityTypeSymbol, KeyStrategy.Include);
+        var (marshalMethods, supported) = CreateAttributeValueFactory(_entityTypeSymbol, KeyStrategy.Include);
+        var (argumentMarshallMethods, _) = CreateAttributeValueFactory(_argumentTypeSymbol, KeyStrategy.Include, supported);
+        
         var (keysMethod, _) = CreateAttributeValueFactory(_entityTypeSymbol, KeyStrategy.Only);
         var keysClass = CodeGenerationExtensions.CreateClass(Accessibility.Private, "KeysClass", keysMethod, 2);
         var unMarshalMethods = CreateAttributePocoFactory();
@@ -190,6 +191,7 @@ public class DynamoDbDocumentGenerator
                 return new {className}.{nameTrackerTypeName}(null);
             }}
 {marshalMethods}
+{argumentMarshallMethods}
 {keysClass}
 {unMarshalMethods}";
 
