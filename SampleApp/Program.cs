@@ -1,21 +1,21 @@
 ﻿using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
-using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.DynamoDBv2.Model;
-using Amazon.Runtime.Documents;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using DynamoDBGenerator;
 using DynamoDBGenerator.Extensions;
-using Document = Amazon.Runtime.Documents.Document;
+using static SampleApp.Repository.PersonEntityMarshallerImplementation;
 using PutItemRequest = Amazon.DynamoDBv2.Model.PutItemRequest;
 
 namespace SampleApp;
 
 internal static class Program
 {
+    private static IDynamoDBClient<PersonEntity, PersonEntity, NN_PersonEntityName, NN_PersonEntityValue> _toDynamoDBClient;
     public static void Main()
     {
+        _toDynamoDBClient = new Repository().PersonEntityMarshaller.ToDynamoDBClient("MyTable", new AmazonDynamoDBClient());
         BenchmarkRunner.Run<Marshalling>();
     }
 
@@ -75,7 +75,7 @@ public class Marshalling
     [Benchmark]
     public PutItemRequest PutBySourceGeneration()
     {
-        return _repository.PersonEntityMarshaller.ToPutItemRequest(_singleElement, "TABLE");
+        return _repository.PersonEntityMarshaller.ToPutItemRequest(_singleElement, (x, y) => "", "");
     }
 
     [Benchmark]

@@ -1,25 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
-using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.Extensions;
 
-// DynamoDB
-public static class DynamoDBMarshallerExtensions
+internal static class RequestFactory
 {
-    public static IDynamoDBClient<T, TArg, TReferences, TArgumentReferences> ToDynamoDBClient<T, TArg, TReferences, TArgumentReferences>(
-        this IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> item,
-        string tableName,
-        IAmazonDynamoDB dynamoDB
-        
-        )
-        where TReferences : IExpressionAttributeNameTracker
-        where TArgumentReferences : IExpressionAttributeValueTracker<TArg>
-    {
-        return new DynamoDBClient<T, TArg, TReferences, TArgumentReferences>(item, tableName, dynamoDB);
-
-    }
-    public static UpdateItemRequest ToUpdateItemRequest<T, TArg, TReferences, TArgumentReferences>(
+    internal static UpdateItemRequest ToUpdateItemRequest<T, TArg, TReferences, TArgumentReferences>(
         this IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> item,
         TArg argument,
         string tableName,
@@ -44,24 +31,38 @@ public static class DynamoDBMarshallerExtensions
             UpdateExpression = updateExpression
         };
     }
-
-    public static PutItemRequest ToPutItemRequest<T, TArg, TReferences, TArgumentReferences>(
+    
+    internal static PutItemRequest ToPutItemRequestInternal<T, TArg, TReferences, TArgumentReferences>(
         this IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> item,
         T entity,
-        string tableName)
-        where TReferences : IExpressionAttributeNameTracker
-        where TArgumentReferences : IExpressionAttributeValueTracker<TArg>
-        where T : TArg => item.ToPutItemRequestInternal(entity, entity, null, tableName);
-
-    public static PutItemRequest ToPutItemRequest<T, TArg, TReferences, TArgumentReferences>(
-        this IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> item,
-        T entity,
-        Func<TReferences, TArgumentReferences, string> conditionExpressionBuilder,
+        TArg argument,
+        Func<TReferences, TArgumentReferences, string>? conditionExpressionBuilder,
         string tableName
     )
         where TReferences : IExpressionAttributeNameTracker
         where TArgumentReferences : IExpressionAttributeValueTracker<TArg>
-        where T : TArg => item.ToPutItemRequestInternal(entity, entity, conditionExpressionBuilder, tableName);
+    {
 
+        Dictionary<string, AttributeValue>? expressionAttributeValues = null;
+        Dictionary<string, string>? expressionAttributeNames = null;
+        string? conditionExpression = null;
 
+        if (conditionExpressionBuilder is not null)
+        {
+            var nameTracker = item.AttributeNameExpressionTracker();
+            var valueTracker = item.AttributeExpressionValueTracker();
+            conditionExpression = conditionExpressionBuilder.Invoke(nameTracker, valueTracker);
+            expressionAttributeNames = nameTracker.AccessedNames().ToDictionary(x => x.Key, x => x.Value);
+            expressionAttributeValues = valueTracker.AccessedValues(argument).ToDictionary(x => x.Key, x => x.Value);
+        }
+
+        return new PutItemRequest
+        {
+            TableName = tableName,
+            ExpressionAttributeNames = expressionAttributeNames,
+            ExpressionAttributeValues = expressionAttributeValues,
+            ConditionExpression = conditionExpression,
+            Item = item.Marshall(entity)
+        };
+    }
 }
