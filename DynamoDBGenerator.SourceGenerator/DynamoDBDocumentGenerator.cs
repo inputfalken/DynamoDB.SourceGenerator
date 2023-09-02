@@ -67,6 +67,11 @@ public class DynamoDBDocumentGenerator : IIncrementalGenerator
             var propertyName = attributeData.NamedArguments.FirstOrDefault(x => x.Key is nameof(DynamoDBDocumentAttribute.PropertyName)).Value;
             var argumentType = attributeData.NamedArguments.FirstOrDefault(x => x.Key is nameof(DynamoDBDocumentAttribute.ArgumentType)).Value;
 
+            // When a `ValueTuple` arrives we get the following format `(T name, T2 otherName)` for example `(string name, int age)`
+            // To support this would be tricky but possible.
+            // We could produce and compile a custom type, take the tuple string and use it as the constructor arguments.
+            // like `private readonly record struct {SomeString} ({tupleString})` for example `private readonly record struct 5604E01E_9058_4A53_BCC4_B5A0FC1038F9(string name, int age)`;
+            // We would publicly accept the ValueTuple and internally build up conversion from compiled type.
             return new DynamoDBDocumentArguments(
                 compiledTypeSymbol,
                 propertyName.Value?.ToString() ?? $"{compiledTypeSymbol.Name}Document",
