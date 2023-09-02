@@ -31,6 +31,7 @@ public static class DynamoDbDocumentExtensions
             UpdateExpression = updateExpression
         };
     }
+
     public static PutItemRequest ToPutItemRequest<T, TArg, TReferences, TArgumentReferences>(
         this IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> item,
         TArg entity,

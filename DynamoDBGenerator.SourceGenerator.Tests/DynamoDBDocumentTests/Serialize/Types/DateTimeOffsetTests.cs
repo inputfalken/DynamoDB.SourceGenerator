@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Types;
 
-[DynamoDBMarshallert(typeof(DateTimeOffsetClass))]
+[DynamoDBMarshaller(typeof(DateTimeOffsetClass))]
 public partial class DateTimeOffsetTests
 {
 
@@ -14,7 +14,7 @@ public partial class DateTimeOffsetTests
             TimeStamp = timeStamp
         };
 
-        DateTimeOffsetClassDocument
+        DateTimeOffsetClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -33,7 +33,7 @@ public partial class DateTimeOffsetTests
             TimeStamp = timeStamp
         };
 
-        DateTimeOffsetClassDocument
+        DateTimeOffsetClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()

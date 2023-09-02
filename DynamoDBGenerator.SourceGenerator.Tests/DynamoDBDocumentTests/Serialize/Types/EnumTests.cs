@@ -1,7 +1,7 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Types;
 
-[DynamoDBMarshallert(typeof(WeekDayClass))]
-[DynamoDBMarshallert(typeof(OptionalWeekDayClass))]
+[DynamoDBMarshaller(typeof(WeekDayClass))]
+[DynamoDBMarshaller(typeof(OptionalWeekDayClass))]
 public partial class EnumTests
 {
     [Theory]
@@ -14,7 +14,7 @@ public partial class EnumTests
     [InlineData(DayOfWeek.Sunday)]
     public void Serialize_WeekDayClass_ShouldBeNumber(DayOfWeek dayOfWeek)
     {
-        WeekDayClassDocument
+        WeekDayClassMarshaller
             .Serialize(new WeekDayClass {DayOfWeek = dayOfWeek})
             .Should()
             .SatisfyRespectively(x =>
@@ -34,7 +34,7 @@ public partial class EnumTests
     [InlineData(DayOfWeek.Sunday)]
     public void Serialize_OptionalWeekDayClass_ShouldBeNumber(DayOfWeek dayOfWeek)
     {
-        OptionalWeekDayClassDocument
+        OptionalWeekDayClassMarshaller
             .Serialize(new OptionalWeekDayClass {DayOfWeek = dayOfWeek})
             .Should()
             .SatisfyRespectively(x =>
@@ -47,7 +47,7 @@ public partial class EnumTests
     [Fact(Skip = "Due to missing the following check: https://learn.microsoft.com/en-us/dotnet/api/system.enum.isdefined?view=net-7.0")]
     public void Serialize_WeekDayClass_NoKeyValueProvidedShouldThrow()
     {
-        var act = () => WeekDayClassDocument
+        var act = () => WeekDayClassMarshaller
             .Serialize(new WeekDayClass())
             .Should();
 
@@ -58,7 +58,7 @@ public partial class EnumTests
     [Fact]
     public void Serialize_OptionalWeekDayClass_NoValueProvided()
     {
-        OptionalWeekDayClassDocument
+        OptionalWeekDayClassMarshaller
             .Serialize(new OptionalWeekDayClass())
             .Should()
             .BeEmpty();
@@ -67,7 +67,7 @@ public partial class EnumTests
     [Fact]
     public void Serialize_OptionalWeekDayClass_ValueExplicitlySetToNull()
     {
-        OptionalWeekDayClassDocument
+        OptionalWeekDayClassMarshaller
             .Serialize(new OptionalWeekDayClass
                 {DayOfWeek = null})
             .Should()

@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBMarshallert(typeof(LookUpClass))]
+[DynamoDBMarshaller(typeof(LookUpClass))]
 public partial class LookUpTests
 {
     [Fact]
@@ -11,7 +11,7 @@ public partial class LookUpTests
             Lookup = Enumerable.Empty<string>().ToLookup(x => x, _ => 1)
         };
 
-        LookUpClassDocument
+        LookUpClassMarshaller
             .Serialize(@class)
             .Should()
             .ContainKey(nameof(LookUpClass.Lookup))
@@ -33,7 +33,7 @@ public partial class LookUpTests
             }.ToLookup(x => x.Key, x => x.Value)
         };
 
-        LookUpClassDocument
+        LookUpClassMarshaller
             .Serialize(@class)
             .Should()
             .ContainKey(nameof(LookUpClass.Lookup))

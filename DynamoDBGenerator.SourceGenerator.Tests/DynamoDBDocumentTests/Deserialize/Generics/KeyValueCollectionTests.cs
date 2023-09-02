@@ -1,14 +1,14 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Generics;
 
-[DynamoDBMarshallert(typeof(KeyValueCollectionClass))]
+[DynamoDBMarshaller(typeof(KeyValueCollectionClass))]
 public partial class KeyValueCollectionTests
 {
 
     [Fact]
     public void Deserialize_ICollection_ShouldBeListWithCorrectElements()
     {
-        KeyValueCollectionClassDocument
+        KeyValueCollectionClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue>
             {
                 {
@@ -48,7 +48,7 @@ public partial class KeyValueCollectionTests
     [Fact]
     public void Deserialize_IReadOnlyCollection_ShouldBeArrayWithCorrectElements()
     {
-        KeyValueCollectionClassDocument
+        KeyValueCollectionClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue>
             {
                 {
@@ -88,7 +88,7 @@ public partial class KeyValueCollectionTests
     [Fact]
     public void Deserialize_IList_ShouldBeListWithCorrectElements()
     {
-        KeyValueCollectionClassDocument
+        KeyValueCollectionClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue>
             {
                 {
@@ -128,7 +128,7 @@ public partial class KeyValueCollectionTests
     [Fact]
     public void Deserialize_IReadOnlyList_ShouldBeArrayWithCorrectElements()
     {
-        KeyValueCollectionClassDocument
+        KeyValueCollectionClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue>
             {
                 {
@@ -168,7 +168,7 @@ public partial class KeyValueCollectionTests
     [Fact]
     public void Deserialize_List_ShouldBeListWithCorrectElements()
     {
-        KeyValueCollectionClassDocument
+        KeyValueCollectionClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue>
             {
                 {
@@ -208,7 +208,7 @@ public partial class KeyValueCollectionTests
     [Fact]
     public void Deserialize_Array_ShouldBeArrayWithCorrectElements()
     {
-        KeyValueCollectionClassDocument
+        KeyValueCollectionClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue>
             {
                 {
@@ -248,7 +248,7 @@ public partial class KeyValueCollectionTests
     [Fact]
     public void Deserialize_IEnumerable_ShouldContainCorrectValues()
     {
-        KeyValueCollectionClassDocument
+        KeyValueCollectionClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue>
             {
                 {

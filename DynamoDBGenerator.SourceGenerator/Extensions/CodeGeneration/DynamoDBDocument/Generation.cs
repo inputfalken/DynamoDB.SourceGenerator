@@ -6,7 +6,7 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.DynamoDBDo
 public class DynamoDbMarshaller
 {
     private const string DeserializeName = "Deserialize";
-    private const string DynamoDbDocumentName = "IDynamoDBMarshaller";
+    private const string InterfaceName = "IDynamoDBMarshaller";
     private const string KeysName = "Keys";
     private const string ValueTrackerName = "AttributeExpressionValueTracker";
     private const string NameTrackerName = "AttributeNameExpressionTracker";
@@ -199,12 +199,12 @@ public class DynamoDbMarshaller
 
         var @class = CodeGenerationExtensions.CreateClass(
             Accessibility.Public,
-            $"{className}: {DynamoDbDocumentName}<{_entityTypeSymbol.Name}, {_argumentTypeSymbol.Name}, {className}.{nameTrackerTypeName}, {className}.{valueTrackerTypeName}>",
+            $"{className}: {InterfaceName}<{_entityTypeSymbol.Name}, {_argumentTypeSymbol.Name}, {className}.{nameTrackerTypeName}, {className}.{valueTrackerTypeName}>",
             in sourceGeneratedCode,
             2
         );
 
-        return $@"{accessibility.ToCode()} {DynamoDbDocumentName}<{_entityTypeSymbol.Name}, {_argumentTypeSymbol.Name}, {className}.{nameTrackerTypeName}, {className}.{valueTrackerTypeName}> {_publicAccessPropertyName} {{ get; }} = new {className}();
+        return $@"{accessibility.ToCode()} {InterfaceName}<{_entityTypeSymbol.Name}, {_argumentTypeSymbol.Name}, {className}.{nameTrackerTypeName}, {className}.{valueTrackerTypeName}> {_publicAccessPropertyName} {{ get; }} = new {className}();
         {@class}";
     }
 

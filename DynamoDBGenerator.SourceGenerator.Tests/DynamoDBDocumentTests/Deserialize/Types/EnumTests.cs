@@ -1,8 +1,8 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Types;
 
-[DynamoDBMarshallert(typeof(WeekDayClass))]
-[DynamoDBMarshallert(typeof(OptionalWeekDayClass))]
+[DynamoDBMarshaller(typeof(WeekDayClass))]
+[DynamoDBMarshaller(typeof(OptionalWeekDayClass))]
 public partial class EnumTests
 {
     [Theory]
@@ -15,7 +15,7 @@ public partial class EnumTests
     [InlineData(DayOfWeek.Sunday)]
     public void Deserialize_WeekDayClass_ShouldBeNumber(DayOfWeek dayOfWeek)
     {
-        WeekDayClassDocument
+        WeekDayClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue> {{nameof(WeekDayClass.DayOfWeek), new AttributeValue {N = ((int)dayOfWeek).ToString()}}})
             .Should()
             .BeOfType<WeekDayClass>()
@@ -35,7 +35,7 @@ public partial class EnumTests
     [InlineData(DayOfWeek.Sunday)]
     public void Deserialize_OptionalWeekDayClass_ShouldBeNumber(DayOfWeek dayOfWeek)
     {
-        OptionalWeekDayClassDocument
+        OptionalWeekDayClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue> {{nameof(WeekDayClass.DayOfWeek), new AttributeValue {N = ((int)dayOfWeek).ToString()}}})
             .Should()
             .BeOfType<OptionalWeekDayClass>()
@@ -48,7 +48,7 @@ public partial class EnumTests
     [Fact]
     public void Deserialize_WeekDayClass_NoKeyValue()
     {
-        var act = () => WeekDayClassDocument
+        var act = () => WeekDayClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue>())
             .Should();
 
@@ -59,7 +59,7 @@ public partial class EnumTests
     [Fact]
     public void Deserialize_WeekDayClass_NoValueProvided()
     {
-        var act = () => WeekDayClassDocument
+        var act = () => WeekDayClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue> {{nameof(WeekDayClass.DayOfWeek), new AttributeValue {N = null}}})
             .Should();
 
@@ -69,7 +69,7 @@ public partial class EnumTests
     [Fact]
     public void Deserialize_OptionalWeekDayClass_NoValueProvided()
     {
-        OptionalWeekDayClassDocument
+        OptionalWeekDayClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue>())
             .Should()
             .BeOfType<OptionalWeekDayClass>()
@@ -82,7 +82,7 @@ public partial class EnumTests
     [Fact]
     public void Deserialize_OptionalWeekDayClass_ValueExplicitlySetToNull()
     {
-        OptionalWeekDayClassDocument
+        OptionalWeekDayClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue> {{nameof(OptionalWeekDayClass.DayOfWeek), new AttributeValue {N = null}}})
             .Should()
             .BeOfType<OptionalWeekDayClass>()

@@ -1,13 +1,13 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Generics;
 
-[DynamoDBMarshallert(typeof(LookUpClass))]
+[DynamoDBMarshaller(typeof(LookUpClass))]
 public partial class LookUpTests
 {
     [Fact]
     public void Deserialize_EmptyLookup_IsIncluded()
     {
-        LookUpClassDocument
+        LookUpClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue> {{nameof(LookUpClass.Lookup), new AttributeValue {M = new Dictionary<string, AttributeValue>()}}})
             .Should()
             .BeOfType<LookUpClass>()
@@ -20,7 +20,7 @@ public partial class LookUpTests
     [Fact]
     public void Deserialize_LookupWithValues_IsIncluded()
     {
-        LookUpClassDocument
+        LookUpClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue>
             {
                 {

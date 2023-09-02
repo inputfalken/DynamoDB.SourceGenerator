@@ -1,13 +1,13 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Types;
 
-[DynamoDBMarshallert(typeof(CharClass))]
+[DynamoDBMarshaller(typeof(CharClass))]
 public partial class CharTests
 {
     [Fact]
     public void Deserialize_CharProperty_IsIncluded()
     {
-        CharClassDocument
+        CharClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue> {{nameof(CharClass.Letter), new AttributeValue {S = "A"}}})
             .Should()
             .BeOfType<CharClass>()
@@ -20,7 +20,7 @@ public partial class CharTests
     [Fact(Skip = "TODO Add check to verify that the string is only of 1 character.")]
     public void Deserialize_StringProperty_ShouldThrow()
     {
-        var act = () => CharClassDocument
+        var act = () => CharClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue> {{nameof(CharClass.Letter), new AttributeValue {S = "AAA"}}});
 
         act.Should().Throw<ArgumentOutOfRangeException>();

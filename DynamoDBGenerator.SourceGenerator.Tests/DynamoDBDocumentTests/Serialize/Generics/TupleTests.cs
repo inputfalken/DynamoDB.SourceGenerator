@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBMarshallert(typeof(TupleClass))]
+[DynamoDBMarshaller(typeof(TupleClass))]
 public partial class TupleTests
 {
 
@@ -13,7 +13,7 @@ public partial class TupleTests
             XYZCoordinate = (3, 4, 5)
         };
 
-        TupleClassDocument
+        TupleClassMarshaller
             .Serialize(@class)
             .Should()
             .SatisfyRespectively(
@@ -63,7 +63,7 @@ public partial class TupleTests
             XYCoordinate = (1, 2)
         };
 
-        TupleClassDocument
+        TupleClassMarshaller
             .Serialize(@class)
             .Should()
             .SatisfyRespectively(
@@ -93,7 +93,7 @@ public partial class TupleTests
             XYZCoordinate = (3, 4, 5)
         };
 
-        TupleClassDocument
+        TupleClassMarshaller
             .Serialize(@class)
             .Should()
             .SatisfyRespectively(

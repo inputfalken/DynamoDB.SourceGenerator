@@ -64,8 +64,8 @@ public class DynamoDBDocumentGenerator : IIncrementalGenerator
             if (compiledTypeSymbol is null)
                 return null;
 
-            var propertyName = attributeData.NamedArguments.FirstOrDefault(x => x.Key is nameof(DynamoDBMarshallertAttribute.PropertyName)).Value;
-            var argumentType = attributeData.NamedArguments.FirstOrDefault(x => x.Key is nameof(DynamoDBMarshallertAttribute.ArgumentType)).Value;
+            var propertyName = attributeData.NamedArguments.FirstOrDefault(x => x.Key is nameof(DynamoDBMarshallerAttribute.PropertyName)).Value;
+            var argumentType = attributeData.NamedArguments.FirstOrDefault(x => x.Key is nameof(DynamoDBMarshallerAttribute.ArgumentType)).Value;
 
             // When a `ValueTuple` arrives we get the following format `(T name, T2 otherName)` for example `(string name, int age)`
             // To support this would be tricky but possible.
@@ -74,7 +74,7 @@ public class DynamoDBDocumentGenerator : IIncrementalGenerator
             // We would publicly accept the ValueTuple and internally build up conversion from compiled type.
             return new DynamoDBMarshallerArguments(
                 compiledTypeSymbol,
-                propertyName.Value?.ToString() ?? $"{compiledTypeSymbol.Name}Document",
+                propertyName.Value?.ToString() ?? $"{compiledTypeSymbol.Name}Marshaller",
                 argumentType is {IsNull: false, Value: not null}
                     ? compilation.GetBestTypeByMetadataName(argumentType.Value.ToString()) ?? compiledTypeSymbol
                     : compiledTypeSymbol
@@ -84,7 +84,7 @@ public class DynamoDBDocumentGenerator : IIncrementalGenerator
         var arguments = typeSymbol
             .GetAttributes()
             .Where(x => x.AttributeClass?.ContainingNamespace is {Name: nameof(DynamoDBGenerator)})
-            .Where(x => x.AttributeClass!.Name is nameof(DynamoDBMarshallertAttribute))
+            .Where(x => x.AttributeClass!.Name is nameof(DynamoDBMarshallerAttribute))
             .Select(ResultSelector);
 
         foreach (var argument in arguments)

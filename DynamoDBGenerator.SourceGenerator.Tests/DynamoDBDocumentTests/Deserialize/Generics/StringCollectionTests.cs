@@ -1,14 +1,14 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Generics;
 
-[DynamoDBMarshallert(typeof(StringedCollectionClass))]
+[DynamoDBMarshaller(typeof(StringedCollectionClass))]
 public partial class StringCollectionTests
 {
 
     [Fact]
     public void Deserialize_ICollection_ShouldBeListWithCorrectElements()
     {
-        StringedCollectionClassDocument
+        StringedCollectionClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue> {{nameof(StringedCollectionClass.CollectionInterface), new AttributeValue {L = new List<AttributeValue> {new() {S = "ABC"}, new() {S = "Foo"}}}}})
             .CollectionInterface
             .Should()
@@ -21,7 +21,7 @@ public partial class StringCollectionTests
     [Fact]
     public void Deserialize_IReadOnlyCollection_ShouldBeArrayWithCorrectElements()
     {
-        StringedCollectionClassDocument
+        StringedCollectionClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue> {{nameof(StringedCollectionClass.ReadOnlyCollectionInterface), new AttributeValue {L = new List<AttributeValue> {new() {S = "ABC"}, new() {S = "Foo"}}}}})
             .ReadOnlyCollectionInterface
             .Should()
@@ -34,7 +34,7 @@ public partial class StringCollectionTests
     [Fact]
     public void Deserialize_IList_ShouldBeListWithCorrectElements()
     {
-        StringedCollectionClassDocument
+        StringedCollectionClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue> {{nameof(StringedCollectionClass.ListInterface), new AttributeValue {L = new List<AttributeValue> {new() {S = "ABC"}, new() {S = "Foo"}}}}})
             .ListInterface
             .Should()
@@ -47,7 +47,7 @@ public partial class StringCollectionTests
     [Fact]
     public void Deserialize_IReadOnlyList_ShouldBeOfArrayWithCorrectElements()
     {
-        StringedCollectionClassDocument
+        StringedCollectionClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue> {{nameof(StringedCollectionClass.ReadOnlyListInterface), new AttributeValue {L = new List<AttributeValue> {new() {S = "ABC"}, new() {S = "Foo"}}}}})
             .ReadOnlyListInterface
             .Should()
@@ -60,7 +60,7 @@ public partial class StringCollectionTests
     [Fact]
     public void Deserialize_List_ShouldBeOfListWithCorrectElements()
     {
-        StringedCollectionClassDocument
+        StringedCollectionClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue> {{nameof(StringedCollectionClass.List), new AttributeValue {L = new List<AttributeValue> {new() {S = "ABC"}, new() {S = "Foo"}}}}})
             .List
             .Should()
@@ -73,7 +73,7 @@ public partial class StringCollectionTests
     [Fact]
     public void Deserialize_Array_ShouldBeOfArrayWithCorrectElements()
     {
-        StringedCollectionClassDocument
+        StringedCollectionClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue> {{nameof(StringedCollectionClass.Array), new AttributeValue {L = new List<AttributeValue> {new() {S = "ABC"}, new() {S = "Foo"}}}}})
             .Array
             .Should()
@@ -86,7 +86,7 @@ public partial class StringCollectionTests
     [Fact]
     public void Deserialize_IEnumerable_ShouldContainCorrectElements()
     {
-        StringedCollectionClassDocument
+        StringedCollectionClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue> {{nameof(StringedCollectionClass.EnumerableInterface), new AttributeValue {L = new List<AttributeValue> {new() {S = "ABC"}, new() {S = "Foo"}}}}})
             .EnumerableInterface
             .Should()

@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBMarshallert(typeof(KeyValuePairClass))]
+[DynamoDBMarshaller(typeof(KeyValuePairClass))]
 public partial class KeyValuePairTests
 {
     [Fact]
@@ -11,7 +11,7 @@ public partial class KeyValuePairTests
             KeyValuePair = new KeyValuePair<string?, int?>("1", 2)
         };
 
-        KeyValuePairClassDocument
+        KeyValuePairClassMarshaller
             .Serialize(@class)
             .Should()
             .SatisfyRespectively(
@@ -41,7 +41,7 @@ public partial class KeyValuePairTests
             KeyValuePair = new KeyValuePair<string?, int?>(null, 2)
         };
 
-        KeyValuePairClassDocument
+        KeyValuePairClassMarshaller
             .Serialize(@class)
             .Should()
             .SatisfyRespectively(
@@ -67,7 +67,7 @@ public partial class KeyValuePairTests
             KeyValuePair = new KeyValuePair<string?, int?>("abc", null)
         };
 
-        KeyValuePairClassDocument
+        KeyValuePairClassMarshaller
             .Serialize(@class)
             .Should()
             .SatisfyRespectively(

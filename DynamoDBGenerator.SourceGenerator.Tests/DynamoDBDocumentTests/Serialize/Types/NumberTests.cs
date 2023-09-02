@@ -1,16 +1,16 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Types;
 
-[DynamoDBMarshallert(typeof(DecimalClass))]
-[DynamoDBMarshallert(typeof(DoubleClass))]
-[DynamoDBMarshallert(typeof(FloatClass))]
-[DynamoDBMarshallert(typeof(Int16Class))]
-[DynamoDBMarshallert(typeof(Int32Class))]
-[DynamoDBMarshallert(typeof(Int64Class))]
-[DynamoDBMarshallert(typeof(Int8Class))]
-[DynamoDBMarshallert(typeof(UInt16Class))]
-[DynamoDBMarshallert(typeof(UInt32Class))]
-[DynamoDBMarshallert(typeof(UInt64Class))]
-[DynamoDBMarshallert(typeof(UInt8Class))]
+[DynamoDBMarshaller(typeof(DecimalClass))]
+[DynamoDBMarshaller(typeof(DoubleClass))]
+[DynamoDBMarshaller(typeof(FloatClass))]
+[DynamoDBMarshaller(typeof(Int16Class))]
+[DynamoDBMarshaller(typeof(Int32Class))]
+[DynamoDBMarshaller(typeof(Int64Class))]
+[DynamoDBMarshaller(typeof(Int8Class))]
+[DynamoDBMarshaller(typeof(UInt16Class))]
+[DynamoDBMarshaller(typeof(UInt32Class))]
+[DynamoDBMarshaller(typeof(UInt64Class))]
+[DynamoDBMarshaller(typeof(UInt8Class))]
 public partial class NumberTests
 {
 
@@ -23,7 +23,7 @@ public partial class NumberTests
             Count = count
         };
 
-        DecimalClassDocument
+        DecimalClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -42,7 +42,7 @@ public partial class NumberTests
             Count = count
         };
 
-        DoubleClassDocument
+        DoubleClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -61,7 +61,7 @@ public partial class NumberTests
             Count = count
         };
 
-        FloatClassDocument
+        FloatClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -80,7 +80,7 @@ public partial class NumberTests
             Count = count
         };
 
-        Int64ClassDocument
+        Int64ClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -99,7 +99,7 @@ public partial class NumberTests
             Count = count
         };
 
-        Int16ClassDocument
+        Int16ClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -118,7 +118,7 @@ public partial class NumberTests
             Count = count
         };
 
-        Int32ClassDocument
+        Int32ClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -137,7 +137,7 @@ public partial class NumberTests
             Count = count
         };
 
-        Int8ClassDocument
+        Int8ClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -156,7 +156,7 @@ public partial class NumberTests
             Count = count
         };
 
-        UInt64ClassDocument
+        UInt64ClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -175,7 +175,7 @@ public partial class NumberTests
             Count = count
         };
 
-        UInt16ClassDocument
+        UInt16ClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -194,7 +194,7 @@ public partial class NumberTests
             Count = count
         };
 
-        UInt32ClassDocument
+        UInt32ClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -212,7 +212,7 @@ public partial class NumberTests
             Count = count
         };
 
-        UInt8ClassDocument
+        UInt8ClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()

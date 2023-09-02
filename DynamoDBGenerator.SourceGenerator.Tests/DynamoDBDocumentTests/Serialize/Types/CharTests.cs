@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Types;
 
-[DynamoDBMarshallert(typeof(CharClass))]
+[DynamoDBMarshaller(typeof(CharClass))]
 public partial class CharTests
 {
     [Fact]
@@ -11,7 +11,7 @@ public partial class CharTests
             Letter = 'L'
         };
 
-        CharClassDocument
+        CharClassMarshaller
             .Serialize(@class)
             .Should()
             .SatisfyRespectively(x =>

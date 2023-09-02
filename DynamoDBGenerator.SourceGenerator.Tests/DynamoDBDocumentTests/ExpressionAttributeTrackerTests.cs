@@ -1,8 +1,8 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 
-[DynamoDBMarshallert(typeof(Person))]
-[DynamoDBMarshallert(typeof(SelfReferencingClass))]
-[DynamoDBMarshallert(typeof(ClassWithOverriddenAttributeName))]
+[DynamoDBMarshaller(typeof(Person))]
+[DynamoDBMarshaller(typeof(SelfReferencingClass))]
+[DynamoDBMarshaller(typeof(ClassWithOverriddenAttributeName))]
 public partial class ExpressionAttributeTrackerTests
 {
     [Theory]
@@ -14,7 +14,7 @@ public partial class ExpressionAttributeTrackerTests
     [InlineData(10000)]
     public void SelfReference_AttributeReferences_EnsureUniqueness(int count)
     {
-        var traversedNameTracker = SelfReferencingClassDocument.TraverseByNameTracker(x => x.Self, count).ToArray();
+        var traversedNameTracker = SelfReferencingClassMarshaller.TraverseByNameTracker(x => x.Self, count).ToArray();
         traversedNameTracker
             .Select(x => x.Field1)
             .Concat(traversedNameTracker.Select(x => x.Field2))
@@ -22,7 +22,7 @@ public partial class ExpressionAttributeTrackerTests
             .Should()
             .HaveCount(count * 2);
 
-        var traversedValueTracker = SelfReferencingClassDocument.TraverseByValueTracker(x => x.Self, count).ToArray();
+        var traversedValueTracker = SelfReferencingClassMarshaller.TraverseByValueTracker(x => x.Self, count).ToArray();
         traversedValueTracker
             .Select(x => x.Field1)
             .Concat(traversedNameTracker.Select(x => x.Field2))
@@ -34,8 +34,8 @@ public partial class ExpressionAttributeTrackerTests
     [Fact]
     public void ClassWithOverriddenAttributeName_AttributeReferences_ShouldChangeNameValue()
     {
-        var nameTracker = ClassWithOverriddenAttributeNameDocument.AttributeNameExpressionTracker();
-        var valueTracker = ClassWithOverriddenAttributeNameDocument.AttributeExpressionValueTracker();
+        var nameTracker = ClassWithOverriddenAttributeNameMarshaller.AttributeNameExpressionTracker();
+        var valueTracker = ClassWithOverriddenAttributeNameMarshaller.AttributeExpressionValueTracker();
 
         nameTracker.Foo.Should().Be("#SomethingElse");
         valueTracker.Foo.Should().Be(":p1");
@@ -44,8 +44,8 @@ public partial class ExpressionAttributeTrackerTests
     [Fact]
     public void Person_AttributeReferences_ShouldBeCorrectlySet()
     {
-        var nameTracker = PersonDocument.AttributeNameExpressionTracker();
-        var valueTracker = PersonDocument.AttributeExpressionValueTracker();
+        var nameTracker = PersonMarshaller.AttributeNameExpressionTracker();
+        var valueTracker = PersonMarshaller.AttributeExpressionValueTracker();
 
         nameTracker.FirstName.Should().Be("#FirstName");
         nameTracker.CreatedAt.Should().Be("#CreatedAt");
@@ -63,7 +63,7 @@ public partial class ExpressionAttributeTrackerTests
     [Fact]
     public void Person_AttributeReferences_ValueAreSetDynamicallySample1()
     {
-        var valueTracker = PersonDocument.AttributeExpressionValueTracker();
+        var valueTracker = PersonMarshaller.AttributeExpressionValueTracker();
 
         valueTracker.Address.Street.Name.Should().Be(":p1");
         valueTracker.FirstName.Should().Be(":p2");
@@ -73,7 +73,7 @@ public partial class ExpressionAttributeTrackerTests
     [Fact]
     public void Person_AttributeReferences_ValueAreSetDynamicallySample2()
     {
-        var valueTracker = PersonDocument.AttributeExpressionValueTracker();
+        var valueTracker = PersonMarshaller.AttributeExpressionValueTracker();
 
         valueTracker.Address.Name.Should().Be(":p1");
         valueTracker.CreatedAt.Should().Be(":p2");

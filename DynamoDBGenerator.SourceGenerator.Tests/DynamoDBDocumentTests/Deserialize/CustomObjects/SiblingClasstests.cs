@@ -1,14 +1,14 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.CustomObjects;
 
-[DynamoDBMarshallert(typeof(SiblingClassOne))]
+[DynamoDBMarshaller(typeof(SiblingClassOne))]
 public partial class SiblingClassTests
 {
     [Fact]
     public void Serialize_AllFieldsSet_AllIncluded()
     {
-
-        var result = SiblingClassOneDocument.Deserialize(new Dictionary<string, AttributeValue>
+        var result = SiblingClassOneMarshaller
+            .Deserialize(new Dictionary<string, AttributeValue>
         {
             {nameof(SiblingClassOne.Id), new AttributeValue {S = "I am the root"}},
 
@@ -35,7 +35,7 @@ public partial class SiblingClassTests
     public void Serialize_CustomProperty_NotIncluded()
     {
 
-        var result = SiblingClassOneDocument.Deserialize(new Dictionary<string, AttributeValue>
+        var result = SiblingClassOneMarshaller.Deserialize(new Dictionary<string, AttributeValue>
         {
             {nameof(SiblingClassOne.Id), new AttributeValue {S = "I am the root"}}
 
@@ -49,7 +49,7 @@ public partial class SiblingClassTests
     public void Serialize_CustomPropertyField_NotIncluded()
     {
 
-        var result = SiblingClassOneDocument.Deserialize(new Dictionary<string, AttributeValue>
+        var result = SiblingClassOneMarshaller.Deserialize(new Dictionary<string, AttributeValue>
         {
             {nameof(SiblingClassOne.Id), new AttributeValue {S = "I am the root"}},
 

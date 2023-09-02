@@ -1,13 +1,13 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Generics;
 
-[DynamoDBMarshallert(typeof(DictionaryClass))]
+[DynamoDBMarshaller(typeof(DictionaryClass))]
 public partial class DictionaryTests
 {
     [Fact]
     public void Deserialize_CustomValuedDictionary_ShouldContainCorrectKeyValues()
     {
-        DictionaryClassDocument.Deserialize(new Dictionary<string, AttributeValue>
+        DictionaryClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(DictionaryClass.CustomValuedDictionary), new AttributeValue
@@ -62,7 +62,7 @@ public partial class DictionaryTests
     [Fact]
     public void Deserialize_Dictionary_ShouldContainCorrectKeyValues()
     {
-        DictionaryClassDocument.Deserialize(new Dictionary<string, AttributeValue>
+        DictionaryClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(DictionaryClass.Dictionary), new AttributeValue
@@ -86,7 +86,7 @@ public partial class DictionaryTests
     [Fact]
     public void Deserialize_IReadOnlyDictionary_ShouldBeDictionaryAndContainCorrectKeyValues()
     {
-        DictionaryClassDocument.Deserialize(new Dictionary<string, AttributeValue>
+        DictionaryClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(DictionaryClass.ReadOnlyDictionaryInterface), new AttributeValue
@@ -109,7 +109,7 @@ public partial class DictionaryTests
     [Fact]
     public void Deserialize_IDictionary_ShouldBeDictionaryAndContainCorrectKeyValues()
     {
-        DictionaryClassDocument.Deserialize(new Dictionary<string, AttributeValue>
+        DictionaryClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(DictionaryClass.DictionaryInterface), new AttributeValue

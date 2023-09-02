@@ -1,14 +1,14 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize;
 
-[DynamoDBMarshallert(typeof(PropertyWithMixedNames))]
+[DynamoDBMarshaller(typeof(PropertyWithMixedNames))]
 public partial class PropertyRenamingTests
 {
     [Fact]
     public void Serialize_Attributes_ChangesNames()
     {
 
-        var propertyAssertion = PropertyWithMixedNamesDocument
+        var propertyAssertion = PropertyWithMixedNamesMarshaller
             .Deserialize(new Dictionary<string, AttributeValue>
             {
                 {nameof(PropertyWithMixedNames.PlainProperty), new AttributeValue {S = "1"}},

@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBMarshallert(typeof(DictionaryClass))]
+[DynamoDBMarshaller(typeof(DictionaryClass))]
 public partial class DictionaryTests
 {
 
@@ -16,7 +16,7 @@ public partial class DictionaryTests
             }
         };
 
-        DictionaryClassDocument
+        DictionaryClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -45,7 +45,7 @@ public partial class DictionaryTests
             DictionaryImplementation = new Dictionary<string, int>()
         };
 
-        DictionaryClassDocument
+        DictionaryClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()

@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.CustomObjects;
 
-[DynamoDBMarshallert(typeof(SiblingClassOne))]
+[DynamoDBMarshaller(typeof(SiblingClassOne))]
 public partial class SiblingClassTests
 {
     [Fact]
@@ -15,7 +15,7 @@ public partial class SiblingClassTests
             }
         };
 
-        SiblingClassOneDocument.Serialize(@class)
+        SiblingClassOneMarshaller.Serialize(@class)
             .Should()
             .SatisfyRespectively(
                 x =>
@@ -43,7 +43,7 @@ public partial class SiblingClassTests
             Id = "I am the root"
         };
 
-        SiblingClassOneDocument.Serialize(@class)
+        SiblingClassOneMarshaller.Serialize(@class)
             .Should()
             .SatisfyRespectively(
                 x =>
@@ -63,7 +63,7 @@ public partial class SiblingClassTests
             CustomClass = new SiblingClassTwo()
         };
 
-        SiblingClassOneDocument.Serialize(@class)
+        SiblingClassOneMarshaller.Serialize(@class)
             .Should()
             .SatisfyRespectively(
                 x =>

@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBMarshallert(typeof(CollectionClass))]
+[DynamoDBMarshaller(typeof(CollectionClass))]
 public partial class CollectionTests
 {
 
@@ -12,7 +12,7 @@ public partial class CollectionTests
             Collection = new[] {"1", "2", "3"}
         };
 
-        CollectionClassDocument
+        CollectionClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -37,7 +37,7 @@ public partial class CollectionTests
             Collection = new List<string>()
         };
 
-        CollectionClassDocument
+        CollectionClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -55,7 +55,7 @@ public partial class CollectionTests
             Enumerable = Enumerable.Empty<string>()
         };
 
-        CollectionClassDocument
+        CollectionClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -73,7 +73,7 @@ public partial class CollectionTests
             Array = Array.Empty<string>()
         };
 
-        CollectionClassDocument
+        CollectionClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -90,7 +90,7 @@ public partial class CollectionTests
             Array = new[] {"1", "2", "3"}
         };
 
-        CollectionClassDocument
+        CollectionClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -115,7 +115,7 @@ public partial class CollectionTests
             List = new List<string>()
         };
 
-        CollectionClassDocument
+        CollectionClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -132,7 +132,7 @@ public partial class CollectionTests
             ReadOnlyList = Array.Empty<string>()
         };
 
-        CollectionClassDocument
+        CollectionClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -150,7 +150,7 @@ public partial class CollectionTests
             Enumerable = new[] {"1", "2", "3"}
         };
 
-        CollectionClassDocument
+        CollectionClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -175,7 +175,7 @@ public partial class CollectionTests
             KeyValuePairs = new[] {new KeyValuePair<string, int>("2", 1), new KeyValuePair<string, int>("1", 1)}
         };
 
-        CollectionClassDocument
+        CollectionClassMarshaller
             .Serialize(@class)
             .Should()
             .AllSatisfy(x =>
@@ -221,7 +221,7 @@ public partial class CollectionTests
             List = new[] {"1", "2", "3"}
         };
 
-        CollectionClassDocument
+        CollectionClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -246,7 +246,7 @@ public partial class CollectionTests
             ReadOnlyList = new[] {"1", "2", "3"}
         };
 
-        CollectionClassDocument
+        CollectionClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()

@@ -4,7 +4,7 @@ namespace DynamoDBGenerator.SourceGenerator;
 
 public class Constants
 {
-    public const string DynamoDbDocumentPropertyFullname = nameof(DynamoDBGenerator) + "." + nameof(DynamoDBMarshallertAttribute);
+    public const string DynamoDbDocumentPropertyFullname = nameof(DynamoDBGenerator) + "." + nameof(DynamoDBMarshallerAttribute);
     public const string NewLine = @"
 ";
 

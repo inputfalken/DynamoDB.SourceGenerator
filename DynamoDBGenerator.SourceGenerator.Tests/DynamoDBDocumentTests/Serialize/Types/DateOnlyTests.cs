@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Types;
 
-[DynamoDBMarshallert(typeof(DateOnlyClass))]
+[DynamoDBMarshaller(typeof(DateOnlyClass))]
 public partial class DateOnlyTests
 {
 
@@ -14,7 +14,7 @@ public partial class DateOnlyTests
             TimeStamp = timeStamp
         };
 
-        DateOnlyClassDocument
+        DateOnlyClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -33,7 +33,7 @@ public partial class DateOnlyTests
             TimeStamp = timeStamp
         };
 
-        DateOnlyClassDocument
+        DateOnlyClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()

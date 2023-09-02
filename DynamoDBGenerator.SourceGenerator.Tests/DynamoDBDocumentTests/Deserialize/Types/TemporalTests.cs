@@ -1,9 +1,9 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Types;
 
-[DynamoDBMarshallert(typeof(DateOnlyClass))]
-[DynamoDBMarshallert(typeof(DateTimeClass))]
-[DynamoDBMarshallert(typeof(DateTimeOffsetClass))]
+[DynamoDBMarshaller(typeof(DateOnlyClass))]
+[DynamoDBMarshaller(typeof(DateTimeClass))]
+[DynamoDBMarshaller(typeof(DateTimeOffsetClass))]
 public partial class TemporalTests
 {
     [Fact]
@@ -11,7 +11,7 @@ public partial class TemporalTests
     {
         var timeStamp = DateOnly.FromDateTime(DateTime.Now);
 
-        DateOnlyClassDocument.Deserialize(new Dictionary<string, AttributeValue>
+        DateOnlyClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(DateOnlyClass.TimeStamp), new AttributeValue
@@ -33,7 +33,7 @@ public partial class TemporalTests
     {
         var timeStamp = DateTime.Now;
 
-        DateTimeClassDocument.Deserialize(new Dictionary<string, AttributeValue>
+        DateTimeClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(DateTimeClass.TimeStamp), new AttributeValue
@@ -55,7 +55,7 @@ public partial class TemporalTests
     {
         var timeStamp = DateTimeOffset.Now;
 
-        DateTimeOffsetClassDocument.Deserialize(new Dictionary<string, AttributeValue>
+        DateTimeOffsetClassMarshaller.Deserialize(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(DateTimeOffsetClass.TimeStamp), new AttributeValue

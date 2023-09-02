@@ -21,7 +21,7 @@ internal static class Program
 
 }
 
-[DynamoDBMarshallert(typeof(PersonEntity))]
+[DynamoDBMarshaller(typeof(PersonEntity))]
 public partial class Repository
 {
 }
@@ -75,13 +75,13 @@ public class Marshalling
     [Benchmark]
     public PutItemRequest PutBySourceGeneration()
     {
-        return _repository.PersonEntityDocument.ToPutItemRequest(_singleElement, "TABLE");
+        return _repository.PersonEntityMarshaller.ToPutItemRequest(_singleElement, "TABLE");
     }
 
     [Benchmark]
     public PersonEntity DeserializeBySourceGeneration()
     {
-        return _repository.PersonEntityDocument.Deserialize(_attributeValues);
+        return _repository.PersonEntityMarshaller.Deserialize(_attributeValues);
     }
 
 }

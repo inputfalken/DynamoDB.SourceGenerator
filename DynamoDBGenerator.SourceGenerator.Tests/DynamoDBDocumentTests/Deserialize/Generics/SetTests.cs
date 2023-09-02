@@ -1,15 +1,15 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Generics;
 
-[DynamoDBMarshallert(typeof(StringSetClass))]
-[DynamoDBMarshallert(typeof(Int32SetClass))]
+[DynamoDBMarshaller(typeof(StringSetClass))]
+[DynamoDBMarshaller(typeof(Int32SetClass))]
 public partial class SetTests
 {
 
     [Fact]
     public void Deserialize_EmptyIntSet_IsIncluded()
     {
-        Int32SetClassDocument
+        Int32SetClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue> {{nameof(Int32SetClass.IntSet), new AttributeValue()}})
             .Should()
             .BeOfType<Int32SetClass>()
@@ -22,7 +22,7 @@ public partial class SetTests
     [Fact]
     public void Deserialize_ExplicitlyEmptyIntSet_IsIncluded()
     {
-        Int32SetClassDocument
+        Int32SetClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue> {{nameof(Int32SetClass.IntSet), new AttributeValue {NS = new List<string>()}}})
             .Should()
             .BeOfType<Int32SetClass>()
@@ -35,7 +35,7 @@ public partial class SetTests
     [Fact]
     public void Serialize_EmptyStringSet_IsIncluded()
     {
-        StringSetClassDocument
+        StringSetClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue> {{nameof(StringSetClass.StringSet), new AttributeValue()}})
             .Should()
             .BeOfType<StringSetClass>()
@@ -48,7 +48,7 @@ public partial class SetTests
     [Fact]
     public void Deserialize_ExplicitlyEmptyStringSet_IsIncluded()
     {
-        StringSetClassDocument
+        StringSetClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue> {{nameof(StringSetClass.StringSet), new AttributeValue {SS = new List<string>()}}})
             .Should()
             .BeOfType<StringSetClass>()
@@ -61,7 +61,7 @@ public partial class SetTests
     [Fact]
     public void Deserialize_IntSetWithValues_IsIncluded()
     {
-        Int32SetClassDocument
+        Int32SetClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue> {{nameof(Int32SetClass.IntSet), new AttributeValue {NS = new List<string> {"1", "2", "3"}}}})
             .Should()
             .BeOfType<Int32SetClass>()
@@ -73,7 +73,7 @@ public partial class SetTests
     [Fact]
     public void Deserialize_NullIntSet_IsSkipped()
     {
-        Int32SetClassDocument
+        Int32SetClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue>())
             .Should()
             .BeOfType<Int32SetClass>()
@@ -86,7 +86,7 @@ public partial class SetTests
     [Fact]
     public void Deserialize_NullStringSet_IsSkipped()
     {
-        StringSetClassDocument
+        StringSetClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue>())
             .Should()
             .BeOfType<StringSetClass>()
@@ -100,7 +100,7 @@ public partial class SetTests
     public void Deserialize_StringSetWithValues_IsIncluded()
     {
 
-        StringSetClassDocument
+        StringSetClassMarshaller
             .Deserialize(new Dictionary<string, AttributeValue> {{nameof(StringSetClass.StringSet), new AttributeValue {SS = new List<string> {"1", "2", "3"}}}})
             .Should()
             .BeOfType<StringSetClass>()

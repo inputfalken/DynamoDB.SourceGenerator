@@ -1,7 +1,7 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBMarshallert(typeof(StringSetClass))]
-[DynamoDBMarshallert(typeof(Int32SetClass))]
+[DynamoDBMarshaller(typeof(StringSetClass))]
+[DynamoDBMarshaller(typeof(Int32SetClass))]
 public partial class SetTests
 {
 
@@ -13,7 +13,7 @@ public partial class SetTests
             IntSet = new HashSet<int>()
         };
 
-        Int32SetClassDocument
+        Int32SetClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -28,7 +28,7 @@ public partial class SetTests
             StringSet = new HashSet<string>()
         };
 
-        StringSetClassDocument
+        StringSetClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -44,7 +44,7 @@ public partial class SetTests
             IntSet = new HashSet<int>(new[] {1, 2, 3})
         };
 
-        Int32SetClassDocument
+        Int32SetClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
@@ -68,7 +68,7 @@ public partial class SetTests
             IntSet = null
         };
 
-        Int32SetClassDocument
+        Int32SetClassMarshaller
             .Serialize(@class)
             .Should()
             .BeEmpty();
@@ -82,7 +82,7 @@ public partial class SetTests
             StringSet = null
         };
 
-        StringSetClassDocument
+        StringSetClassMarshaller
             .Serialize(@class)
             .Should()
             .BeEmpty();
@@ -96,7 +96,7 @@ public partial class SetTests
             StringSet = new HashSet<string>(new[] {"1", "2", "3"})
         };
 
-        StringSetClassDocument
+        StringSetClassMarshaller
             .Serialize(@class)
             .Should()
             .NotBeEmpty()
