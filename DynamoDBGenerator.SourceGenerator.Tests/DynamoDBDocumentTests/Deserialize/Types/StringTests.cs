@@ -1,14 +1,14 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Types;
 
-[DynamoDBDocument(typeof(StringClass))]
+[DynamoDBMarshaller(typeof(StringClass))]
 public partial class StringTests
 {
     [Fact]
     public void Serialize_StringProperty_Included()
     {
-        StringClassDocument
-            .Deserialize(new Dictionary<string, AttributeValue>()
+        StringClassMarshaller
+            .Unmarshall(new Dictionary<string, AttributeValue>()
             {
                 {nameof(StringClass.Name), new AttributeValue {S = "John Doe"}}
             })

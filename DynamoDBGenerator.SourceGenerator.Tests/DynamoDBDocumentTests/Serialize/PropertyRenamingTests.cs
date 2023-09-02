@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
-[DynamoDBDocument(typeof(PropertyWithMixedNames))]
+[DynamoDBMarshaller(typeof(PropertyWithMixedNames))]
 public partial class PropertyRenamingTests
 {
     [Fact]
@@ -17,8 +17,8 @@ public partial class PropertyRenamingTests
             PropertyWithDdbRangeKeyAttributeWithOverridenName = "7"
         };
 
-        PropertyWithMixedNamesDocument
-            .Serialize(@class)
+        PropertyWithMixedNamesMarshaller
+            .Marshall(@class)
             .Should()
             .SatisfyRespectively(
                 x =>

@@ -1,9 +1,9 @@
 using System;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
-[DynamoDBDocument(typeof(NullableAnnotationTests))]
-[DynamoDBDocument(typeof(NestedNullableAnnotationTestClass))]
-[DynamoDBDocument(typeof(NullableAnnotationTestClass))]
+[DynamoDBMarshaller(typeof(NullableAnnotationTests))]
+[DynamoDBMarshaller(typeof(NestedNullableAnnotationTestClass))]
+[DynamoDBMarshaller(typeof(NullableAnnotationTestClass))]
 public partial class NullableAnnotationTests
 {
 
@@ -24,7 +24,7 @@ public partial class NullableAnnotationTests
             EnabledNoneNullableReferenceType = (1, enabledNoneNullableReferenceType)
         };
 
-        var result = () => NestedNullableAnnotationTestClassDocument.Serialize(@class);
+        var result = () => NestedNullableAnnotationTestClassMarshaller.Marshall(@class);
 
         result.Should().NotThrow();
     }
@@ -45,7 +45,7 @@ public partial class NullableAnnotationTests
             EnabledNoneNullableReferenceType = (1, enabledNoneNullableReferenceType)
         };
 
-        var result = () => NestedNullableAnnotationTestClassDocument.Serialize(@class);
+        var result = () => NestedNullableAnnotationTestClassMarshaller.Marshall(@class);
 
         result.Should()
             .ThrowExactly<ArgumentNullException>()
@@ -76,7 +76,7 @@ public partial class NullableAnnotationTests
             EnabledNoneNullableReferenceType = enabledNoneNullableReferenceType
         };
 
-        var result = () => NullableAnnotationTestClassDocument.Serialize(@class);
+        var result = () => NullableAnnotationTestClassMarshaller.Marshall(@class);
 
         if (shouldThrow)
             result.Should()

@@ -1,16 +1,16 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Types;
 
-[DynamoDBDocument(typeof(DecimalClass))]
-[DynamoDBDocument(typeof(DoubleClass))]
-[DynamoDBDocument(typeof(FloatClass))]
-[DynamoDBDocument(typeof(Int16Class))]
-[DynamoDBDocument(typeof(Int32Class))]
-[DynamoDBDocument(typeof(Int64Class))]
-[DynamoDBDocument(typeof(Int8Class))]
-[DynamoDBDocument(typeof(UInt16Class))]
-[DynamoDBDocument(typeof(UInt32Class))]
-[DynamoDBDocument(typeof(UInt64Class))]
-[DynamoDBDocument(typeof(UInt8Class))]
+[DynamoDBMarshaller(typeof(DecimalClass))]
+[DynamoDBMarshaller(typeof(DoubleClass))]
+[DynamoDBMarshaller(typeof(FloatClass))]
+[DynamoDBMarshaller(typeof(Int16Class))]
+[DynamoDBMarshaller(typeof(Int32Class))]
+[DynamoDBMarshaller(typeof(Int64Class))]
+[DynamoDBMarshaller(typeof(Int8Class))]
+[DynamoDBMarshaller(typeof(UInt16Class))]
+[DynamoDBMarshaller(typeof(UInt32Class))]
+[DynamoDBMarshaller(typeof(UInt64Class))]
+[DynamoDBMarshaller(typeof(UInt8Class))]
 public partial class NumberTests
 {
 
@@ -23,8 +23,8 @@ public partial class NumberTests
             Count = count
         };
 
-        DecimalClassDocument
-            .Serialize(@class)
+        DecimalClassMarshaller
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -42,8 +42,8 @@ public partial class NumberTests
             Count = count
         };
 
-        DoubleClassDocument
-            .Serialize(@class)
+        DoubleClassMarshaller
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -61,8 +61,8 @@ public partial class NumberTests
             Count = count
         };
 
-        FloatClassDocument
-            .Serialize(@class)
+        FloatClassMarshaller
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -80,8 +80,8 @@ public partial class NumberTests
             Count = count
         };
 
-        Int64ClassDocument
-            .Serialize(@class)
+        Int64ClassMarshaller
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -99,8 +99,8 @@ public partial class NumberTests
             Count = count
         };
 
-        Int16ClassDocument
-            .Serialize(@class)
+        Int16ClassMarshaller
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -118,8 +118,8 @@ public partial class NumberTests
             Count = count
         };
 
-        Int32ClassDocument
-            .Serialize(@class)
+        Int32ClassMarshaller
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -137,8 +137,8 @@ public partial class NumberTests
             Count = count
         };
 
-        Int8ClassDocument
-            .Serialize(@class)
+        Int8ClassMarshaller
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -156,8 +156,8 @@ public partial class NumberTests
             Count = count
         };
 
-        UInt64ClassDocument
-            .Serialize(@class)
+        UInt64ClassMarshaller
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -175,8 +175,8 @@ public partial class NumberTests
             Count = count
         };
 
-        UInt16ClassDocument
-            .Serialize(@class)
+        UInt16ClassMarshaller
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -194,8 +194,8 @@ public partial class NumberTests
             Count = count
         };
 
-        UInt32ClassDocument
-            .Serialize(@class)
+        UInt32ClassMarshaller
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -212,8 +212,8 @@ public partial class NumberTests
             Count = count
         };
 
-        UInt8ClassDocument
-            .Serialize(@class)
+        UInt8ClassMarshaller
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And

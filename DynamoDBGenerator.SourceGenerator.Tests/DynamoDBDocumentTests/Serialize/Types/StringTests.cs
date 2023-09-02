@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Types;
 
-[DynamoDBDocument(typeof(StringClass))]
+[DynamoDBMarshaller(typeof(StringClass))]
 public partial class StringTests
 {
     [Fact]
@@ -12,8 +12,8 @@ public partial class StringTests
             Name = johnDoe
         };
 
-        StringClassDocument
-            .Serialize(@class)
+        StringClassMarshaller
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And

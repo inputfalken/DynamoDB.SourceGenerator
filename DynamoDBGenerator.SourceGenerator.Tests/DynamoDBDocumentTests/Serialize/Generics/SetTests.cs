@@ -1,7 +1,7 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBDocument(typeof(StringSetClass))]
-[DynamoDBDocument(typeof(Int32SetClass))]
+[DynamoDBMarshaller(typeof(StringSetClass))]
+[DynamoDBMarshaller(typeof(Int32SetClass))]
 public partial class SetTests
 {
 
@@ -13,8 +13,8 @@ public partial class SetTests
             IntSet = new HashSet<int>()
         };
 
-        Int32SetClassDocument
-            .Serialize(@class)
+        Int32SetClassMarshaller
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -28,8 +28,8 @@ public partial class SetTests
             StringSet = new HashSet<string>()
         };
 
-        StringSetClassDocument
-            .Serialize(@class)
+        StringSetClassMarshaller
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -44,8 +44,8 @@ public partial class SetTests
             IntSet = new HashSet<int>(new[] {1, 2, 3})
         };
 
-        Int32SetClassDocument
-            .Serialize(@class)
+        Int32SetClassMarshaller
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And
@@ -68,8 +68,8 @@ public partial class SetTests
             IntSet = null
         };
 
-        Int32SetClassDocument
-            .Serialize(@class)
+        Int32SetClassMarshaller
+            .Marshall(@class)
             .Should()
             .BeEmpty();
     }
@@ -82,8 +82,8 @@ public partial class SetTests
             StringSet = null
         };
 
-        StringSetClassDocument
-            .Serialize(@class)
+        StringSetClassMarshaller
+            .Marshall(@class)
             .Should()
             .BeEmpty();
     }
@@ -96,8 +96,8 @@ public partial class SetTests
             StringSet = new HashSet<string>(new[] {"1", "2", "3"})
         };
 
-        StringSetClassDocument
-            .Serialize(@class)
+        StringSetClassMarshaller
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And

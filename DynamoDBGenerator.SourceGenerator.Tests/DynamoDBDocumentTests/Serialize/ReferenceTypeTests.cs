@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
-[DynamoDBDocument(typeof(ReferenceTypeClass))]
+[DynamoDBMarshaller(typeof(ReferenceTypeClass))]
 public partial class ReferenceTypeTests
 {
     [Fact]
@@ -8,8 +8,8 @@ public partial class ReferenceTypeTests
     {
         var @class = new ReferenceTypeClass();
 
-        ReferenceTypeClassDocument
-            .Serialize(@class)
+        ReferenceTypeClassMarshaller
+            .Marshall(@class)
             .Should()
             .BeEmpty();
     }

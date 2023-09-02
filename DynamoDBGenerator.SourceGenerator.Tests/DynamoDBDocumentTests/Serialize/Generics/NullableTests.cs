@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBDocument(typeof(NullableValueTypeClass))]
+[DynamoDBMarshaller(typeof(NullableValueTypeClass))]
 public partial class NullableTests
 {
     [Fact]
@@ -8,8 +8,8 @@ public partial class NullableTests
     {
         var @class = new NullableValueTypeClass();
 
-        NullableValueTypeClassDocument
-            .Serialize(@class)
+        NullableValueTypeClassMarshaller
+            .Marshall(@class)
             .Should()
             .BeEmpty();
     }
@@ -22,8 +22,8 @@ public partial class NullableTests
             ValueType = 1
         };
 
-        NullableValueTypeClassDocument
-            .Serialize(@class)
+        NullableValueTypeClassMarshaller
+            .Marshall(@class)
             .Should()
             .NotBeEmpty()
             .And

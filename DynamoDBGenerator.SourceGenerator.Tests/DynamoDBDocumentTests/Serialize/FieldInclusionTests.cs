@@ -1,9 +1,9 @@
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
-[DynamoDBDocument(typeof(EmptyClass))]
-[DynamoDBDocument(typeof(ClassWithIgnoredField))]
-[DynamoDBDocument(typeof(ClassWithOneField))]
-[DynamoDBDocument(typeof(ClassWithOneDDBField))]
+[DynamoDBMarshaller(typeof(EmptyClass))]
+[DynamoDBMarshaller(typeof(ClassWithIgnoredField))]
+[DynamoDBMarshaller(typeof(ClassWithOneField))]
+[DynamoDBMarshaller(typeof(ClassWithOneDDBField))]
 public partial class FieldInclusionTests
 {
 
@@ -12,8 +12,8 @@ public partial class FieldInclusionTests
     {
         var @class = new ClassWithOneDDBField {Id = "I should be included"};
 
-        ClassWithOneDDBFieldDocument
-            .Serialize(@class)
+        ClassWithOneDDBFieldMarshaller
+            .Marshall(@class)
             .Should()
             .ContainKey(nameof(ClassWithOneDDBField.Id));
     }
@@ -23,8 +23,8 @@ public partial class FieldInclusionTests
     {
         var @class = new ClassWithOneField {Id = "I should be included"};
 
-        ClassWithOneFieldDocument
-            .Serialize(@class)
+        ClassWithOneFieldMarshaller
+            .Marshall(@class)
             .Should()
             .ContainKey(nameof(ClassWithOneField.Id));
     }
@@ -35,8 +35,8 @@ public partial class FieldInclusionTests
         var @class = new ClassWithIgnoredField
             {Id = "I should not be exists in attribute values"};
 
-        ClassWithIgnoredFieldDocument
-            .Serialize(@class)
+        ClassWithIgnoredFieldMarshaller
+            .Marshall(@class)
             .Should()
             .BeEmpty();
     }
@@ -45,8 +45,8 @@ public partial class FieldInclusionTests
     {
         var @class = new EmptyClass();
 
-        EmptyClassDocument
-            .Serialize(@class)
+        EmptyClassMarshaller
+            .Marshall(@class)
             .Should()
             .BeEmpty();
     }

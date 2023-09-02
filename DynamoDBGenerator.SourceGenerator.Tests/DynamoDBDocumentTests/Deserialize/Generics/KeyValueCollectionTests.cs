@@ -1,15 +1,15 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Generics;
 
-[DynamoDBDocument(typeof(KeyValueCollectionClass))]
+[DynamoDBMarshaller(typeof(KeyValueCollectionClass))]
 public partial class KeyValueCollectionTests
 {
 
     [Fact]
     public void Deserialize_ICollection_ShouldBeListWithCorrectElements()
     {
-        KeyValueCollectionClassDocument
-            .Deserialize(new Dictionary<string, AttributeValue>
+        KeyValueCollectionClassMarshaller
+            .Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(KeyValueCollectionClass.CollectionInterface), new AttributeValue
@@ -48,8 +48,8 @@ public partial class KeyValueCollectionTests
     [Fact]
     public void Deserialize_IReadOnlyCollection_ShouldBeArrayWithCorrectElements()
     {
-        KeyValueCollectionClassDocument
-            .Deserialize(new Dictionary<string, AttributeValue>
+        KeyValueCollectionClassMarshaller
+            .Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(KeyValueCollectionClass.ReadOnlyCollectionInterface), new AttributeValue
@@ -88,8 +88,8 @@ public partial class KeyValueCollectionTests
     [Fact]
     public void Deserialize_IList_ShouldBeListWithCorrectElements()
     {
-        KeyValueCollectionClassDocument
-            .Deserialize(new Dictionary<string, AttributeValue>
+        KeyValueCollectionClassMarshaller
+            .Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(KeyValueCollectionClass.ListInterface), new AttributeValue
@@ -128,8 +128,8 @@ public partial class KeyValueCollectionTests
     [Fact]
     public void Deserialize_IReadOnlyList_ShouldBeArrayWithCorrectElements()
     {
-        KeyValueCollectionClassDocument
-            .Deserialize(new Dictionary<string, AttributeValue>
+        KeyValueCollectionClassMarshaller
+            .Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(KeyValueCollectionClass.ReadOnlyListInterface), new AttributeValue
@@ -168,8 +168,8 @@ public partial class KeyValueCollectionTests
     [Fact]
     public void Deserialize_List_ShouldBeListWithCorrectElements()
     {
-        KeyValueCollectionClassDocument
-            .Deserialize(new Dictionary<string, AttributeValue>
+        KeyValueCollectionClassMarshaller
+            .Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(KeyValueCollectionClass.List), new AttributeValue
@@ -208,8 +208,8 @@ public partial class KeyValueCollectionTests
     [Fact]
     public void Deserialize_Array_ShouldBeArrayWithCorrectElements()
     {
-        KeyValueCollectionClassDocument
-            .Deserialize(new Dictionary<string, AttributeValue>
+        KeyValueCollectionClassMarshaller
+            .Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(KeyValueCollectionClass.Array), new AttributeValue
@@ -248,8 +248,8 @@ public partial class KeyValueCollectionTests
     [Fact]
     public void Deserialize_IEnumerable_ShouldContainCorrectValues()
     {
-        KeyValueCollectionClassDocument
-            .Deserialize(new Dictionary<string, AttributeValue>
+        KeyValueCollectionClassMarshaller
+            .Unmarshall(new Dictionary<string, AttributeValue>
             {
                 {
                     nameof(KeyValueCollectionClass.EnumerableInterface), new AttributeValue

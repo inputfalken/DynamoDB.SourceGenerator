@@ -1,17 +1,17 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize;
 
-[DynamoDBDocument(typeof(ConstructorOnlyClass))]
-[DynamoDBDocument(typeof(ObjectInitializerOnlyClass))]
-[DynamoDBDocument(typeof(ObjectInitializerMixedWithConstructorClass))]
-[DynamoDBDocument(typeof(ConstructorClassWithMixedName))]
+[DynamoDBMarshaller(typeof(ConstructorOnlyClass))]
+[DynamoDBMarshaller(typeof(ObjectInitializerOnlyClass))]
+[DynamoDBMarshaller(typeof(ObjectInitializerMixedWithConstructorClass))]
+[DynamoDBMarshaller(typeof(ConstructorClassWithMixedName))]
 public partial class InitializationTests
 {
 
     [Fact]
     public void ConstructorOnlyClass_CanBe_Deserialized()
     {
-        var deserializeClass = ConstructorOnlyClassDocument.Deserialize(
+        var deserializeClass = ConstructorOnlyClassMarshaller.Unmarshall(
             new Dictionary<string, AttributeValue>
             {
                 {
@@ -28,8 +28,8 @@ public partial class InitializationTests
     public void ObjectInitializerOnlyClass_CanBe_Deserialized()
     {
         var @class = new ObjectInitializerOnlyClass {Prop2 = "Hello"};
-        var serializedClass = ObjectInitializerOnlyClassDocument.Serialize(@class);
-        var deserializeClass = ObjectInitializerOnlyClassDocument.Deserialize(serializedClass);
+        var serializedClass = ObjectInitializerOnlyClassMarshaller.Marshall(@class);
+        var deserializeClass = ObjectInitializerOnlyClassMarshaller.Unmarshall(serializedClass);
 
         deserializeClass.Should().NotBeNull();
         deserializeClass.Prop2.Should().Be(@class.Prop2);
@@ -38,7 +38,7 @@ public partial class InitializationTests
     [Fact]
     public void ObjectInitializerMixedWithConstructorClass_CanBe_Deserialized()
     {
-        var deserializeClass = ObjectInitializerMixedWithConstructorClassDocument.Deserialize(new Dictionary<string, AttributeValue>
+        var deserializeClass = ObjectInitializerMixedWithConstructorClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
             {"Prop3", new AttributeValue {S = "Hello"}},
             {"Prop4", new AttributeValue {S = "Hello2"}}
@@ -53,7 +53,7 @@ public partial class InitializationTests
     [Fact]
     public void ConstructorClassWithMixedName_UnableToFindCorrespondingDataMember_ShouldThrow()
     {
-        var act = () => ConstructorClassWithMixedNameDocument.Deserialize(new Dictionary<string, AttributeValue>
+        var act = () => ConstructorClassWithMixedNameMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
             {"SomethingElse", new AttributeValue {S = "Hello"}}
         });

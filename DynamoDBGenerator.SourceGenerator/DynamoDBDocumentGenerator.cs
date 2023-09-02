@@ -43,10 +43,16 @@ public class DynamoDBDocumentGenerator : IIncrementalGenerator
         }
     }
 
-
+    
     private static IEnumerable<string> GetMethods(ISymbol typeSymbol, Compilation compilation)
+    
     {
-        DynamoDBDocumentArguments? ResultSelector(AttributeData attributeData)
+        // If we can find duplicated types, we could access their properties instead of duplicating the source generator. 
+        // For example :
+        // [DynamoDBDocument(typeof(Person))]
+        // [DynamoDBDocument(typeof(Person), ArgumentType = typeof(ChangeName))]
+        // With this scenario we would be able to use the Person type from the second attribute instead of source generating duplicated code.
+        DynamoDBMarshallerArguments? ResultSelector(AttributeData attributeData)
         {
             var entityType = attributeData.ConstructorArguments
                 .FirstOrDefault(x => x is {Kind: TypedConstantKind.Type, Value: not null});
@@ -58,20 +64,27 @@ public class DynamoDBDocumentGenerator : IIncrementalGenerator
             if (compiledTypeSymbol is null)
                 return null;
 
-            var propertyName = attributeData.NamedArguments.FirstOrDefault(x => x.Key is nameof(DynamoDBDocumentAttribute.PropertyName)).Value;
-            var argumentType = attributeData.NamedArguments.FirstOrDefault(x => x.Key is nameof(DynamoDBDocumentAttribute.ArgumentType)).Value;
+            var propertyName = attributeData.NamedArguments.FirstOrDefault(x => x.Key is nameof(DynamoDBMarshallerAttribute.PropertyName)).Value;
+            var argumentType = attributeData.NamedArguments.FirstOrDefault(x => x.Key is nameof(DynamoDBMarshallerAttribute.ArgumentType)).Value;
 
-            return new DynamoDBDocumentArguments(
+            // When a `ValueTuple` arrives we get the following format `(T name, T2 otherName)` for example `(string name, int age)`
+            // To support this would be tricky but possible.
+            // We could produce and compile a custom type, take the tuple string and use it as the constructor arguments.
+            // like `private readonly record struct {SomeString} ({tupleString})` for example `private readonly record struct 5604E01E_9058_4A53_BCC4_B5A0FC1038F9(string name, int age)`;
+            // We would publicly accept the ValueTuple and internally build up conversion from compiled type.
+            return new DynamoDBMarshallerArguments(
                 compiledTypeSymbol,
-                propertyName.Value?.ToString() ?? $"{compiledTypeSymbol.Name}Document",
-                argumentType is {IsNull: false, Value: not null} ? compilation.GetBestTypeByMetadataName(argumentType.Value.ToString()) : null
+                propertyName.Value?.ToString() ?? $"{compiledTypeSymbol.Name}Marshaller",
+                argumentType is {IsNull: false, Value: not null}
+                    ? compilation.GetBestTypeByMetadataName(argumentType.Value.ToString()) ?? compiledTypeSymbol
+                    : compiledTypeSymbol
             );
         }
 
         var arguments = typeSymbol
             .GetAttributes()
             .Where(x => x.AttributeClass?.ContainingNamespace is {Name: nameof(DynamoDBGenerator)})
-            .Where(x => x.AttributeClass!.Name is nameof(DynamoDBDocumentAttribute))
+            .Where(x => x.AttributeClass!.Name is nameof(DynamoDBMarshallerAttribute))
             .Select(ResultSelector);
 
         foreach (var argument in arguments)
@@ -79,22 +92,22 @@ public class DynamoDBDocumentGenerator : IIncrementalGenerator
             if (argument is null)
                 continue;
 
-            yield return new DynamoDbDocumentGenerator(argument.Value, SymbolEqualityComparer.IncludeNullability).CreateDynamoDbDocumentProperty(Accessibility.Public);
+            yield return new DynamoDbMarshaller(argument.Value, SymbolEqualityComparer.IncludeNullability).CreateDynamoDbDocumentProperty(Accessibility.Public);
         }
     }
 
 
 }
 
-public readonly struct DynamoDBDocumentArguments
+public readonly struct DynamoDBMarshallerArguments
 {
-    public DynamoDBDocumentArguments(INamedTypeSymbol entityTypeSymbol, string propertyName, INamedTypeSymbol? argumentType)
+    public DynamoDBMarshallerArguments(INamedTypeSymbol entityTypeSymbol, string propertyName, INamedTypeSymbol argumentType)
     {
         EntityTypeSymbol = entityTypeSymbol;
         PropertyName = propertyName;
         ArgumentType = argumentType;
     }
     public INamedTypeSymbol EntityTypeSymbol { get; }
-    public INamedTypeSymbol? ArgumentType { get; }
+    public INamedTypeSymbol ArgumentType { get; }
     public string PropertyName { get; }
 }
