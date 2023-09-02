@@ -100,14 +100,17 @@ internal static class Program
 {
     public static void Main()
     {
-        var repository = new();
-        var putItemRequest = repository.PersonDocument.ToPutItemRequest(new Person());
-        ...
+        Repository repository = new Repository();
+        PutItemRequest putItemRequest = repository.PersonMarshaller.ToPutItemRequest(new Person(), "TABLENAME");
     }
 }
 
 public class Person
 {
+    // Will be included as 'PK' in DynamoDB.
+    [DynamoDBHashKey("PK")]
+    public string Id { get; set; }
+    
     // Will be included as 'Firstname' in DynamoDB.
     public string Firstname { get; set; }
     
@@ -121,13 +124,15 @@ public class Person
 
     public class Contact
     {
+        // Will be included as 'Email' in DynamoDB.
         public string Email { get; set;}
     }
 }
-// This DynamoDBDocumentAttribute is what will casuse the source generation to kick in.
-// The type provided to the DynamoDBDocumentAttribute is what will get functionality. 
-// It is possible to provide multiple DynamoDBDocumentAttributes in order to have multiple types source generated.
-[DynamoDBDocument(typeof(Person))]
+
+// This DynamoDBMarshallerAttribute is what will casuse the source generation to kick in.
+// The type provided to the DynamoDBMarshallerAttribute is what will get functionality. 
+// It is possible to provide multiple DynamoDBMarshallerAttributes in order to have multiple types source generated.
+[DynamoDBMarshaller(typeof(Person), PropertyName = "PersonMarshaller")]
 public partial class Repository { }
 ```
 
@@ -138,4 +143,4 @@ There's no NuGet package available yet, In order to try it right now would be to
 ## Project structure
 
 The `DynamoDBGenerator.SourceGenerator` assembly is responsible for doing the heavy lifting by generating the building blocks for the `DynamoDBGenerator` assembly to extend with convenient functionality.
-Such as the [ToPutItemRequest](https://github.com/inputfalken/DynamoDB.SourceGenerator/blob/main/DynamoDBGenerator/Extensions/IDynamoDbDocumentExtensions.cs#L10) extension method.
+Such as the [ToPutItemRequest](https://github.com/inputfalken/DynamoDB.SourceGenerator/blob/main/DynamoDBGenerator/Extensions/DynamoDBMarshallerExtensions.cs) extension method.
