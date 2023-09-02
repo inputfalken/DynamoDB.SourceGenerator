@@ -22,7 +22,6 @@ internal static class Program
 }
 
 [DynamoDBDocument(typeof(PersonEntity))]
-[DynamoDBDocument(typeof(Address))]
 public partial class Repository
 {
 }

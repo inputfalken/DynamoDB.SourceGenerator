@@ -43,9 +43,15 @@ public class DynamoDBDocumentGenerator : IIncrementalGenerator
         }
     }
 
-
+    
     private static IEnumerable<string> GetMethods(ISymbol typeSymbol, Compilation compilation)
+    
     {
+        // If we can find duplicated types, we could access their properties instead of duplicating the source generator. 
+        // For example :
+        // [DynamoDBDocument(typeof(Person))]
+        // [DynamoDBDocument(typeof(Person), ArgumentType = typeof(ChangeName))]
+        // With this scenario we would be able to use the Person type from the second attribute instead of source generating duplicated code.
         DynamoDBDocumentArguments? ResultSelector(AttributeData attributeData)
         {
             var entityType = attributeData.ConstructorArguments
