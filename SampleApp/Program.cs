@@ -75,7 +75,6 @@ public class Marshalling
     [Benchmark]
     public PutItemRequest PutBySourceGeneration()
     {
-        _repository.PersonEntityMarshaller.ToUpdateItemRequest(new PersonEntity(), "", (x, y) => x.Keys(y.Id, y.Lastname), (x, y) => "");
         return _repository.PersonEntityMarshaller.ToPutItemRequest(_singleElement,  ReturnValue.NONE, "TABLE");
     }
 

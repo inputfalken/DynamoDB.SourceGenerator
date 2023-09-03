@@ -436,7 +436,6 @@ public class DynamoDbMarshaller
         var properties = GetAssignments(partitionKeyReference, rangeKeyReference, type).ToArray();
 
         const string indent = "                ";
-
         var body = properties.Length is 0
             ? @$"throw new InvalidOperationException(""Could not create keys for type '{type.Name}', include DynamoDBKeyAttribute on the correct properties."");"
             : @$"{InitializeDictionary(dictionaryName, properties.Select(static x => x.capacityTernary))}
@@ -463,9 +462,9 @@ public class DynamoDbMarshaller
 
                 string accessPattern;
                 if (x.IsHashKey)
-                    accessPattern = range;
-                else if (x.IsRangeKey)
                     accessPattern = partition;
+                else if (x.IsRangeKey)
+                    accessPattern = range;
                 else
                     continue;
 
