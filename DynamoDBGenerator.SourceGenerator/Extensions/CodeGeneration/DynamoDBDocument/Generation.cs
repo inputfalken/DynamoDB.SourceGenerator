@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
@@ -432,12 +436,16 @@ public class DynamoDbMarshaller
         var properties = GetAssignments(partitionKeyReference, rangeKeyReference, type).ToArray();
 
         const string indent = "                ";
+
+        var body = properties.Length is 0
+            ? @$"throw new InvalidOperationException(""Could not create keys for type '{type.Name}', include DynamoDBKeyAttribute on the correct properties."");"
+            : @$"{InitializeDictionary(dictionaryName, properties.Select(static x => x.capacityTernary))}
+                {string.Join(Constants.NewLine + indent, properties.Select(static x => x.dictionaryPopulation))}
+                return {dictionaryName};";
         var method =
             @$"            public static Dictionary<string, AttributeValue> {_keysMethodNameFactory(type)}(object? {partitionKeyReference}, object? {rangeKeyReference})
             {{
-                {InitializeDictionary(dictionaryName, properties.Select(static x => x.capacityTernary))}
-                {string.Join(Constants.NewLine + indent, properties.Select(static x => x.dictionaryPopulation))}
-                return {dictionaryName};
+                {body}
             }}";
 
         return method;
@@ -448,9 +456,7 @@ public class DynamoDbMarshaller
             INamespaceOrTypeSymbol typeSymbol
         )
         {
-            var keys = typeSymbol.GetDynamoDbProperties().Where(static x => x.IsHashKey || x.IsRangeKey);
-
-            foreach (var x in keys)
+            foreach (var x in typeSymbol.GetDynamoDbProperties())
             {
                 if (x.IsIgnored)
                     continue;
@@ -463,21 +469,19 @@ public class DynamoDbMarshaller
                 else
                     continue;
 
-                var reference = $"converted{(x.IsHashKey ? "hashKey" : "rangeKey")}";
-                //x.DataMember.Type.IsValueType
+                var reference = $"converted{x.AttributeName}";
                 var declaration = $"var {reference} = {accessPattern} as {(x.DataMember.Type.IsValueType ? $"{_fullTypeNameFactory(x.DataMember.Type)}?" : _fullTypeNameFactory(x.DataMember.Type))};";
+                var attributeConversion = AttributeValueAssignment(x.DataMember.Type, reference);
 
-                var attributeValue = AttributeValueAssignment(x.DataMember.Type, reference);
-
-                var dictionaryAssignment = x.DataMember.Type.NotNullIfStatement(
+                var assignment = x.DataMember.Type.NotNullIfStatement(
                     in reference,
-                    @$"{dictionaryName}.Add(""{x.AttributeName}"", {attributeValue.ToAttributeValue()});"
+                    @$"{dictionaryName}.Add(""{x.AttributeName}"", {attributeConversion.ToAttributeValue()});"
                 );
 
                 var capacityTernaries = x.DataMember.Type.NotNullTernaryExpression(in accessPattern, "1", "0");
 
                 yield return ($@"{declaration}
-                {dictionaryAssignment}", capacityTernaries, attributeValue);
+                {assignment}", capacityTernaries, attributeConversion);
             }
         }
 
