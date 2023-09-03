@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
@@ -22,6 +23,7 @@ public static class DynamoDBMarshallerExtensions
         this IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> item,
         TArg argument,
         string tableName,
+        Func<IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences>, TArg, Dictionary<string, AttributeValue>> keySelector,
         Func<TReferences, TArgumentReferences, string> updateExpressionBuilder,
         Func<TReferences, TArgumentReferences, string>? conditionExpressionBuilder = null
     )
@@ -36,6 +38,7 @@ public static class DynamoDBMarshallerExtensions
 
         return new UpdateItemRequest
         {
+            Key = keySelector(item, argument),
             TableName = tableName,
             ExpressionAttributeNames = nameTracker.AccessedNames().ToDictionary(x => x.Key, x => x.Value),
             ExpressionAttributeValues = argumentTracker.AccessedValues(argument).ToDictionary(x => x.Key, x => x.Value),

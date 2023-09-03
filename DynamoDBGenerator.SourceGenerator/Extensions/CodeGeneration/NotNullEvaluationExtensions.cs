@@ -52,7 +52,6 @@ public static class NotNullEvaluationExtensions
             NullableAnnotation.Annotated => ifClause,
             _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
         };
-
     }
 
     /// <summary>

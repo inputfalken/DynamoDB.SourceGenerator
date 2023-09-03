@@ -8,6 +8,8 @@ public class DynamoDbMarshaller
     private const string DeserializeName = "Unmarshall";
     private const string InterfaceName = "IDynamoDBMarshaller";
     private const string KeysName = "Keys";
+    private const string PartitionKeyName = "PartitionKey";
+    private const string RangeKeyName = "RangeKey";
     private const string ValueTrackerName = "AttributeExpressionValueTracker";
     private const string NameTrackerName = "AttributeNameExpressionTracker";
     private const string SerializeName = "Marshall";
@@ -15,6 +17,7 @@ public class DynamoDbMarshaller
     private readonly Func<ITypeSymbol, string> _deserializationMethodNameFactory;
     private readonly Func<ITypeSymbol, string> _fullTypeNameFactory;
     private readonly Func<ITypeSymbol, string> _serializationMethodNameFactory;
+    private readonly Func<ITypeSymbol, string> _keysMethodNameFactory;
     private readonly Func<ITypeSymbol, string> _attributeNameAssignmentNameFactory;
     private readonly Func<ITypeSymbol, string> _attributeValueAssignmentNameFactory;
     private readonly INamedTypeSymbol _entityTypeSymbol;
@@ -27,6 +30,7 @@ public class DynamoDbMarshaller
         _argumentTypeSymbol = (INamedTypeSymbol)arguments.ArgumentType.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
         _publicAccessPropertyName = arguments.PropertyName;
         _serializationMethodNameFactory = TypeExtensions.TypeSymbolStringCache("Ser", comparer);
+        _keysMethodNameFactory = TypeExtensions.TypeSymbolStringCache("Keys", comparer);
         _deserializationMethodNameFactory = TypeExtensions.TypeSymbolStringCache("Des", comparer);
         _attributeNameAssignmentNameFactory = TypeExtensions.TypeSymbolStringCache("Name", comparer);
         _attributeValueAssignmentNameFactory = TypeExtensions.TypeSymbolStringCache("Value", comparer);
@@ -168,9 +172,8 @@ public class DynamoDbMarshaller
         var className = $"{_publicAccessPropertyName}Implementation";
         var (marshalMethods, supported) = CreateAttributeValueFactory(_entityTypeSymbol, KeyStrategy.Include);
         var (argumentMarshallMethods, _) = CreateAttributeValueFactory(_argumentTypeSymbol, KeyStrategy.Include, supported);
-        
-        var (keysMethod, _) = CreateAttributeValueFactory(_entityTypeSymbol, KeyStrategy.Only);
-        var keysClass = CodeGenerationExtensions.CreateClass(Accessibility.Private, "KeysClass", keysMethod, 2);
+        var keysMethod = StaticAttributeValueDictionaryKeys(_entityTypeSymbol, "partition", "range");
+
         var unMarshalMethods = CreateAttributePocoFactory();
 
         var rootTypeName = _fullTypeNameFactory(_entityTypeSymbol);
@@ -179,7 +182,9 @@ public class DynamoDbMarshaller
         var implementInterface =
             $@"public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({rootTypeName} entity) => {_serializationMethodNameFactory(_entityTypeSymbol)}(entity);
             public {rootTypeName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => {_deserializationMethodNameFactory(_entityTypeSymbol)}(entity);
-            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {KeysName}({rootTypeName} entity) => KeysClass.{_serializationMethodNameFactory(_entityTypeSymbol)}(entity);
+            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {KeysName}(object partitionKey, object rangeKey) => {_keysMethodNameFactory(_entityTypeSymbol)}(partitionKey, rangeKey);
+            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {RangeKeyName}(object rangeKey) => {_keysMethodNameFactory(_entityTypeSymbol)}(null, rangeKey);
+            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {PartitionKeyName}(object partitionKey) => {_keysMethodNameFactory(_entityTypeSymbol)}(partitionKey, null);
             public {className}.{valueTrackerTypeName} {ValueTrackerName}()
             {{
                 var number = 0;
@@ -192,7 +197,7 @@ public class DynamoDbMarshaller
             }}
 {marshalMethods}
 {argumentMarshallMethods}
-{keysClass}
+{keysMethod}
 {unMarshalMethods}";
 
         var sourceGeneratedCode = string.Join(Constants.NewLine, referenceTrackers.Prepend(implementInterface));
@@ -204,7 +209,8 @@ public class DynamoDbMarshaller
             2
         );
 
-        return $@"{accessibility.ToCode()} {InterfaceName}<{_entityTypeSymbol.Name}, {_argumentTypeSymbol.Name}, {className}.{nameTrackerTypeName}, {className}.{valueTrackerTypeName}> {_publicAccessPropertyName} {{ get; }} = new {className}();
+        return
+            $@"{accessibility.ToCode()} {InterfaceName}<{_entityTypeSymbol.Name}, {_argumentTypeSymbol.Name}, {className}.{nameTrackerTypeName}, {className}.{valueTrackerTypeName}> {_publicAccessPropertyName} {{ get; }} = new {className}();
         {@class}";
     }
 
@@ -416,6 +422,76 @@ public class DynamoDbMarshaller
         return new Conversion(@class, fieldAssignments.Where(x => x.HasExternalDependency));
 
         string AttributeInterfaceName() => nameof(IExpressionAttributeNameTracker);
+    }
+    private string StaticAttributeValueDictionaryKeys(
+        ITypeSymbol type,
+        string partitionKeyReference,
+        string rangeKeyReference)
+    {
+        const string dictionaryName = "attributeValues";
+        var properties = GetAssignments(partitionKeyReference, rangeKeyReference, type).ToArray();
+
+        const string indent = "                ";
+        var method =
+            @$"            public static Dictionary<string, AttributeValue> {_keysMethodNameFactory(type)}(object? {partitionKeyReference}, object? {rangeKeyReference})
+            {{
+                {InitializeDictionary(dictionaryName, properties.Select(static x => x.capacityTernary))}
+                {string.Join(Constants.NewLine + indent, properties.Select(static x => x.dictionaryPopulation))}
+                return {dictionaryName};
+            }}";
+
+        return method;
+
+        IEnumerable<(string dictionaryPopulation, string capacityTernary, Assignment assignment)> GetAssignments(
+            string partition,
+            string range,
+            INamespaceOrTypeSymbol typeSymbol
+        )
+        {
+            var keys = typeSymbol.GetDynamoDbProperties().Where(static x => x.IsHashKey || x.IsRangeKey);
+
+            foreach (var x in keys)
+            {
+                if (x.IsIgnored)
+                    continue;
+
+                string accessPattern;
+                if (x.IsHashKey)
+                    accessPattern = range;
+                else if (x.IsRangeKey)
+                    accessPattern = partition;
+                else
+                    continue;
+
+                var reference = $"converted{(x.IsHashKey ? "hashKey" : "rangeKey")}";
+                //x.DataMember.Type.IsValueType
+                var declaration = $"var {reference} = {accessPattern} as {(x.DataMember.Type.IsValueType ? $"{_fullTypeNameFactory(x.DataMember.Type)}?" : _fullTypeNameFactory(x.DataMember.Type))};";
+
+                var attributeValue = AttributeValueAssignment(x.DataMember.Type, reference);
+
+                var dictionaryAssignment = x.DataMember.Type.NotNullIfStatement(
+                    in reference,
+                    @$"{dictionaryName}.Add(""{x.AttributeName}"", {attributeValue.ToAttributeValue()});"
+                );
+
+                var capacityTernaries = x.DataMember.Type.NotNullTernaryExpression(in accessPattern, "1", "0");
+
+                yield return ($@"{declaration}
+                {dictionaryAssignment}", capacityTernaries, attributeValue);
+            }
+        }
+
+        static string InitializeDictionary(string dictionaryName, IEnumerable<string> capacityCalculations)
+        {
+            var capacityCalculation = string.Join(" + ", capacityCalculations);
+
+            return string.Join(" + ", capacityCalculation)switch
+            {
+                "" => $"var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: 0);",
+                var capacities => $@"var capacity = {capacities};
+                var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: capacity);"
+            };
+        }
     }
     private Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type, KeyStrategy keyStrategy)
     {

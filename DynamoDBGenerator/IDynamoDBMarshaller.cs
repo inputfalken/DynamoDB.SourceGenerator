@@ -10,7 +10,9 @@ public interface IDynamoDBMarshaller<TEntity, in TArg, out TEntityAttributeNameT
     /// <summary>
     /// Creates <see cref="Dictionary{TKey,TValue}"/> from the fields attributed with <see cref="DynamoDBHashKeyAttribute"/> and <see cref="DynamoDBRangeKeyAttribute"/> from <see cref="TEntity"/>.
     /// </summary>
-    public Dictionary<string, AttributeValue> Keys(TEntity entity);
+    public Dictionary<string, AttributeValue> Keys(object partitionKey, object rangeKey);
+    public Dictionary<string, AttributeValue> PartitionKey(object key);
+    public Dictionary<string, AttributeValue> RangeKey(object key);
 
     /// <summary>
     ///  Serializes the <typeparamref name="TEntity"/> into AttributeValues.
