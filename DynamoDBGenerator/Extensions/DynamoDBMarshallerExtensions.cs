@@ -17,7 +17,7 @@ public static class DynamoDBMarshallerExtensions
     public static UpdateItemRequest ToUpdateItemRequest<T, TArg, TReferences, TArgumentReferences>(
         this IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> item,
         TArg argument,
-        Func<IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences>, TArg, Dictionary<string, AttributeValue>> keySelector,
+        Func<IDynamoDBKeyMarshaller, TArg, Dictionary<string, AttributeValue>> keySelector,
         Func<TReferences, TArgumentReferences, string> updateExpressionBuilder,
         ReturnValue returnValue,
         string tableName
@@ -28,7 +28,7 @@ public static class DynamoDBMarshallerExtensions
     public static UpdateItemRequest ToUpdateItemRequest<T, TArg, TReferences, TArgumentReferences>(
         this IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> item,
         TArg argument,
-        Func<IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences>, TArg, Dictionary<string, AttributeValue>> keySelector,
+        Func<IDynamoDBKeyMarshaller, TArg, Dictionary<string, AttributeValue>> keySelector,
         Func<TReferences, TArgumentReferences, string> updateExpressionBuilder,
         Func<TReferences, TArgumentReferences, string> conditionExpressionBuilder,
         ReturnValue returnValue,

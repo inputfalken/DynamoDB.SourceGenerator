@@ -63,15 +63,17 @@ public partial class ToPutItemRequestTests
 public class User
 {
     [DynamoDBHashKey]
-    public string Id { get; set; }
+    public string Id { get; set; } = null!;
 
     [DynamoDBRangeKey]
-    public string Email { get; set; }
-    public string Lastname { get; set; }
+    public string Email { get; set; } = null!;
 
-    public string Firstname { get; set; }
+    public string Lastname { get; set; } = null!;
 
-    public Meta Metadata { get; set; }
+    public string Firstname { get; set; } = null!;
+
+    public Meta Metadata { get; set; } = null!;
+
     public class Meta
     {
         public DateTimeOffset ModifiedAt { get; set; }
@@ -80,7 +82,7 @@ public class User
 
 public class UpdateUserEmail
 {
-    public string UserId { get; set; }
-    public string UserEmail { get; set; }
+    public string UserId { get; set; } = null!;
+    public string UserEmail { get; set; } = null!;
     public DateTimeOffset TimeStamp { get; set; }
 }
