@@ -15,16 +15,20 @@ public partial class ToPutItemRequestTests
         var putItemRequest = UserMarshaller.ToPutItemRequest(user, ReturnValue.NONE, "TABLE");
 
         putItemRequest.ConditionExpression.Should().BeNullOrWhiteSpace();
-        putItemRequest.ReturnValues.Should().Be(ReturnValue.NONE);
-        putItemRequest.TableName.Should().Be("TABLE");
-
         putItemRequest.ExpressionAttributeNames.Should().BeNullOrEmpty();
         putItemRequest.ExpressionAttributeValues.Should().BeNullOrEmpty();
-
-        putItemRequest.Item.Should().HaveCount(3);
+        putItemRequest.Item.Should().HaveCount(5);
         putItemRequest.Item[nameof(user.Email)].S.Should().Be(user.Email);
         putItemRequest.Item[nameof(user.Firstname)].S.Should().Be(user.Firstname);
         putItemRequest.Item[nameof(user.Lastname)].S.Should().Be(user.Lastname);
+        putItemRequest.Item[nameof(user.Id)].S.Should().Be(user.Id);
+        putItemRequest.Item[nameof(user.Metadata)].M.Should().SatisfyRespectively(x =>
+        {
+            x.Key.Should().Be(nameof(user.Metadata.ModifiedAt));
+            x.Value.S.Should().Be(user.Metadata.ModifiedAt.ToString("O"));
+        });
+        putItemRequest.ReturnValues.Should().Be(ReturnValue.NONE);
+        putItemRequest.TableName.Should().Be("TABLE");
     }
 
     [Fact]
@@ -34,28 +38,49 @@ public partial class ToPutItemRequestTests
         var putItemRequest = UserMarshaller.ToPutItemRequest(user, (x, y) => $"{x.Email} <> {y.Email} AND {x.Firstname} = {y.Firstname}", ReturnValue.NONE, "TABLE");
 
         putItemRequest.ConditionExpression.Should().Be("#Email <> :p1 AND #Firstname = :p2");
-        putItemRequest.ReturnValues.Should().Be(ReturnValue.NONE);
-        putItemRequest.TableName.Should().Be("TABLE");
-
         putItemRequest.ExpressionAttributeNames.Should().HaveCount(2);
         putItemRequest.ExpressionAttributeNames["#Email"].Should().Be(nameof(user.Email));
         putItemRequest.ExpressionAttributeNames["#Firstname"].Should().Be(nameof(user.Firstname));
-
         putItemRequest.ExpressionAttributeValues.Should().HaveCount(2);
         putItemRequest.ExpressionAttributeValues[":p1"].S.Should().Be(user.Email);
         putItemRequest.ExpressionAttributeValues[":p2"].S.Should().Be(user.Firstname);
-
-        putItemRequest.Item.Should().HaveCount(3);
+        putItemRequest.Item.Should().HaveCount(5);
         putItemRequest.Item[nameof(user.Email)].S.Should().Be(user.Email);
         putItemRequest.Item[nameof(user.Firstname)].S.Should().Be(user.Firstname);
         putItemRequest.Item[nameof(user.Lastname)].S.Should().Be(user.Lastname);
+        putItemRequest.Item[nameof(user.Id)].S.Should().Be(user.Id);
+        putItemRequest.Item[nameof(user.Metadata)].M.Should().SatisfyRespectively(x =>
+        {
+            x.Key.Should().Be(nameof(user.Metadata.ModifiedAt));
+            x.Value.S.Should().Be(user.Metadata.ModifiedAt.ToString("O"));
+        });
+        putItemRequest.ReturnValues.Should().Be(ReturnValue.NONE);
+        putItemRequest.TableName.Should().Be("TABLE");
     }
 
 }
 
 public class User
 {
+    [DynamoDBHashKey]
+    public string Id { get; set; }
+
+    [DynamoDBRangeKey]
     public string Email { get; set; }
-    public string Firstname { get; set; }
     public string Lastname { get; set; }
+
+    public string Firstname { get; set; }
+
+    public Meta Metadata { get; set; }
+    public class Meta
+    {
+        public DateTimeOffset ModifiedAt { get; set; }
+    }
+}
+
+public class UpdateUserEmail
+{
+    public string UserId { get; set; }
+    public string UserEmail { get; set; }
+    public DateTimeOffset TimeStamp { get; set; }
 }
