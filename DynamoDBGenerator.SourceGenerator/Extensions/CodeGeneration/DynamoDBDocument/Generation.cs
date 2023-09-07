@@ -206,15 +206,17 @@ public class DynamoDbMarshaller
 
         var sourceGeneratedCode = string.Join(Constants.NewLine, referenceTrackers.Prepend(implementInterface));
 
+        var @interface =
+            $"{InterfaceName}<{rootTypeName}, {_fullTypeNameFactory(_argumentTypeSymbol)}, {className}.{nameTrackerTypeName}, {className}.{valueTrackerTypeName}>";
         var @class = CodeGenerationExtensions.CreateClass(
             Accessibility.Public,
-            $"{className}: {InterfaceName}<{_entityTypeSymbol.Name}, {_argumentTypeSymbol.Name}, {className}.{nameTrackerTypeName}, {className}.{valueTrackerTypeName}>",
+            $"{className}: {@interface}",
             in sourceGeneratedCode,
             2
         );
 
         return
-            $@"{accessibility.ToCode()} {InterfaceName}<{_entityTypeSymbol.Name}, {_argumentTypeSymbol.Name}, {className}.{nameTrackerTypeName}, {className}.{valueTrackerTypeName}> {_publicAccessPropertyName} {{ get; }} = new {className}();
+            $@"{accessibility.ToCode()} {@interface} {_publicAccessPropertyName} {{ get; }} = new {className}();
         {@class}";
     }
 
