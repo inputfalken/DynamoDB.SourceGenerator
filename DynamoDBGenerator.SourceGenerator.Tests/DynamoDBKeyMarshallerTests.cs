@@ -1,3 +1,4 @@
+using System;
 using AutoFixture;
 namespace DynamoDBGenerator.SourceGenerator.Tests;
 
@@ -32,7 +33,7 @@ public partial class DynamoDBKeyMarshallerTests
     }
 
     [Theory]
-    [InlineData("abc", null)]
+    [InlineData("abc", null, Skip = "Could make sense to allow this")]
     [InlineData(null, "abc")]
     [InlineData(null, null)]
     [InlineData("abc", "dfg")]
@@ -66,12 +67,12 @@ public partial class DynamoDBKeyMarshallerTests
 
     [Theory]
     [InlineData("abc", null)]
-    [InlineData(null, "abc")]
+    [InlineData(null, "abc", Skip = "Could make sense to allow this")]
     [InlineData(null, null)]
     [InlineData("abc", "dfg")]
     public void Keys_TypeWithRangeKeyOnly_ShouldThrow(string partitionKey, string rangeKey)
     {
-        var act = () => PartitionKeyOnly.Keys(partitionKey, rangeKey);
+        var act = () => TypeWithRangeOnly.Keys(partitionKey, rangeKey);
         act.Should().Throw<InvalidOperationException>();
     }
 

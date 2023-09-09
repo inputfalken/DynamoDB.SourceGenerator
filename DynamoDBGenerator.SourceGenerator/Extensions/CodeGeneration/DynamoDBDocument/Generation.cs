@@ -435,6 +435,7 @@ public class DynamoDbMarshaller
         string rangeKeyReference)
     {
         const string dictionaryName = "attributeValues";
+
         var properties = GetAssignments(partitionKeyReference, rangeKeyReference, type).ToArray();
 
         const string indent = "                ";
@@ -442,6 +443,8 @@ public class DynamoDbMarshaller
             ? @$"throw new InvalidOperationException(""Could not create keys for type '{type.Name}', include DynamoDBKeyAttribute on the correct properties."");"
             : @$"{InitializeDictionary(dictionaryName, properties.Select(static x => x.capacityTernary))}
                 {string.Join(Constants.NewLine + indent, properties.Select(static x => x.dictionaryPopulation))}
+                if ({dictionaryName}.Count != (({partitionKeyReference} is null ? 0 : 1) + ({rangeKeyReference} is null ? 0 : 1)))
+                    throw new InvalidOperationException(""The amount of keys does not match the amount provided."");
                 return {dictionaryName};";
         var method =
             @$"            public static Dictionary<string, AttributeValue> {_keysMethodNameFactory(type)}(object? {partitionKeyReference}, object? {rangeKeyReference})
@@ -490,7 +493,7 @@ public class DynamoDbMarshaller
         {
             var capacityCalculation = string.Join(" + ", capacityCalculations);
 
-            return string.Join(" + ", capacityCalculation)switch
+            return string.Join(" + ", capacityCalculation) switch
             {
                 "" => $"var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: 0);",
                 var capacities => $@"var capacity = {capacities};
