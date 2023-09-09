@@ -36,7 +36,7 @@ public static class NotNullEvaluationExtensions
 
     private static string CreateException(in string accessPattern)
     {
-        return @$"throw new ArgumentNullException(nameof({accessPattern}), ""{Constants.NotNullErrorMessage}"");";
+        return @$"throw new DynamoDBMarshallingException(nameof({accessPattern}),""{Constants.NotNullErrorMessage}"");";
     }
 
     public static string NotNullIfStatement(this ITypeSymbol typeSymbol, in string accessPattern, in string truthy)
@@ -48,11 +48,10 @@ public static class NotNullEvaluationExtensions
         return typeSymbol.NullableAnnotation switch
         {
             NullableAnnotation.None => ifClause,
-            NullableAnnotation.NotAnnotated => $@"{ifClause} else {{ {CreateException(in accessPattern)}}}",
+            NullableAnnotation.NotAnnotated => $@"{ifClause} else {{ {CreateException(in accessPattern)} }}",
             NullableAnnotation.Annotated => ifClause,
             _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
         };
-
     }
 
     /// <summary>
