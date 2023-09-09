@@ -41,3 +41,12 @@ internal class DynamoDBClient<T, TArg, TReferences, TArgumentReferences> : IDyna
         return _amazonDynamoDB.PutItemAsync(putRequest, cancellationToken);
     }
 }
+
+public class DynamoDBMarshallingException : InvalidOperationException
+{
+    public string MemberName { get; }
+    public DynamoDBMarshallingException(string memberName, string message) : base(message: $"{message} (Data member '{memberName}')")
+    {
+        MemberName = memberName;
+    }
+}

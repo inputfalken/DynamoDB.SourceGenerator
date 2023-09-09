@@ -48,9 +48,9 @@ public partial class NullableAnnotationTests
         var result = () => NestedNullableAnnotationTestClassMarshaller.Marshall(@class);
 
         result.Should()
-            .ThrowExactly<ArgumentNullException>()
+            .ThrowExactly<DynamoDBMarshallingException>()
             .WithMessage(
-                "The value is not supposed to be null, to allow this; make the property nullable. (Parameter 'EnabledNoneNullableValue')");
+                "The data member is not supposed to be null, to allow this; make the data member nullable. (Data member 'EnabledNoneNullableValue')");
     }
     [Theory]
     [InlineData(1, "1", "2", "3", false)]
@@ -80,9 +80,9 @@ public partial class NullableAnnotationTests
 
         if (shouldThrow)
             result.Should()
-                .ThrowExactly<ArgumentNullException>()
+                .ThrowExactly<DynamoDBMarshallingException>()
                 .WithMessage(
-                    "The value is not supposed to be null, to allow this; make the property nullable. (Parameter 'EnabledNoneNullableReferenceType')");
+                    "The data member is not supposed to be null, to allow this; make the data member nullable. (Data member 'EnabledNoneNullableReferenceType')");
         else
             result.Should().NotThrow();
     }
