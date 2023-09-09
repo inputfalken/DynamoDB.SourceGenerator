@@ -142,9 +142,8 @@ public class DynamoDbMarshaller
         return string.Join(Constants.NewLine, enumerable);
     }
 
-    private (string code, ISet<ITypeSymbol> supportedTypes) CreateAttributeValueFactory(ITypeSymbol typeSymbol, KeyStrategy keyStrategy, ISet<ITypeSymbol>? typeSymbols = null)
+    private string CreateAttributeValueFactory(ITypeSymbol typeSymbol, KeyStrategy keyStrategy, ISet<ITypeSymbol> typeSymbols)
     {
-        typeSymbols ??= new HashSet<ITypeSymbol>(_comparer);
         var enumerable = Conversion.ConversionMethods(
                 typeSymbol,
                 x => StaticAttributeValueDictionaryFactory(x, keyStrategy),
@@ -152,8 +151,7 @@ public class DynamoDbMarshaller
             )
             .Select(static x => x.Code);
 
-        return (string.Join(Constants.NewLine, enumerable), typeSymbols);
-
+        return string.Join(Constants.NewLine, enumerable);
     }
 
 
@@ -174,8 +172,10 @@ public class DynamoDbMarshaller
             .Select(static x => x.Code);
 
         var className = $"{_publicAccessPropertyName}Implementation";
-        var (marshalMethods, supported) = CreateAttributeValueFactory(_entityTypeSymbol, KeyStrategy.Include);
-        var (argumentMarshallMethods, _) = CreateAttributeValueFactory(_argumentTypeSymbol, KeyStrategy.Include, supported);
+
+        var set = new HashSet<ITypeSymbol>(_comparer);
+        var marshalMethods = CreateAttributeValueFactory(_entityTypeSymbol, KeyStrategy.Include, set);
+        var argumentMarshallMethods = CreateAttributeValueFactory(_argumentTypeSymbol, KeyStrategy.Include, set);
         var keysMethod = StaticAttributeValueDictionaryKeys(_entityTypeSymbol, "partition", "range");
 
         var unMarshalMethods = CreateAttributePocoFactory();
@@ -477,7 +477,6 @@ public class DynamoDbMarshaller
                 var declaration = $"var {reference} = {accessPattern}?.Value as {(x.DataMember.Type.IsValueType ? $"{_fullTypeNameFactory(x.DataMember.Type)}?" : _fullTypeNameFactory(x.DataMember.Type))};";
                 var attributeConversion = AttributeValueAssignment(x.DataMember.Type, reference);
 
-                
                 var assignment = x.DataMember.Type.NotNullIfStatement(
                     in reference,
                     @$"{dictionaryName}.Add(""{x.AttributeName}"", {attributeConversion.ToAttributeValue()});"
