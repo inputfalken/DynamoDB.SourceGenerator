@@ -186,9 +186,9 @@ public class DynamoDbMarshaller
         var implementInterface =
             $@"public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({rootTypeName} entity) => {_serializationMethodNameFactory(_entityTypeSymbol)}(entity);
             public {rootTypeName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => {_deserializationMethodNameFactory(_entityTypeSymbol)}(entity);
-            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {KeysName}(object partitionKey, object rangeKey) => {_keysMethodNameFactory(_entityTypeSymbol)}(partitionKey, rangeKey);
-            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {RangeKeyName}(object rangeKey) => {_keysMethodNameFactory(_entityTypeSymbol)}(null, rangeKey);
-            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {PartitionKeyName}(object partitionKey) => {_keysMethodNameFactory(_entityTypeSymbol)}(partitionKey, null);
+            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {KeysName}(object partitionKey, object rangeKey) => {_keysMethodNameFactory(_entityTypeSymbol)}((partitionKey, true), (rangeKey, true));
+            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {RangeKeyName}(object rangeKey) => {_keysMethodNameFactory(_entityTypeSymbol)}(null, (rangeKey, true));
+            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {PartitionKeyName}(object partitionKey) => {_keysMethodNameFactory(_entityTypeSymbol)}((partitionKey, true), null);
             public {className}.{valueTrackerTypeName} {ValueTrackerName}()
             {{
                 var number = 0;
@@ -447,7 +447,7 @@ public class DynamoDbMarshaller
                     throw new InvalidOperationException(""The amount of keys does not match the amount provided."");
                 return {dictionaryName};";
         var method =
-            @$"            public static Dictionary<string, AttributeValue> {_keysMethodNameFactory(type)}(object? {partitionKeyReference}, object? {rangeKeyReference})
+            @$"            public static Dictionary<string, AttributeValue> {_keysMethodNameFactory(type)}((object Value, bool IsStrict)? {partitionKeyReference}, (object Value, bool IsStrict)? {rangeKeyReference})
             {{
                 {body}
             }}";
@@ -474,9 +474,10 @@ public class DynamoDbMarshaller
                     continue;
 
                 var reference = $"converted{x.AttributeName}";
-                var declaration = $"var {reference} = {accessPattern} as {(x.DataMember.Type.IsValueType ? $"{_fullTypeNameFactory(x.DataMember.Type)}?" : _fullTypeNameFactory(x.DataMember.Type))};";
+                var declaration = $"var {reference} = {accessPattern}?.Value as {(x.DataMember.Type.IsValueType ? $"{_fullTypeNameFactory(x.DataMember.Type)}?" : _fullTypeNameFactory(x.DataMember.Type))};";
                 var attributeConversion = AttributeValueAssignment(x.DataMember.Type, reference);
 
+                
                 var assignment = x.DataMember.Type.NotNullIfStatement(
                     in reference,
                     @$"{dictionaryName}.Add(""{x.AttributeName}"", {attributeConversion.ToAttributeValue()});"
@@ -485,7 +486,8 @@ public class DynamoDbMarshaller
                 var capacityTernaries = x.DataMember.Type.NotNullTernaryExpression(in accessPattern, "1", "0");
 
                 yield return ($@"{declaration}
-                {assignment}", capacityTernaries, attributeConversion);
+                if({accessPattern}?.IsStrict == true)
+                    {assignment}", capacityTernaries, attributeConversion);
             }
         }
 

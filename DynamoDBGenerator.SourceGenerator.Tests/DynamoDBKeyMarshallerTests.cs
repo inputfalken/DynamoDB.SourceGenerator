@@ -113,7 +113,7 @@ public partial class DynamoDBKeyMarshallerTests
             .Should().SatisfyRespectively(x =>
             {
                 x.Key.Should().Be(nameof(type.Id));
-                x.Value.S.Should().Be(type.RangeKey);
+                x.Value.S.Should().Be(type.Id);
             });
     }
 
@@ -121,10 +121,10 @@ public partial class DynamoDBKeyMarshallerTests
     public void RangeKey_TypeWithKeys_ShouldSucceed()
     {
         var type = _fixture.Create<TypeWithKeys>();
-        TypeWithKeys.RangeKey(type.Id).Should().SatisfyRespectively(x =>
+        TypeWithKeys.RangeKey(type.RangeKey).Should().SatisfyRespectively(x =>
         {
             x.Key.Should().Be(nameof(type.RangeKey));
-            x.Value.S.Should().Be(type.Id);
+            x.Value.S.Should().Be(type.RangeKey);
         });
     }
 
