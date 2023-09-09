@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
@@ -289,32 +285,20 @@ public class DynamoDbMarshaller
             .ToArray();
 
         var fieldDeclarations = dataMembers
-            .Select(static x =>
-            {
-                if (x.IsKnown)
-                {
-                    return $@"    private readonly Lazy<string> {x.ValueRef};
-    public string {x.DDB.DataMember.Name} => {x.ValueRef}.Value;";
-                }
-                return $@"    private readonly Lazy<{x.AttributeReference}> _{x.DDB.DataMember.Name};
-    public {x.AttributeReference} {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;";
-            });
+            .Select(static x => x.IsKnown
+                ? $@"    private readonly Lazy<string> {x.ValueRef};
+    public string {x.DDB.DataMember.Name} => {x.ValueRef}.Value;"
+                : $@"    private readonly Lazy<{x.AttributeReference}> _{x.DDB.DataMember.Name};
+    public {x.AttributeReference} {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;"
+            );
 
         const string valueProvider = "valueIdProvider";
         var fieldAssignments = dataMembers
             .Select(static x =>
             {
-                string assignment;
-                if (x.IsKnown)
-                {
-                    assignment =
-                        $@"        {x.ValueRef} = new ({valueProvider});";
-                }
-                else
-                {
-                    assignment =
-                        $@"        _{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({valueProvider}));";
-                }
+                var assignment = x.IsKnown
+                    ? $@"        {x.ValueRef} = new ({valueProvider});"
+                    : $@"        _{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({valueProvider}));";
 
                 return new Assignment(assignment, x.DDB.DataMember.Type, x.IsKnown is false);
             })
@@ -368,34 +352,22 @@ public class DynamoDbMarshaller
             .ToArray();
 
         var fieldDeclarations = dataMembers
-            .Select(static x =>
-            {
-                if (x.IsKnown)
-                {
-                    return $@"    private readonly Lazy<string> {x.NameRef};
-    public string {x.DDB.DataMember.Name} => {x.NameRef}.Value;";
-                }
-                return $@"    private readonly Lazy<{x.AttributeReference}> _{x.DDB.DataMember.Name};
-    public {x.AttributeReference} {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;";
-            });
+            .Select(static x => x.IsKnown
+                ? $@"    private readonly Lazy<string> {x.NameRef};
+    public string {x.DDB.DataMember.Name} => {x.NameRef}.Value;"
+                : $@"    private readonly Lazy<{x.AttributeReference}> _{x.DDB.DataMember.Name};
+    public {x.AttributeReference} {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;"
+            );
 
         const string constructorAttributeName = "nameRef";
         var fieldAssignments = dataMembers
             .Select(static x =>
             {
-                string assignment;
                 var ternaryExpressionName =
                     $"{constructorAttributeName} is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{{constructorAttributeName}}}.#{x.DDB.AttributeName}"""}";
-                if (x.IsKnown)
-                {
-                    assignment =
-                        $@"        {x.NameRef} = new (() => {ternaryExpressionName});";
-                }
-                else
-                {
-                    assignment =
-                        $@"        _{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({ternaryExpressionName}));";
-                }
+                var assignment = x.IsKnown
+                    ? $@"        {x.NameRef} = new (() => {ternaryExpressionName});"
+                    : $@"        _{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({ternaryExpressionName}));";
 
                 return new Assignment(assignment, x.DDB.DataMember.Type, x.IsKnown is false);
             })
