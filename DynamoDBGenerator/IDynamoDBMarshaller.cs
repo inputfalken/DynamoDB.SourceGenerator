@@ -3,6 +3,7 @@ using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator;
 
+// TODO might be good to include a option to Get the keys based on a generic argument which would be TArg from IDynamoDBMarshaller. Then the consumer could customize their DynamoDBKeyAttributes on the TArg payload. This would not work for tuples though. 😢
 public interface IDynamoDBKeyMarshaller
 {
     /// <summary>
