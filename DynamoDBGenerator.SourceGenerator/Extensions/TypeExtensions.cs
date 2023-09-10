@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 using DynamoDBGenerator.SourceGenerator.Types;
@@ -23,20 +26,22 @@ public static class TypeExtensions
             return name;
         };
     }
-    public static Func<ITypeSymbol, string> TypeSymbolStringCache(string suffix, IEqualityComparer<ISymbol> comparer)
+    public static Func<ITypeSymbol, string> TypeSymbolStringCache(string suffix, IEqualityComparer<ISymbol> comparer, bool useNullableAnnotationNaming)
     {
         return x => Execution(
             new Dictionary<ITypeSymbol, string>(comparer),
             x,
             false,
-            suffix
+            suffix,
+            useNullableAnnotationNaming
         );
 
         static string Execution(
             IDictionary<ITypeSymbol, string> cache,
             ITypeSymbol typeSymbol,
             bool isRecursive,
-            string suffix
+            string suffix,
+            bool useNullableAnnotationNaming
         )
         {
             if (cache.TryGetValue(typeSymbol, out var methodName))
@@ -44,15 +49,16 @@ public static class TypeExtensions
 
             var displayString = typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
 
-            var str = (typeSymbol.NullableAnnotation, typeDisplay: displayString) switch
-            {
-                (_, {Length: > Constants.MaxMethodNameLenght}) => throw new NotSupportedException(
-                    $"Could not generate a method name that's within the supported method lenght {Constants.MaxMethodNameLenght} for type '{displayString}'."),
-                (NullableAnnotation.NotAnnotated, _) => $"NN_{displayString.ToAlphaNumericMethodName()}{suffix}",
-                (NullableAnnotation.None, _) => $"{displayString.ToAlphaNumericMethodName()}{suffix}",
-                (NullableAnnotation.Annotated, _) => $"N_{displayString.ToAlphaNumericMethodName()}{suffix}",
-                _ => throw new ArgumentOutOfRangeException()
-            };
+            var str = useNullableAnnotationNaming
+                ? (typeSymbol.NullableAnnotation, typeDisplay: displayString) switch
+                {
+                    (NullableAnnotation.NotAnnotated, _) => $"NN_{displayString.ToAlphaNumericMethodName()}{suffix}",
+                    (NullableAnnotation.None, _) => $"{displayString.ToAlphaNumericMethodName()}{suffix}",
+                    (NullableAnnotation.Annotated, _) => $"N_{displayString.ToAlphaNumericMethodName()}{suffix}",
+                    _ => throw new NotImplementedException(typeSymbol.ToDisplayString())
+                }
+                : $"{displayString.ToAlphaNumericMethodName()}{suffix}";
+            
 
             if (typeSymbol is not INamedTypeSymbol namedTypeSymbol)
             {
@@ -65,7 +71,7 @@ public static class TypeExtensions
 
             var result = string.Join(
                 "_",
-                namedTypeSymbol.TypeArguments.Select(x => Execution(cache, x, true, suffix)).Prepend(str)
+                namedTypeSymbol.TypeArguments.Select(x => Execution(cache, x, true, suffix, useNullableAnnotationNaming)).Prepend(str)
             );
 
             // We do not need to populate the dictionary if the execution originates from recursion.
@@ -89,7 +95,7 @@ public static class TypeExtensions
     {
         return type.IsValueType && type is INamedTypeSymbol {OriginalDefinition.SpecialType: SpecialType.System_Nullable_T} symbol ? symbol : null;
     }
-    
+
 
     public static string ToXmlComment(this ITypeSymbol typeSymbol)
     {

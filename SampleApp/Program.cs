@@ -12,7 +12,7 @@ namespace SampleApp;
 
 internal static class Program
 {
-    private static IDynamoDBClient<PersonEntity, PersonEntity, NN_PersonEntityName, NN_PersonEntityValue> _toDynamoDBClient;
+    private static IDynamoDBClient<PersonEntity, PersonEntity, PersonEntityName, PersonEntityValue> _toDynamoDBClient;
     public static void Main()
     {
         _toDynamoDBClient = new Repository().PersonEntityMarshaller.ToDynamoDBClient("MyTable", new AmazonDynamoDBClient());

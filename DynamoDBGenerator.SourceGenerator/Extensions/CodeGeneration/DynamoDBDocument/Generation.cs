@@ -29,11 +29,11 @@ public class DynamoDbMarshaller
         _entityTypeSymbol = (INamedTypeSymbol)arguments.EntityTypeSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
         _argumentTypeSymbol = (INamedTypeSymbol)arguments.ArgumentType.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
         _publicAccessPropertyName = arguments.PropertyName;
-        _serializationMethodNameFactory = TypeExtensions.TypeSymbolStringCache("Ser", comparer);
-        _keysMethodNameFactory = TypeExtensions.TypeSymbolStringCache("Keys", comparer);
-        _deserializationMethodNameFactory = TypeExtensions.TypeSymbolStringCache("Des", comparer);
-        _attributeNameAssignmentNameFactory = TypeExtensions.TypeSymbolStringCache("Name", comparer);
-        _attributeValueAssignmentNameFactory = TypeExtensions.TypeSymbolStringCache("Value", comparer);
+        _serializationMethodNameFactory = TypeExtensions.TypeSymbolStringCache("Ser", comparer, true);
+        _keysMethodNameFactory = TypeExtensions.TypeSymbolStringCache("Keys", comparer, false);
+        _deserializationMethodNameFactory = TypeExtensions.TypeSymbolStringCache("Des", comparer, true);
+        _attributeNameAssignmentNameFactory = TypeExtensions.TypeSymbolStringCache("Name", comparer, false);
+        _attributeValueAssignmentNameFactory = TypeExtensions.TypeSymbolStringCache("Value", comparer, false);
         _fullTypeNameFactory = TypeExtensions.NameCache(SymbolDisplayFormat.FullyQualifiedFormat, comparer);
         _comparer = comparer;
     }
