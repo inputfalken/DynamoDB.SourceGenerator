@@ -51,16 +51,14 @@ public partial class InitializationTests
     }
 
     [Fact]
-    public void ConstructorClassWithMixedName_UnableToFindCorrespondingDataMember_ShouldThrow()
+    public void ConstructorClassWithMixedName_UnableToFindCorrespondingDataMember_ShouldSucceed()
     {
-        var act = () => ConstructorClassWithMixedNameMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
+        var result = ConstructorClassWithMixedNameMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
             {"SomethingElse", new AttributeValue {S = "Hello"}}
         });
 
-        act.Should()
-            .Throw<ArgumentException>()
-            .WithMessage("Unable to determine the corresponding data member for constructor argument 'something' in 'ConstructorClassWithMixedName'; make sure the names are consistent.");
+        result.SomethingElse.Should().Be("Hello");
     }
 }
 

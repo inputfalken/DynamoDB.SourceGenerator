@@ -1,6 +1,11 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection.Metadata;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.DynamoDBDocument;
 
 public class DynamoDbMarshaller
@@ -578,10 +583,18 @@ public class DynamoDbMarshaller
                     .OrderByDescending(x => x.Parameters.Length)
                     .First();
 
-                var ctorInitialization = ctor.Parameters
+                // For some reason DeclaringSyntaxReferences has a Length of 0 For KeyValuePair<TKey, TValue>.
+                var memberParam = ctor.DeclaringSyntaxReferences.Length is 0
+                    ? ctor.Parameters.Select(x => (Member: x.Name, Parameter: x.Name))
+                    : ((ConstructorDeclarationSyntax)ctor.DeclaringSyntaxReferences[0].GetSyntax())
+                    .DescendantNodes()
+                    .OfType<AssignmentExpressionSyntax>()
+                    .Select(x => (Member: x.Left.ToString(), Parameter: x.Right.ToString()));
+
+                var ctorInitialization = memberParam
                     .GroupJoin(
                         assignments,
-                        y => y.Name,
+                        y => y.Member,
                         y => y.DDB.DataMember.Name,
                         (y, z) => (constructurArgument: y, Items: z),
                         StringComparer.OrdinalIgnoreCase
@@ -590,11 +603,11 @@ public class DynamoDbMarshaller
                     .Select(x =>
                     {
                         if (x.Item is { } item)
-                            return $"{x.constructurArgument.Name} : {item.assignment.Value}";
+                            return $"{x.constructurArgument.Parameter} : {item.assignment.Value}";
 
                         // TODO might be worth considering to throw exception in the source generator for this in order to give faster feedback.
                         return
-                            $@"{x.constructurArgument.Name} : true ? throw new ArgumentException(""Unable to determine the corresponding data member for constructor argument '{x.constructurArgument.Name}' in '{namedTypeSymbol.Name}'; make sure the names are consistent."") : default";
+                            $@"{x.constructurArgument.Parameter} : true ? throw new ArgumentException(""Unable to determine the corresponding data member for constructor argument '{x.constructurArgument.Parameter}' in '{namedTypeSymbol.Name}'; make sure the names are consistent."") : default";
                     });
 
                 constructorArgs = string.Join(", ", ctorInitialization);
