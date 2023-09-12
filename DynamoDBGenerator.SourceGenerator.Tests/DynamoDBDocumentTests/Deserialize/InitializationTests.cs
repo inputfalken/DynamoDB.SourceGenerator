@@ -5,6 +5,8 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserial
 [DynamoDBMarshaller(typeof(ObjectInitializerOnlyClass))]
 [DynamoDBMarshaller(typeof(ObjectInitializerMixedWithConstructorClass))]
 [DynamoDBMarshaller(typeof(ConstructorClassWithMixedName))]
+[DynamoDBMarshaller(typeof(InlinedRecord))]
+[DynamoDBMarshaller(typeof(ExplicitConstructorRecord))]
 public partial class InitializationTests
 {
 
@@ -60,6 +62,45 @@ public partial class InitializationTests
 
         result.SomethingElse.Should().Be("Hello");
     }
+    [Fact]
+    public void Deserialize_InlineRecord_ShouldSucceed()
+    {
+        var inlinedRecord = InlinedRecordMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
+        {
+            {"FirstProperty", new AttributeValue {S = "Hello"}},
+            {"SecondProperty", new AttributeValue {S = "World"}}
+        });
+
+        inlinedRecord.FirstProperty.Should().Be("Hello");
+        inlinedRecord.SecondProperty.Should().Be("World");
+    }
+    [Fact]
+    public void Deserialize_ExplicitConstructorRecord_ShouldSucceed()
+    {
+        var inlinedRecord = ExplicitConstructorRecordMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
+        {
+            {"FirstProperty", new AttributeValue {S = "Hello"}},
+            {"SecondProperty", new AttributeValue {S = "World"}}
+        });
+
+        inlinedRecord.FirstProperty.Should().Be("Hello");
+        inlinedRecord.SecondProperty.Should().Be("World");
+    }
+}
+
+public record InlinedRecord(string FirstProperty, string SecondProperty);
+
+public record ExplicitConstructorRecord
+{
+
+    // ReSharper disable once ConvertToPrimaryConstructor
+    public ExplicitConstructorRecord(string first, string second)
+    {
+        FirstProperty = first;
+        SecondProperty = second;
+    }
+    public string FirstProperty { get; init; }
+    public string SecondProperty { get; init; }
 }
 
 public class ConstructorOnlyClass

@@ -586,10 +586,19 @@ public class DynamoDbMarshaller
                 // For some reason DeclaringSyntaxReferences has a Length of 0 For KeyValuePair<TKey, TValue>.
                 var memberParam = ctor.DeclaringSyntaxReferences.Length is 0
                     ? ctor.Parameters.Select(x => (Member: x.Name, Parameter: x.Name))
-                    : ((ConstructorDeclarationSyntax)ctor.DeclaringSyntaxReferences[0].GetSyntax())
-                    .DescendantNodes()
-                    .OfType<AssignmentExpressionSyntax>()
-                    .Select(x => (Member: x.Left.ToString(), Parameter: x.Right.ToString()));
+                    : ctor.DeclaringSyntaxReferences[0].GetSyntax() switch
+                    {
+                        ConstructorDeclarationSyntax ctorSyntax => ctorSyntax
+                            .DescendantNodes()
+                            .OfType<AssignmentExpressionSyntax>()
+                            .Select(x => (Member: x.Left.ToString(), Parameter: x.Right.ToString())),
+                        RecordDeclarationSyntax recordDeclarationSyntax => recordDeclarationSyntax
+                            .DescendantNodes()
+                            .OfType<ParameterListSyntax>()
+                            .SelectMany(x => x.Parameters)
+                            .Select(x => (Member: x.Identifier.Text, Parameter: x.Identifier.Text)),
+                        _ => throw new NotSupportedException(ctor.DeclaringSyntaxReferences[0].GetSyntax().ToFullString())
+                    };
 
                 var ctorInitialization = memberParam
                     .GroupJoin(
