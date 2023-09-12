@@ -7,11 +7,12 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserial
 [DynamoDBMarshaller(typeof(ConstructorClassWithMixedName))]
 [DynamoDBMarshaller(typeof(InlinedRecord))]
 [DynamoDBMarshaller(typeof(ExplicitConstructorRecord))]
+[DynamoDBMarshaller(typeof(RecordWithNestedRecord))]
 public partial class InitializationTests
 {
 
     [Fact]
-    public void ConstructorOnlyClass_CanBe_Deserialized()
+    public void ConstructorOnlyClass_FindCorrespondingDataMember_ShouldSucceed()
     {
         var deserializeClass = ConstructorOnlyClassMarshaller.Unmarshall(
             new Dictionary<string, AttributeValue>
@@ -27,7 +28,7 @@ public partial class InitializationTests
     }
 
     [Fact]
-    public void ObjectInitializerOnlyClass_CanBe_Deserialized()
+    public void ObjectInitializerOnlyClass_FindCorrespondingDataMember_ShouldSucceed()
     {
         var @class = new ObjectInitializerOnlyClass {Prop2 = "Hello"};
         var serializedClass = ObjectInitializerOnlyClassMarshaller.Marshall(@class);
@@ -38,7 +39,7 @@ public partial class InitializationTests
     }
 
     [Fact]
-    public void ObjectInitializerMixedWithConstructorClass_CanBe_Deserialized()
+    public void ObjectInitializerMixedWithConstructorClass_FindCorrespondingDataMember_ShouldSucceed()
     {
         var deserializeClass = ObjectInitializerMixedWithConstructorClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
@@ -53,7 +54,7 @@ public partial class InitializationTests
     }
 
     [Fact]
-    public void ConstructorClassWithMixedName_UnableToFindCorrespondingDataMember_ShouldSucceed()
+    public void ConstructorClassWithMixedName_FindCorrespondingDataMember_ShouldSucceed()
     {
         var result = ConstructorClassWithMixedNameMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
@@ -63,7 +64,7 @@ public partial class InitializationTests
         result.SomethingElse.Should().Be("Hello");
     }
     [Fact]
-    public void Deserialize_InlineRecord_ShouldSucceed()
+    public void InlineRecord_FindingCorrespondingDataMembers_ShouldSucceed()
     {
         var inlinedRecord = InlinedRecordMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
@@ -75,7 +76,7 @@ public partial class InitializationTests
         inlinedRecord.SecondProperty.Should().Be("World");
     }
     [Fact]
-    public void Deserialize_ExplicitConstructorRecord_ShouldSucceed()
+    public void ExplicitConstructorRecord_FindingCorrespondingDataMembers_ShouldSucceed()
     {
         var inlinedRecord = ExplicitConstructorRecordMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
@@ -88,6 +89,10 @@ public partial class InitializationTests
     }
 }
 
+public record RecordWithNestedRecord(string One, RecordWithNestedRecord.NestedRecord Test)
+{
+    public record NestedRecord(string Two);
+}
 public record InlinedRecord(string FirstProperty, string SecondProperty);
 
 public record ExplicitConstructorRecord

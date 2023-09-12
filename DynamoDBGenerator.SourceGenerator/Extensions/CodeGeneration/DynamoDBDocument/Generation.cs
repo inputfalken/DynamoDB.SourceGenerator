@@ -1,4 +1,5 @@
 using System;
+using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Metadata;
@@ -577,6 +578,7 @@ public class DynamoDbMarshaller
             // Right now we either take a constructor path or object initialization path. But they could co-exist.
             // We do expect the constructor arguments to be 1-1 with case insensitive comparison for data member names.
             var constructorArgs = string.Empty;
+                const string indent = "                  ";
             if (typeSymbol is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.InstanceConstructors.Any(x => x.Parameters.Length > 0))
             {
                 var ctor = namedTypeSymbol.InstanceConstructors
@@ -594,41 +596,31 @@ public class DynamoDbMarshaller
                             .Select(x => (Member: x.Left.ToString(), Parameter: x.Right.ToString())),
                         RecordDeclarationSyntax recordDeclarationSyntax => recordDeclarationSyntax
                             .DescendantNodes()
-                            .OfType<ParameterListSyntax>()
-                            .SelectMany(x => x.Parameters)
+                            .OfType<ParameterSyntax>()
                             .Select(x => (Member: x.Identifier.Text, Parameter: x.Identifier.Text)),
                         _ => throw new NotSupportedException(ctor.DeclaringSyntaxReferences[0].GetSyntax().ToFullString())
                     };
 
                 var ctorInitialization = memberParam
-                    .GroupJoin(
+                    .Join(
                         assignments,
                         y => y.Member,
                         y => y.DDB.DataMember.Name,
                         (y, z) => (constructurArgument: y, Items: z),
                         StringComparer.OrdinalIgnoreCase
                     )
-                    .SelectMany(y => y.Items.Cast<(DynamoDbDataMember DynamoDbDataMember, Assignment assignment)?>().DefaultIfEmpty(), (y, z) => (y.constructurArgument, Item: z))
-                    .Select(x =>
-                    {
-                        if (x.Item is { } item)
-                            return $"{x.constructurArgument.Parameter} : {item.assignment.Value}";
-
-                        // TODO might be worth considering to throw exception in the source generator for this in order to give faster feedback.
-                        return
-                            $@"{x.constructurArgument.Parameter} : true ? throw new ArgumentException(""Unable to determine the corresponding data member for constructor argument '{x.constructurArgument.Parameter}' in '{namedTypeSymbol.Name}'; make sure the names are consistent."") : default";
-                    });
+                    .Select(x => $"{Constants.NewLine}                  {x.constructurArgument.Parameter} : {x.Items.Assignment.Value}");
 
                 constructorArgs = string.Join(", ", ctorInitialization);
             }
 
             var objInitialization = assignments
                 .Where(x => x.DDB.DataMember.IsAssignable)
-                .Select(x => $"{x.DDB.DataMember.Name} = {x.Assignment.Value}");
+                .Select(x => $"{Constants.NewLine}                    {x.DDB.DataMember.Name} = {x.Assignment.Value}");
 
             return (
                 assignments.Select(x => x.Assignment),
-                $"new {_fullTypeNameFactory(typeSymbol)}({constructorArgs}) {{{string.Join(", ", objInitialization)}}}"
+                $"new {_fullTypeNameFactory(typeSymbol)}({(constructorArgs is "" ? null : $"{constructorArgs}{Constants.NewLine}                ")}) {{{string.Join(", ", objInitialization)}{Constants.NewLine}                  }}"
             );
         }
 
