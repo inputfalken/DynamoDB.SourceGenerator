@@ -575,10 +575,7 @@ public class DynamoDbMarshaller
             if (typeSymbol.IsTupleType)
                 return (assignments.Select(x => x.Assignment), $"({string.Join(", ", assignments.Select(x => $"{x.DDB.DataMember.Name}: {x.Assignment.Value}"))})");
 
-            // Right now we either take a constructor path or object initialization path. But they could co-exist.
-            // We do expect the constructor arguments to be 1-1 with case insensitive comparison for data member names.
-            var constructorArgs = string.Empty;
-                const string indent = "                  ";
+            var constructorInitializationArguments = Enumerable.Empty<string>();
             if (typeSymbol is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.InstanceConstructors.Any(x => x.Parameters.Length > 0))
             {
                 var ctor = namedTypeSymbol.InstanceConstructors
@@ -609,19 +606,39 @@ public class DynamoDbMarshaller
                         (y, z) => (constructurArgument: y, Items: z),
                         StringComparer.OrdinalIgnoreCase
                     )
-                    .Select(x => $"{Constants.NewLine}                  {x.constructurArgument.Parameter} : {x.Items.Assignment.Value}");
+                    .Select(x => $"                    {x.constructurArgument.Parameter} : {x.Items.Assignment.Value}");
 
-                constructorArgs = string.Join(", ", ctorInitialization);
+                constructorInitializationArguments = ctorInitialization;
             }
 
-            var objInitialization = assignments
+            var objInitializationArguments = assignments
                 .Where(x => x.DDB.DataMember.IsAssignable)
-                .Select(x => $"{Constants.NewLine}                    {x.DDB.DataMember.Name} = {x.Assignment.Value}");
+                .Select(x => $"                    {x.DDB.DataMember.Name} = {x.Assignment.Value}");
 
             return (
                 assignments.Select(x => x.Assignment),
-                $"new {_fullTypeNameFactory(typeSymbol)}({(constructorArgs is "" ? null : $"{constructorArgs}{Constants.NewLine}                ")}) {{{string.Join(", ", objInitialization)}{Constants.NewLine}                  }}"
+                (string.Join($",{Constants.NewLine}", constructorInitializationArguments), string.Join($",{Constants.NewLine}", objInitializationArguments)) switch
+                {
+                    ("", "") => $"new {_fullTypeNameFactory(typeSymbol)}()",
+                    (var constructorOnly, "") => $@"new {_fullTypeNameFactory(typeSymbol)}
+                (
+{constructorOnly}
+                )",
+                    ("", var objectInitOnly) => $@"new {_fullTypeNameFactory(typeSymbol)}
+                {{
+{objectInitOnly}
+                }}",
+                    var (constructor, objectInit) => $@"new {_fullTypeNameFactory(typeSymbol)}
+                (
+{constructor}
+                )
+                {{
+{objectInit}
+                }}"
+                }
+                
             );
+
         }
 
     }
