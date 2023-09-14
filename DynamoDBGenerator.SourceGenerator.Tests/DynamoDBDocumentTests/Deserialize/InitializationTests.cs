@@ -7,7 +7,7 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserial
 [DynamoDBMarshaller(typeof(ConstructorClassWithMixedName))]
 [DynamoDBMarshaller(typeof(InlinedRecord))]
 [DynamoDBMarshaller(typeof(ExplicitConstructorRecord))]
-[DynamoDBMarshaller(typeof(RecordWithNestedRecord))]
+[DynamoDBMarshaller(typeof(InlineRecordWithNestedRecord))]
 public partial class InitializationTests
 {
 
@@ -89,16 +89,16 @@ public partial class InitializationTests
     }
 }
 
-public record RecordWithNestedRecord(string One, RecordWithNestedRecord.NestedRecord Test)
+public record InlineRecordWithNestedRecord(string One, InlineRecordWithNestedRecord.InlinedNestedRecord Test)
 {
-    public record NestedRecord(string Two);
+    public record InlinedNestedRecord(string Two);
 }
 public record InlinedRecord(string FirstProperty, string SecondProperty);
 
 public record ExplicitConstructorRecord
 {
 
-    // ReSharper disable once ConvertToPrimaryConstructor
+    [DynamoDBMarshallerConstructor]
     public ExplicitConstructorRecord(string first, string second)
     {
         FirstProperty = first;
@@ -110,6 +110,7 @@ public record ExplicitConstructorRecord
 
 public class ConstructorOnlyClass
 {
+    [DynamoDBMarshallerConstructor]
     public ConstructorOnlyClass(string prop1)
     {
         Prop1 = prop1;
@@ -124,6 +125,7 @@ public class ObjectInitializerOnlyClass
 
 public class ObjectInitializerMixedWithConstructorClass
 {
+    [DynamoDBMarshallerConstructor]
     public ObjectInitializerMixedWithConstructorClass(string prop3)
     {
         Prop3 = prop3;
@@ -135,7 +137,7 @@ public class ObjectInitializerMixedWithConstructorClass
 
 public class ConstructorClassWithMixedName
 {
-
+    [DynamoDBMarshallerConstructor]
     public ConstructorClassWithMixedName(string something)
     {
 

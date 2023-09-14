@@ -3,6 +3,7 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Metadata;
+using System.Xml;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
@@ -575,49 +576,20 @@ public class DynamoDbMarshaller
             if (typeSymbol.IsTupleType)
                 return (assignments.Select(x => x.Assignment), $"({string.Join(", ", assignments.Select(x => $"{x.DDB.DataMember.Name}: {x.Assignment.Value}"))})");
 
-            var constructorInitializationArguments = Enumerable.Empty<string>();
-            if (typeSymbol is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.InstanceConstructors.Any(x => x.Parameters.Length > 0))
-            {
-                var ctor = namedTypeSymbol.InstanceConstructors
-                    .OrderByDescending(x => x.Parameters.Length)
-                    .First();
-
-                // For some reason DeclaringSyntaxReferences has a Length of 0 For KeyValuePair<TKey, TValue>.
-                var memberParam = ctor.DeclaringSyntaxReferences.Length is 0
-                    ? ctor.Parameters.Select(x => (Member: x.Name, Parameter: x.Name))
-                    : ctor.DeclaringSyntaxReferences[0].GetSyntax() switch
-                    {
-                        ConstructorDeclarationSyntax ctorSyntax => ctorSyntax
-                            .DescendantNodes()
-                            .OfType<AssignmentExpressionSyntax>()
-                            .Select(x => (Member: x.Left.ToString(), Parameter: x.Right.ToString())),
-                        RecordDeclarationSyntax recordDeclarationSyntax => recordDeclarationSyntax
-                            .DescendantNodes()
-                            .OfType<ParameterSyntax>()
-                            .Select(x => (Member: x.Identifier.Text, Parameter: x.Identifier.Text)),
-                        _ => throw new NotSupportedException(ctor.DeclaringSyntaxReferences[0].GetSyntax().ToFullString())
-                    };
-
-                var ctorInitialization = memberParam
-                    .Join(
-                        assignments,
-                        y => y.Member,
-                        y => y.DDB.DataMember.Name,
-                        (y, z) => (constructurArgument: y, Items: z),
-                        StringComparer.OrdinalIgnoreCase
-                    )
-                    .Select(x => $"                    {x.constructurArgument.Parameter} : {x.Items.Assignment.Value}");
-
-                constructorInitializationArguments = ctorInitialization;
-            }
+            var constructorAssignments = assignments
+                .Join(
+                    TryGetMatchedConstructorArguments(typeSymbol),
+                    x => x.DDB.DataMember.Name,
+                    x => x.DataMember,
+                    (x, y) => $"                    {y.ParameterName} : {x.Assignment.Value}"
+                );
 
             var objInitializationArguments = assignments
                 .Where(x => x.DDB.DataMember.IsAssignable)
                 .Select(x => $"                    {x.DDB.DataMember.Name} = {x.Assignment.Value}");
-
             return (
                 assignments.Select(x => x.Assignment),
-                (string.Join($",{Constants.NewLine}", constructorInitializationArguments), string.Join($",{Constants.NewLine}", objInitializationArguments)) switch
+                (string.Join($",{Constants.NewLine}", constructorAssignments), string.Join($",{Constants.NewLine}", objInitializationArguments)) switch
                 {
                     ("", "") => $"new {_fullTypeNameFactory(typeSymbol)}()",
                     (var constructorOnly, "") => $@"new {_fullTypeNameFactory(typeSymbol)}
@@ -636,8 +608,52 @@ public class DynamoDbMarshaller
 {objectInit}
                 }}"
                 }
-                
             );
+
+        }
+
+        static IEnumerable<(string DataMember, string ParameterName)> TryGetMatchedConstructorArguments(ITypeSymbol typeSymbol)
+        {
+
+            if (typeSymbol is not INamedTypeSymbol namedTypeSymbol)
+                return Enumerable.Empty<(string, string )>();
+
+            if (namedTypeSymbol.InstanceConstructors.Length is 0)
+                return Enumerable.Empty<(string, string )>();
+
+            if (namedTypeSymbol is {Name: "KeyValuePair", ContainingNamespace.Name: "System.Collections.Generic"})
+                return namedTypeSymbol.InstanceConstructors
+                    .First(x => x.Parameters.Length is 2)
+                    .Parameters
+                    .Select(x => (MemberName: x.Name, ParameterName: x.Name));
+
+            // Should not need to be looked at when it's a RecordDeclarationSyntax
+            return namedTypeSymbol switch
+            {
+                _ when namedTypeSymbol.InstanceConstructors
+                    .SelectMany(
+                        x => x.GetAttributes().Where(y => y.AttributeClass is {ContainingNamespace.Name: nameof(DynamoDBGenerator), Name: nameof(DynamoDBMarshallerConstructor)}),
+                        (x, _) => x
+                    )
+                    .FirstOrDefault() is { } ctor => ctor.DeclaringSyntaxReferences
+                    .Select(x => x.GetSyntax())
+                    .OfType<ConstructorDeclarationSyntax>()
+                    .Select(
+                        x => x.DescendantNodes()
+                            .OfType<AssignmentExpressionSyntax>()
+                            .Select(y => (MemberName: y.Left.ToString(), ParameterName: y.Right.ToString()))
+                    )
+                    .FirstOrDefault() ?? Enumerable.Empty<(string, string)>(),
+                {IsRecord: true} when namedTypeSymbol.InstanceConstructors[0]
+                    .DeclaringSyntaxReferences
+                    .Select(x => x.GetSyntax())
+                    .OfType<RecordDeclarationSyntax>()
+                    .FirstOrDefault() is { } ctor => ctor
+                    .DescendantNodes()
+                    .OfType<ParameterSyntax>()
+                    .Select(x => (MemberName: x.Identifier.Text, ParameterName: x.Identifier.Text)),
+                _ => Array.Empty<(string, string)>()
+            };
 
         }
 

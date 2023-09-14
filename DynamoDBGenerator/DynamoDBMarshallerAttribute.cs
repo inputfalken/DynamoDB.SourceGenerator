@@ -51,3 +51,9 @@ public class DynamoDBMarshallerAttribute : Attribute
         _entityType = entityType;
     }
 }
+
+[AttributeUsage(AttributeTargets.Constructor)]
+public class DynamoDBMarshallerConstructor : Attribute
+{
+
+}
