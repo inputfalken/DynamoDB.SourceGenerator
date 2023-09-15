@@ -581,7 +581,8 @@ public class DynamoDbMarshaller
                     TryGetMatchedConstructorArguments(typeSymbol),
                     x => x.DDB.DataMember.Name,
                     x => x.DataMember,
-                    (x, y) => (x.Assignment, x.DDB, Constructor: y.OfType<(string DataMember, string ParameterName)?>().FirstOrDefault())
+                    (x, y) => (x.Assignment, x.DDB, Constructor: y.OfType<(string DataMember, string ParameterName)?>().FirstOrDefault()),
+                    StringComparer.OrdinalIgnoreCase // Is Required for KeyValuePair to work.
                 )
                 .GroupBy(x => x.Constructor.HasValue, (x, y) =>
                 {
@@ -615,7 +616,7 @@ public class DynamoDbMarshaller
             if (namedTypeSymbol.InstanceConstructors.Length is 0)
                 return Enumerable.Empty<(string, string )>();
 
-            if (namedTypeSymbol is {Name: "KeyValuePair", ContainingNamespace.Name: "System.Collections.Generic"})
+            if (namedTypeSymbol is {Name: "KeyValuePair", ContainingNamespace.Name: "Generic"})
                 return namedTypeSymbol.InstanceConstructors
                     .First(x => x.Parameters.Length is 2)
                     .Parameters
