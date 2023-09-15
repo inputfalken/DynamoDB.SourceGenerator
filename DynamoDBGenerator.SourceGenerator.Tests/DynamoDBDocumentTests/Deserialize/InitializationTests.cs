@@ -8,9 +8,33 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserial
 [DynamoDBMarshaller(typeof(InlinedRecord))]
 [DynamoDBMarshaller(typeof(ExplicitConstructorRecord))]
 [DynamoDBMarshaller(typeof(InlineRecordWithNestedRecord))]
+[DynamoDBMarshaller(typeof(ClassWithConstructorThatObjectInitializerShouldOnlyBeUsed), PropertyName = "InitializerOnly")]
+[DynamoDBMarshaller(typeof(ClassWithConstructorThatShouldOnlyBeUsed), PropertyName = "ConstructorOnly")]
 public partial class InitializationTests
 {
 
+    [Fact]
+    public void ClassWithConstructorThatObjectInitializerShouldOnlyBeUsed_Deserialize_ShouldNotThrow()
+    {
+        var act = () => InitializerOnly.Unmarshall(new Dictionary<string, AttributeValue>
+        {
+            {"First", new AttributeValue {S = "ABC"}}
+        });
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void ClassWithConstructorThatShouldOnlyBeUsed_Deserialize_ShouldNotThrow()
+    {
+        var act = () => ConstructorOnly.Unmarshall(new Dictionary<string, AttributeValue>
+        {
+            {"First", new AttributeValue {S = "ABC"}}
+        });
+
+        act.Should().NotThrow();
+    }
+    
     [Fact]
     public void ConstructorOnlyClass_FindCorrespondingDataMember_ShouldSucceed()
     {
@@ -95,6 +119,36 @@ public record InlineRecordWithNestedRecord(string One, InlineRecordWithNestedRec
 }
 
 public record InlinedRecord(string FirstProperty, string SecondProperty);
+
+public class ClassWithConstructorThatObjectInitializerShouldOnlyBeUsed
+{
+    public ClassWithConstructorThatObjectInitializerShouldOnlyBeUsed(string first)
+    {
+        throw new Exception("PARAMETERIZED CTOR SHOULD NOT BE ACCESSED");
+    }
+
+    public ClassWithConstructorThatObjectInitializerShouldOnlyBeUsed()
+    {
+    }
+
+    public string? First { get; init; }
+}
+
+public class ClassWithConstructorThatShouldOnlyBeUsed
+{
+    [DynamoDBMarshallerConstructor]
+    public ClassWithConstructorThatShouldOnlyBeUsed(string first)
+    {
+        First = first;
+    }
+
+    public ClassWithConstructorThatShouldOnlyBeUsed()
+    {
+        throw new Exception("EMPTY CTOR SHOULD NOT BE ACCESSED");
+    }
+
+    public string First { get; init; }
+}
 
 public record ExplicitConstructorRecord
 {
