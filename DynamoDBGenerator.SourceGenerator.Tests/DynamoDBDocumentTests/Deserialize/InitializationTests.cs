@@ -24,7 +24,7 @@ public partial class InitializationTests
         );
 
         deserializeClass.Should().NotBeNull();
-        deserializeClass.Prop1.Should().Be(@"Hello");
+        deserializeClass.Prop1.Should().Be("Hello");
     }
 
     [Fact]
@@ -93,6 +93,7 @@ public record InlineRecordWithNestedRecord(string One, InlineRecordWithNestedRec
 {
     public record InlinedNestedRecord(string Two);
 }
+
 public record InlinedRecord(string FirstProperty, string SecondProperty);
 
 public record ExplicitConstructorRecord
@@ -104,8 +105,8 @@ public record ExplicitConstructorRecord
         FirstProperty = first;
         SecondProperty = second;
     }
-    public string FirstProperty { get; init; }
-    public string SecondProperty { get; init; }
+    public string FirstProperty { get; }
+    public string SecondProperty { get; }
 }
 
 public class ConstructorOnlyClass
@@ -132,7 +133,7 @@ public class ObjectInitializerMixedWithConstructorClass
     }
 
     public string Prop3 { get; }
-    public string? Prop4 { get; set; }
+    public string? Prop4 { get; init; }
 }
 
 public class ConstructorClassWithMixedName
