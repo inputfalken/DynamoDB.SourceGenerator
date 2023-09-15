@@ -576,40 +576,34 @@ public class DynamoDbMarshaller
             if (typeSymbol.IsTupleType)
                 return (assignments.Select(x => x.Assignment), $"({string.Join(", ", assignments.Select(x => $"{x.DDB.DataMember.Name}: {x.Assignment.Value}"))})");
 
-            var constructorAssignments = assignments
-                .Join(
+            var objectArguments = assignments
+                .GroupJoin(
                     TryGetMatchedConstructorArguments(typeSymbol),
                     x => x.DDB.DataMember.Name,
                     x => x.DataMember,
-                    (x, y) => $"                    {y.ParameterName} : {x.Assignment.Value}"
-                );
+                    (x, y) => (x.Assignment, x.DDB, Constructor: y.OfType<(string DataMember, string ParameterName)?>().FirstOrDefault())
+                )
+                .GroupBy(x => x.Constructor.HasValue, (x, y) =>
+                {
+                    return x
+                        ? @$"
+                (
+{string.Join($",{Constants.NewLine}", y.Select(z => $"                    {z.Constructor!.Value.ParameterName} : {z.Assignment.Value}"))}
+                )"
+                        : $@"
+                {{
+{string.Join($",{Constants.NewLine}", y.Where(x => x.DDB.DataMember.IsAssignable).Select(z => $"                    {z.DDB.DataMember.Name} = {z.Assignment.Value}"))}
+                }}";
+                });
 
-            var objInitializationArguments = assignments
-                .Where(x => x.DDB.DataMember.IsAssignable)
-                .Select(x => $"                    {x.DDB.DataMember.Name} = {x.Assignment.Value}");
             return (
                 assignments.Select(x => x.Assignment),
-                (string.Join($",{Constants.NewLine}", constructorAssignments), string.Join($",{Constants.NewLine}", objInitializationArguments)) switch
+                string.Join("", objectArguments) switch
                 {
-                    ("", "") => $"new {_fullTypeNameFactory(typeSymbol)}()",
-                    (var constructorOnly, "") => $@"new {_fullTypeNameFactory(typeSymbol)}
-                (
-{constructorOnly}
-                )",
-                    ("", var objectInitOnly) => $@"new {_fullTypeNameFactory(typeSymbol)}
-                {{
-{objectInitOnly}
-                }}",
-                    var (constructor, objectInit) => $@"new {_fullTypeNameFactory(typeSymbol)}
-                (
-{constructor}
-                )
-                {{
-{objectInit}
-                }}"
+                    "" => $"new {_fullTypeNameFactory(typeSymbol)}()",
+                    var args => $"new {_fullTypeNameFactory(typeSymbol)}{args}"
                 }
             );
-
         }
 
         static IEnumerable<(string DataMember, string ParameterName)> TryGetMatchedConstructorArguments(ITypeSymbol typeSymbol)
