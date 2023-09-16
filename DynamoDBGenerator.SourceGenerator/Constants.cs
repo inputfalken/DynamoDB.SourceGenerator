@@ -24,7 +24,6 @@ public static class Constants
     public const int MaxMethodNameLenght = 511;
 
     public const string NotNullErrorMessage = "The data member is not supposed to be null, to allow this; make the data member nullable.";
-
 }
 
 public static class ConstantExtensions

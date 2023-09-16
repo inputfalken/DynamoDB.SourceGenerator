@@ -3,20 +3,15 @@ using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.Model;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
-using DynamoDBGenerator;
 using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.Extensions;
-using static SampleApp.Repository.PersonEntityMarshallerImplementation;
-using PutItemRequest = Amazon.DynamoDBv2.Model.PutItemRequest;
 
 namespace SampleApp;
 
 internal static class Program
 {
-    private static IDynamoDBClient<PersonEntity, PersonEntity, PersonEntityName, PersonEntityValue> _toDynamoDBClient;
     public static void Main()
     {
-        _toDynamoDBClient = new Repository().PersonEntityMarshaller.ToDynamoDBClient("MyTable", new AmazonDynamoDBClient());
         BenchmarkRunner.Run<Marshalling>();
     }
 

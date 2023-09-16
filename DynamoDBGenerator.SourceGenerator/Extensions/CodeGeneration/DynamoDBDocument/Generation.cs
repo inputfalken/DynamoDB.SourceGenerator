@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
@@ -96,9 +99,9 @@ public class DynamoDbMarshaller
         return new Assignment(in outerAssignment, in elementType, innerAssignment.HasExternalDependency);
     }
 
-    private Assignment BuildPocoList(in SingleGeneric singleGeneric, in string? operation, in string accessPattern, in string defaultCause)
+    private Assignment BuildPocoList(in SingleGeneric singleGeneric, in string? operation, in string accessPattern, in string defaultCause, in string memberName)
     {
-        var innerAssignment = DataMemberAssignment(singleGeneric.T, "y");
+        var innerAssignment = DataMemberAssignment(singleGeneric.T, "y", in memberName);
         var outerAssignment = $"{accessPattern} switch {{ {{ L: {{ }} x }} => x.Select(y => {innerAssignment.Value}){operation}, {defaultCause} }}";
 
         return new Assignment(in outerAssignment, singleGeneric.T, innerAssignment.HasExternalDependency);
@@ -217,12 +220,13 @@ public class DynamoDbMarshaller
         {@class}";
     }
 
-    private Assignment DataMemberAssignment(in ITypeSymbol type, in string pattern)
+    private Assignment DataMemberAssignment(in ITypeSymbol type, in string pattern, in string memberName)
     {
-        var defaultCase = type.IsNullable() ? "_ => null" : @$"_ => throw new ArgumentNullException(""{Constants.NotNullErrorMessage}"")";
-        return Execution(in type, in pattern, defaultCase);
+        
+        var defaultCase = type.IsNullable() ? "_ => null" : @$"_ => throw new DynamoDBMarshallingException(""{memberName}"", ""{Constants.NotNullErrorMessage}"")";
+        return Execution(in type, in pattern, defaultCase, in memberName);
 
-        Assignment Execution(in ITypeSymbol typeSymbol, in string accessPattern, string @default)
+        Assignment Execution(in ITypeSymbol typeSymbol, in string accessPattern, string @default, in string memberName)
         {
             if (typeSymbol.GetKnownType() is not { } knownType) return ExternalAssignment(in typeSymbol, in accessPattern);
 
@@ -252,15 +256,15 @@ public class DynamoDbMarshaller
                 },
                 SingleGeneric singleGeneric => singleGeneric.Type switch
                 {
-                    SingleGeneric.SupportedType.Nullable => Execution(singleGeneric.T, in accessPattern, @default),
+                    SingleGeneric.SupportedType.Nullable => Execution(singleGeneric.T, in accessPattern, @default, in memberName),
                     SingleGeneric.SupportedType.Set => BuildPocoSet(singleGeneric.T, in accessPattern, in @default),
-                    SingleGeneric.SupportedType.Array => BuildPocoList(in singleGeneric, ".ToArray()", in accessPattern, in @default),
-                    SingleGeneric.SupportedType.ICollection => BuildPocoList(in singleGeneric, ".ToList()", in accessPattern, in @default),
-                    SingleGeneric.SupportedType.IReadOnlyCollection => BuildPocoList(in singleGeneric, ".ToArray()", in accessPattern, in @default),
-                    SingleGeneric.SupportedType.IEnumerable => BuildPocoList(in singleGeneric, null, in accessPattern, in @default),
+                    SingleGeneric.SupportedType.Array => BuildPocoList(in singleGeneric, ".ToArray()", in accessPattern, in @default, in memberName),
+                    SingleGeneric.SupportedType.ICollection => BuildPocoList(in singleGeneric, ".ToList()", in accessPattern, in @default, in memberName),
+                    SingleGeneric.SupportedType.IReadOnlyCollection => BuildPocoList(in singleGeneric, ".ToArray()", in accessPattern, in @default, in memberName),
+                    SingleGeneric.SupportedType.IEnumerable => BuildPocoList(in singleGeneric, null, in accessPattern, in @default, in memberName),
                     _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
                 },
-                KeyValueGeneric keyValueGeneric => StringKeyedPocoGeneric(in keyValueGeneric, in accessPattern, @default),
+                KeyValueGeneric keyValueGeneric => StringKeyedPocoGeneric(in keyValueGeneric, in accessPattern, in @default, in memberName),
                 _ => null
             };
 
@@ -564,7 +568,7 @@ public class DynamoDbMarshaller
         {
             var assignments = typeSymbol
                 .GetDynamoDbProperties()
-                .Select(x => (DDB: x, Assignment: DataMemberAssignment(x.DataMember.Type, @$"{paramReference}.GetValueOrDefault(""{x.AttributeName}"")")))
+                .Select(x => (DDB: x, Assignment: DataMemberAssignment(x.DataMember.Type, @$"{paramReference}.GetValueOrDefault(""{x.AttributeName}"")", x.DataMember.Name)))
                 .ToArray();
 
             if (typeSymbol.IsTupleType)
@@ -653,21 +657,21 @@ public class DynamoDbMarshaller
 
     }
 
-    private Assignment? StringKeyedPocoGeneric(in KeyValueGeneric keyValueGeneric, in string accessPattern, string defaultCase)
+    private Assignment? StringKeyedPocoGeneric(in KeyValueGeneric keyValueGeneric, in string accessPattern, in string defaultCase, in string memberName)
     {
         switch (keyValueGeneric)
         {
             case {TKey: not {SpecialType: SpecialType.System_String}}:
                 return null;
             case {Type: KeyValueGeneric.SupportedType.LookUp}:
-                var lookupValueAssignment = DataMemberAssignment(keyValueGeneric.TValue, "y.z");
+                var lookupValueAssignment = DataMemberAssignment(keyValueGeneric.TValue, "y.z", in memberName);
                 return new Assignment(
                     $"{accessPattern} switch {{ {{ M: {{ }} x }} => x.SelectMany(y => y.Value.L, (y, z) => (y.Key, z)).ToLookup(y => y.Key, y => {lookupValueAssignment.Value}), {defaultCase} }}",
                     keyValueGeneric.TValue,
                     lookupValueAssignment.HasExternalDependency
                 );
             case {Type: KeyValueGeneric.SupportedType.Dictionary}:
-                var dictionaryValueAssignment = DataMemberAssignment(keyValueGeneric.TValue, "y.Value");
+                var dictionaryValueAssignment = DataMemberAssignment(keyValueGeneric.TValue, "y.Value", in memberName);
                 return new Assignment(
                     $@"{accessPattern} switch {{ {{ M: {{ }} x }} => x.ToDictionary(y => y.Key, y => {dictionaryValueAssignment.Value}), {defaultCase} }}",
                     keyValueGeneric.TValue,
