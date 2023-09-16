@@ -5,7 +5,12 @@ namespace DynamoDBGenerator.SourceGenerator;
 
 public class Constants
 {
-    public const string DynamoDbDocumentPropertyFullname = nameof(DynamoDBGenerator) + "." + nameof(Attributes) + "." + nameof(DynamoDBMarshallerAttribute);
+    public const string AssemblyName = nameof(DynamoDBGenerator);
+    public const string AttributeNameSpace = nameof(Attributes);
+    public const string MarshallerAttributeName = nameof(DynamoDBMarshallerAttribute);
+    public const string MarshallerConstructorAttributeName = nameof(DynamoDBMarshallerConstructorAttribute);
+    public const string DynamoDbDocumentPropertyFullname = $"{AssemblyName}.{AttributeNameSpace}.{MarshallerAttributeName}";
+    
 
     public const string NewLine = @"
 ";

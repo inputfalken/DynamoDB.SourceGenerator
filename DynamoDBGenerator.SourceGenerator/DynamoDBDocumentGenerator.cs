@@ -84,7 +84,12 @@ public class DynamoDBDocumentGenerator : IIncrementalGenerator
 
         var arguments = typeSymbol
             .GetAttributes()
-            .Where(x => x.AttributeClass is {ContainingNamespace.Name: nameof(Attributes), Name: nameof(DynamoDBMarshallerAttribute)})
+            .Where(x => x.AttributeClass is
+            {
+                ContainingNamespace.Name: Constants.AttributeNameSpace,
+                Name: Constants.MarshallerAttributeName,
+                ContainingAssembly.Name: Constants.AssemblyName
+            })
             .Select(ResultSelector);
 
         foreach (var argument in arguments)
