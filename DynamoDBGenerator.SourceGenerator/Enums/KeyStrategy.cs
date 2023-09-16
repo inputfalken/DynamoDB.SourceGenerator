@@ -1,4 +1,4 @@
-namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.DynamoDBDocument;
+namespace DynamoDBGenerator.SourceGenerator.Enums;
 
 public enum KeyStrategy
 {

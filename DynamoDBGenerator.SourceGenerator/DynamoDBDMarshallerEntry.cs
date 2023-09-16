@@ -1,8 +1,7 @@
 using System.Collections.Immutable;
 using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Extensions;
-using DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
-using DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.DynamoDBDocument;
+using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -10,7 +9,7 @@ namespace DynamoDBGenerator.SourceGenerator;
 
 [Generator]
 // ReSharper disable once InconsistentNaming
-public class DynamoDBDocumentGenerator : IIncrementalGenerator
+public class DynamoDBDMarshallerEntry : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -102,17 +101,4 @@ public class DynamoDBDocumentGenerator : IIncrementalGenerator
     }
 
 
-}
-
-public readonly struct DynamoDBMarshallerArguments
-{
-    public DynamoDBMarshallerArguments(INamedTypeSymbol entityTypeSymbol, string propertyName, INamedTypeSymbol argumentType)
-    {
-        EntityTypeSymbol = entityTypeSymbol;
-        PropertyName = propertyName;
-        ArgumentType = argumentType;
-    }
-    public INamedTypeSymbol EntityTypeSymbol { get; }
-    public INamedTypeSymbol ArgumentType { get; }
-    public string PropertyName { get; }
 }

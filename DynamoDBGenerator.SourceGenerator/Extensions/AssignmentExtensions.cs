@@ -1,4 +1,5 @@
-namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
+using DynamoDBGenerator.SourceGenerator.Types;
+namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class AssignmentExtensions
 {

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 

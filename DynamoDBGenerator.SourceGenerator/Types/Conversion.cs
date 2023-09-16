@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
-
-namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
+namespace DynamoDBGenerator.SourceGenerator.Types;
 
 public readonly record struct Conversion(
     in string Code,

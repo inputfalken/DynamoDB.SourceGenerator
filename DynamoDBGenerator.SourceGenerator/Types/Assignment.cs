@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
-
-namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
+namespace DynamoDBGenerator.SourceGenerator.Types;
 
 public readonly record struct Assignment(in string Value, in ITypeSymbol Type, in bool HasExternalDependency)
 {

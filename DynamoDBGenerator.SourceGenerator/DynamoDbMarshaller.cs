@@ -1,8 +1,10 @@
 using Amazon.DynamoDBv2.Model;
+using DynamoDBGenerator.SourceGenerator.Enums;
+using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.DynamoDBDocument;
+namespace DynamoDBGenerator.SourceGenerator;
 
 public class DynamoDbMarshaller
 {
@@ -589,7 +591,7 @@ public class DynamoDbMarshaller
                 )"
                         : $@"
                 {{
-{string.Join($",{Constants.NewLine}", y.Where(x => x.DDB.DataMember.IsAssignable).Select(z => $"                    {z.DDB.DataMember.Name} = {z.Assignment.Value}"))}
+{string.Join($",{Constants.NewLine}", y.Where(z => z.DDB.DataMember.IsAssignable).Select(z => $"                    {z.DDB.DataMember.Name} = {z.Assignment.Value}"))}
                 }}";
                 });
 
