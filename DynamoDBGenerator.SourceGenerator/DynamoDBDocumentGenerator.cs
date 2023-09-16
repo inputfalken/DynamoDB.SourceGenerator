@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration;
 using DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.DynamoDBDocument;
@@ -43,9 +44,9 @@ public class DynamoDBDocumentGenerator : IIncrementalGenerator
         }
     }
 
-    
+
     private static IEnumerable<string> GetMethods(ISymbol typeSymbol, Compilation compilation)
-    
+
     {
         // If we can find duplicated types, we could access their properties instead of duplicating the source generator. 
         // For example :
@@ -83,8 +84,12 @@ public class DynamoDBDocumentGenerator : IIncrementalGenerator
 
         var arguments = typeSymbol
             .GetAttributes()
-            .Where(x => x.AttributeClass?.ContainingNamespace is {Name: nameof(DynamoDBGenerator)})
-            .Where(x => x.AttributeClass!.Name is nameof(DynamoDBMarshallerAttribute))
+            .Where(x => x.AttributeClass is
+            {
+                ContainingNamespace.Name: Constants.AttributeNameSpace,
+                Name: Constants.MarshallerAttributeName,
+                ContainingAssembly.Name: Constants.AssemblyName
+            })
             .Select(ResultSelector);
 
         foreach (var argument in arguments)

@@ -1,6 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace DynamoDBGenerator.SourceGenerator.Extensions.CodeGeneration.DynamoDBDocument;
 
 public class DynamoDbMarshaller
@@ -95,9 +99,9 @@ public class DynamoDbMarshaller
         return new Assignment(in outerAssignment, in elementType, innerAssignment.HasExternalDependency);
     }
 
-    private Assignment BuildPocoList(in SingleGeneric singleGeneric, in string? operation, in string accessPattern, in string defaultCause)
+    private Assignment BuildPocoList(in SingleGeneric singleGeneric, in string? operation, in string accessPattern, in string defaultCause, in string memberName)
     {
-        var innerAssignment = DataMemberAssignment(singleGeneric.T, "y");
+        var innerAssignment = DataMemberAssignment(singleGeneric.T, "y", in memberName);
         var outerAssignment = $"{accessPattern} switch {{ {{ L: {{ }} x }} => x.Select(y => {innerAssignment.Value}){operation}, {defaultCause} }}";
 
         return new Assignment(in outerAssignment, singleGeneric.T, innerAssignment.HasExternalDependency);
@@ -216,12 +220,13 @@ public class DynamoDbMarshaller
         {@class}";
     }
 
-    private Assignment DataMemberAssignment(in ITypeSymbol type, in string pattern)
+    private Assignment DataMemberAssignment(in ITypeSymbol type, in string pattern, in string memberName)
     {
-        var defaultCase = type.IsNullable() ? "_ => null" : @$"_ => throw new ArgumentNullException(""{Constants.NotNullErrorMessage}"")";
-        return Execution(in type, in pattern, defaultCase);
+        
+        var defaultCase = type.IsNullable() ? "_ => null" : @$"_ => throw new DynamoDBMarshallingException(""{memberName}"", ""{Constants.NotNullErrorMessage}"")";
+        return Execution(in type, in pattern, defaultCase, in memberName);
 
-        Assignment Execution(in ITypeSymbol typeSymbol, in string accessPattern, string @default)
+        Assignment Execution(in ITypeSymbol typeSymbol, in string accessPattern, string @default, in string memberName)
         {
             if (typeSymbol.GetKnownType() is not { } knownType) return ExternalAssignment(in typeSymbol, in accessPattern);
 
@@ -251,15 +256,15 @@ public class DynamoDbMarshaller
                 },
                 SingleGeneric singleGeneric => singleGeneric.Type switch
                 {
-                    SingleGeneric.SupportedType.Nullable => Execution(singleGeneric.T, in accessPattern, @default),
+                    SingleGeneric.SupportedType.Nullable => Execution(singleGeneric.T, in accessPattern, @default, in memberName),
                     SingleGeneric.SupportedType.Set => BuildPocoSet(singleGeneric.T, in accessPattern, in @default),
-                    SingleGeneric.SupportedType.Array => BuildPocoList(in singleGeneric, ".ToArray()", in accessPattern, in @default),
-                    SingleGeneric.SupportedType.ICollection => BuildPocoList(in singleGeneric, ".ToList()", in accessPattern, in @default),
-                    SingleGeneric.SupportedType.IReadOnlyCollection => BuildPocoList(in singleGeneric, ".ToArray()", in accessPattern, in @default),
-                    SingleGeneric.SupportedType.IEnumerable => BuildPocoList(in singleGeneric, null, in accessPattern, in @default),
+                    SingleGeneric.SupportedType.Array => BuildPocoList(in singleGeneric, ".ToArray()", in accessPattern, in @default, in memberName),
+                    SingleGeneric.SupportedType.ICollection => BuildPocoList(in singleGeneric, ".ToList()", in accessPattern, in @default, in memberName),
+                    SingleGeneric.SupportedType.IReadOnlyCollection => BuildPocoList(in singleGeneric, ".ToArray()", in accessPattern, in @default, in memberName),
+                    SingleGeneric.SupportedType.IEnumerable => BuildPocoList(in singleGeneric, null, in accessPattern, in @default, in memberName),
                     _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
                 },
-                KeyValueGeneric keyValueGeneric => StringKeyedPocoGeneric(in keyValueGeneric, in accessPattern, @default),
+                KeyValueGeneric keyValueGeneric => StringKeyedPocoGeneric(in keyValueGeneric, in accessPattern, in @default, in memberName),
                 _ => null
             };
 
@@ -563,70 +568,110 @@ public class DynamoDbMarshaller
         {
             var assignments = typeSymbol
                 .GetDynamoDbProperties()
-                .Select(x => (DDB: x, Assignment: DataMemberAssignment(x.DataMember.Type, @$"{paramReference}.GetValueOrDefault(""{x.AttributeName}"")")))
+                .Select(x => (DDB: x, Assignment: DataMemberAssignment(x.DataMember.Type, @$"{paramReference}.GetValueOrDefault(""{x.AttributeName}"")", x.DataMember.Name)))
                 .ToArray();
 
             if (typeSymbol.IsTupleType)
                 return (assignments.Select(x => x.Assignment), $"({string.Join(", ", assignments.Select(x => $"{x.DDB.DataMember.Name}: {x.Assignment.Value}"))})");
 
-            // Right now we either take a constructor path or object initialization path. But they could co-exist.
-            // We do expect the constructor arguments to be 1-1 with case insensitive comparison for data member names.
-            var constructorArgs = string.Empty;
-            if (typeSymbol is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.InstanceConstructors.Any(x => x.Parameters.Length > 0))
-            {
-                var ctor = namedTypeSymbol.InstanceConstructors
-                    .OrderByDescending(x => x.Parameters.Length)
-                    .First();
-
-                var ctorInitialization = ctor.Parameters
-                    .GroupJoin(
-                        assignments,
-                        y => y.Name,
-                        y => y.DDB.DataMember.Name,
-                        (y, z) => (constructurArgument: y, Items: z),
-                        StringComparer.OrdinalIgnoreCase
-                    )
-                    .SelectMany(y => y.Items.Cast<(DynamoDbDataMember DynamoDbDataMember, Assignment assignment)?>().DefaultIfEmpty(), (y, z) => (y.constructurArgument, Item: z))
-                    .Select(x =>
-                    {
-                        if (x.Item is { } item)
-                            return $"{x.constructurArgument.Name} : {item.assignment.Value}";
-
-                        // TODO might be worth considering to throw exception in the source generator for this in order to give faster feedback.
-                        return
-                            $@"{x.constructurArgument.Name} : true ? throw new ArgumentException(""Unable to determine the corresponding data member for constructor argument '{x.constructurArgument.Name}' in '{namedTypeSymbol.Name}'; make sure the names are consistent."") : default";
-                    });
-
-                constructorArgs = string.Join(", ", ctorInitialization);
-            }
-
-            var objInitialization = assignments
-                .Where(x => x.DDB.DataMember.IsAssignable)
-                .Select(x => $"{x.DDB.DataMember.Name} = {x.Assignment.Value}");
+            var objectArguments = assignments
+                .GroupJoin(
+                    TryGetMatchedConstructorArguments(typeSymbol),
+                    x => x.DDB.DataMember.Name,
+                    x => x.DataMember,
+                    (x, y) => (x.Assignment, x.DDB, Constructor: y.OfType<(string DataMember, string ParameterName)?>().FirstOrDefault()),
+                    StringComparer.OrdinalIgnoreCase // Is Required for KeyValuePair to work.
+                )
+                .GroupBy(x => x.Constructor.HasValue, (x, y) =>
+                {
+                    return x
+                        ? @$"
+                (
+{string.Join($",{Constants.NewLine}", y.Select(z => $"                    {z.Constructor!.Value.ParameterName} : {z.Assignment.Value}"))}
+                )"
+                        : $@"
+                {{
+{string.Join($",{Constants.NewLine}", y.Where(x => x.DDB.DataMember.IsAssignable).Select(z => $"                    {z.DDB.DataMember.Name} = {z.Assignment.Value}"))}
+                }}";
+                });
 
             return (
                 assignments.Select(x => x.Assignment),
-                $"new {_fullTypeNameFactory(typeSymbol)}({constructorArgs}) {{{string.Join(", ", objInitialization)}}}"
+                string.Join("", objectArguments) switch
+                {
+                    "" => $"new {_fullTypeNameFactory(typeSymbol)}()",
+                    var args => $"new {_fullTypeNameFactory(typeSymbol)}{args}"
+                }
             );
+        }
+
+        static IEnumerable<(string DataMember, string ParameterName)> TryGetMatchedConstructorArguments(ITypeSymbol typeSymbol)
+        {
+
+            if (typeSymbol is not INamedTypeSymbol namedTypeSymbol)
+                return Enumerable.Empty<(string, string )>();
+
+            if (namedTypeSymbol.InstanceConstructors.Length is 0)
+                return Enumerable.Empty<(string, string )>();
+
+            if (namedTypeSymbol is {Name: "KeyValuePair", ContainingNamespace.Name: "Generic"})
+                return namedTypeSymbol.InstanceConstructors
+                    .First(x => x.Parameters.Length is 2)
+                    .Parameters
+                    .Select(x => (MemberName: x.Name, ParameterName: x.Name));
+
+            // Should not need to be looked at when it's a RecordDeclarationSyntax
+            return namedTypeSymbol switch
+            {
+                _ when namedTypeSymbol.InstanceConstructors
+                    .SelectMany(
+                        x => x.GetAttributes().Where(y => y.AttributeClass is
+                        {
+                            ContainingNamespace.Name: Constants.AttributeNameSpace,
+                            Name: Constants.MarshallerConstructorAttributeName,
+                            ContainingAssembly.Name: Constants.AssemblyName
+                        }),
+                        (x, _) => x
+                    )
+                    .FirstOrDefault() is { } ctor => ctor.DeclaringSyntaxReferences
+                    .Select(x => x.GetSyntax())
+                    .OfType<ConstructorDeclarationSyntax>()
+                    .Select(
+                        x => x.DescendantNodes()
+                            .OfType<AssignmentExpressionSyntax>()
+                            .Select(y => (MemberName: y.Left.ToString(), ParameterName: y.Right.ToString()))
+                    )
+                    .FirstOrDefault() ?? Enumerable.Empty<(string, string)>(),
+                {IsRecord: true} when namedTypeSymbol.InstanceConstructors[0]
+                    .DeclaringSyntaxReferences
+                    .Select(x => x.GetSyntax())
+                    .OfType<RecordDeclarationSyntax>()
+                    .FirstOrDefault() is { } ctor => ctor
+                    .DescendantNodes()
+                    .OfType<ParameterSyntax>()
+                    .Select(x => (MemberName: x.Identifier.Text, ParameterName: x.Identifier.Text)),
+                _ => Array.Empty<(string, string)>()
+            };
+
         }
 
     }
 
-    private Assignment? StringKeyedPocoGeneric(in KeyValueGeneric keyValueGeneric, in string accessPattern, string defaultCase)
+    private Assignment? StringKeyedPocoGeneric(in KeyValueGeneric keyValueGeneric, in string accessPattern, in string defaultCase, in string memberName)
     {
         switch (keyValueGeneric)
         {
             case {TKey: not {SpecialType: SpecialType.System_String}}:
                 return null;
             case {Type: KeyValueGeneric.SupportedType.LookUp}:
-                var lookupValueAssignment = DataMemberAssignment(keyValueGeneric.TValue, "y.z");
+                var lookupValueAssignment = DataMemberAssignment(keyValueGeneric.TValue, "y.z", in memberName);
                 return new Assignment(
                     $"{accessPattern} switch {{ {{ M: {{ }} x }} => x.SelectMany(y => y.Value.L, (y, z) => (y.Key, z)).ToLookup(y => y.Key, y => {lookupValueAssignment.Value}), {defaultCase} }}",
                     keyValueGeneric.TValue,
                     lookupValueAssignment.HasExternalDependency
                 );
             case {Type: KeyValueGeneric.SupportedType.Dictionary}:
-                var dictionaryValueAssignment = DataMemberAssignment(keyValueGeneric.TValue, "y.Value");
+                var dictionaryValueAssignment = DataMemberAssignment(keyValueGeneric.TValue, "y.Value", in memberName);
                 return new Assignment(
                     $@"{accessPattern} switch {{ {{ M: {{ }} x }} => x.ToDictionary(y => y.Key, y => {dictionaryValueAssignment.Value}), {defaultCase} }}",
                     keyValueGeneric.TValue,

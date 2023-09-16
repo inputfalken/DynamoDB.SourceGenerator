@@ -1,3 +1,4 @@
+using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.CustomObjects;
 
 [DynamoDBMarshaller(typeof(SiblingClassOne))]

@@ -1,4 +1,6 @@
 using Amazon.DynamoDBv2.Model;
+using DynamoDBGenerator.Attributes;
+using DynamoDBGenerator.Exceptions;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Types;
 
 [DynamoDBMarshaller(typeof(WeekDayClass))]
@@ -52,7 +54,7 @@ public partial class EnumTests
             .Unmarshall(new Dictionary<string, AttributeValue>())
             .Should();
 
-        act.Should().Throw<ArgumentNullException>();
+        act.Should().Throw<DynamoDBMarshallingException>();
 
     }
 
@@ -63,7 +65,7 @@ public partial class EnumTests
             .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(WeekDayClass.DayOfWeek), new AttributeValue {N = null}}})
             .Should();
 
-        act.Should().Throw<ArgumentNullException>();
+        act.Should().Throw<DynamoDBMarshallingException>();
 
     }
     [Fact]

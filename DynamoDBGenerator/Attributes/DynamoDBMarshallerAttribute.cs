@@ -1,9 +1,8 @@
-﻿using System;
-
-namespace DynamoDBGenerator;
+using System;
+namespace DynamoDBGenerator.Attributes;
 
 /// <summary>
-/// Used to generate an <see cref="IDynamoDBMarshaller{TEntity,TArg,TEntityAttributeNameTracker,TArgumentAttributeValueTracker}"/>  implementation.
+/// When placed on a class it will generate an implementation of <see cref="IDynamoDBMarshaller{TEntity,TArg,TEntityAttributeNameTracker,TArgumentAttributeValueTracker}"/> for the specified type.
 /// The example below shows an example of this attribute being used in a repository.
 /// </summary>
 /// <example>

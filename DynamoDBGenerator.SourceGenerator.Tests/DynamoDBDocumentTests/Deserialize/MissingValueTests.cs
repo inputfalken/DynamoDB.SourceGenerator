@@ -1,4 +1,6 @@
 using Amazon.DynamoDBv2.Model;
+using DynamoDBGenerator.Attributes;
+using DynamoDBGenerator.Exceptions;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize;
 
 [DynamoDBMarshaller(typeof(RequiredReferenceTypeValueMissingClass))]
@@ -10,14 +12,14 @@ public partial class MissingValueTests
     public void Deserialize_RequiredReferenceTypeValueMissingClass_NoKeyValueProvidedShouldThrow()
     {
         var act = () => RequiredReferenceTypeValueMissingClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>());
-        act.Should().Throw<ArgumentNullException>();
+        act.Should().Throw<DynamoDBMarshallingException>();
     }
 
     [Fact]
     public void Deserialize_RequiredReferenceTypeValueMissingClass_KeyWithoutValueProvidedShouldThrow()
     {
         var act = () => RequiredReferenceTypeValueMissingClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue> {{"RequiredProperty", new AttributeValue {S = null}}});
-        act.Should().Throw<ArgumentNullException>();
+        act.Should().Throw<DynamoDBMarshallingException>();
     }
     
     [Fact]
@@ -38,14 +40,14 @@ public partial class MissingValueTests
     public void Deserialize_RequiredValueTypeValueMissingClass_KeyWithoutValueProvidedShouldThrow()
     {
         var act = () => RequiredValueTypeValueMissingClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue> {{"RequiredProperty", new AttributeValue {N = null}}});
-        act.Should().Throw<ArgumentNullException>();
+        act.Should().Throw<DynamoDBMarshallingException>();
     }
 
     [Fact]
     public void Deserialize_RequiredValueTypeValueMissingClass_NoKeyValueProvidedShouldThrow()
     {
         var act = () => RequiredValueTypeValueMissingClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>());
-        act.Should().Throw<ArgumentNullException>();
+        act.Should().Throw<DynamoDBMarshallingException>().WithMessage("The data member is not supposed to be null, to allow this; make the data member nullable. (Data member 'RequiredProperty')");
     }
 }
 

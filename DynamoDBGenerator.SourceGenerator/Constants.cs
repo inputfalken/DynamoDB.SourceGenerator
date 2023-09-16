@@ -1,17 +1,29 @@
+using DynamoDBGenerator.Attributes;
 using Microsoft.CodeAnalysis;
 
 namespace DynamoDBGenerator.SourceGenerator;
 
-public class Constants
+public static class Constants
 {
-    public const string DynamoDbDocumentPropertyFullname = nameof(DynamoDBGenerator) + "." + nameof(DynamoDBMarshallerAttribute);
+    public const string AssemblyName = nameof(DynamoDBGenerator);
+    public const string AttributeNameSpace = nameof(Attributes);
+    public const string MarshallerAttributeName = nameof(DynamoDBMarshallerAttribute);
+    public const string MarshallerConstructorAttributeName = nameof(DynamoDBMarshallerConstructorAttribute);
+    public const string DynamoDbDocumentPropertyFullname = $"{AssemblyName}.{AttributeNameSpace}.{MarshallerAttributeName}";
+    
+    public static class Errors
+    {
+        
+        
+    }
+    
+
     public const string NewLine = @"
 ";
 
     public const int MaxMethodNameLenght = 511;
 
     public const string NotNullErrorMessage = "The data member is not supposed to be null, to allow this; make the data member nullable.";
-
 }
 
 public static class ConstantExtensions
