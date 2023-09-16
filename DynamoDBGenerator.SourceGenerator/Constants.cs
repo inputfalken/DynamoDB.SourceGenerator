@@ -1,4 +1,6 @@
+using System;
 using DynamoDBGenerator.Attributes;
+using DynamoDBGenerator.Exceptions;
 using Microsoft.CodeAnalysis;
 
 namespace DynamoDBGenerator.SourceGenerator;
@@ -10,13 +12,7 @@ public static class Constants
     public const string MarshallerAttributeName = nameof(DynamoDBMarshallerAttribute);
     public const string MarshallerConstructorAttributeName = nameof(DynamoDBMarshallerConstructorAttribute);
     public const string DynamoDbDocumentPropertyFullname = $"{AssemblyName}.{AttributeNameSpace}.{MarshallerAttributeName}";
-    
-    public static class Errors
-    {
-        
-        
-    }
-    
+    public const string MarshallingExceptionName = nameof(DynamoDBMarshallingException);
 
     public const string NewLine = @"
 ";

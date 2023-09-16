@@ -36,7 +36,7 @@ public static class NotNullEvaluationExtensions
 
     private static string CreateException(in string accessPattern)
     {
-        return @$"throw new DynamoDBMarshallingException(nameof({accessPattern}),""{Constants.NotNullErrorMessage}"");";
+        return @$"throw new {Constants.MarshallingExceptionName}(nameof({accessPattern}),""{Constants.NotNullErrorMessage}"");";
     }
 
     public static string NotNullIfStatement(this ITypeSymbol typeSymbol, in string accessPattern, in string truthy)
