@@ -3,13 +3,19 @@ using Microsoft.CodeAnalysis;
 
 namespace DynamoDBGenerator.SourceGenerator;
 
-public class Constants
+public static class Constants
 {
     public const string AssemblyName = nameof(DynamoDBGenerator);
     public const string AttributeNameSpace = nameof(Attributes);
     public const string MarshallerAttributeName = nameof(DynamoDBMarshallerAttribute);
     public const string MarshallerConstructorAttributeName = nameof(DynamoDBMarshallerConstructorAttribute);
     public const string DynamoDbDocumentPropertyFullname = $"{AssemblyName}.{AttributeNameSpace}.{MarshallerAttributeName}";
+    
+    public static class Errors
+    {
+        
+        
+    }
     
 
     public const string NewLine = @"

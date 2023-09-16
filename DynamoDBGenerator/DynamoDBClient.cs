@@ -98,12 +98,3 @@ internal class DynamoDBClient<T, TArg, TReferences, TArgumentReferences> : IDyna
         return _marshaller.Unmarshall(result.Attributes);
     }
 }
-
-public class DynamoDBMarshallingException : InvalidOperationException
-{
-    public string MemberName { get; }
-    public DynamoDBMarshallingException(string memberName, string message) : base(message: $"{message} (Data member '{memberName}')")
-    {
-        MemberName = memberName;
-    }
-}

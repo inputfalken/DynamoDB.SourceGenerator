@@ -1,5 +1,6 @@
 using System;
 using DynamoDBGenerator.Attributes;
+using DynamoDBGenerator.Exceptions;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
 [DynamoDBMarshaller(typeof(NullableAnnotationTests))]
