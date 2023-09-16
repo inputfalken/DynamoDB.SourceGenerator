@@ -1,5 +1,6 @@
 using Amazon.DynamoDBv2;
 using AutoFixture;
+using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.Extensions;
 namespace DynamoDBGenerator.SourceGenerator.Tests.Extensions;
 

@@ -1,10 +1,12 @@
+using DynamoDBGenerator.Attributes;
 using Microsoft.CodeAnalysis;
 
 namespace DynamoDBGenerator.SourceGenerator;
 
 public class Constants
 {
-    public const string DynamoDbDocumentPropertyFullname = nameof(DynamoDBGenerator) + "." + nameof(DynamoDBMarshallerAttribute);
+    public const string DynamoDbDocumentPropertyFullname = nameof(DynamoDBGenerator) + "." + nameof(Attributes) + "." + nameof(DynamoDBMarshallerAttribute);
+
     public const string NewLine = @"
 ";
 

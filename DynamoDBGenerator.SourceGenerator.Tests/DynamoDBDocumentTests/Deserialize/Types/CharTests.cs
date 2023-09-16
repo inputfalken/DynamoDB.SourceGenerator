@@ -1,4 +1,5 @@
 using Amazon.DynamoDBv2.Model;
+using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Types;
 
 [DynamoDBMarshaller(typeof(CharClass))]

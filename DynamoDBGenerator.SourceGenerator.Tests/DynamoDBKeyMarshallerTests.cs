@@ -1,5 +1,6 @@
 using System;
 using AutoFixture;
+using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests;
 
 [DynamoDBMarshaller(typeof(TypeWithPartitionKeyOnly), PropertyName = "PartitionKeyOnly")]

@@ -1,10 +1,10 @@
-﻿using System.Text.Json.Serialization;
-using Amazon.DynamoDBv2;
+﻿using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.Model;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using DynamoDBGenerator;
+using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.Extensions;
 using static SampleApp.Repository.PersonEntityMarshallerImplementation;
 using PutItemRequest = Amazon.DynamoDBv2.Model.PutItemRequest;

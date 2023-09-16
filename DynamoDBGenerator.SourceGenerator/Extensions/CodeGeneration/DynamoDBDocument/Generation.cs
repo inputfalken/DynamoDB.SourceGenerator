@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Xml;
 using Amazon.DynamoDBv2.Model;
+using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -627,7 +628,7 @@ public class DynamoDbMarshaller
             {
                 _ when namedTypeSymbol.InstanceConstructors
                     .SelectMany(
-                        x => x.GetAttributes().Where(y => y.AttributeClass is {ContainingNamespace.Name: nameof(DynamoDBGenerator), Name: nameof(DynamoDBMarshallerConstructor)}),
+                        x => x.GetAttributes().Where(y => y.AttributeClass is {ContainingNamespace.Name: nameof(Attributes), Name: nameof(DynamoDBMarshallerConstructorAttribute)}),
                         (x, _) => x
                     )
                     .FirstOrDefault() is { } ctor => ctor.DeclaringSyntaxReferences
