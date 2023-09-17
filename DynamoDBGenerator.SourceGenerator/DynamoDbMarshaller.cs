@@ -16,16 +16,17 @@ public class DynamoDbMarshaller
     private const string RangeKeyName = "RangeKey";
     private const string SerializeName = "Marshall";
     private const string ValueTrackerName = "AttributeExpressionValueTracker";
-    private readonly INamedTypeSymbol _argumentTypeSymbol;
+    private readonly Func<ITypeSymbol, DynamoDbDataMember[]> _cachedDataMembers;
     private readonly Func<ITypeSymbol, string> _attributeNameAssignmentNameFactory;
     private readonly Func<ITypeSymbol, string> _attributeValueAssignmentNameFactory;
-    private readonly IEqualityComparer<ITypeSymbol> _comparer;
     private readonly Func<ITypeSymbol, string> _deserializationMethodNameFactory;
-    private readonly INamedTypeSymbol _entityTypeSymbol;
     private readonly Func<ITypeSymbol, string> _fullTypeNameFactory;
     private readonly Func<ITypeSymbol, string> _keysMethodNameFactory;
-    private readonly string _publicAccessPropertyName;
     private readonly Func<ITypeSymbol, string> _serializationMethodNameFactory;
+    private readonly IEqualityComparer<ITypeSymbol> _comparer;
+    private readonly INamedTypeSymbol _argumentTypeSymbol;
+    private readonly INamedTypeSymbol _entityTypeSymbol;
+    private readonly string _publicAccessPropertyName;
 
     public DynamoDbMarshaller(in DynamoDBMarshallerArguments arguments, IEqualityComparer<ISymbol> comparer)
     {
@@ -38,6 +39,7 @@ public class DynamoDbMarshaller
         _attributeNameAssignmentNameFactory = TypeExtensions.TypeSymbolStringCache("Name", comparer, false);
         _attributeValueAssignmentNameFactory = TypeExtensions.TypeSymbolStringCache("Value", comparer, false);
         _fullTypeNameFactory = TypeExtensions.NameCache(SymbolDisplayFormat.FullyQualifiedFormat, comparer);
+        _cachedDataMembers = TypeExtensions.DataMembers(comparer);
         _comparer = comparer;
     }
     private Assignment AttributeValueAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
@@ -278,8 +280,7 @@ public class DynamoDbMarshaller
     }
     private Conversion ExpressionAttributeName(ITypeSymbol typeSymbol)
     {
-        var dataMembers = typeSymbol
-            .GetDynamoDbProperties()
+        var dataMembers = _cachedDataMembers(typeSymbol)
             .Where(static x => x.IsIgnored is false)
             .Select(x => (
                 IsKnown: x.DataMember.Type.GetKnownType() is not null,
@@ -304,8 +305,8 @@ public class DynamoDbMarshaller
                 var ternaryExpressionName =
                     $"{constructorAttributeName} is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{{constructorAttributeName}}}.#{x.DDB.AttributeName}"""}";
                 var assignment = x.IsKnown
-                    ? $@"        {x.NameRef} = new (() => {ternaryExpressionName});"
-                    : $@"        _{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({ternaryExpressionName}));";
+                    ? $"        {x.NameRef} = new (() => {ternaryExpressionName});"
+                    : $"        _{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({ternaryExpressionName}));";
 
                 return new Assignment(assignment, x.DDB.DataMember.Type, x.IsKnown is false);
             })
@@ -342,8 +343,7 @@ public class DynamoDbMarshaller
 
     private Conversion ExpressionAttributeValue(ITypeSymbol typeSymbol)
     {
-        var dataMembers = typeSymbol
-            .GetDynamoDbProperties()
+        var dataMembers = _cachedDataMembers(typeSymbol)
             .Where(static x => x.IsIgnored is false)
             .Select(x => (
                 IsKnown: x.DataMember.Type.GetKnownType() is not null,
@@ -366,8 +366,8 @@ public class DynamoDbMarshaller
             .Select(static x =>
             {
                 var assignment = x.IsKnown
-                    ? $@"        {x.ValueRef} = new ({valueProvider});"
-                    : $@"        _{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({valueProvider}));";
+                    ? $"        {x.ValueRef} = new ({valueProvider});"
+                    : $"        _{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({valueProvider}));";
 
                 return new Assignment(assignment, x.DDB.DataMember.Type, x.IsKnown is false);
             })
@@ -429,17 +429,17 @@ public class DynamoDbMarshaller
         );
 
         IEnumerable<(string dictionaryPopulation, string capacityTernary, Assignment assignment)> GetAssignments(
-            INamespaceOrTypeSymbol typeSymbol,
+            ITypeSymbol typeSymbol,
             KeyStrategy strategy
         )
         {
             var dynamoDbProperties = strategy switch
             {
-                KeyStrategy.Ignore => typeSymbol.GetDynamoDbProperties()
+                KeyStrategy.Ignore => _cachedDataMembers(typeSymbol)
                     .Where(static x => x is {IsRangeKey: false, IsHashKey: false}),
-                KeyStrategy.Only => typeSymbol.GetDynamoDbProperties()
+                KeyStrategy.Only => _cachedDataMembers(typeSymbol)
                     .Where(static x => x.IsHashKey || x.IsRangeKey),
-                KeyStrategy.Include => typeSymbol.GetDynamoDbProperties(),
+                KeyStrategy.Include => _cachedDataMembers(typeSymbol),
                 _ => throw new ArgumentOutOfRangeException()
             };
 
@@ -473,7 +473,7 @@ public class DynamoDbMarshaller
                 "" => $"var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: 0);",
                 var capacities => $@"var capacity = {capacities};
                 var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: capacity);
-                if (capacity is 0) {{ return {dictionaryName}; }} "
+                if (capacity is 0) {{ return {dictionaryName}; }}"
             };
         }
     }
@@ -505,10 +505,10 @@ public class DynamoDbMarshaller
         IEnumerable<(string dictionaryPopulation, string capacityTernary, Assignment assignment)> GetAssignments(
             string partition,
             string range,
-            INamespaceOrTypeSymbol typeSymbol
+            ITypeSymbol typeSymbol
         )
         {
-            foreach (var x in typeSymbol.GetDynamoDbProperties())
+            foreach (var x in _cachedDataMembers(typeSymbol))
             {
                 if (x.IsIgnored)
                     continue;
@@ -566,8 +566,7 @@ public class DynamoDbMarshaller
 
         (IEnumerable<Assignment>, string objectInitialization) GetAssignments(ITypeSymbol typeSymbol)
         {
-            var assignments = typeSymbol
-                .GetDynamoDbProperties()
+            var assignments = _cachedDataMembers(typeSymbol)
                 .Select(x => (DDB: x, Assignment: DataMemberAssignment(x.DataMember.Type, @$"{paramReference}.GetValueOrDefault(""{x.AttributeName}"")", x.DataMember.Name)))
                 .ToArray();
 

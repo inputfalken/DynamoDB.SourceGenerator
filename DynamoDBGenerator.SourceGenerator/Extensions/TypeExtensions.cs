@@ -25,6 +25,21 @@ public static class TypeExtensions
             return name;
         };
     }
+    public static Func<ITypeSymbol, DynamoDbDataMember[]> DataMembers(IEqualityComparer<ISymbol> comparer)
+    {
+        var cache = new Dictionary<ITypeSymbol, DynamoDbDataMember[]>(comparer);
+
+        return x =>
+        {
+            if (cache.TryGetValue(x, out var dynamoDbDataMembers))
+                return dynamoDbDataMembers;
+
+            var properties = x.GetDynamoDbProperties().ToArray();
+            cache[x] = properties;
+
+            return properties;
+        };
+    }
     public static Func<ITypeSymbol, string> TypeSymbolStringCache(string suffix, IEqualityComparer<ISymbol> comparer, bool useNullableAnnotationNaming)
     {
         return x => Execution(
