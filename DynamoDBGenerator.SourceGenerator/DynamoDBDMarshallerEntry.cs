@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Diagnostics;
 using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
@@ -34,8 +35,9 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
 
         foreach (var typeSymbol in compilation.GetTypeSymbols(documents))
         {
+            var timestamp = Stopwatch.GetTimestamp();
             var repository = string.Join(Constants.NewLine, GetMethods(typeSymbol, compilation));
-            var code = typeSymbol.CreateNamespace(typeSymbol.CreateClass(repository));
+            var code = typeSymbol.CreateNamespace(typeSymbol.CreateClass(repository), TimeSpan.FromTicks(Stopwatch.GetTimestamp() - timestamp));
             var typeNamespace = typeSymbol.ContainingNamespace.IsGlobalNamespace
                 ? null
                 : $"{typeSymbol.ContainingNamespace}.";
