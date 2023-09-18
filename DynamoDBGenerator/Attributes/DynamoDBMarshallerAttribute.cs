@@ -2,11 +2,13 @@ using System;
 namespace DynamoDBGenerator.Attributes;
 
 /// <summary>
-/// When placed on a class it will generate an implementation of <see cref="IDynamoDBMarshaller{TEntity,TArg,TEntityAttributeNameTracker,TArgumentAttributeValueTracker}"/> for the specified type.
-/// The example below shows an example of this attribute being used in a repository.
+///     When placed on a class it will generate an implementation of
+///     <see cref="IDynamoDBMarshaller{TEntity,TArg,TEntityAttributeNameTracker,TArgumentAttributeValueTracker}" /> for the
+///     specified type.
+///     The example below shows an example of this attribute being used in a repository.
 /// </summary>
 /// <example>
-/// <code>
+///     <code>
 /// [DynamoDBMarshaller(typeof(OrderEntity), PropertyName = "MyCustomPropertyName")]
 /// public class Repository
 /// {
@@ -30,23 +32,26 @@ public class DynamoDBMarshallerAttribute : Attribute
     private readonly Type _entityType;
 
     /// <summary>
-    /// Specifies the name of the property to use when accessing <see cref="IDynamoDBMarshaller{TEntity,TArg,TEntityAttributeNameTracker,TArgumentAttributeValueTracker}"/>.
-    /// </summary>
-    public string? PropertyName { get; set; }
-
-    /// <summary>
-    /// Will set the type <see cref="IDynamoDBMarshaller{TEntity,TArg,TEntityAttributeNameTracker,TArgumentAttributeValueTracker}"/> will use as its argument type-parameter.
-    /// </summary>
-    public Type? ArgumentType { get; set; }
-
-    /// <summary>
-    ///  Constructs an <see cref="DynamoDBMarshallerAttribute"/> for source generation purposes.
+    ///     Constructs an <see cref="DynamoDBMarshallerAttribute" /> for source generation purposes.
     /// </summary>
     /// <param name="entityType">
-    /// The type to be represented as an DynamoDB entity.
+    ///     The type to be represented as an DynamoDB entity.
     /// </param>
     public DynamoDBMarshallerAttribute(Type entityType)
     {
         _entityType = entityType;
     }
+
+    /// <summary>
+    ///     Specifies the name of the property to use when accessing
+    ///     <see cref="IDynamoDBMarshaller{TEntity,TArg,TEntityAttributeNameTracker,TArgumentAttributeValueTracker}" />.
+    /// </summary>
+    public string? PropertyName { get; set; }
+
+    /// <summary>
+    ///     Will set the type
+    ///     <see cref="IDynamoDBMarshaller{TEntity,TArg,TEntityAttributeNameTracker,TArgumentAttributeValueTracker}" /> will
+    ///     use as its argument type-parameter.
+    /// </summary>
+    public Type? ArgumentType { get; set; }
 }

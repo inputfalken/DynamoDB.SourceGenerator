@@ -7,48 +7,13 @@ using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Extensions;
 namespace DynamoDBGenerator;
 
-public interface IDynamoDBClient<TEntity, TArgument, out TReferences, out TArgumentReferences>
+internal class DynamoDBClient<T, TArg, TReferences, TArgumentReferences> : IDynamoDBClient<T, TArg, TReferences, TArgumentReferences>
     where TReferences : IExpressionAttributeNameTracker
-    where TArgumentReferences : IExpressionAttributeValueTracker<TArgument>
-{
-    Task Save<T>(
-        T entity,
-        Func<TReferences, TArgumentReferences, string> conditionExpressionBuilder,
-        CancellationToken cancellationToken = default
-    ) where T : TEntity, TArgument;
-    Task Save<T>(
-        T entity,
-        CancellationToken cancellationToken = default
-    ) where T : TEntity, TArgument;
-    Task Update(
-        TArgument entity,
-        Func<IDynamoDBKeyMarshaller, TArgument, Dictionary<string, AttributeValue>> keySelector,
-        Func<TReferences, TArgumentReferences, string> updateExpressionBuilder,
-        CancellationToken cancellationToken = default
-    );
-    Task Update(
-        TArgument entity,
-        Func<IDynamoDBKeyMarshaller, TArgument, Dictionary<string, AttributeValue>> keySelector,
-        Func<TReferences, TArgumentReferences, string> updateExpressionBuilder,
-        Func<TReferences, TArgumentReferences, string> conditionExpressionBuilder,
-        CancellationToken cancellationToken = default
-    );
-
-    Task<TEntity> UpdateReturned(
-        TArgument entity,
-        Func<IDynamoDBKeyMarshaller, TArgument, Dictionary<string, AttributeValue>> keySelector,
-        Func<TReferences, TArgumentReferences, string> updateExpressionBuilder,
-        Func<TReferences, TArgumentReferences, string> conditionExpressionBuilder,
-        CancellationToken cancellationToken = default
-    );
-}
-
-internal class DynamoDBClient<T, TArg, TReferences, TArgumentReferences> : IDynamoDBClient<T, TArg, TReferences, TArgumentReferences> where TReferences : IExpressionAttributeNameTracker
     where TArgumentReferences : IExpressionAttributeValueTracker<TArg>
 {
+    private readonly IAmazonDynamoDB _amazonDynamoDB;
     private readonly IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> _marshaller;
     private readonly string _tableName;
-    private readonly IAmazonDynamoDB _amazonDynamoDB;
 
     public DynamoDBClient(IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> marshaller, string tableName, IAmazonDynamoDB amazonDynamoDB)
     {
@@ -68,6 +33,7 @@ internal class DynamoDBClient<T, TArg, TReferences, TArgumentReferences> : IDyna
         var putRequest = _marshaller.ToPutItemRequestInternal(entity, entity, null, ReturnValue.NONE, _tableName);
         return _amazonDynamoDB.PutItemAsync(putRequest, cancellationToken);
     }
+
     public Task Update(
         TArg entity,
         Func<IDynamoDBKeyMarshaller, TArg, Dictionary<string, AttributeValue>> keySelector,
@@ -78,6 +44,7 @@ internal class DynamoDBClient<T, TArg, TReferences, TArgumentReferences> : IDyna
         var updateItemRequest = _marshaller.ToUpdateItemRequestInternal(entity, keySelector, updateExpressionBuilder, null, ReturnValue.NONE, _tableName);
         return _amazonDynamoDB.UpdateItemAsync(updateItemRequest, cancellationToken);
     }
+
     public Task Update(
         TArg entity,
         Func<IDynamoDBKeyMarshaller, TArg, Dictionary<string, AttributeValue>> keySelector,
@@ -89,6 +56,7 @@ internal class DynamoDBClient<T, TArg, TReferences, TArgumentReferences> : IDyna
         var updateItemRequest = _marshaller.ToUpdateItemRequestInternal(entity, keySelector, updateExpressionBuilder, conditionExpressionBuilder, ReturnValue.NONE, _tableName);
         return _amazonDynamoDB.UpdateItemAsync(updateItemRequest, cancellationToken);
     }
+
     public async Task<T> UpdateReturned(TArg entity, Func<IDynamoDBKeyMarshaller, TArg, Dictionary<string, AttributeValue>> keySelector, Func<TReferences, TArgumentReferences, string> updateExpressionBuilder,
         Func<TReferences, TArgumentReferences, string> conditionExpressionBuilder, CancellationToken cancellationToken = default)
     {

@@ -7,36 +7,7 @@ namespace DynamoDBGenerator.Extensions;
 
 internal static class RequestFactory
 {
-    internal static UpdateItemRequest ToUpdateItemRequestInternal<T, TArg, TReferences, TArgumentReferences>(
-        this IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> item,
-        TArg argument,
-        Func<IDynamoDBKeyMarshaller, TArg, Dictionary<string, AttributeValue>> keySelector,
-        Func<TReferences, TArgumentReferences, string> updateExpressionBuilder,
-        Func<TReferences, TArgumentReferences, string>? conditionExpressionBuilder,
-        ReturnValue returnValue,
-        string tableName
-    )
-        where TReferences : IExpressionAttributeNameTracker
-        where TArgumentReferences : IExpressionAttributeValueTracker<TArg>
-    {
 
-        var nameTracker = item.AttributeNameExpressionTracker();
-        var argumentTracker = item.AttributeExpressionValueTracker();
-        var updateExpression = updateExpressionBuilder(nameTracker, argumentTracker);
-        var conditionExpression = conditionExpressionBuilder?.Invoke(nameTracker, argumentTracker);
-
-        return new UpdateItemRequest
-        {
-            Key = keySelector(item, argument),
-            TableName = tableName,
-            ExpressionAttributeNames = nameTracker.AccessedNames().ToDictionary(x => x.Key, x => x.Value),
-            ExpressionAttributeValues = argumentTracker.AccessedValues(argument).ToDictionary(x => x.Key, x => x.Value),
-            ConditionExpression = conditionExpression,
-            UpdateExpression = updateExpression,
-            ReturnValues = returnValue
-        };
-    }
-    
     internal static PutItemRequest ToPutItemRequestInternal<T, TArg, TReferences, TArgumentReferences>(
         this IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> item,
         T entity,
@@ -69,6 +40,35 @@ internal static class RequestFactory
             ExpressionAttributeValues = expressionAttributeValues,
             ConditionExpression = conditionExpression,
             Item = item.Marshall(entity),
+            ReturnValues = returnValue
+        };
+    }
+    internal static UpdateItemRequest ToUpdateItemRequestInternal<T, TArg, TReferences, TArgumentReferences>(
+        this IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> item,
+        TArg argument,
+        Func<IDynamoDBKeyMarshaller, TArg, Dictionary<string, AttributeValue>> keySelector,
+        Func<TReferences, TArgumentReferences, string> updateExpressionBuilder,
+        Func<TReferences, TArgumentReferences, string>? conditionExpressionBuilder,
+        ReturnValue returnValue,
+        string tableName
+    )
+        where TReferences : IExpressionAttributeNameTracker
+        where TArgumentReferences : IExpressionAttributeValueTracker<TArg>
+    {
+
+        var nameTracker = item.AttributeNameExpressionTracker();
+        var argumentTracker = item.AttributeExpressionValueTracker();
+        var updateExpression = updateExpressionBuilder(nameTracker, argumentTracker);
+        var conditionExpression = conditionExpressionBuilder?.Invoke(nameTracker, argumentTracker);
+
+        return new UpdateItemRequest
+        {
+            Key = keySelector(item, argument),
+            TableName = tableName,
+            ExpressionAttributeNames = nameTracker.AccessedNames().ToDictionary(x => x.Key, x => x.Value),
+            ExpressionAttributeValues = argumentTracker.AccessedValues(argument).ToDictionary(x => x.Key, x => x.Value),
+            ConditionExpression = conditionExpression,
+            UpdateExpression = updateExpression,
             ReturnValues = returnValue
         };
     }

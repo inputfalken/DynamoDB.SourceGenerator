@@ -3,9 +3,9 @@ namespace DynamoDBGenerator.Exceptions;
 
 public class DynamoDBMarshallingException : InvalidOperationException
 {
-    public string MemberName { get; }
-    public DynamoDBMarshallingException(string memberName, string message) : base(message: $"{message} (Data member '{memberName}')")
+    public DynamoDBMarshallingException(string memberName, string message) : base($"{message} (Data member '{memberName}')")
     {
         MemberName = memberName;
     }
+    public string MemberName { get; }
 }
