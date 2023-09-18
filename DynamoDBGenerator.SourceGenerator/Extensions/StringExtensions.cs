@@ -2,11 +2,6 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class StringExtensions
 {
-    public static string ToBase64(this string txt)
-    {
-        var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(txt);
-        return Convert.ToBase64String(plainTextBytes);
-    }
 
     private static readonly IDictionary<int, string> IndentCache = new Dictionary<int, string>();
 
