@@ -1,99 +1,94 @@
 # DynamoDB.SourceGenerator
 
-A .NET source generator whose goal is to automate the low-level DynamoDB API. 
-While also being AOT compatible by not using any reflection in the source generated code.
+This source generator is crafted to simplify DynamoDB integration for your projects. It's designed to effortlessly
+generate the low-level DynamoDB API tailored to any DTO you provide.
 
 ## Note
 
 This project has not been tested in any real scenario and currently serves as a hobby project.
 
-## Features
+## Goals:
 
-### Type Marshalling
+* Seamless Developer Interaction (DevEx): Experience a hassle-free DynamoDB interaction where the generated code handles
+  the heavy lifting, ensuring an intuitive and convenient experience for developers.
+* Faster performance: Utilize the low-level API that would normally be implemented manually.
+* Simplify Attribute Expressions: Easily create complex expressions with an intuitive approach.
 
-#### Primitive Types
+## Features:
 
-| Type            | Field       |
-| ---             | ---         |
-| `bool`          | `BOOL`      |
-| `char`          | `S`         |
-| `int`           | `N`         |
-| `long`          | `N`         |
-| `string`        | `S`         |
-| `uint`          | `N`         |
-| `ulong`         | `N`         |
+* Reflection-Free Codebase: The generated code is built without reliance on reflection, ensuring compatibility with
+  Ahead-of-Time (AOT) compilation: Translates to faster startup times and a more efficient memory footprint.
+* Nullable Reference type support: Embrace modern coding practices with full support for Nullable Reference Types.
+  Effortlessly handle optional values and ensure robust error handling.
+* Marshalling: Seamlessly convert your DTO into DynamoDB types.
+* Unmarshalling: Seamlessly convert DynamoDB types into your DTO.
+* Constructor support: Leverage constructors in your DTOs.
+* Streamlined DynamoDBClient: Effortlessly handle requests with the power of source generation. (Coming soon)
 
-#### Temporal Types
+## Conversion
 
-| Type            | Field       | Format    |
-| ---             | ---         | ---       |
-| `DateOnly`      | `S`         | ISO 8601  |
-| `DateTime`      | `S`         | ISO 8601  |
-| `DateTimeOffset`| `S`         | ISO 8601  |
+### Primitive Types
 
-#### Collection Types
+| Type     | Field  |
+|----------|--------|
+| `bool`   | `BOOL` |
+| `char`   | `S`    |
+| `int`    | `N`    |
+| `long`   | `N`    |
+| `string` | `S`    |
+| `uint`   | `N`    |
+| `ulong`  | `N`    |
 
-| Type                                  | Field       | Description                                           |
-| ---                                   | ---         |-------------------------------------------------------|
-| `ICollection<T>`                      | `L`         |                                                       |
-| `IDictonary<string, TValue>`          | `M`         | Will treat the `Dictionary` as a **Key-Value** store. |
-| `IEnumerable<T>`                      | `L`         |                                                       |
-| `IReadOnlyList<T>`                    | `L`         |                                                       |
-| `IRedonlyDictionary<string, TValue>`  | `M`         | Will treat the `Dictionary` as a **Key-Value** store. |
-| `ISet<int>`                           | `NS`        |                                                       |
-| `ISet<long>`                          | `NS`        |                                                       |
-| `ISet<string>`                        | `SS`        |                                                       |
-| `ISet<uint>`                          | `NS`        |                                                       |
-| `ISet<ulong>`                         | `NS`        |                                                       |
-| `T[]`                                 | `L`         |                                                       |
+### Temporal Types
 
-#### Custom types
-For types not listed such as a custom entity class the source generator will treat as an object.
-See below for more information.
+| Type             | Field | Format   |
+|------------------|-------|----------|
+| `DateOnly`       | `S`   | ISO 8601 |
+| `DateTime`       | `S`   | ISO 8601 |
+| `DateTimeOffset` | `S`   | ISO 8601 |
 
-```csharp
-public class Person 
-{
-    public string Id { get; set; }
-    public string Name { get; set; }
-}
+### Collection Types
 
-public class Address 
-{
-    public string Id { get; set; }
-    public string Street { get; set; }
-}
-```
+| Type                                 | Field | Description                                           |
+|--------------------------------------|-------|-------------------------------------------------------|
+| `ICollection<T>`                     | `L`   |                                                       |
+| `IDictonary<string, TValue>`         | `M`   | Will treat the `Dictionary` as a **Key-Value** store. |
+| `IEnumerable<T>`                     | `L`   |                                                       |
+| `IReadOnlyList<T>`                   | `L`   |                                                       |
+| `IRedonlyDictionary<string, TValue>` | `M`   | Will treat the `Dictionary` as a **Key-Value** store. |
+| `ISet<int>`                          | `NS`  |                                                       |
+| `ISet<long>`                         | `NS`  |                                                       |
+| `ISet<string>`                       | `SS`  |                                                       |
+| `ISet<uint>`                         | `NS`  |                                                       |
+| `ISet<ulong>`                        | `NS`  |                                                       |
+| `T[]`                                | `L`   |                                                       |
 
-| Type      | Field       | Description                      |
-|-----------| ---         |----------------------------------|
-| `Person`  | `M`         | All datamember will be included. |
-| `Address` | `M`         | All datamember will be included. |
+### Custom types
 
-### Type Unmarshalling
+Types not listed above will be treated as an object by being assigned to the `M` field
 
-TODO
+## Reference Tracker
 
-### Reference Tracker
+Coming soon
 
-TODO
+## Nullable reference types
 
-### Nullable reference types
 The source generated code will adapt to your NullableReference types if you have it enabled.
 
-##### Examples
+### Examples
+
 ```csharp
 #nullable enable
 // The following would be considered to be optional.
 public string? MyOptionalString { get; set; }
-// The following would be considered required and throw ArgumentNullException if the value was not provided.
+// The following would be considered required and throw DynamoDBMarshallingException if the value was not provided.
 public string MyRequiredString { get; set; }
 #nullable disable
 // The following does not have nullable enabled and would consider the string to be optional.
 public string MyUnknownString { get; set; }
 ```
 
-### Usage sample
+## Usage sample
 
 ```csharp
 internal static class Program
@@ -110,14 +105,14 @@ public class Person
     // Will be included as 'PK' in DynamoDB.
     [DynamoDBHashKey("PK")]
     public string Id { get; set; }
-    
+
     // Will be included as 'Firstname' in DynamoDB.
     public string Firstname { get; set; }
-    
+
     // Will be included as 'Contact' in DynamoDB.
     [DynamoDBProperty("Contact")]
     public Contact ContactInfo { get; set; }
-    
+
     // Wont be included in DynamoDB.
     [DynamoDBIgnore]
     public string FirstNameLowercase => Firstname.ToLower();
@@ -130,7 +125,7 @@ public class Person
 }
 
 // This DynamoDBMarshallerAttribute is what will casuse the source generation to kick in.
-// The type provided to the DynamoDBMarshallerAttribute is what will get functionality. 
+// The type provided to the DynamoDBMarshallerAttribute is what will get functionality.
 // It is possible to provide multiple DynamoDBMarshallerAttributes in order to have multiple types source generated.
 [DynamoDBMarshaller(typeof(Person), PropertyName = "PersonMarshaller")]
 public partial class Repository { }
@@ -138,9 +133,13 @@ public partial class Repository { }
 
 ## Installing
 
-There's no NuGet package available yet, In order to try it right now would be to clone this repository and play with the `SampleApp` assembly.
+There's no NuGet package available yet, In order to try it right now would be to clone this repository and play with
+the `SampleApp` assembly.
 
 ## Project structure
 
-The `DynamoDBGenerator.SourceGenerator` assembly is responsible for doing the heavy lifting by generating the building blocks for the `DynamoDBGenerator` assembly to extend with convenient functionality.
-Such as the [ToPutItemRequest](https://github.com/inputfalken/DynamoDB.SourceGenerator/blob/main/DynamoDBGenerator/Extensions/DynamoDBMarshallerExtensions.cs) extension method.
+The `DynamoDBGenerator.SourceGenerator` assembly is responsible for doing the heavy lifting by generating the building
+blocks for the `DynamoDBGenerator` assembly to extend with convenient functionality.
+Such as
+the [ToPutItemRequest](https://github.com/inputfalken/DynamoDB.SourceGenerator/blob/main/DynamoDBGenerator/Extensions/DynamoDBMarshallerExtensions.cs)
+extension method.
