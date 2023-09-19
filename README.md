@@ -17,13 +17,18 @@ This project has not been tested in any real scenario and currently serves as a 
 ## Features:
 
 * Reflection-Free Codebase: The generated code is built without reliance on reflection, ensuring compatibility with
-  Ahead-of-Time (AOT) compilation: Translates to faster startup times and a more efficient memory footprint.
+  Ahead-of-Time (AOT) compilation: This translates to faster startup times and a more efficient memory footprint.
 * Nullable Reference type support: Embrace modern coding practices with full support for Nullable Reference Types.
   Effortlessly handle optional values and ensure robust error handling.
 * Marshalling: Seamlessly convert your DTO into DynamoDB types.
 * Unmarshalling: Seamlessly convert DynamoDB types into your DTO.
 * Constructor support: Leverage constructors in your DTOs.
-* Streamlined DynamoDBClient: Effortlessly handle requests with the power of source generation. (Coming soon)
+
+## TODO
+* Streamlined DynamoDBClient based on the source-generated code. 
+* Index support
+* Add the `ToQueryRequest` method.
+* Add the `ToDeleteRequest` method.
 
 ## Conversion
 
@@ -73,7 +78,7 @@ Coming soon
 
 ## Nullable reference types
 
-The source generated code will adapt to your NullableReference types if you have it enabled.
+The source-generated code will adapt to your NullableReference types if you have it enabled.
 
 ### Examples
 
@@ -124,9 +129,9 @@ public class Person
     }
 }
 
-// This DynamoDBMarshallerAttribute is what will casuse the source generation to kick in.
+// This DynamoDBMarshallerAttribute is what will cause the source generation to kick in.
 // The type provided to the DynamoDBMarshallerAttribute is what will get functionality.
-// It is possible to provide multiple DynamoDBMarshallerAttributes in order to have multiple types source generated.
+// It is possible to provide multiple DynamoDBMarshallerAttributes in order to source-generate multiple types in the same class.
 [DynamoDBMarshaller(typeof(Person), PropertyName = "PersonMarshaller")]
 public partial class Repository { }
 ```
