@@ -11,8 +11,9 @@ This project has not been tested in any real scenario and currently serves as a 
 
 * Seamless Developer Interaction (DevEx): Experience a hassle-free DynamoDB interaction where the generated code handles
   the heavy lifting, ensuring an intuitive and convenient experience for developers.
+  * Simplify Attribute Expressions: Easily create complex expressions with an intuitive approach.
 * Faster performance: Utilize the low-level API that would normally be implemented manually.
-* Simplify Attribute Expressions: Easily create complex expressions with an intuitive approach.
+
 
 ## Features:
 
