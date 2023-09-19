@@ -17,8 +17,8 @@ This project has not been tested in any real scenario and currently serves as a 
 ## Features:
 
 * Reflection-Free Codebase: The generated code is built without reliance on reflection, ensuring compatibility with
-  Ahead-of-Time (AOT) compilation: This translates to faster startup times and a more efficient memory footprint.
-* Nullable Reference type support: Embrace modern coding practices with full support for Nullable Reference Types.
+  Ahead-of-Time ([AOT](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/?tabs=net7%2Cwindows)) compilation: This translates to faster startup times and a more efficient memory footprint.
+* Nullable Reference type support: Embrace modern coding practices with support for [Nullable Reference Types](https://learn.microsoft.com/en-us/dotnet/csharp/nullable-references).
   Effortlessly handle optional values and ensure robust error handling.
 * Marshalling: Seamlessly convert your DTO into DynamoDB types.
 * Unmarshalling: Seamlessly convert DynamoDB types into your DTO.
