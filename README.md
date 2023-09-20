@@ -23,7 +23,7 @@ This project has not been tested in any real scenario and currently serves as a 
   Effortlessly handle optional values and ensure robust error handling.
 * Marshalling: Seamlessly convert your DTO into DynamoDB types.
 * Unmarshalling: Seamlessly convert DynamoDB types into your DTO.
-* Constructor support: Leverage constructors in your DTOs.
+  * Constructor support: Leverage constructors in your DTOs.
 
 ## TODO
 * Streamlined DynamoDBClient based on the source-generated code. 
