@@ -9,6 +9,10 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class TypeExtensions
 {
+    public static DynamoDBKeyStructure? GetKeyStructure(this INamedTypeSymbol namedTypeSymbol)
+    {
+        return null;
+    }
 
     public static Func<ITypeSymbol, string> NameCache(SymbolDisplayFormat symbolDisplayFormat, IEqualityComparer<ISymbol> comparer)
     {

@@ -1,31 +1,12 @@
-using Microsoft.CodeAnalysis;
 namespace DynamoDBGenerator.SourceGenerator.Types;
-
-public readonly struct RootEntity
-{
-    public RootEntity(INamedTypeSymbol entity, DynamoDBKeyStructure? keyStructure)
-    {
-        Entity = entity;
-        KeyStructure = keyStructure;
-    }
-
-    /// <summary>
-    /// Represents the root entity that all functionality will be based from.
-    /// </summary>
-    public INamedTypeSymbol Entity { get; }
-
-    /// <summary>
-    /// Represents the DynamoDB keyStructure.
-    /// </summary>
-    public DynamoDBKeyStructure? KeyStructure { get; }
-}
 
 /// <summary>
 /// Represents the key structure of a DynamoDB table.
 /// </summary>
 public readonly struct DynamoDBKeyStructure
 {
-    public DynamoDBKeyStructure(DynamoDbDataMember partitionKey, DynamoDbDataMember? sortKey, IReadOnlyList<LocalSecondaryIndex> localSecondaryIndices, IReadOnlyList<Amazon.DynamoDBv2.Model.GlobalSecondaryIndex> globalSecondaryIndices)
+    public DynamoDBKeyStructure(DynamoDbDataMember partitionKey, DynamoDbDataMember? sortKey, IReadOnlyList<LocalSecondaryIndex> localSecondaryIndices,
+        IReadOnlyList<Amazon.DynamoDBv2.Model.GlobalSecondaryIndex> globalSecondaryIndices)
     {
         PartitionKey = partitionKey;
         SortKey = sortKey;

@@ -26,11 +26,13 @@ public class DynamoDbMarshaller
     private readonly IEqualityComparer<ITypeSymbol> _comparer;
     private readonly INamedTypeSymbol _argumentTypeSymbol;
     private readonly INamedTypeSymbol _entityTypeSymbol;
+    private readonly DynamoDBKeyStructure? _keyStructure;
     private readonly string _publicAccessPropertyName;
 
     public DynamoDbMarshaller(in DynamoDBMarshallerArguments arguments, IEqualityComparer<ISymbol> comparer)
     {
-        _entityTypeSymbol = arguments.EntityTypeSymbol.Entity;
+        _keyStructure = arguments.EntityTypeSymbol.GetKeyStructure();
+        _entityTypeSymbol = arguments.EntityTypeSymbol;
         _argumentTypeSymbol = arguments.ArgumentType;
         _publicAccessPropertyName = arguments.PropertyName;
         _serializationMethodNameFactory = TypeExtensions.TypeSymbolStringCache("Ser", comparer, true);

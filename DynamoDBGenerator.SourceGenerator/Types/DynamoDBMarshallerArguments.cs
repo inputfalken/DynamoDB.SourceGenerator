@@ -3,13 +3,13 @@ namespace DynamoDBGenerator.SourceGenerator.Types;
 
 public readonly struct DynamoDBMarshallerArguments
 {
-    public DynamoDBMarshallerArguments(INamedTypeSymbol entityTypeSymbol, string propertyName, INamedTypeSymbol argumentType)
+    public DynamoDBMarshallerArguments(ITypeSymbol entityTypeSymbol, string propertyName, ITypeSymbol argumentType)
     {
-        EntityTypeSymbol = new RootEntity((INamedTypeSymbol)entityTypeSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated), null);
-        PropertyName = propertyName;
+        EntityTypeSymbol = (INamedTypeSymbol)entityTypeSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
         ArgumentType = (INamedTypeSymbol)argumentType.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
+        PropertyName = propertyName;
     }
-    public RootEntity EntityTypeSymbol { get; }
+    public INamedTypeSymbol EntityTypeSymbol { get; }
     public INamedTypeSymbol ArgumentType { get; }
     public string PropertyName { get; }
 }
