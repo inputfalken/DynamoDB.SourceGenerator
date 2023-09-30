@@ -5,11 +5,11 @@ public readonly struct DynamoDBMarshallerArguments
 {
     public DynamoDBMarshallerArguments(INamedTypeSymbol entityTypeSymbol, string propertyName, INamedTypeSymbol argumentType)
     {
-        EntityTypeSymbol = entityTypeSymbol;
+        EntityTypeSymbol = new RootEntity((INamedTypeSymbol)entityTypeSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated), null);
         PropertyName = propertyName;
-        ArgumentType = argumentType;
+        ArgumentType = (INamedTypeSymbol)argumentType.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
     }
-    public INamedTypeSymbol EntityTypeSymbol { get; }
+    public RootEntity EntityTypeSymbol { get; }
     public INamedTypeSymbol ArgumentType { get; }
     public string PropertyName { get; }
 }

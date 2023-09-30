@@ -30,8 +30,8 @@ public class DynamoDbMarshaller
 
     public DynamoDbMarshaller(in DynamoDBMarshallerArguments arguments, IEqualityComparer<ISymbol> comparer)
     {
-        _entityTypeSymbol = (INamedTypeSymbol)arguments.EntityTypeSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
-        _argumentTypeSymbol = (INamedTypeSymbol)arguments.ArgumentType.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
+        _entityTypeSymbol = arguments.EntityTypeSymbol.Entity;
+        _argumentTypeSymbol = arguments.ArgumentType;
         _publicAccessPropertyName = arguments.PropertyName;
         _serializationMethodNameFactory = TypeExtensions.TypeSymbolStringCache("Ser", comparer, true);
         _keysMethodNameFactory = TypeExtensions.TypeSymbolStringCache("Keys", comparer, false);
