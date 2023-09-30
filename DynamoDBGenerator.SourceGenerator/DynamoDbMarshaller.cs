@@ -505,7 +505,7 @@ public class DynamoDbMarshaller
                 {{
 {string.Join(Constants.NewLine, switchCases)}
                     default: 
-                        throw new ArgumentOutOfRangeException(nameof(index), ""Could not find any match."");
+                        throw new ArgumentOutOfRangeException(nameof(index), $""Could not find any index match for value '{{index}}'."");
                 }}
                 if ({dictionaryName}.Count != (({partitionKeyReference} is null ? 0 : 1) + ({rangeKeyReference} is null ? 0 : 1)))
                     throw new InvalidOperationException(""The amount of keys does not match the amount provided."");

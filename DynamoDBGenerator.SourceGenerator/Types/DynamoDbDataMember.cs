@@ -17,7 +17,7 @@ public readonly struct DynamoDbDataMember
         IsIgnored = Attributes.OfType<DynamoDBIgnoreAttribute>().Any();
         AttributeName = Attributes
             .OfType<DynamoDBRenamableAttribute>()
-            .FirstOrDefault()?.AttributeName ?? dataMember.Name;
+            .FirstOrDefault(x => string.IsNullOrWhiteSpace(x.AttributeName) is false)?.AttributeName ?? dataMember.Name;
         DataMember = dataMember;
     }
 
@@ -43,10 +43,7 @@ public readonly struct DynamoDbDataMember
     private static IEnumerable<DynamoDBAttribute> GetAttributes(ISymbol symbol)
     {
         static DynamoDBAttribute? CreateInstance<T>(AttributeData attributeData)
-            where T : DynamoDBAttribute
-        {
-            return attributeData.CreateInstance<T>();
-        }
+            where T : DynamoDBAttribute => attributeData.CreateInstance<T>();
 
         var dynamoDbPropertyAttributes = symbol
             .GetAttributes()

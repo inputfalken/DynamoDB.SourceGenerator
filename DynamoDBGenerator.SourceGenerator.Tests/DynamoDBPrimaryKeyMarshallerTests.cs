@@ -7,7 +7,7 @@ namespace DynamoDBGenerator.SourceGenerator.Tests;
 [DynamoDBMarshaller(typeof(TypeWithRangeKeyOnly), PropertyName = "TypeWithRangeOnly")]
 [DynamoDBMarshaller(typeof(TypeWithKeys), PropertyName = "TypeWithKeys")]
 [DynamoDBMarshaller(typeof(TypeWithoutKeys), PropertyName = "TypeWithoutKeys")]
-public partial class DynamoDBKeyMarshallerTests
+public partial class DynamoDBPrimaryKeyMarshallerTests
 {
     private readonly Fixture _fixture = new();
 
