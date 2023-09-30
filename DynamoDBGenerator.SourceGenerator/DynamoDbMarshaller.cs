@@ -1,5 +1,4 @@
 using Amazon.DynamoDBv2.Model;
-using DynamoDBGenerator.SourceGenerator.Enums;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
@@ -474,14 +473,35 @@ public class DynamoDbMarshaller
         const string dictionaryName = "attributeValues";
 
         string body;
-        const string indent = "                ";
         if (keyStructure is null)
             body = @$"throw new InvalidOperationException(""Could not create keys for type '{_entityTypeSymbol.Name}', include DynamoDBKeyAttribute on the correct properties."");";
         else
         {
-            var properties = GetAssignments(partitionKeyReference, rangeKeyReference, keyStructure.Value).ToArray();
-            body = @$"{InitializeDictionary(dictionaryName, properties.Select(static x => x.capacityTernary))}
-                {string.Join(Constants.NewLine + indent, properties.Select(static x => x.dictionaryPopulation))}
+
+            var switchCases = GetAssignments(partitionKeyReference, rangeKeyReference, keyStructure.Value)
+                .Select(x =>
+            {
+
+                if (x.IndexName is null)
+                {
+                    return @$"                    case null:
+                    {{
+{string.Join(Constants.NewLine, x.Item2)}
+                        break;
+                    }}";
+                }
+
+                return $@"                    case ""{x.IndexName}"": 
+                    {{
+{string.Join(Constants.NewLine, x.Item2)}
+                        break;
+                    }}";
+            });
+            body = @$"var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: 2);
+                switch (index)
+                {{
+{string.Join(Constants.NewLine, switchCases)}
+                }}
                 if ({dictionaryName}.Count != (({partitionKeyReference} is null ? 0 : 1) + ({rangeKeyReference} is null ? 0 : 1)))
                     throw new InvalidOperationException(""The amount of keys does not match the amount provided."");
                 return {dictionaryName};";
@@ -495,18 +515,32 @@ public class DynamoDbMarshaller
 
         return method;
 
-        IEnumerable<(string dictionaryPopulation, string capacityTernary)> GetAssignments(
+        IEnumerable<(string? IndexName, IReadOnlyList<string>)> GetAssignments(
             string partition,
             string range,
             DynamoDBKeyStructure keyStructure
         )
         {
-            yield return Test(partition, keyStructure.PartitionKey);
+            yield return keyStructure switch
+            {
+                {PartitionKey: var pk, SortKey: { } sortKey} => (null, new[] {CreateAssignment(partition, pk), CreateAssignment(range, sortKey)}),
+                {PartitionKey: var pk, SortKey: null} => (null, new[] {CreateAssignment(partition, pk)})
+            };
 
-            if (keyStructure.SortKey is { } sortKey)
-                yield return Test(range, sortKey);
+            foreach (var gsi in keyStructure.GlobalSecondaryIndices)
+                yield return gsi switch
+                {
+                    {PartitionKey: var pk, SortKey: { } sortKey} => (gsi.Name, new[] {CreateAssignment(partition, pk), CreateAssignment(range, sortKey)}),
+                    {PartitionKey: var pk, SortKey: null} => (gsi.Name, new[] {CreateAssignment(partition, pk)})
+                };
 
-            (string dictionaryPopulation, string capacityTernary) Test(string accessPattern, DynamoDbDataMember dataMember)
+            foreach (var lsi in keyStructure.LocalSecondaryIndices)
+                yield return (lsi, keyStructure.PartitionKey) switch
+                {
+                    {PartitionKey: var pk, lsi: var sortKey} => (lsi.Name, new[] {CreateAssignment(partition, pk), CreateAssignment(range, sortKey.SortKey)}),
+                };
+
+            string CreateAssignment(string accessPattern, DynamoDbDataMember dataMember)
             {
 
                 var reference = $"converted{dataMember.AttributeName}";
@@ -519,24 +553,12 @@ public class DynamoDbMarshaller
                     @$"{dictionaryName}.Add(""{dataMember.AttributeName}"", {attributeConversion.ToAttributeValue()});"
                 );
 
-                var capacityTernaries = dataMember.DataMember.Type.NotNullTernaryExpression(in accessPattern, "1", "0");
-
-                return ($"{declaration} if({accessPattern}?.IsStrict == true) {assignment}", capacityTernaries);
+                return $@"                        {declaration}
+                        if({accessPattern}?.IsStrict == true) {assignment}";
             }
 
         }
 
-        static string InitializeDictionary(string dictionaryName, IEnumerable<string> capacityCalculations)
-        {
-            var capacityCalculation = string.Join(" + ", capacityCalculations);
-
-            return string.Join(" + ", capacityCalculation) switch
-            {
-                "" => $"var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: 0);",
-                var capacities => $@"var capacity = {capacities};
-                var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: capacity);"
-            };
-        }
     }
 
     private Conversion StaticPocoFactory(ITypeSymbol type)
