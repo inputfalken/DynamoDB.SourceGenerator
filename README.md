@@ -45,6 +45,13 @@ This project has not been tested in any real scenario and currently serves as a 
 | `uint`   | `N`    |
 | `ulong`  | `N`    |
 
+### Binary
+
+| Type           | Field |
+|----------------|-------|
+| `MemoryStream` | `B`   |
+
+
 ### Temporal Types
 
 | Type             | Field | Format   |

@@ -130,6 +130,7 @@ public record BaseType : KnownType
             {SpecialType: SpecialType.System_Single} => SupportedType.Single,
             {SpecialType: SpecialType.System_Byte} => SupportedType.Byte,
             {SpecialType: SpecialType.System_SByte} => SupportedType.SByte,
+            {Name: nameof(MemoryStream)} => SupportedType.MemoryStream,
             {TypeKind: TypeKind.Enum} => SupportedType.Enum,
             {SpecialType: SpecialType.System_DateTime} => SupportedType.DateTime,
             {Name: nameof(DateTimeOffset)} => SupportedType.DateTimeOffset,
@@ -159,6 +160,7 @@ public record BaseType : KnownType
         Single = 15,
         DateTime = 16,
         DateTimeOffset = 17,
-        DateOnly = 18
+        DateOnly = 18,
+        MemoryStream = 19
     }
 }
