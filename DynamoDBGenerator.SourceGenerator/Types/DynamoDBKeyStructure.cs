@@ -5,8 +5,11 @@ namespace DynamoDBGenerator.SourceGenerator.Types;
 /// </summary>
 public readonly struct DynamoDBKeyStructure
 {
-    public DynamoDBKeyStructure(DynamoDbDataMember partitionKey, DynamoDbDataMember? sortKey, IReadOnlyList<LocalSecondaryIndex> localSecondaryIndices,
-        IReadOnlyList<Amazon.DynamoDBv2.Model.GlobalSecondaryIndex> globalSecondaryIndices)
+    public DynamoDBKeyStructure(
+        DynamoDbDataMember partitionKey,
+        DynamoDbDataMember? sortKey,
+        IReadOnlyList<LocalSecondaryIndex> localSecondaryIndices,
+        IReadOnlyList<GlobalSecondaryIndex> globalSecondaryIndices)
     {
         PartitionKey = partitionKey;
         SortKey = sortKey;
@@ -32,7 +35,7 @@ public readonly struct DynamoDBKeyStructure
     /// <summary>
     /// Represents 0 - N amount of GSI.
     /// </summary>
-    public IReadOnlyList<Amazon.DynamoDBv2.Model.GlobalSecondaryIndex> GlobalSecondaryIndices { get; }
+    public IReadOnlyList<GlobalSecondaryIndex> GlobalSecondaryIndices { get; }
 }
 
 /// <summary>

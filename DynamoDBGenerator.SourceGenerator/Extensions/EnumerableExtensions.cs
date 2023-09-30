@@ -11,6 +11,7 @@ public static class EnumerableExtensions
         foreach (var publicInstanceProperty in type.GetPublicInstanceProperties())
             yield return new DynamoDbDataMember(publicInstanceProperty);
     }
+    
     private static IEnumerable<DataMember> GetPublicInstanceProperties(this INamespaceOrTypeSymbol symbol)
     {
         var publicInstanceDataMembers = symbol

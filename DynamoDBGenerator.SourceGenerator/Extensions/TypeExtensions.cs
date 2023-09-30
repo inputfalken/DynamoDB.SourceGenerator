@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Amazon.DynamoDBv2.DataModel;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
@@ -9,9 +10,29 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class TypeExtensions
 {
-    public static DynamoDBKeyStructure? GetKeyStructure(this INamedTypeSymbol namedTypeSymbol)
+    public static DynamoDBKeyStructure? GetKeyStructure(this IEnumerable<DynamoDbDataMember> dataMembers)
     {
-        return null;
+        var items = dataMembers
+            .SelectMany(x => x.Attributes, (x, y) => (DataMember: x, Attribute: y))
+            .ToArray();
+
+        var partititionKey = items
+            .Where(x => x.Attribute is DynamoDBHashKeyAttribute)
+            .Select(x => x.DataMember)
+            .Cast<DynamoDbDataMember?>()
+            .FirstOrDefault();
+
+        
+        var rangeKey = items
+            .Where(x => x.Attribute is DynamoDBRangeKeyAttribute)
+            .Select(x => x.DataMember)
+            .Cast<DynamoDbDataMember?>()
+            .FirstOrDefault();
+
+        if (partititionKey is null)
+            return null;
+
+        return new DynamoDBKeyStructure(partititionKey.Value, rangeKey, Array.Empty<LocalSecondaryIndex>(), Array.Empty<GlobalSecondaryIndex>());
     }
 
     public static Func<ITypeSymbol, string> NameCache(SymbolDisplayFormat symbolDisplayFormat, IEqualityComparer<ISymbol> comparer)
@@ -76,7 +97,6 @@ public static class TypeExtensions
                     _ => throw new NotImplementedException(typeSymbol.ToDisplayString())
                 }
                 : $"{displayString.ToAlphaNumericMethodName()}{suffix}";
-            
 
             if (typeSymbol is not INamedTypeSymbol namedTypeSymbol)
             {

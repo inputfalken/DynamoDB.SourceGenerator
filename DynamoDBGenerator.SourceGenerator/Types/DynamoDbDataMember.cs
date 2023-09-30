@@ -13,12 +13,9 @@ public readonly struct DynamoDbDataMember
 
     public DynamoDbDataMember(DataMember dataMember)
     {
-        var attributes = GetAttributes(dataMember.BaseSymbol).ToArray();
-
-        IsIgnored = attributes.OfType<DynamoDBIgnoreAttribute>().Any();
-        IsHashKey = attributes.OfType<DynamoDBHashKeyAttribute>().Any();
-        IsRangeKey = attributes.OfType<DynamoDBRangeKeyAttribute>().Any();
-        AttributeName = attributes
+        Attributes = GetAttributes(dataMember.BaseSymbol).ToArray();
+        IsIgnored = Attributes.OfType<DynamoDBIgnoreAttribute>().Any();
+        AttributeName = Attributes
             .OfType<DynamoDBRenamableAttribute>()
             .FirstOrDefault()?.AttributeName ?? dataMember.Name;
         DataMember = dataMember;
@@ -28,15 +25,7 @@ public readonly struct DynamoDbDataMember
     /// <inheritdoc cref="Types.DataMember" />
     public DataMember DataMember { get; }
 
-    /// <summary>
-    ///     Indicates whether the property is the HashKey.
-    /// </summary>
-    public bool IsHashKey { get; }
-
-    /// <summary>
-    ///     Indicates whether the property is the RangeKey.
-    /// </summary>
-    public bool IsRangeKey { get; }
+    public IReadOnlyList<DynamoDBAttribute> Attributes { get; }
 
     /// <summary>
     ///     Indicates whether the property should be ignored being sent to DynamoDB.
@@ -83,6 +72,15 @@ public readonly struct DynamoDbDataMember
 
             if (CreateInstance<DynamoDBRangeKeyAttribute>(propertyAttribute) is { } rangeKey)
                 yield return rangeKey;
+            
+            if (CreateInstance<DynamoDBGlobalSecondaryIndexHashKeyAttribute>(propertyAttribute) is { } gsiHashKey)
+                yield return gsiHashKey;
+            
+            if (CreateInstance<DynamoDBGlobalSecondaryIndexRangeKeyAttribute>(propertyAttribute) is { } gsiRangeKey)
+                yield return gsiRangeKey;
+            
+            if (CreateInstance<DynamoDBLocalSecondaryIndexRangeKeyAttribute>(propertyAttribute) is { } lsiRangeKey)
+                yield return lsiRangeKey;
 
             if (CreateInstance<DynamoDBPropertyAttribute>(propertyAttribute) is { } ddbProperty)
                 yield return ddbProperty;
