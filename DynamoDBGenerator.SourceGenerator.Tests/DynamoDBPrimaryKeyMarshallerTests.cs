@@ -1,6 +1,7 @@
 using System;
 using AutoFixture;
 using DynamoDBGenerator.Attributes;
+using DynamoDBGenerator.Exceptions;
 namespace DynamoDBGenerator.SourceGenerator.Tests;
 
 [DynamoDBMarshaller(typeof(TypeWithPartitionKeyOnly), PropertyName = "PartitionKeyOnly")]
@@ -34,7 +35,7 @@ public partial class DynamoDBPrimaryKeyMarshallerTests
     }
 
     [Theory]
-    [InlineData("abc", null, Skip = "Could make sense to allow this")]
+    [InlineData("abc", null)]
     [InlineData(null, "abc")]
     [InlineData(null, null)]
     [InlineData("abc", "dfg")]
@@ -53,22 +54,17 @@ public partial class DynamoDBPrimaryKeyMarshallerTests
     }
 
     [Fact]
-    public void RangeKey_TypeWithRangeKeyOnly_ShouldSucceed()
+    public void RangeKey_TypeWithRangeKeyOnly_ShouldThrow()
     {
         var type = _fixture.Create<TypeWithRangeKeyOnly>();
-        TypeWithRangeOnly
-            .RangeKey(type.Id)
-            .Should()
-            .SatisfyRespectively(x =>
-            {
-                x.Key.Should().Be(nameof(type.Id));
-                x.Value.S.Should().Be(type.Id);
-            });
+        var act = () => TypeWithRangeOnly.RangeKey(type.Id);
+
+        act.Should().Throw<InvalidOperationException>();
     }
 
     [Theory]
     [InlineData("abc", null)]
-    [InlineData(null, "abc", Skip = "Could make sense to allow this")]
+    [InlineData(null, "abc")]
     [InlineData(null, null)]
     [InlineData("abc", "dfg")]
     public void Keys_TypeWithRangeKeyOnly_ShouldThrow(string partitionKey, string rangeKey)
@@ -155,7 +151,7 @@ public partial class DynamoDBPrimaryKeyMarshallerTests
     public void Keys_InvalidTypeWithKeys_ShouldThrow(object partitionKey, object rangeKey)
     {
         var act = () => TypeWithKeys.Keys(partitionKey, rangeKey);
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<DynamoDBMarshallingException>();
     }
 
     [Theory]
@@ -168,7 +164,7 @@ public partial class DynamoDBPrimaryKeyMarshallerTests
     public void PartitionKey_InvalidTypes_ShouldThrow(object key)
     {
         var act = () => PartitionKeyOnly.PartitionKey(key);
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<DynamoDBMarshallingException>();
     }
 
     [Theory]
@@ -195,7 +191,7 @@ public partial class DynamoDBPrimaryKeyMarshallerTests
     public void Keys_InvalidTypes_ShouldThrow(object key)
     {
         var act = () => PartitionKeyOnly.Keys(key, key);
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<DynamoDBMarshallingException>();
     }
 }
 

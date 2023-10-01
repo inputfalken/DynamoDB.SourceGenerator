@@ -482,24 +482,12 @@ public class DynamoDbMarshaller
         {
 
             var switchCases = GetAssignments(partitionKeyReference, rangeKeyReference, keyStructure.Value)
-                .Select(x =>
-            {
-
-                if (x.IndexName is null)
-                {
-                    return @$"                    case null:
+                .Select(x => @$"                    case {(x.IndexName is null ? "null" : @$"""{x.IndexName}""")}:
                     {{
-{string.Join(Constants.NewLine, x.Item2)}
+{string.Join(Constants.NewLine, x.assignments)}
                         break;
-                    }}";
-                }
-
-                return $@"                    case ""{x.IndexName}"": 
-                    {{
-{string.Join(Constants.NewLine, x.Item2)}
-                        break;
-                    }}";
-            });
+                    }}");
+            
             body = @$"var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: 2);
                 switch (index)
                 {{
@@ -520,7 +508,7 @@ public class DynamoDbMarshaller
 
         return method;
 
-        IEnumerable<(string? IndexName, IReadOnlyList<string>)> GetAssignments(
+        IEnumerable<(string? IndexName, IReadOnlyList<string> assignments)> GetAssignments(
             string partition,
             string range,
             DynamoDBKeyStructure keyStructure
@@ -549,17 +537,18 @@ public class DynamoDbMarshaller
             {
 
                 var reference = $"converted{dataMember.AttributeName}";
-                var declaration =
-                    $"var {reference} = {accessPattern}?.Value as {(dataMember.DataMember.Type.IsValueType ? $"{_fullTypeNameFactory(dataMember.DataMember.Type)}?" : _fullTypeNameFactory(dataMember.DataMember.Type))};";
                 var attributeConversion = AttributeValueAssignment(dataMember.DataMember.Type, reference);
+                var expression = $"{accessPattern}?.Value is {_fullTypeNameFactory(dataMember.DataMember.Type)} {{ }} {reference}";
 
-                var assignment = dataMember.DataMember.Type.NotNullIfStatement(
-                    in reference,
-                    @$"{dictionaryName}.Add(""{dataMember.AttributeName}"", {attributeConversion.ToAttributeValue()});"
-                );
-
-                return $@"                        {declaration}
-                        if({accessPattern}?.IsStrict == true) {assignment}";
+                return $@"                        if({accessPattern}?.IsStrict == true) 
+                        {{ 
+                            if ({expression}) 
+                                {dictionaryName}.Add(""{dataMember.AttributeName}"", {attributeConversion.ToAttributeValue()});
+                            else if ({partition}?.Value is null) 
+                                throw new {Constants.MarshallingExceptionName}(""{dataMember.DataMember.Name}"", $""The argument {{nameof({accessPattern})}} can not be null."");
+                            else 
+                                throw new {Constants.MarshallingExceptionName}(""{dataMember.DataMember.Name}"", $""Value '{{{partition}.Value}}' from argument {{nameof({accessPattern})}} is not convertable to data member."");
+                        }}";
             }
 
         }

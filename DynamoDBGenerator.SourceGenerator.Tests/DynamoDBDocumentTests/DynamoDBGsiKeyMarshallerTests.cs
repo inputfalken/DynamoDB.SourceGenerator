@@ -1,50 +1,82 @@
 using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 
-[DynamoDBMarshaller(typeof(GsiHashKeyOnly))]
+[DynamoDBMarshaller(typeof(GsiHashAndRangeKey))]
 public partial class DynamoDBGsiKeyMarshallerTests
 {
-
     [Fact]
-    public void UnmatchedIndexName_Throws()
+    public void PartitionKey_MissMatchedIndexName_ShouldThrow()
     {
-        var indexedKeyMarshaller = GsiHashKeyOnlyMarshallerWithIndex("I DO NOT EXIST");
+        var act = () => GsiHashAndRangeKeyMarshallerWithIndex("Unknown").PartitionKey("test");
 
-        const string exceptionMessage = "Could not find any index match for value 'I DO NOT EXIST'. (Parameter 'index')";
-        var indexedRangeKeyAct = () => indexedKeyMarshaller.RangeKey("Id");
-        var indexedPartitionAct = () => indexedKeyMarshaller.PartitionKey("ID");
-        var indexedKeysAct = () => indexedKeyMarshaller.Keys("id1", "id2");
-        indexedRangeKeyAct.Should().Throw<ArgumentOutOfRangeException>().WithMessage(exceptionMessage);
-        indexedPartitionAct.Should().Throw<ArgumentOutOfRangeException>().WithMessage(exceptionMessage);
-        indexedKeysAct.Should().Throw<ArgumentOutOfRangeException>().WithMessage(exceptionMessage);
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+    
+    [Fact]
+    public void RangeKey_MissMatchedIndexName_ShouldThrow()
+    {
+        var act = () => GsiHashAndRangeKeyMarshallerWithIndex("Unknown").RangeKey("test");
 
-        // Verify that Primary access still would work.
-        var primaryKeyMarshaller = GsiHashKeyOnlyMarshaller;
-        var rangeKeyAct = () => primaryKeyMarshaller.RangeKey("Id");
-        var partitionAct = () => primaryKeyMarshaller.PartitionKey("ID");
-        var keysAct = () => primaryKeyMarshaller.Keys("id1", "id2");
-        rangeKeyAct.Should().NotThrow();
-        partitionAct.Should().NotThrow();
-        keysAct.Should().NotThrow();
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+    
+    [Fact]
+    public void Keys_MissMatchedIndexName_ShouldThrow()
+    {
+        var act = () => GsiHashAndRangeKeyMarshallerWithIndex("Unknown").Keys("1", 1);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
-    public void MatchedIndexName_Should_MapCorrectly()
+    public void PartitionKey_MatchedIndexName_ShouldMapCorrectly()
     {
-        var indexedKeyMarshaller = GsiHashKeyOnlyMarshallerWithIndex(GsiHashKeyOnly.IndexName);
-
-        var result = indexedKeyMarshaller.PartitionKey("something@domain.com");
-
-        result.Should().SatisfyRespectively(x =>
-        {
-            x.Key.Should().Be(nameof(GsiHashKeyOnly.Email));
-            x.Value.S.Should().Be("something@domain.com");
-        });
+        GsiHashAndRangeKeyMarshallerWithIndex(GsiHashAndRangeKey.IndexName)
+            .PartitionKey("something@domain.com")
+            .Should()
+            .SatisfyRespectively(x =>
+            {
+                x.Key.Should().Be(nameof(GsiHashAndRangeKey.Email));
+                x.Value.S.Should().Be("something@domain.com");
+            });
     }
 
+    [Fact]
+    public void RangeKey_MatchedIndexName_ShouldMapCorrectly()
+    {
+        GsiHashAndRangeKeyMarshallerWithIndex(GsiHashAndRangeKey.IndexName)
+            .RangeKey(1)
+            .Should()
+            .SatisfyRespectively(x =>
+            {
+                x.Key.Should().Be(nameof(GsiHashAndRangeKey.EmailRanking));
+                x.Value.N.Should().Be("1");
+            });
+    }
+
+    [Fact]
+    public void Keys_MatchedIndexName_ShouldMapCorrectly()
+    {
+        GsiHashAndRangeKeyMarshallerWithIndex(GsiHashAndRangeKey.IndexName)
+            .Keys("something@domain.com", 1)
+            .Should()
+            .SatisfyRespectively(x =>
+                {
+
+                    x.Key.Should().Be(nameof(GsiHashAndRangeKey.Email));
+                    x.Value.S.Should().Be("something@domain.com");
+                },
+                x =>
+                {
+                    x.Key.Should().Be(nameof(GsiHashAndRangeKey.EmailRanking));
+                    x.Value.N.Should().Be("1");
+
+                }
+            );
+    }
 }
 
-public class GsiHashKeyOnly
+public class GsiHashAndRangeKey
 {
     public const string IndexName = "EmailGSI";
 
