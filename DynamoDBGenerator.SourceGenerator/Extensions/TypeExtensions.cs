@@ -46,8 +46,10 @@ public static class TypeExtensions
             .Where(x => x.Attribute is DynamoDBGlobalSecondaryIndexHashKeyAttribute or DynamoDBGlobalSecondaryIndexRangeKeyAttribute)
             .GroupBy(x => x.Attribute switch
             {
-                DynamoDBGlobalSecondaryIndexHashKeyAttribute gsiHash when gsiHash.IndexNames.Length > 0 => gsiHash.IndexNames[0],
-                DynamoDBGlobalSecondaryIndexRangeKeyAttribute gsiRange when gsiRange.IndexNames.Length > 0 => gsiRange.IndexNames[0],
+                DynamoDBGlobalSecondaryIndexHashKeyAttribute hash
+                    when hash.IndexNames.FirstOrDefault(y => string.IsNullOrWhiteSpace(y) is false) is {} index => index,
+                DynamoDBGlobalSecondaryIndexRangeKeyAttribute range
+                    when range.IndexNames.FirstOrDefault(y => string.IsNullOrWhiteSpace(y) is false) is {} index => index,
                 _ => throw new NotSupportedException(x.DataMember.DataMember.Type.ToDisplayString())
             })
             .Select(x =>
