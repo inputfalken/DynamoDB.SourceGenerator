@@ -181,7 +181,7 @@ public class DynamoDbMarshaller
         var set = new HashSet<ITypeSymbol>(_comparer);
         var marshalMethods = CreateAttributeValueFactory(_entityTypeSymbol, set);
         var argumentMarshallMethods = CreateAttributeValueFactory(_argumentTypeSymbol, set);
-        var keysMethod = StaticAttributeValueDictionaryKeys(_keyStructure, "partition", "range");
+        var keysMethod = StaticAttributeValueDictionaryKeys(_keyStructure, "partitionKey", "rangeKey", "isPartitionKey", "isRangeKey");
 
         var unMarshalMethods = CreateAttributePocoFactory();
 
@@ -193,9 +193,9 @@ public class DynamoDbMarshaller
             public {className}(string? index) => _index = index;
             public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({rootTypeName} entity) => {_serializationMethodNameFactory(_entityTypeSymbol)}(entity);
             public {rootTypeName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => {_deserializationMethodNameFactory(_entityTypeSymbol)}(entity);
-            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {KeysName}(object partitionKey, object rangeKey) => {_keysMethodNameFactory(_entityTypeSymbol)}((partitionKey, true), (rangeKey, true), _index);
-            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {RangeKeyName}(object rangeKey) => {_keysMethodNameFactory(_entityTypeSymbol)}(null, (rangeKey, true), _index);
-            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {PartitionKeyName}(object partitionKey) => {_keysMethodNameFactory(_entityTypeSymbol)}((partitionKey, true), null, _index);
+            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {KeysName}(object partitionKey, object rangeKey) => {_keysMethodNameFactory(_entityTypeSymbol)}(partitionKey, rangeKey, true, true, _index);
+            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {RangeKeyName}(object rangeKey) => {_keysMethodNameFactory(_entityTypeSymbol)}(null, rangeKey, false, true, _index);
+            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {PartitionKeyName}(object partitionKey) => {_keysMethodNameFactory(_entityTypeSymbol)}(partitionKey, null, true, false, _index);
             public {className}.{valueTrackerTypeName} {ValueTrackerName}()
             {{
                 var number = 0;
@@ -470,8 +470,11 @@ public class DynamoDbMarshaller
     }
     private string StaticAttributeValueDictionaryKeys(
         DynamoDBKeyStructure? keyStructure,
-        string partitionKeyReference,
-        string rangeKeyReference)
+        string pkReference,
+        string rkReference,
+        string enforcePkValidation,
+        string enforceRkValidation
+    )
     {
         const string dictionaryName = "attributeValues";
 
@@ -481,13 +484,13 @@ public class DynamoDbMarshaller
         else
         {
 
-            var switchCases = GetAssignments(partitionKeyReference, rangeKeyReference, keyStructure.Value)
+            var switchCases = GetAssignments(pkReference, rkReference, enforcePkValidation, enforceRkValidation, keyStructure.Value)
                 .Select(x => @$"                    case {(x.IndexName is null ? "null" : @$"""{x.IndexName}""")}:
                     {{
 {string.Join(Constants.NewLine, x.assignments)}
                         break;
                     }}");
-            
+
             body = @$"var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: 2);
                 switch (index)
                 {{
@@ -495,13 +498,13 @@ public class DynamoDbMarshaller
                     default: 
                         throw new ArgumentOutOfRangeException(nameof(index), $""Could not find any index match for value '{{index}}'."");
                 }}
-                if ({dictionaryName}.Count != (({partitionKeyReference} is null ? 0 : 1) + ({rangeKeyReference} is null ? 0 : 1)))
+                if ({dictionaryName}.Count != (({enforcePkValidation} ? 1 : 0) + ({enforceRkValidation} ? 1 : 0)))
                     throw new InvalidOperationException(""The amount of keys does not match the amount provided."");
                 return {dictionaryName};";
         }
 
         var method =
-            @$"            public static Dictionary<string, AttributeValue> {_keysMethodNameFactory(_entityTypeSymbol)}((object Value, bool IsStrict)? {partitionKeyReference}, (object Value, bool IsStrict)? {rangeKeyReference}, string? index = null)
+            @$"            public static Dictionary<string, AttributeValue> {_keysMethodNameFactory(_entityTypeSymbol)}(object? {pkReference}, object? {rkReference}, bool {enforcePkValidation}, bool {enforceRkValidation}, string? index = null)
             {{
                 {body}
             }}";
@@ -511,43 +514,45 @@ public class DynamoDbMarshaller
         IEnumerable<(string? IndexName, IReadOnlyList<string> assignments)> GetAssignments(
             string partition,
             string range,
+            string enforcePartition,
+            string enforceRange,
             DynamoDBKeyStructure keyStructure
         )
         {
             yield return keyStructure switch
             {
-                {PartitionKey: var pk, SortKey: { } sortKey} => (null, new[] {CreateAssignment(partition, pk), CreateAssignment(range, sortKey)}),
-                {PartitionKey: var pk, SortKey: null} => (null, new[] {CreateAssignment(partition, pk)})
+                {PartitionKey: var pk, SortKey: { } sortKey} => (null, new[] {CreateAssignment(enforcePartition, partition, pk), CreateAssignment(enforceRange, range, sortKey)}),
+                {PartitionKey: var pk, SortKey: null} => (null, new[] {CreateAssignment(enforcePartition, partition, pk)})
             };
 
             foreach (var gsi in keyStructure.GlobalSecondaryIndices)
                 yield return gsi switch
                 {
-                    {PartitionKey: var pk, SortKey: { } sortKey} => (gsi.Name, new[] {CreateAssignment(partition, pk), CreateAssignment(range, sortKey)}),
-                    {PartitionKey: var pk, SortKey: null} => (gsi.Name, new[] {CreateAssignment(partition, pk)})
+                    {PartitionKey: var pk, SortKey: { } sortKey} => (gsi.Name, new[] {CreateAssignment(enforcePartition, partition, pk), CreateAssignment(enforceRange, range, sortKey)}),
+                    {PartitionKey: var pk, SortKey: null} => (gsi.Name, new[] {CreateAssignment(enforcePartition, partition, pk)})
                 };
 
             foreach (var lsi in keyStructure.LocalSecondaryIndices)
                 yield return (lsi, keyStructure.PartitionKey) switch
                 {
-                    {PartitionKey: var pk, lsi: var sortKey} => (lsi.Name, new[] {CreateAssignment(partition, pk), CreateAssignment(range, sortKey.SortKey)}),
+                    {PartitionKey: var pk, lsi: var sortKey} => (lsi.Name, new[] {CreateAssignment(enforcePartition, partition, pk), CreateAssignment(enforceRange, range, sortKey.SortKey)}),
                 };
 
-            string CreateAssignment(string accessPattern, DynamoDbDataMember dataMember)
+            string CreateAssignment(string validateReference, string keyReference, DynamoDbDataMember dataMember)
             {
 
-                var reference = $"converted{dataMember.AttributeName}";
+                const string reference = "value";
                 var attributeConversion = AttributeValueAssignment(dataMember.DataMember.Type, reference);
-                var expression = $"{accessPattern}?.Value is {_fullTypeNameFactory(dataMember.DataMember.Type)} {{ }} {reference}";
+                var expression = $"{keyReference} is {_fullTypeNameFactory(dataMember.DataMember.Type)} {{ }} {reference}";
 
-                return $@"                        if({accessPattern}?.IsStrict == true) 
+                return $@"                        if({validateReference}) 
                         {{ 
                             if ({expression}) 
                                 {dictionaryName}.Add(""{dataMember.AttributeName}"", {attributeConversion.ToAttributeValue()});
-                            else if ({partition}?.Value is null) 
-                                throw new {Constants.MarshallingExceptionName}(""{dataMember.DataMember.Name}"", $""The argument {{nameof({accessPattern})}} can not be null."");
+                            else if ({partition} is null) 
+                                throw new {Constants.MarshallingExceptionName}(""{dataMember.DataMember.Name}"", $""The argument {{nameof({keyReference})}} can not be null."");
                             else 
-                                throw new {Constants.MarshallingExceptionName}(""{dataMember.DataMember.Name}"", $""Value '{{{partition}.Value}}' from argument {{nameof({accessPattern})}} is not convertable to data member."");
+                                throw new {Constants.MarshallingExceptionName}(""{dataMember.DataMember.Name}"", $""Value '{{{partition}}}' from argument {{nameof({keyReference})}} is not convertable."");
                         }}";
             }
 
