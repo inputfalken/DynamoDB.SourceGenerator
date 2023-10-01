@@ -11,14 +11,14 @@ namespace DynamoDBGenerator.Internal;
 /// </summary>
 public sealed class IndexDynamoDBMarshallerDelegator : IDynamoDBIndexKeyMarshaller
 {
-    private readonly Func<object?, object?, bool, bool, string?, Dictionary<string, AttributeValue>> _fn;
-    public IndexDynamoDBMarshallerDelegator(Func<object?, object?, bool, bool, string?, Dictionary<string, AttributeValue>> fn, string index)
+    private readonly Func<object?, object?, bool, bool, string?, Dictionary<string, AttributeValue>> _implementation;
+    public IndexDynamoDBMarshallerDelegator(Func<object?, object?, bool, bool, string?, Dictionary<string, AttributeValue>> implementation, string index)
     {
-        _fn = fn;
+        _implementation = implementation;
         Index = index;
     }
-    public Dictionary<string, AttributeValue> Keys(object partitionKey, object rangeKey) => _fn(partitionKey, rangeKey, true, true, Index);
-    public Dictionary<string, AttributeValue> PartitionKey(object key) => _fn(key, null, true, false, Index);
-    public Dictionary<string, AttributeValue> RangeKey(object key) => _fn(null, key, false, true, Index);
+    public Dictionary<string, AttributeValue> Keys(object partitionKey, object rangeKey) => _implementation(partitionKey, rangeKey, true, true, Index);
+    public Dictionary<string, AttributeValue> PartitionKey(object key) => _implementation(key, null, true, false, Index);
+    public Dictionary<string, AttributeValue> RangeKey(object key) => _implementation(null, key, false, true, Index);
     public string Index { get; }
 }
