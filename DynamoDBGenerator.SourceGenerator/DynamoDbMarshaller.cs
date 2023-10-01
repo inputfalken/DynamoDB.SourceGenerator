@@ -470,8 +470,7 @@ public class DynamoDbMarshaller
             {
                 "" => $"var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: 0);",
                 var capacities => $@"var capacity = {capacities};
-                var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: capacity);
-                if (capacity is 0) {{ return {dictionaryName}; }}"
+                var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: capacity);"
             };
         }
     }
