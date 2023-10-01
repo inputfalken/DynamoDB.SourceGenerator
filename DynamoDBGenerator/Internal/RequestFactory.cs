@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
-namespace DynamoDBGenerator.Extensions;
+namespace DynamoDBGenerator.Internal;
 
 internal static class RequestFactory
 {
@@ -63,7 +63,7 @@ internal static class RequestFactory
 
         return new UpdateItemRequest
         {
-            Key = keySelector(item, argument),
+            Key = keySelector(item.PrimaryKeyMarshaller, argument),
             TableName = tableName,
             ExpressionAttributeNames = nameTracker.AccessedNames().ToDictionary(x => x.Key, x => x.Value),
             ExpressionAttributeValues = argumentTracker.AccessedValues(argument).ToDictionary(x => x.Key, x => x.Value),

@@ -7,7 +7,7 @@ public partial class DynamoDBGsiKeyMarshallerTests
     [Fact]
     public void PartitionKey_MissMatchedIndexName_ShouldThrow()
     {
-        var act = () => GsiHashAndRangeKeyMarshallerWithIndex("Unknown").PartitionKey("test");
+        var act = () => GsiHashAndRangeKeyMarshaller.IndexKeyMarshaller("Unknown").PartitionKey("test");
 
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
@@ -15,7 +15,7 @@ public partial class DynamoDBGsiKeyMarshallerTests
     [Fact]
     public void RangeKey_MissMatchedIndexName_ShouldThrow()
     {
-        var act = () => GsiHashAndRangeKeyMarshallerWithIndex("Unknown").RangeKey("test");
+        var act = () => GsiHashAndRangeKeyMarshaller.IndexKeyMarshaller("Unknown").RangeKey("test");
 
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
@@ -23,7 +23,7 @@ public partial class DynamoDBGsiKeyMarshallerTests
     [Fact]
     public void Keys_MissMatchedIndexName_ShouldThrow()
     {
-        var act = () => GsiHashAndRangeKeyMarshallerWithIndex("Unknown").Keys("1", 1);
+        var act = () => GsiHashAndRangeKeyMarshaller.IndexKeyMarshaller("Unknown").Keys("1", 1);
 
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
@@ -31,7 +31,7 @@ public partial class DynamoDBGsiKeyMarshallerTests
     [Fact]
     public void PartitionKey_MatchedIndexName_ShouldMapCorrectly()
     {
-        GsiHashAndRangeKeyMarshallerWithIndex(GsiHashAndRangeKey.IndexName)
+        GsiHashAndRangeKeyMarshaller.IndexKeyMarshaller(GsiHashAndRangeKey.IndexName)
             .PartitionKey("something@domain.com")
             .Should()
             .SatisfyRespectively(x =>
@@ -44,7 +44,7 @@ public partial class DynamoDBGsiKeyMarshallerTests
     [Fact]
     public void RangeKey_MatchedIndexName_ShouldMapCorrectly()
     {
-        GsiHashAndRangeKeyMarshallerWithIndex(GsiHashAndRangeKey.IndexName)
+        GsiHashAndRangeKeyMarshaller.IndexKeyMarshaller(GsiHashAndRangeKey.IndexName)
             .RangeKey(1)
             .Should()
             .SatisfyRespectively(x =>
@@ -57,7 +57,7 @@ public partial class DynamoDBGsiKeyMarshallerTests
     [Fact]
     public void Keys_MatchedIndexName_ShouldMapCorrectly()
     {
-        GsiHashAndRangeKeyMarshallerWithIndex(GsiHashAndRangeKey.IndexName)
+        GsiHashAndRangeKeyMarshaller.IndexKeyMarshaller(GsiHashAndRangeKey.IndexName)
             .Keys("something@domain.com", 1)
             .Should()
             .SatisfyRespectively(x =>

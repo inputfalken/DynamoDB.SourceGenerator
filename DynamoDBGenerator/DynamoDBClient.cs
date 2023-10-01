@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Extensions;
+using DynamoDBGenerator.Internal;
 namespace DynamoDBGenerator;
 
 internal class DynamoDBClient<T, TArg, TReferences, TArgumentReferences> : IDynamoDBClient<T, TArg, TReferences, TArgumentReferences>

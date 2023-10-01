@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator;
 
@@ -30,4 +29,9 @@ public interface IDynamoDBKeyMarshaller
     /// <param name="key">The range key to be marshalled.</param>
     /// <returns>A Dictionary containing marshalled AttributeValues for the range key.</returns>
     public Dictionary<string, AttributeValue> RangeKey(object key);
+}
+
+public interface IDynamoDBIndexKeyMarshaller : IDynamoDBKeyMarshaller
+{
+    public string Index { get; }
 }

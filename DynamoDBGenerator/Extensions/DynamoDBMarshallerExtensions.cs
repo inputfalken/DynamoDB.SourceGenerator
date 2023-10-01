@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
+using DynamoDBGenerator.Internal;
 namespace DynamoDBGenerator.Extensions;
 
 public static class DynamoDBMarshallerExtensions
