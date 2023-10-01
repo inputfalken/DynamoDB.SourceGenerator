@@ -4,10 +4,27 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 [DynamoDBMarshaller(typeof(LsiHashAndRangeKey))]
 public partial class DynamoDBLsiKeyMarshallerTests
 {
+    [Fact(Skip = "Could be nice to validate this before the marshaller is created.")]
+    public void IndexKeyMarshaller_MissMatchedIndexName_ShouldThrow()
+    {
+        var act = () => LsiHashAndRangeKeyMarshaller.IndexKeyMarshaller("Unknown");
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void IndexKeyMarshaller_MatchedIndexName_ShouldHaveIndex()
+    {
+        LsiHashAndRangeKeyMarshaller
+            .IndexKeyMarshaller(LsiHashAndRangeKey.IndexName)
+            .Index
+            .Should()
+            .Be(LsiHashAndRangeKey.IndexName);
+    }
     [Fact]
     public void PartitionKey_MissMatchedIndexName_ShouldThrow()
     {
-        var act = () => LsiHashAndRangeKeyMarshallerWithIndex("Unknown").PartitionKey("test");
+        var act = () => LsiHashAndRangeKeyMarshaller.IndexKeyMarshaller("Unknown").PartitionKey("test");
 
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
@@ -15,7 +32,7 @@ public partial class DynamoDBLsiKeyMarshallerTests
     [Fact]
     public void RangeKey_MissMatchedIndexName_ShouldThrow()
     {
-        var act = () => LsiHashAndRangeKeyMarshallerWithIndex("Unknown").RangeKey("test");
+        var act = () => LsiHashAndRangeKeyMarshaller.IndexKeyMarshaller("Unknown").RangeKey("test");
 
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
@@ -23,7 +40,7 @@ public partial class DynamoDBLsiKeyMarshallerTests
     [Fact]
     public void Keys_MissMatchedIndexName_ShouldThrow()
     {
-        var act = () => LsiHashAndRangeKeyMarshallerWithIndex("Unknown").Keys("1", 1);
+        var act = () => LsiHashAndRangeKeyMarshaller.IndexKeyMarshaller("Unknown").Keys("1", 1);
 
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
@@ -31,7 +48,7 @@ public partial class DynamoDBLsiKeyMarshallerTests
     [Fact]
     public void PartitionKey_MatchedIndexName_ShouldMapCorrectly()
     {
-        LsiHashAndRangeKeyMarshallerWithIndex(LsiHashAndRangeKey.IndexName)
+        LsiHashAndRangeKeyMarshaller.IndexKeyMarshaller(LsiHashAndRangeKey.IndexName)
             .PartitionKey("something@domain.com")
             .Should()
             .SatisfyRespectively(x =>
@@ -44,7 +61,7 @@ public partial class DynamoDBLsiKeyMarshallerTests
     [Fact]
     public void RangeKey_MatchedIndexName_ShouldMapCorrectly()
     {
-        LsiHashAndRangeKeyMarshallerWithIndex(LsiHashAndRangeKey.IndexName)
+        LsiHashAndRangeKeyMarshaller.IndexKeyMarshaller(LsiHashAndRangeKey.IndexName)
             .RangeKey(1)
             .Should()
             .SatisfyRespectively(x =>
@@ -57,7 +74,7 @@ public partial class DynamoDBLsiKeyMarshallerTests
     [Fact]
     public void Keys_MatchedIndexName_ShouldMapCorrectly()
     {
-        LsiHashAndRangeKeyMarshallerWithIndex(LsiHashAndRangeKey.IndexName)
+        LsiHashAndRangeKeyMarshaller.IndexKeyMarshaller(LsiHashAndRangeKey.IndexName)
             .Keys("something@domain.com", 1)
             .Should()
             .SatisfyRespectively(x =>

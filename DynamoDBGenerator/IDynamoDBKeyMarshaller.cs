@@ -1,9 +1,7 @@
 using System.Collections.Generic;
-using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator;
 
-// TODO might be good to include a option to Get the keys based on a generic argument which would be TArg from IDynamoDBMarshaller. Then the consumer could customize their DynamoDBKeyAttributes on the TArg payload. This would not work for tuples though. 😢
 /// <summary>
 /// Represents a marshaller responsible for converting .NET based types into a format suitable for DynamoDB.
 /// </summary>
@@ -30,4 +28,13 @@ public interface IDynamoDBKeyMarshaller
     /// <param name="key">The range key to be marshalled.</param>
     /// <returns>A Dictionary containing marshalled AttributeValues for the range key.</returns>
     public Dictionary<string, AttributeValue> RangeKey(object key);
+}
+
+/// <inheritdoc cref="IDynamoDBKeyMarshaller"/>
+public interface IDynamoDBIndexKeyMarshaller : IDynamoDBKeyMarshaller
+{
+    /// <summary>
+    /// Gets the index associated with the marshalling process.
+    /// </summary>
+    public string Index { get; }
 }

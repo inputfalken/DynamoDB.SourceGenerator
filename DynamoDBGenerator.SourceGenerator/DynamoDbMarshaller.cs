@@ -189,13 +189,10 @@ public class DynamoDbMarshaller
         var valueTrackerTypeName = _attributeValueAssignmentNameFactory(_argumentTypeSymbol);
         var nameTrackerTypeName = _attributeNameAssignmentNameFactory(_entityTypeSymbol);
         var implementInterface =
-            $@"private readonly string? _index;
-            public {className}(string? index) => _index = index;
-            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({rootTypeName} entity) => {_serializationMethodNameFactory(_entityTypeSymbol)}(entity);
+            $@"public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({rootTypeName} entity) => {_serializationMethodNameFactory(_entityTypeSymbol)}(entity);
             public {rootTypeName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => {_deserializationMethodNameFactory(_entityTypeSymbol)}(entity);
-            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {KeysName}(object partitionKey, object rangeKey) => {_keysMethodNameFactory(_entityTypeSymbol)}(partitionKey, rangeKey, true, true, _index);
-            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {RangeKeyName}(object rangeKey) => {_keysMethodNameFactory(_entityTypeSymbol)}(null, rangeKey, false, true, _index);
-            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {PartitionKeyName}(object partitionKey) => {_keysMethodNameFactory(_entityTypeSymbol)}(partitionKey, null, true, false, _index);
+            public {Constants.KeyMarshallerInterFaceName} PrimaryKeyMarshaller {{ get; }} = new {Constants.KeyMarshallerImplementationTypeName}({_keysMethodNameFactory(_entityTypeSymbol)});
+            public {Constants.IndexKeyMarshallerInterfaceName} IndexKeyMarshaller(string index) => new {Constants.IndexKeyMarshallerImplementationTypeName}({_keysMethodNameFactory(_entityTypeSymbol)}, index);
             public {className}.{valueTrackerTypeName} {ValueTrackerName}()
             {{
                 var number = 0;
@@ -223,8 +220,7 @@ public class DynamoDbMarshaller
         );
 
         return
-            $@"{accessibility.ToCode()} {@interface} {_publicAccessPropertyName} {{ get; }} = new {className}(null);
-        {accessibility.ToCode()} {@interface} {_publicAccessPropertyName}WithIndex(string index) => new {className}(index);
+            $@"{accessibility.ToCode()} {@interface} {_publicAccessPropertyName} {{ get; }} = new {className}();
         {@class}";
     }
 

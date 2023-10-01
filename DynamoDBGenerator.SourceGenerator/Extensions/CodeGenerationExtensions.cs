@@ -22,6 +22,7 @@ using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator;
 using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.Exceptions;
+using DynamoDBGenerator.Internal;
 
 {(nameSpace is null ? null : $@"namespace {nameSpace}
 {{")}
