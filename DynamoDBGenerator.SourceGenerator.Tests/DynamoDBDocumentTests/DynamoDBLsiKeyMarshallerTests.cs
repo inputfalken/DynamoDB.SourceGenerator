@@ -4,6 +4,23 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 [DynamoDBMarshaller(typeof(LsiHashAndRangeKey))]
 public partial class DynamoDBLsiKeyMarshallerTests
 {
+    [Fact(Skip = "Could be nice to validate this before the marshaller is created.")]
+    public void IndexKeyMarshaller_MissMatchedIndexName_ShouldThrow()
+    {
+        var act = () => LsiHashAndRangeKeyMarshaller.IndexKeyMarshaller("Unknown");
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void IndexKeyMarshaller_MatchedIndexName_ShouldHaveIndex()
+    {
+        LsiHashAndRangeKeyMarshaller
+            .IndexKeyMarshaller(LsiHashAndRangeKey.IndexName)
+            .Index
+            .Should()
+            .Be(LsiHashAndRangeKey.IndexName);
+    }
     [Fact]
     public void PartitionKey_MissMatchedIndexName_ShouldThrow()
     {
