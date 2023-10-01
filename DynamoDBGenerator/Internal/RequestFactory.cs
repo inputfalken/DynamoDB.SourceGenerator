@@ -7,7 +7,6 @@ namespace DynamoDBGenerator.Internal;
 
 internal static class RequestFactory
 {
-
     internal static PutItemRequest ToPutItemRequestInternal<T, TArg, TReferences, TArgumentReferences>(
         this IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> item,
         T entity,

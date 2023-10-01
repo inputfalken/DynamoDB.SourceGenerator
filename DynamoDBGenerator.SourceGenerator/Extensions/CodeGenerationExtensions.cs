@@ -43,7 +43,7 @@ using DynamoDBGenerator.Internal;
     {
         var indent = StringExtensions.Indent(indentLevel);
         var indent2 = StringExtensions.Indent(indentLevel + 1);
-        return $@"{accessibility.ToCode()}{(isPartial ? " partial" : null)} class {className}
+        return $@"{accessibility.ToCode()} sealed{(isPartial ? " partial" : null)} class {className}
 {indent}{{
 {indent2}{content}
 {indent}}}";
