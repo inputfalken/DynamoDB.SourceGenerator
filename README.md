@@ -24,12 +24,15 @@ This project has not been tested in any real scenario and currently serves as a 
 * Marshalling: Seamlessly convert your DTO into DynamoDB types.
 * Unmarshalling: Seamlessly convert DynamoDB types into your DTO.
   * Constructor support: Leverage constructors in your DTOs.
+* Marshalling keys: Seamlessly convert values into DynamoDB key types by decorating your properties with DynamoDbKeysAttributes.
+  * HashKey and RangeKey ✔ 
+  * GlobalSecondaryIndex ✔
+  * LocalSecondaryIndex ✔
+       
 
 ## TODO
-* Streamlined DynamoDBClient based on the source-generated code. 
-* Index support
-* Add the `ToQueryRequest` method.
-* Add the `ToDeleteRequest` method.
+* Streamlined DynamoDBClient based on the source-generated code.
+* Add methods to convert to request objects.
 
 ## Conversion
 
