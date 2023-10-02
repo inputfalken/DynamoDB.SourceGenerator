@@ -85,7 +85,15 @@ Types not listed above will be treated as an object by being assigned to the `M`
 
 ## Reference Tracker
 
-Coming soon
+
+As part of the source generation process, two additional types will be mirrored to the provided DTO:
+
+* A reference tracker that serves as attribute references on DynamoDB side.
+* A reference tracker that functions as attribute references for the arguments you provide to DynamoDB.
+
+These trackers enable you to consistently construct your AttributeExpressions using string interpolation. 
+
+For an illustrative example, refer to the [tests](https://github.com/inputfalken/DynamoDB.SourceGenerator/blob/main/DynamoDBGenerator.SourceGenerator.Tests/Extensions/ToAttributeExpressionTests.cs).
 
 ## Nullable reference types
 
