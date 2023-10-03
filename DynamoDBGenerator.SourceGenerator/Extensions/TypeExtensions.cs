@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
 using Amazon.DynamoDBv2.DataModel;
 using DynamoDBGenerator.SourceGenerator.Types;
@@ -15,15 +12,15 @@ public static class TypeExtensions
         var items = dataMembers
             .SelectMany(x => x.Attributes, (x, y) => (DataMember: x, Attribute: y))
             .ToArray();
-
+        
         var partitionKey = items
-            .Where(x => x.Attribute is DynamoDBHashKeyAttribute)
+            .Where(x => x.Attribute is DynamoDBHashKeyAttribute and not DynamoDBGlobalSecondaryIndexHashKeyAttribute)
             .Select(x => x.DataMember)
             .Cast<DynamoDbDataMember?>()
             .FirstOrDefault();
 
         var rangeKey = items
-            .Where(x => x.Attribute is DynamoDBRangeKeyAttribute)
+            .Where(x => x.Attribute is DynamoDBRangeKeyAttribute and not DynamoDBGlobalSecondaryIndexRangeKeyAttribute)
             .Select(x => x.DataMember)
             .Cast<DynamoDbDataMember?>()
             .FirstOrDefault();

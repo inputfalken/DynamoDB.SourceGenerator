@@ -11,6 +11,7 @@ namespace DynamoDBGenerator.Internal;
 /// </summary>
 public sealed class IndexDynamoDBMarshallerDelegator : IDynamoDBIndexKeyMarshaller
 {
+    // TODO enrich IDynamoDBKeyMarshaller to contain the intent that was invoked. Such whether Keys, PartitionKey, RangeKey was used.
     private readonly Func<object?, object?, bool, bool, string?, Dictionary<string, AttributeValue>> _implementation;
     public IndexDynamoDBMarshallerDelegator(Func<object?, object?, bool, bool, string?, Dictionary<string, AttributeValue>> implementation, string index)
     {

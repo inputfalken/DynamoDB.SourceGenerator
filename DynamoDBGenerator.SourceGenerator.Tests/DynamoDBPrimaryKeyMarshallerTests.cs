@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Amazon.DynamoDBv2.Model;
 using AutoFixture;
 using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.Exceptions;
@@ -31,7 +33,7 @@ public partial class DynamoDBPrimaryKeyMarshallerTests
     {
         var type = _fixture.Create<TypeWithPartitionKeyOnly>();
         var act = () => PartitionKeyOnly.PrimaryKeyMarshaller.RangeKey(type.Id);
-        act.Should().Throw<InvalidOperationException>();
+        NoCorrespondingAttributeAssertion(type.Id, act);
     }
 
     [Theory]
@@ -150,7 +152,7 @@ public partial class DynamoDBPrimaryKeyMarshallerTests
     [InlineData("abc", 1)]
     [InlineData(1, "abc")]
     [InlineData(1, 2)]
-    public void Keys_InvalidTypeWithKeys_ShouldThrow(object partitionKey, object rangeKey)
+    public void Keys_InvalidTypesWithKeys_ShouldThrow(object partitionKey, object rangeKey)
     {
         var act = () => TypeWithKeys.PrimaryKeyMarshaller.Keys(partitionKey, rangeKey);
         act.Should().Throw<DynamoDBMarshallingException>();
@@ -179,8 +181,13 @@ public partial class DynamoDBPrimaryKeyMarshallerTests
     public void RangeKey_InvalidTypes_ShouldThrow(object key)
     {
         var act = () => PartitionKeyOnly.PrimaryKeyMarshaller.RangeKey(key);
-        act.Should().Throw<InvalidOperationException>();
-
+        NoCorrespondingAttributeAssertion(key, act);
+    }
+    private static void NoCorrespondingAttributeAssertion(object key, Func<Dictionary<string, AttributeValue>> act)
+    {
+        act.Should()
+            .Throw<InvalidOperationException>()
+            .WithMessage($"Value '{key}' from argument 'rangeKey' was provided but there's no corresponding DynamoDBKeyAttribute.");
     }
 
     [Theory]

@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
@@ -528,14 +531,14 @@ public class DynamoDbMarshaller
             yield return keyStructure switch
             {
                 {PartitionKey: var pk, SortKey: { } sortKey} => (null, new[] {CreateAssignment(enforcePartition, partition, pk), CreateAssignment(enforceRange, range, sortKey)}),
-                {PartitionKey: var pk, SortKey: null} => (null, new[] {CreateAssignment(enforcePartition, partition, pk)})
+                {PartitionKey: var pk, SortKey: null} => (null, new[] {CreateAssignment(enforcePartition, partition, pk), MissingAssigment(enforceRange, range)})
             };
 
             foreach (var gsi in keyStructure.GlobalSecondaryIndices)
                 yield return gsi switch
                 {
                     {PartitionKey: var pk, SortKey: { } sortKey} => (gsi.Name, new[] {CreateAssignment(enforcePartition, partition, pk), CreateAssignment(enforceRange, range, sortKey)}),
-                    {PartitionKey: var pk, SortKey: null} => (gsi.Name, new[] {CreateAssignment(enforcePartition, partition, pk)})
+                    {PartitionKey: var pk, SortKey: null} => (gsi.Name, new[] {CreateAssignment(enforcePartition, partition, pk), MissingAssigment(enforceRange, range) })
                 };
 
             foreach (var lsi in keyStructure.LocalSecondaryIndices)
@@ -544,21 +547,31 @@ public class DynamoDbMarshaller
                     {PartitionKey: var pk, lsi: var sortKey} => (lsi.Name, new[] {CreateAssignment(enforcePartition, partition, pk), CreateAssignment(enforceRange, range, sortKey.SortKey)}),
                 };
 
+            string MissingAssigment(string validateReference, string keyReference)
+            {
+                var expression = $"{validateReference} && {keyReference} is not null";
+                return $@"                        if({expression}) 
+                        {{ 
+                            throw new InvalidOperationException($""Value '{{{keyReference}}}' from argument '{{nameof({keyReference})}}' was provided but there's no corresponding DynamoDBKeyAttribute."");
+                        }}";
+            }
+
             string CreateAssignment(string validateReference, string keyReference, DynamoDbDataMember dataMember)
             {
-
                 const string reference = "value";
                 var attributeConversion = AttributeValueAssignment(dataMember.DataMember.Type, reference);
-                var expression = $"{keyReference} is {_fullTypeNameFactory(dataMember.DataMember.Type)} {{ }} {reference}";
+                var expectedType = _fullTypeNameFactory(dataMember.DataMember.Type);
+                var expression = $"{keyReference} is {expectedType} {{ }} {reference}";
+                
 
                 return $@"                        if({validateReference}) 
                         {{ 
                             if ({expression}) 
                                 {dictionaryName}.Add(""{dataMember.AttributeName}"", {attributeConversion.ToAttributeValue()});
-                            else if ({partition} is null) 
-                                throw new {Constants.MarshallingExceptionName}(""{dataMember.DataMember.Name}"", $""The argument {{nameof({keyReference})}} can not be null."");
+                            else if ({keyReference} is null) 
+                                throw new {Constants.MarshallingExceptionName}(""{dataMember.DataMember.Name}"", $""The argument '{{nameof({keyReference})}}' can not be null."");
                             else 
-                                throw new {Constants.MarshallingExceptionName}(""{dataMember.DataMember.Name}"", $""Value '{{{partition}}}' from argument {{nameof({keyReference})}} is not convertable."");
+                                throw new {Constants.MarshallingExceptionName}(""{dataMember.DataMember.Name}"", $""Value '{{{keyReference}}}' from argument '{{nameof({keyReference})}}' is not convertable to '{expectedType}'."");
                         }}";
             }
 
