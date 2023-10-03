@@ -187,7 +187,7 @@ public class DynamoDbMarshaller
         var rootTypeName = _fullTypeNameFactory(_entityTypeSymbol);
         var valueTrackerTypeName = _attributeValueAssignmentNameFactory(_argumentTypeSymbol);
         var nameTrackerTypeName = _attributeNameAssignmentNameFactory(_entityTypeSymbol);
-        
+
         var implementInterface =
             $@"public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({rootTypeName} entity) => {_serializationMethodNameFactory(_entityTypeSymbol)}(entity);
             public {rootTypeName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => {_deserializationMethodNameFactory(_entityTypeSymbol)}(entity);
@@ -507,9 +507,17 @@ public class DynamoDbMarshaller
                     default: 
                         throw new ArgumentOutOfRangeException(nameof(index), $""Could not find any index match for value '{{index}}'."");
                 }}
-                if ({dictionaryName}.Count != (({enforcePkValidation} ? 1 : 0) + ({enforceRkValidation} ? 1 : 0)))
-                    throw new InvalidOperationException(""The amount of keys does not match the amount provided."");
-                return {dictionaryName};";
+                var keysCount = {dictionaryName}.Count;
+                if ({enforcePkValidation} && {enforceRkValidation} && keysCount == 2)
+                    return {dictionaryName};
+                if ({enforcePkValidation} && {enforceRkValidation} is false && keysCount == 1)
+                    return {dictionaryName};
+                if ({enforcePkValidation} is false && {enforceRkValidation} && keysCount == 1)
+                    return {dictionaryName};
+                if ({enforcePkValidation} && {enforceRkValidation} && keysCount == 1)
+                    throw new InvalidOperationException($""Unable to create keys with the provided arguments (PartitionKey: {{{pkReference}}}, RangeKey: {{{rkReference}}}) due to missing DynamoDBKeyAttributes."");
+                
+                throw new Exception(""Should never happen."");";
         }
 
         var method =
@@ -538,7 +546,7 @@ public class DynamoDbMarshaller
                 yield return gsi switch
                 {
                     {PartitionKey: var pk, SortKey: { } sortKey} => (gsi.Name, new[] {CreateAssignment(enforcePartition, partition, pk), CreateAssignment(enforceRange, range, sortKey)}),
-                    {PartitionKey: var pk, SortKey: null} => (gsi.Name, new[] {CreateAssignment(enforcePartition, partition, pk), MissingAssigment(enforceRange, range) })
+                    {PartitionKey: var pk, SortKey: null} => (gsi.Name, new[] {CreateAssignment(enforcePartition, partition, pk), MissingAssigment(enforceRange, range)})
                 };
 
             foreach (var lsi in keyStructure.LocalSecondaryIndices)
@@ -562,14 +570,13 @@ public class DynamoDbMarshaller
                 var attributeConversion = AttributeValueAssignment(dataMember.DataMember.Type, reference);
                 var expectedType = _fullTypeNameFactory(dataMember.DataMember.Type);
                 var expression = $"{keyReference} is {expectedType} {{ }} {reference}";
-                
 
                 return $@"                        if({validateReference}) 
                         {{ 
                             if ({expression}) 
                                 {dictionaryName}.Add(""{dataMember.AttributeName}"", {attributeConversion.ToAttributeValue()});
                             else if ({keyReference} is null) 
-                                throw new {Constants.MarshallingExceptionName}(""{dataMember.DataMember.Name}"", $""The argument '{{nameof({keyReference})}}' can not be null."");
+                                throw new {Constants.MarshallingExceptionName}(""{dataMember.DataMember.Name}"", $""Argument '{{nameof({keyReference})}}' can not be null."");
                             else 
                                 throw new {Constants.MarshallingExceptionName}(""{dataMember.DataMember.Name}"", $""Value '{{{keyReference}}}' from argument '{{nameof({keyReference})}}' is not convertable to '{expectedType}'."");
                         }}";
