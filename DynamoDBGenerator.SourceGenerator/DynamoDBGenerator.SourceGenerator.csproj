@@ -18,7 +18,7 @@
     <ItemGroup>
         <!-- Generator dependencies -->
         <ProjectReference Include="..\DynamoDBGenerator\DynamoDBGenerator.csproj" PrivateAssets="all" />
-        <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.201.3" PrivateAssets="all" GeneratePathProperty="true" />
+        <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.202.5" PrivateAssets="all" GeneratePathProperty="true" />
 
         <!-- We need to add *.dll here so all dlls would be packed inside NuGet package as our DependencyB.dll is not a NuGet package -->
         <None Include="$(OutputPath)\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
