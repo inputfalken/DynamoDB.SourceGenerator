@@ -18,7 +18,6 @@ public static class ExpressionAttributeExtensions
     )
         where TReferences : IExpressionAttributeNameTracker
         where TArgumentReferences : IExpressionAttributeValueTracker<TArg>
-        where T : TArg
     {
 
         var nameTracker = item.AttributeNameExpressionTracker();
