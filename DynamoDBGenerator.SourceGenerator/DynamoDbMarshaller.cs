@@ -241,7 +241,7 @@ public class DynamoDbMarshaller
     private Assignment DataMemberAssignment(in ITypeSymbol type, in string pattern, in string memberName)
     {
 
-        var defaultCase = type.IsNullable() ? "_ => null" : @$"_ => throw new {Constants.MarshallingExceptionName}(""{memberName}"", ""{Constants.NotNullErrorMessage}"")";
+        var defaultCase = type.IsNullable() ? "_ => null" : @$"_ => throw {Constants.NullExceptionMethod}(""{memberName}"")";
         return Execution(in type, in pattern, defaultCase, in memberName);
 
         Assignment Execution(in ITypeSymbol typeSymbol, in string accessPattern, string @default, in string memberName)
@@ -489,7 +489,7 @@ public class DynamoDbMarshaller
 
         string body;
         if (keyStructure is null)
-            body = @$"throw new InvalidOperationException(""Could not create keys for type '{_entityTypeSymbol.Name}', include DynamoDBKeyAttribute on the correct properties."");";
+            body = @$"throw {Constants.NoDynamoDBKeyAttributesExceptionMethod}(""{_entityTypeSymbol.Name}"");";
         else
         {
 
@@ -505,7 +505,7 @@ public class DynamoDbMarshaller
                 {{
 {string.Join(Constants.NewLine, switchCases)}
                     default: 
-                        throw new ArgumentOutOfRangeException(nameof(index), $""Could not find any index match for value '{{index}}'."");
+                        throw {Constants.MissMatchedIndexNameExceptionMethod}(nameof(index), index);
                 }}
                 var keysCount = {dictionaryName}.Count;
                 if ({enforcePkValidation} && {enforceRkValidation} && keysCount == 2)
@@ -515,9 +515,8 @@ public class DynamoDbMarshaller
                 if ({enforcePkValidation} is false && {enforceRkValidation} && keysCount == 1)
                     return {dictionaryName};
                 if ({enforcePkValidation} && {enforceRkValidation} && keysCount == 1)
-                    throw new InvalidOperationException($""Unable to create keys with the provided arguments (PartitionKey: {{{pkReference}}}, RangeKey: {{{rkReference}}}) due to missing DynamoDBKeyAttributes."");
-                
-                throw new Exception(""Should never happen."");";
+                    throw {Constants.KeysMissingDynamoDBAttributeExceptionMethod}({pkReference}, {rkReference});
+                throw {Constants.ShouldNeverHappenExceptionMethod}();";
         }
 
         var method =
@@ -559,9 +558,7 @@ public class DynamoDbMarshaller
             {
                 var expression = $"{validateReference} && {keyReference} is not null";
                 return $@"                        if({expression}) 
-                        {{ 
-                            throw new InvalidOperationException($""Value '{{{keyReference}}}' from argument '{{nameof({keyReference})}}' was provided but there's no corresponding DynamoDBKeyAttribute."");
-                        }}";
+                            throw {Constants.KeysValueWithNoCorrespondenceMethod}(""{keyReference}"", {keyReference});";
             }
 
             string CreateAssignment(string validateReference, string keyReference, DynamoDbDataMember dataMember)
@@ -576,9 +573,9 @@ public class DynamoDbMarshaller
                             if ({expression}) 
                                 {dictionaryName}.Add(""{dataMember.AttributeName}"", {attributeConversion.ToAttributeValue()});
                             else if ({keyReference} is null) 
-                                throw new {Constants.MarshallingExceptionName}(""{dataMember.DataMember.Name}"", $""Argument '{{nameof({keyReference})}}' can not be null."");
+                                throw {Constants.KeysArgumentNullExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"");
                             else 
-                                throw new {Constants.MarshallingExceptionName}(""{dataMember.DataMember.Name}"", $""Value '{{{keyReference}}}' from argument '{{nameof({keyReference})}}' is not convertable to '{expectedType}'."");
+                                throw {Constants.KeysInvalidConversionExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"", {keyReference}, ""{expectedType}"");
                         }}";
             }
 
