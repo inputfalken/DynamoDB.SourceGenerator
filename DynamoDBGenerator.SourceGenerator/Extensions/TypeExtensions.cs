@@ -74,38 +74,15 @@ public static class TypeExtensions
 
         return new DynamoDBKeyStructure(partitionKey.Value, rangeKey, lsi, gsi);
     }
-
-    public static Func<ITypeSymbol, string> NameCache(SymbolDisplayFormat symbolDisplayFormat, IEqualityComparer<ISymbol> comparer)
+    
+    public static Func<ITypeSymbol, T> CacheFactory<T>(IEqualityComparer<ISymbol> comparer, Func<ITypeSymbol, T> selector)
     {
-        var dictionary = new Dictionary<ISymbol, string>(comparer);
+        var cache = new Dictionary<ITypeSymbol, T>(comparer);
 
-        return x =>
-        {
-            if (dictionary.TryGetValue(x, out var name))
-                return name;
-
-            name = x.ToDisplayString(symbolDisplayFormat);
-
-            dictionary.Add(x, name);
-            return name;
-        };
+        return x => cache.TryGetValue(x, out var value) ? value : cache[x] = selector(x);
     }
-    public static Func<ITypeSymbol, DynamoDbDataMember[]> DataMembers(IEqualityComparer<ISymbol> comparer)
-    {
-        var cache = new Dictionary<ITypeSymbol, DynamoDbDataMember[]>(comparer);
-
-        return x =>
-        {
-            if (cache.TryGetValue(x, out var dynamoDbDataMembers))
-                return dynamoDbDataMembers;
-
-            var properties = x.GetDynamoDbProperties().ToArray();
-            cache[x] = properties;
-
-            return properties;
-        };
-    }
-    public static Func<ITypeSymbol, string> TypeSymbolStringCache(string suffix, IEqualityComparer<ISymbol> comparer, bool useNullableAnnotationNaming)
+    
+    public static Func<ITypeSymbol, string> SuffixedTypeSymbolNameFactory(string suffix, IEqualityComparer<ISymbol> comparer, bool useNullableAnnotationNaming)
     {
         return x => Execution(
             new Dictionary<ITypeSymbol, string>(comparer),

@@ -27,25 +27,27 @@ public class DynamoDbMarshaller
     private readonly INamedTypeSymbol _entityTypeSymbol;
     private readonly DynamoDBKeyStructure? _keyStructure;
     private readonly string _publicAccessPropertyName;
+    private readonly Func<ITypeSymbol, KnownType?> _knownTypeFactory;
 
     public DynamoDbMarshaller(in DynamoDBMarshallerArguments arguments, IEqualityComparer<ISymbol> comparer)
     {
         _entityTypeSymbol = arguments.EntityTypeSymbol;
         _argumentTypeSymbol = arguments.ArgumentType;
         _publicAccessPropertyName = arguments.PropertyName;
-        _serializationMethodNameFactory = TypeExtensions.TypeSymbolStringCache("Ser", comparer, true);
-        _keysMethodNameFactory = TypeExtensions.TypeSymbolStringCache("Keys", comparer, false);
-        _deserializationMethodNameFactory = TypeExtensions.TypeSymbolStringCache("Des", comparer, true);
-        _attributeNameAssignmentNameFactory = TypeExtensions.TypeSymbolStringCache("Name", comparer, false);
-        _attributeValueAssignmentNameFactory = TypeExtensions.TypeSymbolStringCache("Value", comparer, false);
-        _fullTypeNameFactory = TypeExtensions.NameCache(SymbolDisplayFormat.FullyQualifiedFormat, comparer);
-        _cachedDataMembers = TypeExtensions.DataMembers(comparer);
+        _serializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Ser", comparer, true);
+        _keysMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Keys", comparer, false);
+        _deserializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Des", comparer, true);
+        _attributeNameAssignmentNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Name", comparer, false);
+        _attributeValueAssignmentNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Value", comparer, false);
+        _fullTypeNameFactory = TypeExtensions.CacheFactory(comparer, static x => x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+        _cachedDataMembers = TypeExtensions.CacheFactory(comparer, static x => x.GetDynamoDbProperties().ToArray());
+        _knownTypeFactory = TypeExtensions.CacheFactory(comparer, static x => x.GetKnownType());
         _comparer = comparer;
         _keyStructure = _cachedDataMembers(arguments.EntityTypeSymbol).GetKeyStructure();
     }
     private Assignment AttributeValueAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
     {
-        if (typeSymbol.GetKnownType() is not { } knownType) return ExternalAssignment(in typeSymbol, in accessPattern);
+        if (_knownTypeFactory(typeSymbol) is not { } knownType) return ExternalAssignment(in typeSymbol, in accessPattern);
 
         var assignment = knownType switch
         {
@@ -246,7 +248,7 @@ public class DynamoDbMarshaller
 
         Assignment Execution(in ITypeSymbol typeSymbol, in string accessPattern, string @default, in string memberName)
         {
-            if (typeSymbol.GetKnownType() is not { } knownType) return ExternalAssignment(in typeSymbol, in accessPattern);
+            if (_knownTypeFactory(typeSymbol) is not { } knownType) return ExternalAssignment(in typeSymbol, in accessPattern);
 
             var assignment = knownType switch
             {
@@ -299,7 +301,7 @@ public class DynamoDbMarshaller
         var dataMembers = _cachedDataMembers(typeSymbol)
             .Where(static x => x.IsIgnored is false)
             .Select(x => (
-                KnownType: x.DataMember.Type.GetKnownType(),
+                KnownType: _knownTypeFactory(x.DataMember.Type),
                 DDB: x,
                 NameRef: $"_{x.DataMember.Name}NameRef",
                 AttributeReference: _attributeNameAssignmentNameFactory(x.DataMember.Type),
@@ -362,7 +364,7 @@ public class DynamoDbMarshaller
         var dataMembers = _cachedDataMembers(typeSymbol)
             .Where(static x => x.IsIgnored is false)
             .Select(x => (
-                KnownType: x.DataMember.Type.GetKnownType(),
+                KnownType: _knownTypeFactory(x.DataMember.Type),
                 DDB: x,
                 ValueRef: $"_{x.DataMember.Name}ValueRef",
                 AttributeReference: _attributeValueAssignmentNameFactory(x.DataMember.Type),
