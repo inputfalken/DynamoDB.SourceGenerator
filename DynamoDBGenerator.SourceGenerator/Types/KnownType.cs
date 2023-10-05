@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using Microsoft.CodeAnalysis;
 

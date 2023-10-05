@@ -51,8 +51,8 @@ public class DynamoDbMarshaller
         {
             BaseType baseType => baseType.Type switch
             {
-                BaseType.SupportedType.String => typeSymbol.ToInlineAssignment($"S = {accessPattern}"),
-                BaseType.SupportedType.Bool => typeSymbol.ToInlineAssignment($"BOOL = {accessPattern}"),
+                BaseType.SupportedType.String => typeSymbol.ToInlineAssignment($"S = {accessPattern}", knownType),
+                BaseType.SupportedType.Bool => typeSymbol.ToInlineAssignment($"BOOL = {accessPattern}", knownType),
                 BaseType.SupportedType.Int16
                     or BaseType.SupportedType.Int32
                     or BaseType.SupportedType.Int64
@@ -64,11 +64,11 @@ public class DynamoDbMarshaller
                     or BaseType.SupportedType.Single
                     or BaseType.SupportedType.SByte
                     or BaseType.SupportedType.Byte
-                    => typeSymbol.ToInlineAssignment($"N = {accessPattern}.ToString()"),
-                BaseType.SupportedType.Char => typeSymbol.ToInlineAssignment($"S = {accessPattern}.ToString()"),
-                BaseType.SupportedType.DateOnly or BaseType.SupportedType.DateTimeOffset or BaseType.SupportedType.DateTime => typeSymbol.ToInlineAssignment($@"S = {accessPattern}.ToString(""O"")"),
-                BaseType.SupportedType.Enum => typeSymbol.ToInlineAssignment($"N = ((int){accessPattern}).ToString()"),
-                BaseType.SupportedType.MemoryStream => typeSymbol.ToInlineAssignment($"B = {accessPattern}"),
+                    => typeSymbol.ToInlineAssignment($"N = {accessPattern}.ToString()", knownType),
+                BaseType.SupportedType.Char => typeSymbol.ToInlineAssignment($"S = {accessPattern}.ToString()", knownType),
+                BaseType.SupportedType.DateOnly or BaseType.SupportedType.DateTimeOffset or BaseType.SupportedType.DateTime => typeSymbol.ToInlineAssignment($@"S = {accessPattern}.ToString(""O"")", knownType),
+                BaseType.SupportedType.Enum => typeSymbol.ToInlineAssignment($"N = ((int){accessPattern}).ToString()", knownType),
+                BaseType.SupportedType.MemoryStream => typeSymbol.ToInlineAssignment($"B = {accessPattern}", knownType),
                 _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
             },
             SingleGeneric singleGeneric => singleGeneric.Type switch
@@ -78,7 +78,7 @@ public class DynamoDbMarshaller
                     or SingleGeneric.SupportedType.Array
                     or SingleGeneric.SupportedType.IEnumerable
                     or SingleGeneric.SupportedType.ICollection => BuildList(singleGeneric.T, in accessPattern),
-                SingleGeneric.SupportedType.Set => BuildSet(singleGeneric.T, accessPattern),
+                SingleGeneric.SupportedType.Set => BuildSet(singleGeneric.T, accessPattern, knownType),
                 _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
             },
             KeyValueGeneric keyValueGeneric => StringKeyedValuedGeneric(in keyValueGeneric, in accessPattern),
@@ -99,7 +99,7 @@ public class DynamoDbMarshaller
             ? $"L = new List<AttributeValue>({accessPattern}.Where({whereBody}).{select}"
             : $"L = new List<AttributeValue>({accessPattern}.{select}";
 
-        return new Assignment(in outerAssignment, in elementType, innerAssignment.HasExternalDependency);
+        return new Assignment(in outerAssignment, in elementType, innerAssignment.KnownType);
     }
 
     private Assignment BuildPocoList(in SingleGeneric singleGeneric, in string? operation, in string accessPattern, in string defaultCause, in string memberName)
@@ -107,32 +107,32 @@ public class DynamoDbMarshaller
         var innerAssignment = DataMemberAssignment(singleGeneric.T, "y", in memberName);
         var outerAssignment = $"{accessPattern} switch {{ {{ L: {{ }} x }} => x.Select(y => {innerAssignment.Value}){operation}, {defaultCause} }}";
 
-        return new Assignment(in outerAssignment, singleGeneric.T, innerAssignment.HasExternalDependency);
+        return new Assignment(in outerAssignment, singleGeneric.T, innerAssignment.KnownType);
     }
 
-    private static Assignment? BuildPocoSet(in ITypeSymbol elementType, in string accessPattern, in string defaultCase)
+    private static Assignment? BuildPocoSet(in ITypeSymbol elementType, in string accessPattern, in string defaultCase, KnownType knownType)
     {
         if (elementType.IsNumeric())
-            return elementType.ToInlineAssignment($"{accessPattern} switch {{ {{ NS: {{ }} x }} =>  new HashSet<{elementType.Name}>(x.Select(y => {elementType.Name}.Parse(y))), {defaultCase} }}");
+            return elementType.ToInlineAssignment($"{accessPattern} switch {{ {{ NS: {{ }} x }} =>  new HashSet<{elementType.Name}>(x.Select(y => {elementType.Name}.Parse(y))), {defaultCase} }}", knownType);
 
         if (elementType.SpecialType is SpecialType.System_String)
-            return elementType.ToInlineAssignment($"{accessPattern} switch {{ {{ SS: {{ }} x }} =>  new HashSet<string>(x), {defaultCase} }}");
+            return elementType.ToInlineAssignment($"{accessPattern} switch {{ {{ SS: {{ }} x }} =>  new HashSet<string>(x), {defaultCase} }}", knownType);
 
         return null;
     }
 
-    private static Assignment? BuildSet(in ITypeSymbol elementType, in string accessPattern)
+    private static Assignment? BuildSet(in ITypeSymbol elementType, in string accessPattern, KnownType knownType)
     {
         var newAccessPattern = elementType.NotNullLambdaExpression() is { } expression
             ? $"{accessPattern}.Where({expression})"
             : accessPattern;
 
         if (elementType.SpecialType is SpecialType.System_String)
-            return elementType.ToInlineAssignment($"SS = new List<string>({newAccessPattern})");
+            return elementType.ToInlineAssignment($"SS = new List<string>({newAccessPattern})", knownType);
 
         return elementType.IsNumeric() is false
             ? null
-            : elementType.ToInlineAssignment($"NS = new List<string>({newAccessPattern}.Select(x => x.ToString()))");
+            : elementType.ToInlineAssignment($"NS = new List<string>({newAccessPattern}.Select(x => x.ToString()))", knownType);
     }
 
     private string CreateAttributePocoFactory()
@@ -252,31 +252,31 @@ public class DynamoDbMarshaller
             {
                 BaseType baseType => baseType.Type switch
                 {
-                    BaseType.SupportedType.String => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => x, {@default} }}"),
-                    BaseType.SupportedType.Bool => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ BOOL: var x }} => x, {@default} }}"),
-                    BaseType.SupportedType.Char => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => x[0], {@default} }}"),
-                    BaseType.SupportedType.Enum => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} when Int32.Parse(x) is var y =>({_fullTypeNameFactory(typeSymbol)})y, {@default} }}"),
-                    BaseType.SupportedType.Int16 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Int16.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.Byte => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Byte.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.Int32 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Int32.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.Int64 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Int64.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.SByte => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => SByte.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.UInt16 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => UInt16.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.UInt32 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => UInt32.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.UInt64 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{  {{ N: {{ }} x }} => UInt64.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.Decimal => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Decimal.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.Double => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Double.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.Single => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Single.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.DateTime => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => DateTime.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.DateTimeOffset => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => DateTimeOffset.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.DateOnly => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => DateOnly.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.MemoryStream => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ B: {{ }} x }} => x, {@default} }}"),
+                    BaseType.SupportedType.String => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => x, {@default} }}", knownType),
+                    BaseType.SupportedType.Bool => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ BOOL: var x }} => x, {@default} }}", knownType),
+                    BaseType.SupportedType.Char => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => x[0], {@default} }}", knownType),
+                    BaseType.SupportedType.Enum => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} when Int32.Parse(x) is var y =>({_fullTypeNameFactory(typeSymbol)})y, {@default} }}", knownType),
+                    BaseType.SupportedType.Int16 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Int16.Parse(x), {@default} }}", knownType),
+                    BaseType.SupportedType.Byte => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Byte.Parse(x), {@default} }}", knownType),
+                    BaseType.SupportedType.Int32 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Int32.Parse(x), {@default} }}", knownType),
+                    BaseType.SupportedType.Int64 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Int64.Parse(x), {@default} }}", knownType),
+                    BaseType.SupportedType.SByte => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => SByte.Parse(x), {@default} }}", knownType),
+                    BaseType.SupportedType.UInt16 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => UInt16.Parse(x), {@default} }}", knownType),
+                    BaseType.SupportedType.UInt32 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => UInt32.Parse(x), {@default} }}", knownType),
+                    BaseType.SupportedType.UInt64 => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{  {{ N: {{ }} x }} => UInt64.Parse(x), {@default} }}", knownType),
+                    BaseType.SupportedType.Decimal => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Decimal.Parse(x), {@default} }}", knownType),
+                    BaseType.SupportedType.Double => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Double.Parse(x), {@default} }}", knownType),
+                    BaseType.SupportedType.Single => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Single.Parse(x), {@default} }}", knownType),
+                    BaseType.SupportedType.DateTime => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => DateTime.Parse(x), {@default} }}", knownType),
+                    BaseType.SupportedType.DateTimeOffset => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => DateTimeOffset.Parse(x), {@default} }}", knownType),
+                    BaseType.SupportedType.DateOnly => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => DateOnly.Parse(x), {@default} }}", knownType),
+                    BaseType.SupportedType.MemoryStream => typeSymbol.ToInlineAssignment($"{accessPattern} switch {{ {{ B: {{ }} x }} => x, {@default} }}", knownType),
                     _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
                 },
                 SingleGeneric singleGeneric => singleGeneric.Type switch
                 {
                     SingleGeneric.SupportedType.Nullable => Execution(singleGeneric.T, in accessPattern, @default, in memberName),
-                    SingleGeneric.SupportedType.Set => BuildPocoSet(singleGeneric.T, in accessPattern, in @default),
+                    SingleGeneric.SupportedType.Set => BuildPocoSet(singleGeneric.T, in accessPattern, in @default, knownType),
                     SingleGeneric.SupportedType.Array => BuildPocoList(in singleGeneric, ".ToArray()", in accessPattern, in @default, in memberName),
                     SingleGeneric.SupportedType.ICollection => BuildPocoList(in singleGeneric, ".ToList()", in accessPattern, in @default, in memberName),
                     SingleGeneric.SupportedType.IReadOnlyCollection => BuildPocoList(in singleGeneric, ".ToArray()", in accessPattern, in @default, in memberName),
@@ -299,7 +299,7 @@ public class DynamoDbMarshaller
         var dataMembers = _cachedDataMembers(typeSymbol)
             .Where(static x => x.IsIgnored is false)
             .Select(x => (
-                IsKnown: x.DataMember.Type.GetKnownType() is not null,
+                KnownType: x.DataMember.Type.GetKnownType(),
                 DDB: x,
                 NameRef: $"_{x.DataMember.Name}NameRef",
                 AttributeReference: _attributeNameAssignmentNameFactory(x.DataMember.Type),
@@ -307,7 +307,7 @@ public class DynamoDbMarshaller
             .ToArray();
 
         var fieldDeclarations = dataMembers
-            .Select(static x => x.IsKnown
+            .Select(static x => x.KnownType is not null
                 ? $@"    private readonly Lazy<string> {x.NameRef};
     public string {x.DDB.DataMember.Name} => {x.NameRef}.Value;"
                 : $@"    private readonly Lazy<{x.AttributeReference}> _{x.DDB.DataMember.Name};
@@ -320,11 +320,11 @@ public class DynamoDbMarshaller
             {
                 var ternaryExpressionName =
                     $"{constructorAttributeName} is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{{constructorAttributeName}}}.#{x.DDB.AttributeName}"""}";
-                var assignment = x.IsKnown
+                var assignment = x.KnownType is not null
                     ? $"        {x.NameRef} = new (() => {ternaryExpressionName});"
                     : $"        _{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({ternaryExpressionName}));";
 
-                return new Assignment(assignment, x.DDB.DataMember.Type, x.IsKnown is false);
+                return new Assignment(assignment, x.DDB.DataMember.Type, x.KnownType);
             })
             .ToArray();
 
@@ -334,7 +334,7 @@ public class DynamoDbMarshaller
 {string.Join(Constants.NewLine, fieldAssignments.Select(x => x.Value))}
     }}";
 
-        var expressionAttributeNameYields = dataMembers.Select(static x => x.IsKnown
+        var expressionAttributeNameYields = dataMembers.Select(static x => x.KnownType is not null
             ? $@"       if ({x.NameRef}.IsValueCreated) yield return new ({x.NameRef}.Value, ""{x.DDB.AttributeName}"");"
             : $"       if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{nameof(IExpressionAttributeNameTracker.AccessedNames)}()) {{ yield return x; }}");
 
@@ -352,7 +352,7 @@ public class DynamoDbMarshaller
             isReadonly: true,
             isRecord: true
         );
-        return new Conversion(@class, fieldAssignments.Where(x => x.HasExternalDependency));
+        return new Conversion(@class, fieldAssignments.Where(x => x.KnownType is null));
 
         string AttributeInterfaceName() => nameof(IExpressionAttributeNameTracker);
     }
@@ -362,7 +362,7 @@ public class DynamoDbMarshaller
         var dataMembers = _cachedDataMembers(typeSymbol)
             .Where(static x => x.IsIgnored is false)
             .Select(x => (
-                IsKnown: x.DataMember.Type.GetKnownType() is not null,
+                KnownType: x.DataMember.Type.GetKnownType(),
                 DDB: x,
                 ValueRef: $"_{x.DataMember.Name}ValueRef",
                 AttributeReference: _attributeValueAssignmentNameFactory(x.DataMember.Type),
@@ -370,7 +370,7 @@ public class DynamoDbMarshaller
             .ToArray();
 
         var fieldDeclarations = dataMembers
-            .Select(static x => x.IsKnown
+            .Select(static x => x.KnownType is not null
                 ? $@"    private readonly Lazy<string> {x.ValueRef};
     public string {x.DDB.DataMember.Name} => {x.ValueRef}.Value;"
                 : $@"    private readonly Lazy<{x.AttributeReference}> _{x.DDB.DataMember.Name};
@@ -381,11 +381,11 @@ public class DynamoDbMarshaller
         var fieldAssignments = dataMembers
             .Select(static x =>
             {
-                var assignment = x.IsKnown
+                var assignment = x.KnownType is not null
                     ? $"        {x.ValueRef} = new ({valueProvider});"
                     : $"        _{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({valueProvider}));";
 
-                return new Assignment(assignment, x.DDB.DataMember.Type, x.IsKnown is false);
+                return new Assignment(assignment, x.DDB.DataMember.Type, x.KnownType);
             })
             .ToArray();
 
@@ -399,7 +399,7 @@ public class DynamoDbMarshaller
             .Select(x =>
             {
                 var accessPattern = $"entity.{x.DDB.DataMember.Name}";
-                return x.IsKnown
+                return x.KnownType is not null
                     ? $"       if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {AttributeValueAssignment(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}").ToAttributeValue()});")}"
                     : $"       if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{nameof(IExpressionAttributeValueTracker<object>.AccessedValues)}({accessPattern})) {{ yield return x; }}")}";
             });
@@ -418,7 +418,7 @@ public class DynamoDbMarshaller
             isReadonly: true,
             isRecord: true
         );
-        return new Conversion(@class, fieldAssignments.Where(x => x.HasExternalDependency));
+        return new Conversion(@class, fieldAssignments.Where(x => x.KnownType is null));
 
         string AttributeInterfaceName(ITypeSymbol symbol) => $"{nameof(IExpressionAttributeValueTracker<object>)}<{_fullTypeNameFactory(symbol)}>";
     }
@@ -441,7 +441,7 @@ public class DynamoDbMarshaller
             in method,
             properties
                 .Select(static x => x.assignment)
-                .Where(static x => x.HasExternalDependency)
+                .Where(static x => x.KnownType is null)
         );
 
         IEnumerable<(string dictionaryPopulation, string capacityTernary, Assignment assignment)> GetAssignments(ITypeSymbol typeSymbol)
@@ -594,7 +594,7 @@ public class DynamoDbMarshaller
                 return {values.objectInitialization};
             }}";
 
-        return new Conversion(method, values.Item1.Where(x => x.HasExternalDependency));
+        return new Conversion(method, values.Item1.Where(x => x.KnownType is null));
 
         (IEnumerable<Assignment>, string objectInitialization) GetAssignments(ITypeSymbol typeSymbol)
         {
@@ -699,14 +699,14 @@ public class DynamoDbMarshaller
                 return new Assignment(
                     $"{accessPattern} switch {{ {{ M: {{ }} x }} => x.SelectMany(y => y.Value.L, (y, z) => (y.Key, z)).ToLookup(y => y.Key, y => {lookupValueAssignment.Value}), {defaultCase} }}",
                     keyValueGeneric.TValue,
-                    lookupValueAssignment.HasExternalDependency
+                    lookupValueAssignment.KnownType
                 );
             case {Type: KeyValueGeneric.SupportedType.Dictionary}:
                 var dictionaryValueAssignment = DataMemberAssignment(keyValueGeneric.TValue, "y.Value", in memberName);
                 return new Assignment(
                     $"{accessPattern} switch {{ {{ M: {{ }} x }} => x.ToDictionary(y => y.Key, y => {dictionaryValueAssignment.Value}), {defaultCase} }}",
                     keyValueGeneric.TValue,
-                    dictionaryValueAssignment.HasExternalDependency
+                    dictionaryValueAssignment.KnownType
                 );
             default:
                 return null;
@@ -723,14 +723,14 @@ public class DynamoDbMarshaller
                 return new Assignment(
                     $"M = {accessPattern}.ToDictionary(x => x.Key, x => {lookupValueAssignment.ToAttributeValue()})",
                     keyValueGeneric.TValue,
-                    lookupValueAssignment.HasExternalDependency
+                    lookupValueAssignment.KnownType
                 );
             case {Type: KeyValueGeneric.SupportedType.Dictionary}:
                 var dictionaryValueAssignment = AttributeValueAssignment(keyValueGeneric.TValue, "x.Value");
                 return new Assignment(
                     $@"M = {accessPattern}.ToDictionary(x => x.Key, x => {dictionaryValueAssignment.ToAttributeValue()})",
                     keyValueGeneric.TValue,
-                    dictionaryValueAssignment.HasExternalDependency
+                    dictionaryValueAssignment.KnownType
                 );
             default:
                 return null;

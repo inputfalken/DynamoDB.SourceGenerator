@@ -12,7 +12,7 @@ public static class TypeExtensions
         var items = dataMembers
             .SelectMany(x => x.Attributes, (x, y) => (DataMember: x, Attribute: y))
             .ToArray();
-        
+
         var partitionKey = items
             .Where(x => x.Attribute is DynamoDBHashKeyAttribute and not DynamoDBGlobalSecondaryIndexHashKeyAttribute)
             .Select(x => x.DataMember)
@@ -44,9 +44,9 @@ public static class TypeExtensions
             .GroupBy(x => x.Attribute switch
             {
                 DynamoDBGlobalSecondaryIndexHashKeyAttribute hash
-                    when hash.IndexNames.FirstOrDefault(y => string.IsNullOrWhiteSpace(y) is false) is {} index => index,
+                    when hash.IndexNames.FirstOrDefault(y => string.IsNullOrWhiteSpace(y) is false) is { } index => index,
                 DynamoDBGlobalSecondaryIndexRangeKeyAttribute range
-                    when range.IndexNames.FirstOrDefault(y => string.IsNullOrWhiteSpace(y) is false) is {} index => index,
+                    when range.IndexNames.FirstOrDefault(y => string.IsNullOrWhiteSpace(y) is false) is { } index => index,
                 _ => throw new NotSupportedException(x.DataMember.DataMember.Type.ToDisplayString())
             })
             .Select(x =>
@@ -71,7 +71,7 @@ public static class TypeExtensions
 
             })
             .ToArray();
-        
+
         return new DynamoDBKeyStructure(partitionKey.Value, rangeKey, lsi, gsi);
     }
 
@@ -159,14 +159,14 @@ public static class TypeExtensions
             return result;
         }
     }
-    public static Assignment ToInlineAssignment(this ITypeSymbol typeSymbol, string value)
+    public static Assignment ToInlineAssignment(this ITypeSymbol typeSymbol, string value, KnownType knownType)
     {
-        return new Assignment(in value, in typeSymbol, false);
+        return new Assignment(in value, typeSymbol, knownType);
     }
 
     public static Assignment ToExternalDependencyAssignment(this ITypeSymbol typeSymbol, string value)
     {
-        return new Assignment(in value, in typeSymbol, true);
+        return new Assignment(in value, in typeSymbol, null);
     }
 
     public static INamedTypeSymbol? TryGetNullableValueType(this ITypeSymbol type)

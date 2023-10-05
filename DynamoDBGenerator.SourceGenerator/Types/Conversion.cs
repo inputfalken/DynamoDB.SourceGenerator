@@ -3,17 +3,14 @@ namespace DynamoDBGenerator.SourceGenerator.Types;
 
 public readonly record struct Conversion(
     in string Code,
-    in IEnumerable<Assignment> Conversions)
+    in IEnumerable<Assignment> Assignments)
 {
-    /// <summary>
-    ///     The C# code for the <see cref="Amazon.DynamoDBv2.Model.AttributeValue" /> conversion.
-    /// </summary>
     public string Code { get; } = Code;
 
     /// <summary>
-    ///     The conversions that occur within the method.
+    ///     The assignments that occur within the method.
     /// </summary>
-    public IEnumerable<Assignment> Conversions { get; } = Conversions;
+    public IEnumerable<Assignment> Assignments { get; } = Assignments;
 
     public static IEnumerable<Conversion> ConversionMethods(
         ITypeSymbol typeSymbol,
@@ -29,10 +26,10 @@ public readonly record struct Conversion(
 
         yield return rootConversion;
 
-        foreach (var conversion in rootConversion.Conversions)
+        foreach (var assignment in rootConversion.Assignments)
         {
-            foreach (var recursionConversion in ConversionMethods(conversion.Type, conversionSelector, typeSymbols))
-                yield return recursionConversion;
+            foreach (var innerAssignment in ConversionMethods(assignment.Type, conversionSelector, typeSymbols))
+                yield return innerAssignment;
         }
     }
 }

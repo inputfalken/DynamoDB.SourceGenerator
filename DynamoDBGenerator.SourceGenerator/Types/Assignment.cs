@@ -1,7 +1,7 @@
 using Microsoft.CodeAnalysis;
 namespace DynamoDBGenerator.SourceGenerator.Types;
 
-public readonly record struct Assignment(in string Value, in ITypeSymbol Type, in bool HasExternalDependency)
+public readonly record struct Assignment(in string Value, in ITypeSymbol Type, in KnownType? KnownType)
 {
     public string Value { get; } = Value;
 
@@ -11,8 +11,7 @@ public readonly record struct Assignment(in string Value, in ITypeSymbol Type, i
     public ITypeSymbol Type { get; } = Type;
 
     /// <summary>
-    ///     The assignment decision.
+    ///     Determines whether the type was handled.
     /// </summary>
-    // TODO convert this into KnownType? where a nullable KnownType will have the intent that it's unknown and requires external help.
-    public bool HasExternalDependency { get; } = HasExternalDependency;
+    public KnownType? KnownType { get; } = KnownType;
 }
