@@ -352,7 +352,7 @@ public class DynamoDbMarshaller
             isReadonly: true,
             isRecord: true
         );
-        return new Conversion(@class, fieldAssignments.Where(x => x.KnownType is null));
+        return new Conversion(@class, fieldAssignments);
 
         string AttributeInterfaceName() => nameof(IExpressionAttributeNameTracker);
     }
@@ -418,7 +418,7 @@ public class DynamoDbMarshaller
             isReadonly: true,
             isRecord: true
         );
-        return new Conversion(@class, fieldAssignments.Where(x => x.KnownType is null));
+        return new Conversion(@class, fieldAssignments);
 
         string AttributeInterfaceName(ITypeSymbol symbol) => $"{nameof(IExpressionAttributeValueTracker<object>)}<{_fullTypeNameFactory(symbol)}>";
     }
@@ -439,9 +439,7 @@ public class DynamoDbMarshaller
 
         return new Conversion(
             in method,
-            properties
-                .Select(static x => x.assignment)
-                .Where(static x => x.KnownType is null)
+            properties.Select(static x => x.assignment)
         );
 
         IEnumerable<(string dictionaryPopulation, string capacityTernary, Assignment assignment)> GetAssignments(ITypeSymbol typeSymbol)
@@ -594,7 +592,7 @@ public class DynamoDbMarshaller
                 return {values.objectInitialization};
             }}";
 
-        return new Conversion(method, values.Item1.Where(x => x.KnownType is null));
+        return new Conversion(method, values.Item1);
 
         (IEnumerable<Assignment>, string objectInitialization) GetAssignments(ITypeSymbol typeSymbol)
         {

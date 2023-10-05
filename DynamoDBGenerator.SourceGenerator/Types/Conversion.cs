@@ -1,16 +1,17 @@
 using Microsoft.CodeAnalysis;
 namespace DynamoDBGenerator.SourceGenerator.Types;
 
-public readonly record struct Conversion(
-    in string Code,
-    in IEnumerable<Assignment> Assignments)
+public readonly record struct Conversion(in string Code, in IEnumerable<Assignment> Assignments)
 {
+    /// <summary>
+    /// The code surrounding all assignments.
+    /// </summary>
     public string Code { get; } = Code;
 
     /// <summary>
     ///     The assignments that occur within the method.
     /// </summary>
-    public IEnumerable<Assignment> Assignments { get; } = Assignments;
+    private IEnumerable<Assignment> Assignments { get; } = Assignments;
 
     public static IEnumerable<Conversion> ConversionMethods(
         ITypeSymbol typeSymbol,
@@ -26,10 +27,10 @@ public readonly record struct Conversion(
 
         yield return rootConversion;
 
-        foreach (var assignment in rootConversion.Assignments)
+        foreach (var unknownAssignment in rootConversion.Assignments.Where(x => x.KnownType is null))
         {
-            foreach (var innerAssignment in ConversionMethods(assignment.Type, conversionSelector, typeSymbols))
-                yield return innerAssignment;
+            foreach (var assignment in ConversionMethods(unknownAssignment.Type, conversionSelector, typeSymbols))
+                yield return assignment;
         }
     }
 }
