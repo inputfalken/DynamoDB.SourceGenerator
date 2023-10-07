@@ -432,7 +432,7 @@ public class DynamoDbMarshaller
 
         const string indent = "                ";
         var method =
-            @$"            public static Dictionary<string, AttributeValue> {_serializationMethodNameFactory(type)}({_fullTypeNameFactory(type)} {paramReference})
+            @$"            private static Dictionary<string, AttributeValue> {_serializationMethodNameFactory(type)}({_fullTypeNameFactory(type)} {paramReference})
             {{
                 {InitializeDictionary(dictionaryName, properties.Select(static x => x.capacityTernary))}
                 {string.Join(Constants.NewLine + indent, properties.Select(static x => x.dictionaryPopulation))}
@@ -589,7 +589,7 @@ public class DynamoDbMarshaller
         var values = GetAssignments(type);
         const string paramReference = "entity";
         var method =
-            @$"            public static {_fullTypeNameFactory(type)} {_deserializationMethodNameFactory(type)}(Dictionary<string, AttributeValue> {paramReference})
+            @$"            private static {_fullTypeNameFactory(type)} {_deserializationMethodNameFactory(type)}(Dictionary<string, AttributeValue> {paramReference})
             {{ 
                 return {values.objectInitialization};
             }}";
