@@ -34,11 +34,11 @@ public class DynamoDbMarshaller
         _entityTypeSymbol = arguments.EntityTypeSymbol;
         _argumentTypeSymbol = arguments.ArgumentType;
         _publicAccessPropertyName = arguments.PropertyName;
-        _serializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Ser", comparer, true);
-        _keysMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Keys", comparer, false);
-        _deserializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Des", comparer, true);
-        _attributeNameAssignmentNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Name", comparer, false);
-        _attributeValueAssignmentNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Value", comparer, false);
+        _serializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("_M", comparer, true);
+        _keysMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("_K", comparer, false);
+        _deserializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("_U", comparer, true);
+        _attributeNameAssignmentNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", comparer, false);
+        _attributeValueAssignmentNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Values", comparer, false);
         _fullTypeNameFactory = TypeExtensions.CacheFactory(comparer, static x => x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
         _cachedDataMembers = TypeExtensions.CacheFactory(comparer, static x => x.GetDynamoDbProperties().ToArray());
         _knownTypeFactory = TypeExtensions.CacheFactory(comparer, static x => x.GetKnownType());
