@@ -496,7 +496,7 @@ public class DynamoDbMarshaller
             var switchCases = GetAssignments(pkReference, rkReference, enforcePkValidation, enforceRkValidation, keyStructure.Value)
                 .Select(x => @$"                    case {(x.IndexName is null ? "null" : @$"""{x.IndexName}""")}:
                     {{
-{string.Join(Constants.NewLine, x.assignments)}
+{x.assignments}
                         break;
                     }}");
 
@@ -527,7 +527,7 @@ public class DynamoDbMarshaller
 
         return method;
 
-        IEnumerable<(string? IndexName, IReadOnlyList<string> assignments)> GetAssignments(
+        IEnumerable<(string? IndexName, string assignments)> GetAssignments(
             string partition,
             string range,
             string enforcePartition,
@@ -537,21 +537,21 @@ public class DynamoDbMarshaller
         {
             yield return keyStructure switch
             {
-                {PartitionKey: var pk, SortKey: { } sortKey} => (null, new[] {CreateAssignment(enforcePartition, partition, pk), CreateAssignment(enforceRange, range, sortKey)}),
-                {PartitionKey: var pk, SortKey: null} => (null, new[] {CreateAssignment(enforcePartition, partition, pk), MissingAssigment(enforceRange, range)})
+                {PartitionKey: var pk, SortKey: { } sortKey} => (null, $"{CreateAssignment(enforcePartition, partition, pk)}{Constants.NewLine}{CreateAssignment(enforceRange, range, sortKey)}"),
+                {PartitionKey: var pk, SortKey: null} => (null, $"{CreateAssignment(enforcePartition, partition, pk)}{Constants.NewLine}{MissingAssigment(enforceRange, range)}")
             };
 
             foreach (var gsi in keyStructure.GlobalSecondaryIndices)
                 yield return gsi switch
                 {
-                    {PartitionKey: var pk, SortKey: { } sortKey} => (gsi.Name, new[] {CreateAssignment(enforcePartition, partition, pk), CreateAssignment(enforceRange, range, sortKey)}),
-                    {PartitionKey: var pk, SortKey: null} => (gsi.Name, new[] {CreateAssignment(enforcePartition, partition, pk), MissingAssigment(enforceRange, range)})
+                    {PartitionKey: var pk, SortKey: { } sortKey} => (gsi.Name, $"{CreateAssignment(enforcePartition, partition, pk)}{Constants.NewLine}{CreateAssignment(enforceRange, range, sortKey)}"),
+                    {PartitionKey: var pk, SortKey: null} => (gsi.Name, $"{CreateAssignment(enforcePartition, partition, pk)}{Constants.NewLine}{MissingAssigment(enforceRange, range)}")
                 };
 
             foreach (var lsi in keyStructure.LocalSecondaryIndices)
                 yield return (lsi, keyStructure.PartitionKey) switch
                 {
-                    {PartitionKey: var pk, lsi: var sortKey} => (lsi.Name, new[] {CreateAssignment(enforcePartition, partition, pk), CreateAssignment(enforceRange, range, sortKey.SortKey)}),
+                    {PartitionKey: var pk, lsi: var sortKey} => (lsi.Name, $"{CreateAssignment(enforcePartition, partition, pk)}{Constants.NewLine}{CreateAssignment(enforceRange, range, sortKey.SortKey)}")
                 };
 
             string MissingAssigment(string validateReference, string keyReference)
