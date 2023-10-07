@@ -25,15 +25,17 @@ public class DynamoDbMarshaller
     private readonly IEqualityComparer<ITypeSymbol> _comparer;
     private readonly INamedTypeSymbol _argumentTypeSymbol;
     private readonly INamedTypeSymbol _entityTypeSymbol;
+    private readonly string _implementationName;
     private readonly DynamoDBKeyStructure? _keyStructure;
     private readonly string _publicAccessPropertyName;
     private readonly Func<ITypeSymbol, KnownType?> _knownTypeFactory;
 
     public DynamoDbMarshaller(in DynamoDBMarshallerArguments arguments, IEqualityComparer<ISymbol> comparer)
     {
+        _implementationName = arguments.ImplementationName;
         _entityTypeSymbol = arguments.EntityTypeSymbol;
         _argumentTypeSymbol = arguments.ArgumentType;
-        _publicAccessPropertyName = arguments.PropertyName;
+        _publicAccessPropertyName = arguments.ConsumerAccessProperty;
         _serializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("_M", comparer, true);
         _keysMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("_K", comparer, false);
         _deserializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("_U", comparer, true);
@@ -184,7 +186,6 @@ public class DynamoDbMarshaller
 
     public string CreateDynamoDbDocumentProperty(Accessibility accessibility)
     {
-        var className = $"{_publicAccessPropertyName}Implementation";
         var keysMethod = StaticAttributeValueDictionaryKeys(_keyStructure, "partitionKey", "rangeKey", "isPartitionKey", "isRangeKey");
         var rootTypeName = _fullTypeNameFactory(_entityTypeSymbol);
         var valueTrackerTypeName = _attributeValueAssignmentNameFactory(_argumentTypeSymbol);
@@ -195,15 +196,15 @@ public class DynamoDbMarshaller
             public {rootTypeName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => {_deserializationMethodNameFactory(_entityTypeSymbol)}(entity);
             public {Constants.KeyMarshallerInterFaceName} PrimaryKeyMarshaller {{ get; }} = new {Constants.KeyMarshallerImplementationTypeName}({_keysMethodNameFactory(_entityTypeSymbol)});
             public {Constants.IndexKeyMarshallerInterfaceName} IndexKeyMarshaller(string index) => new {Constants.IndexKeyMarshallerImplementationTypeName}({_keysMethodNameFactory(_entityTypeSymbol)}, index);
-            public {className}.{valueTrackerTypeName} {ValueTrackerName}()
+            public {_implementationName}.{valueTrackerTypeName} {ValueTrackerName}()
             {{
                 var number = 0;
                 Func<string> valueIdProvider = () => $"":p{{++number}}"";
-                return new {className}.{valueTrackerTypeName}(valueIdProvider);
+                return new {_implementationName}.{valueTrackerTypeName}(valueIdProvider);
             }}
-            public {className}.{nameTrackerTypeName} {NameTrackerName}()
+            public {_implementationName}.{nameTrackerTypeName} {NameTrackerName}()
             {{
-                return new {className}.{nameTrackerTypeName}(null);
+                return new {_implementationName}.{nameTrackerTypeName}(null);
             }}
 {CreateAttributeValueFactory()}
 {keysMethod}
@@ -212,16 +213,16 @@ public class DynamoDbMarshaller
         var sourceGeneratedCode = string.Join(Constants.NewLine, CreateExpressionAttributeTrackers().Prepend(implementInterface));
 
         var @interface =
-            $"{InterfaceName}<{rootTypeName}, {_fullTypeNameFactory(_argumentTypeSymbol)}, {className}.{nameTrackerTypeName}, {className}.{valueTrackerTypeName}>";
+            $"{InterfaceName}<{rootTypeName}, {_fullTypeNameFactory(_argumentTypeSymbol)}, {_implementationName}.{nameTrackerTypeName}, {_implementationName}.{valueTrackerTypeName}>";
         var @class = CodeGenerationExtensions.CreateClass(
             Accessibility.Public,
-            $"{className}: {@interface}",
+            $"{_implementationName}: {@interface}",
             in sourceGeneratedCode,
             2
         );
 
         return
-            $@"{accessibility.ToCode()} {@interface} {_publicAccessPropertyName} {{ get; }} = new {className}();
+            $@"{accessibility.ToCode()} {@interface} {_publicAccessPropertyName} {{ get; }} = new {_implementationName}();
         {@class}";
     }
     private IEnumerable<string> CreateExpressionAttributeTrackers()

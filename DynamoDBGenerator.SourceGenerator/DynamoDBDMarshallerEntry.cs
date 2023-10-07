@@ -1,5 +1,8 @@
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Linq;
 using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
@@ -47,24 +50,46 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
 
 
     private static IEnumerable<string> GetMethods(ISymbol typeSymbol, Compilation compilation)
-
     {
-        // If we can find duplicated types, we could access their properties instead of duplicating the source generator. 
-        // For example :
-        // [DynamoDBDocument(typeof(Person))]
-        // [DynamoDBDocument(typeof(Person), ArgumentType = typeof(ChangeName))]
-        // With this scenario we would be able to use the Person type from the second attribute instead of source generating duplicated code.
-        DynamoDBMarshallerArguments? ResultSelector(AttributeData attributeData)
+        var attributes = typeSymbol
+            .GetAttributes()
+            .Where(x => x.AttributeClass is
+            {
+                ContainingNamespace.Name: Constants.AttributeNameSpace,
+                Name: Constants.MarshallerAttributeName,
+                ContainingAssembly.Name: Constants.AssemblyName
+            });
+
+        return CreateArguments(attributes, compilation)
+            .Select(x => new DynamoDbMarshaller(x, SymbolEqualityComparer.IncludeNullability).CreateDynamoDbDocumentProperty(Accessibility.Public));
+    }
+
+    // If we can find duplicated types, we could access their properties instead of duplicating the source generator. 
+    // For example :
+    // [DynamoDBDocument(typeof(Person))]
+    // [DynamoDBDocument(typeof(Person), ArgumentType = typeof(ChangeName))]
+    // With this scenario we would be able to use the Person type from the second attribute instead of source generating duplicated code.
+    private static IEnumerable<DynamoDBMarshallerArguments> CreateArguments(IEnumerable<AttributeData> attributes, Compilation compilation)
+    {
+        var dict = new Dictionary<string, DynamoDBMarshallerArguments>();
+
+        foreach (var attributeData in attributes)
         {
             var entityType = attributeData.ConstructorArguments
                 .FirstOrDefault(x => x is {Kind: TypedConstantKind.Type, Value: not null});
 
             if (entityType.IsNull)
-                return null;
+                continue;
 
-            var compiledTypeSymbol = compilation.GetBestTypeByMetadataName(entityType.Value!.ToString());
+            var qualifiedMetadataName = entityType.Value!.ToString();
+            var isCached = dict.TryGetValue(qualifiedMetadataName, out var entity);
+
+            var compiledTypeSymbol = isCached
+                ? entity!.EntityTypeSymbol
+                : compilation.GetBestTypeByMetadataName(qualifiedMetadataName);
+
             if (compiledTypeSymbol is null)
-                return null;
+                continue;
 
             var propertyName = attributeData.NamedArguments.FirstOrDefault(x => x.Key is nameof(DynamoDBMarshallerAttribute.PropertyName)).Value;
             var argumentType = attributeData.NamedArguments.FirstOrDefault(x => x.Key is nameof(DynamoDBMarshallerAttribute.ArgumentType)).Value;
@@ -74,33 +99,17 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
             // We could produce and compile a custom type, take the tuple string and use it as the constructor arguments.
             // like `private readonly record struct {SomeString} ({tupleString})` for example `private readonly record struct 5604E01E_9058_4A53_BCC4_B5A0FC1038F9(string name, int age)`;
             // We would publicly accept the ValueTuple and internally build up conversion from compiled type.
-            return new DynamoDBMarshallerArguments(
+            yield return dict[qualifiedMetadataName] = new DynamoDBMarshallerArguments(
                 compiledTypeSymbol,
-                propertyName.Value?.ToString() ?? $"{compiledTypeSymbol.Name}Marshaller",
+                propertyName.Value?.ToString(),
                 argumentType is {IsNull: false, Value: not null}
                     ? compilation.GetBestTypeByMetadataName(argumentType.Value.ToString()) ?? compiledTypeSymbol
-                    : compiledTypeSymbol
+                    : compiledTypeSymbol,
+                isCached ? entity : null
             );
+
         }
 
-        var arguments = typeSymbol
-            .GetAttributes()
-            .Where(x => x.AttributeClass is
-            {
-                ContainingNamespace.Name: Constants.AttributeNameSpace,
-                Name: Constants.MarshallerAttributeName,
-                ContainingAssembly.Name: Constants.AssemblyName
-            })
-            .Select(ResultSelector);
-
-        foreach (var argument in arguments)
-        {
-            if (argument is null)
-                continue;
-
-            yield return new DynamoDbMarshaller(argument.Value, SymbolEqualityComparer.IncludeNullability).CreateDynamoDbDocumentProperty(Accessibility.Public);
-        }
     }
-
 
 }
