@@ -520,7 +520,7 @@ public class DynamoDbMarshaller
         }
 
         var method =
-            @$"            public static Dictionary<string, AttributeValue> {_keysMethodNameFactory(_entityTypeSymbol)}(object? {pkReference}, object? {rkReference}, bool {enforcePkValidation}, bool {enforceRkValidation}, string? index = null)
+            @$"            private static Dictionary<string, AttributeValue> {_keysMethodNameFactory(_entityTypeSymbol)}(object? {pkReference}, object? {rkReference}, bool {enforcePkValidation}, bool {enforceRkValidation}, string? index = null)
             {{
                 {body}
             }}";
