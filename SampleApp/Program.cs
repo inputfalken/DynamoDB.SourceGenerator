@@ -26,7 +26,6 @@ public partial class Repository
 [MemoryDiagnoser]
 public class Marshalling
 {
-    private readonly Repository _repository;
     private readonly DynamoDBContext _context;
     private readonly DynamoDBOperationConfig _dynamoDbOperationConfig;
     private readonly PersonEntity _singleElement;
@@ -34,7 +33,6 @@ public class Marshalling
 
     public Marshalling()
     {
-        _repository = new();
         _context = new(new AmazonDynamoDBClient());
         _dynamoDbOperationConfig = new()
         {
@@ -71,13 +69,13 @@ public class Marshalling
     [Benchmark]
     public PutItemRequest PutBySourceGeneration()
     {
-        return _repository.PersonEntityMarshaller.ToPutItemRequest(_singleElement,  ReturnValue.NONE, "TABLE");
+        return Repository.PersonEntityMarshaller.ToPutItemRequest(_singleElement,  ReturnValue.NONE, "TABLE");
     }
 
     [Benchmark]
     public PersonEntity DeserializeBySourceGeneration()
     {
-        return _repository.PersonEntityMarshaller.Unmarshall(_attributeValues);
+        return Repository.PersonEntityMarshaller.Unmarshall(_attributeValues);
     }
 
 }

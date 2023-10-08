@@ -7,6 +7,7 @@ public class DynamoDBMarshallerArguments
         ITypeSymbol entityTypeSymbol,
         string? consumerAccessProperty,
         ITypeSymbol argumentType,
+        SymbolEqualityComparer comparer,
         DynamoDBMarshallerArguments? delegation
     )
     {
@@ -15,11 +16,14 @@ public class DynamoDBMarshallerArguments
         ConsumerAccessProperty = consumerAccessProperty ?? $"{entityTypeSymbol.Name}Marshaller";
         Delegation = delegation;
         ImplementationName = $"{ConsumerAccessProperty}Implementation";
+        SymbolComparer = comparer;
     }
     public string ImplementationName { get; }
     public INamedTypeSymbol EntityTypeSymbol { get; }
     public INamedTypeSymbol ArgumentType { get; }
     public string ConsumerAccessProperty { get; }
     public DynamoDBMarshallerArguments? Delegation { get; }
+
+    public SymbolEqualityComparer SymbolComparer { get;  }
 
 }

@@ -61,7 +61,7 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
             });
 
         return CreateArguments(attributes, compilation)
-            .Select(x => new DynamoDbMarshaller(x, SymbolEqualityComparer.IncludeNullability).CreateDynamoDbDocumentProperty(Accessibility.Public));
+            .Select(x => new DynamoDbMarshaller(x).CreateDynamoDbDocumentProperty(Accessibility.Public));
     }
 
     // If we can find duplicated types, we could access their properties instead of duplicating the source generator. 
@@ -105,6 +105,7 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
                 argumentType is {IsNull: false, Value: not null}
                     ? compilation.GetBestTypeByMetadataName(argumentType.Value.ToString()) ?? compiledTypeSymbol
                     : compiledTypeSymbol,
+                SymbolEqualityComparer.IncludeNullability,
                 isCached ? entity : null
             );
 

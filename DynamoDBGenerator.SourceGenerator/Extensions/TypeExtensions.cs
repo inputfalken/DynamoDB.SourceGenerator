@@ -82,7 +82,7 @@ public static class TypeExtensions
         return x => cache.TryGetValue(x, out var value) ? value : cache[x] = selector(x);
     }
     
-    public static Func<ITypeSymbol, string> SuffixedTypeSymbolNameFactory(string suffix, IEqualityComparer<ISymbol> comparer, bool useNullableAnnotationNaming)
+    public static Func<ITypeSymbol, string> SuffixedTypeSymbolNameFactory(string suffix, IEqualityComparer<ISymbol?> comparer, bool useNullableAnnotationNaming)
     {
         return x => Execution(
             new Dictionary<ITypeSymbol, string>(comparer),

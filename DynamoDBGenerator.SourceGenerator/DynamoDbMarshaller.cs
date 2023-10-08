@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
@@ -15,7 +12,10 @@ public class DynamoDbMarshaller
     private const string NameTrackerName = "AttributeNameExpressionTracker";
     private const string SerializeName = "Marshall";
     private const string ValueTrackerName = "AttributeExpressionValueTracker";
+    private readonly DynamoDBKeyStructure? _keyStructure;
+    private readonly DynamoDBMarshallerArguments _arguments;
     private readonly Func<ITypeSymbol, DynamoDbDataMember[]> _cachedDataMembers;
+    private readonly Func<ITypeSymbol, KnownType?> _knownTypeFactory;
     private readonly Func<ITypeSymbol, string> _attributeNameAssignmentNameFactory;
     private readonly Func<ITypeSymbol, string> _attributeValueAssignmentNameFactory;
     private readonly Func<ITypeSymbol, string> _deserializationMethodNameFactory;
@@ -23,29 +23,20 @@ public class DynamoDbMarshaller
     private readonly Func<ITypeSymbol, string> _keysMethodNameFactory;
     private readonly Func<ITypeSymbol, string> _serializationMethodNameFactory;
     private readonly IEqualityComparer<ITypeSymbol> _comparer;
-    private readonly INamedTypeSymbol _argumentTypeSymbol;
-    private readonly INamedTypeSymbol _entityTypeSymbol;
-    private readonly string _implementationName;
-    private readonly DynamoDBKeyStructure? _keyStructure;
-    private readonly string _publicAccessPropertyName;
-    private readonly Func<ITypeSymbol, KnownType?> _knownTypeFactory;
 
-    public DynamoDbMarshaller(in DynamoDBMarshallerArguments arguments, IEqualityComparer<ISymbol> comparer)
+    public DynamoDbMarshaller(in DynamoDBMarshallerArguments arguments)
     {
-        _implementationName = arguments.ImplementationName;
-        _entityTypeSymbol = arguments.EntityTypeSymbol;
-        _argumentTypeSymbol = arguments.ArgumentType;
-        _publicAccessPropertyName = arguments.ConsumerAccessProperty;
-        _serializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("_M", comparer, true);
-        _keysMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("_K", comparer, false);
-        _deserializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("_U", comparer, true);
-        _attributeNameAssignmentNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", comparer, false);
-        _attributeValueAssignmentNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Values", comparer, false);
-        _fullTypeNameFactory = TypeExtensions.CacheFactory(comparer, static x => x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
-        _cachedDataMembers = TypeExtensions.CacheFactory(comparer, static x => x.GetDynamoDbProperties().ToArray());
-        _knownTypeFactory = TypeExtensions.CacheFactory(comparer, static x => x.GetKnownType());
-        _comparer = comparer;
+        _arguments = arguments;
+        _attributeNameAssignmentNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", _arguments.SymbolComparer, false);
+        _attributeValueAssignmentNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Values", _arguments.SymbolComparer, false);
+        _cachedDataMembers = TypeExtensions.CacheFactory(_arguments.SymbolComparer, static x => x.GetDynamoDbProperties().ToArray());
+        _comparer = _arguments.SymbolComparer;
+        _deserializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("_U", _arguments.SymbolComparer, true);
+        _fullTypeNameFactory = TypeExtensions.CacheFactory(_arguments.SymbolComparer, static x => x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+        _keysMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("_K", _arguments.SymbolComparer, false);
         _keyStructure = _cachedDataMembers(arguments.EntityTypeSymbol).GetKeyStructure();
+        _knownTypeFactory = TypeExtensions.CacheFactory(_arguments.SymbolComparer, static x => x.GetKnownType());
+        _serializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("_M", _arguments.SymbolComparer, true);
     }
     private Assignment AttributeValueAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
     {
@@ -142,7 +133,7 @@ public class DynamoDbMarshaller
     private string CreateAttributePocoFactory()
     {
         var enumerable = Conversion.ConversionMethods(
-                _entityTypeSymbol,
+                _arguments.EntityTypeSymbol,
                 StaticPocoFactory,
                 new HashSet<ITypeSymbol>(_comparer)
             )
@@ -154,17 +145,19 @@ public class DynamoDbMarshaller
     private string CreateAttributeValueFactory()
     {
         var hashset = new HashSet<ITypeSymbol>(_comparer);
+        var entityTypeSymbol = _arguments.EntityTypeSymbol;
         var code = Conversion.ConversionMethods(
-            _entityTypeSymbol,
+            entityTypeSymbol,
             StaticAttributeValueDictionaryFactory,
             hashset
         );
 
+        var argumentTypeSymbol = _arguments.ArgumentType;
         return string.Join(
             Constants.NewLine,
-            (_comparer.Equals(_entityTypeSymbol, _argumentTypeSymbol)
+            (_comparer.Equals(entityTypeSymbol, argumentTypeSymbol)
                 ? code
-                : code.Concat(Conversion.ConversionMethods(_argumentTypeSymbol, StaticAttributeValueDictionaryFactory, hashset))
+                : code.Concat(Conversion.ConversionMethods(argumentTypeSymbol, StaticAttributeValueDictionaryFactory, hashset))
             ).Select(x => x.Code)
         );
 
@@ -174,24 +167,26 @@ public class DynamoDbMarshaller
     public string CreateDynamoDbDocumentProperty(Accessibility accessibility)
     {
         var keysMethod = StaticAttributeValueDictionaryKeys(_keyStructure, "partitionKey", "rangeKey", "isPartitionKey", "isRangeKey");
-        var rootTypeName = _fullTypeNameFactory(_entityTypeSymbol);
-        var valueTrackerTypeName = _attributeValueAssignmentNameFactory(_argumentTypeSymbol);
-        var nameTrackerTypeName = _attributeNameAssignmentNameFactory(_entityTypeSymbol);
+        var entityTypeSymbol = _arguments.EntityTypeSymbol;
+        var rootTypeName = _fullTypeNameFactory(entityTypeSymbol);
+        var argumentTypeSymbol = _arguments.ArgumentType;
+        var valueTrackerTypeName = _attributeValueAssignmentNameFactory(argumentTypeSymbol);
+        var nameTrackerTypeName = _attributeNameAssignmentNameFactory(entityTypeSymbol);
 
         var implementInterface =
-            $@"public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({rootTypeName} entity) => {_serializationMethodNameFactory(_entityTypeSymbol)}(entity);
-            public {rootTypeName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => {_deserializationMethodNameFactory(_entityTypeSymbol)}(entity);
-            public {Constants.KeyMarshallerInterFaceName} PrimaryKeyMarshaller {{ get; }} = new {Constants.KeyMarshallerImplementationTypeName}({_keysMethodNameFactory(_entityTypeSymbol)});
-            public {Constants.IndexKeyMarshallerInterfaceName} IndexKeyMarshaller(string index) => new {Constants.IndexKeyMarshallerImplementationTypeName}({_keysMethodNameFactory(_entityTypeSymbol)}, index);
-            public {_implementationName}.{valueTrackerTypeName} {ValueTrackerName}()
+            $@"public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({rootTypeName} entity) => {_serializationMethodNameFactory(entityTypeSymbol)}(entity);
+            public {rootTypeName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => {_deserializationMethodNameFactory(entityTypeSymbol)}(entity);
+            public {Constants.KeyMarshallerInterFaceName} PrimaryKeyMarshaller {{ get; }} = new {Constants.KeyMarshallerImplementationTypeName}({_keysMethodNameFactory(entityTypeSymbol)});
+            public {Constants.IndexKeyMarshallerInterfaceName} IndexKeyMarshaller(string index) => new {Constants.IndexKeyMarshallerImplementationTypeName}({_keysMethodNameFactory(entityTypeSymbol)}, index);
+            public {_arguments.ImplementationName}.{valueTrackerTypeName} {ValueTrackerName}()
             {{
                 var number = 0;
                 Func<string> valueIdProvider = () => $"":p{{++number}}"";
-                return new {_implementationName}.{valueTrackerTypeName}(valueIdProvider);
+                return new {_arguments.ImplementationName}.{valueTrackerTypeName}(valueIdProvider);
             }}
-            public {_implementationName}.{nameTrackerTypeName} {NameTrackerName}()
+            public {_arguments.ImplementationName}.{nameTrackerTypeName} {NameTrackerName}()
             {{
-                return new {_implementationName}.{nameTrackerTypeName}(null);
+                return new {_arguments.ImplementationName}.{nameTrackerTypeName}(null);
             }}
 {CreateAttributeValueFactory()}
 {keysMethod}
@@ -200,27 +195,27 @@ public class DynamoDbMarshaller
         var sourceGeneratedCode = string.Join(Constants.NewLine, CreateExpressionAttributeTrackers().Prepend(implementInterface));
 
         var @interface =
-            $"{InterfaceName}<{rootTypeName}, {_fullTypeNameFactory(_argumentTypeSymbol)}, {_implementationName}.{nameTrackerTypeName}, {_implementationName}.{valueTrackerTypeName}>";
+            $"{InterfaceName}<{rootTypeName}, {_fullTypeNameFactory(argumentTypeSymbol)}, {_arguments.ImplementationName}.{nameTrackerTypeName}, {_arguments.ImplementationName}.{valueTrackerTypeName}>";
         var @class = CodeGenerationExtensions.CreateClass(
             Accessibility.Public,
-            $"{_implementationName}: {@interface}",
+            $"{_arguments.ImplementationName}: {@interface}",
             in sourceGeneratedCode,
             2
         );
 
         return
-            $@"{accessibility.ToCode()} {@interface} {_publicAccessPropertyName} {{ get; }} = new {_implementationName}();
+            $@"{accessibility.ToCode()} static {@interface} {_arguments.ConsumerAccessProperty} {{ get; }} = new {_arguments.ImplementationName}();
         {@class}";
     }
     private IEnumerable<string> CreateExpressionAttributeTrackers()
     {
         return Conversion.ConversionMethods(
-                _entityTypeSymbol,
+                _arguments.EntityTypeSymbol,
                 ExpressionAttributeName,
                 new HashSet<ITypeSymbol>(_comparer)
             )
             .Concat(Conversion.ConversionMethods(
-                    _argumentTypeSymbol,
+                    _arguments.ArgumentType,
                     ExpressionAttributeValue,
                     new HashSet<ITypeSymbol>(_comparer)
                 )
@@ -476,8 +471,9 @@ public class DynamoDbMarshaller
         const string dictionaryName = "attributeValues";
 
         string body;
+        var entityTypeSymbol = _arguments.EntityTypeSymbol;
         if (keyStructure is null)
-            body = @$"throw {Constants.NoDynamoDBKeyAttributesExceptionMethod}(""{_entityTypeSymbol.Name}"");";
+            body = @$"throw {Constants.NoDynamoDBKeyAttributesExceptionMethod}(""{entityTypeSymbol.Name}"");";
         else
         {
 
@@ -508,7 +504,7 @@ public class DynamoDbMarshaller
         }
 
         var method =
-            @$"            private static Dictionary<string, AttributeValue> {_keysMethodNameFactory(_entityTypeSymbol)}(object? {pkReference}, object? {rkReference}, bool {enforcePkValidation}, bool {enforceRkValidation}, string? index = null)
+            @$"            private static Dictionary<string, AttributeValue> {_keysMethodNameFactory(entityTypeSymbol)}(object? {pkReference}, object? {rkReference}, bool {enforcePkValidation}, bool {enforceRkValidation}, string? index = null)
             {{
                 {body}
             }}";
