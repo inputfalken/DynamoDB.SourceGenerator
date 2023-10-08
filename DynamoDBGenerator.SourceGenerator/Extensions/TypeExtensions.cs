@@ -151,18 +151,6 @@ public static class TypeExtensions
         return type.IsValueType && type is INamedTypeSymbol {OriginalDefinition.SpecialType: SpecialType.System_Nullable_T} symbol ? symbol : null;
     }
 
-
-    public static string ToXmlComment(this ITypeSymbol typeSymbol)
-    {
-        if (typeSymbol is not INamedTypeSymbol {IsGenericType: true} namedTypeSymbol)
-            return typeSymbol.ToDisplayString();
-
-        var typeParameters = string.Join(",", namedTypeSymbol.TypeParameters.Select(x => x.Name));
-
-        return Regex.Replace(namedTypeSymbol.ToDisplayString(), "<.+>", $"{{{typeParameters}}}");
-    }
-
-
     public static KnownType? GetKnownType(this ITypeSymbol type)
     {
         if (BaseType.CreateInstance(type) is { } baseType)
