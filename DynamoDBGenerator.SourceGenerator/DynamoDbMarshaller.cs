@@ -153,34 +153,21 @@ public class DynamoDbMarshaller
 
     private string CreateAttributeValueFactory()
     {
+        var hashset = new HashSet<ITypeSymbol>(_comparer);
+        var code = Conversion.ConversionMethods(
+            _entityTypeSymbol,
+            StaticAttributeValueDictionaryFactory,
+            hashset
+        );
 
-        IEnumerable<string> code;
-        if (_comparer.Equals(_entityTypeSymbol, _argumentTypeSymbol))
-        {
-            code = Conversion.ConversionMethods(
-                    _entityTypeSymbol,
-                    StaticAttributeValueDictionaryFactory,
-                    new HashSet<ITypeSymbol>(_comparer)
-                )
-                .Select(static x => x.Code);
-        }
-        else
-        {
-            var hashset = new HashSet<ITypeSymbol>(_comparer);
-            code = Conversion.ConversionMethods(
-                _entityTypeSymbol,
-                StaticAttributeValueDictionaryFactory,
-                hashset
-            ).Concat(
-                Conversion.ConversionMethods(
-                    _argumentTypeSymbol,
-                    StaticAttributeValueDictionaryFactory,
-                    hashset
-                )
-            ).Select(x => x.Code);
-        }
+        return string.Join(
+            Constants.NewLine,
+            (_comparer.Equals(_entityTypeSymbol, _argumentTypeSymbol)
+                ? code
+                : code.Concat(Conversion.ConversionMethods(_argumentTypeSymbol, StaticAttributeValueDictionaryFactory, hashset))
+            ).Select(x => x.Code)
+        );
 
-        return string.Join(Constants.NewLine, code);
     }
 
 
