@@ -14,7 +14,7 @@ public class DynamoDBMarshallerArguments
         ArgumentType = (INamedTypeSymbol)argumentType.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
         ConsumerAccessProperty = consumerAccessProperty ?? $"{entityTypeSymbol.Name}Marshaller";
         Delegation = delegation;
-        ImplementationName = $"{consumerAccessProperty}Implementation";
+        ImplementationName = $"{ConsumerAccessProperty}Implementation";
     }
     public string ImplementationName { get; }
     public INamedTypeSymbol EntityTypeSymbol { get; }
