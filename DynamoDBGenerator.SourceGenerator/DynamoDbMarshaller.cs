@@ -203,7 +203,7 @@ public class DynamoDbMarshaller
         );
 
         return
-            $@"{accessibility.ToCode()} static {@interface} {_arguments.ConsumerAccessProperty} {{ get; }} = new {_arguments.ImplementationName}();
+            $@"{accessibility.ToCode()} {@interface} {_arguments.PropertyName} {{ get; }} = new {_arguments.ImplementationName}();
         {@class}";
     }
     private IEnumerable<string> CreateExpressionAttributeTrackers()

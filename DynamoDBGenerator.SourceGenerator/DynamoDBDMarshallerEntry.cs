@@ -76,18 +76,18 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
             var entityType = attributeData.ConstructorArguments
                 .FirstOrDefault(x => x is {Kind: TypedConstantKind.Type, Value: not null});
 
-            if (entityType.Value is null || entityType.IsNull is false)
+            if (entityType.Value is null || entityType.IsNull)
                 continue;
 
             var qualifiedMetadataName = entityType.Value.ToString();
 
-            var compiledTypeSymbol = compilation.GetBestTypeByMetadataName(qualifiedMetadataName);
+            var entityTypeSymbol = compilation.GetBestTypeByMetadataName(qualifiedMetadataName);
 
-            if (compiledTypeSymbol is null)
+            if (entityTypeSymbol is null)
                 continue;
 
             var propertyName = attributeData.NamedArguments.FirstOrDefault(x => x.Key is nameof(DynamoDBMarshallerAttribute.PropertyName)).Value;
-            var argumentType = attributeData.NamedArguments.FirstOrDefault(x => x.Key is nameof(DynamoDBMarshallerAttribute.ArgumentType)).Value;
+            var argumentTypeSymbol = attributeData.NamedArguments.FirstOrDefault(x => x.Key is nameof(DynamoDBMarshallerAttribute.ArgumentType)).Value;
 
             // When a `ValueTuple` arrives we get the following format `(T name, T2 otherName)` for example `(string name, int age)`
             // To support this would be tricky but possible.
@@ -95,9 +95,9 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
             // like `private readonly record struct {SomeString} ({tupleString})` for example `private readonly record struct 5604E01E_9058_4A53_BCC4_B5A0FC1038F9(string name, int age)`;
             // We would publicly accept the ValueTuple and internally build up conversion from compiled type.
             yield return new DynamoDBMarshallerArguments(
-                compiledTypeSymbol,
-                argumentType is {IsNull: false, Value: not null}
-                    ? compilation.GetBestTypeByMetadataName(argumentType.Value.ToString())
+                entityTypeSymbol,
+                argumentTypeSymbol is {IsNull: false, Value: not null}
+                    ? compilation.GetBestTypeByMetadataName(argumentTypeSymbol.Value.ToString())
                     : null,
                 propertyName.Value?.ToString(),
                 SymbolEqualityComparer.IncludeNullability
