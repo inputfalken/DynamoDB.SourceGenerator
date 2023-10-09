@@ -1,20 +1,15 @@
 using Microsoft.CodeAnalysis;
 namespace DynamoDBGenerator.SourceGenerator.Types;
 
-public class DynamoDBMarshallerArguments
+public readonly struct DynamoDBMarshallerArguments
 {
-    public DynamoDBMarshallerArguments(
-        ITypeSymbol entityTypeSymbol,
-        string? consumerAccessProperty,
-        ITypeSymbol argumentType,
-        SymbolEqualityComparer comparer,
-        DynamoDBMarshallerArguments? delegation
-    )
+    public DynamoDBMarshallerArguments(INamedTypeSymbol entityTypeSymbol, INamedTypeSymbol? argumentType, string? consumerAccessProperty, SymbolEqualityComparer comparer)
     {
         EntityTypeSymbol = (INamedTypeSymbol)entityTypeSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
-        ArgumentType = (INamedTypeSymbol)argumentType.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
+        ArgumentType = argumentType is null
+            ? EntityTypeSymbol
+            : (INamedTypeSymbol)argumentType.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
         ConsumerAccessProperty = consumerAccessProperty ?? $"{entityTypeSymbol.Name}Marshaller";
-        Delegation = delegation;
         ImplementationName = $"{ConsumerAccessProperty}Implementation";
         SymbolComparer = comparer;
     }
@@ -22,8 +17,6 @@ public class DynamoDBMarshallerArguments
     public INamedTypeSymbol EntityTypeSymbol { get; }
     public INamedTypeSymbol ArgumentType { get; }
     public string ConsumerAccessProperty { get; }
-    public DynamoDBMarshallerArguments? Delegation { get; }
-
-    public SymbolEqualityComparer SymbolComparer { get;  }
+    public SymbolEqualityComparer SymbolComparer { get; }
 
 }

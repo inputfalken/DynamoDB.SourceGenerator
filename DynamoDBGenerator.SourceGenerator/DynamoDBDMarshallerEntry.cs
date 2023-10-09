@@ -71,22 +71,17 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
     // With this scenario we would be able to use the Person type from the second attribute instead of source generating duplicated code.
     private static IEnumerable<DynamoDBMarshallerArguments> CreateArguments(IEnumerable<AttributeData> attributes, Compilation compilation)
     {
-        var dict = new Dictionary<string, DynamoDBMarshallerArguments>();
-
         foreach (var attributeData in attributes)
         {
             var entityType = attributeData.ConstructorArguments
                 .FirstOrDefault(x => x is {Kind: TypedConstantKind.Type, Value: not null});
 
-            if (entityType.IsNull)
+            if (entityType.Value is null || entityType.IsNull is false)
                 continue;
 
-            var qualifiedMetadataName = entityType.Value!.ToString();
-            var isCached = dict.TryGetValue(qualifiedMetadataName, out var entity);
+            var qualifiedMetadataName = entityType.Value.ToString();
 
-            var compiledTypeSymbol = isCached
-                ? entity!.EntityTypeSymbol
-                : compilation.GetBestTypeByMetadataName(qualifiedMetadataName);
+            var compiledTypeSymbol = compilation.GetBestTypeByMetadataName(qualifiedMetadataName);
 
             if (compiledTypeSymbol is null)
                 continue;
@@ -99,14 +94,13 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
             // We could produce and compile a custom type, take the tuple string and use it as the constructor arguments.
             // like `private readonly record struct {SomeString} ({tupleString})` for example `private readonly record struct 5604E01E_9058_4A53_BCC4_B5A0FC1038F9(string name, int age)`;
             // We would publicly accept the ValueTuple and internally build up conversion from compiled type.
-            yield return dict[qualifiedMetadataName] = new DynamoDBMarshallerArguments(
+            yield return new DynamoDBMarshallerArguments(
                 compiledTypeSymbol,
-                propertyName.Value?.ToString(),
                 argumentType is {IsNull: false, Value: not null}
-                    ? compilation.GetBestTypeByMetadataName(argumentType.Value.ToString()) ?? compiledTypeSymbol
-                    : compiledTypeSymbol,
-                SymbolEqualityComparer.IncludeNullability,
-                isCached ? entity : null
+                    ? compilation.GetBestTypeByMetadataName(argumentType.Value.ToString())
+                    : null,
+                propertyName.Value?.ToString(),
+                SymbolEqualityComparer.IncludeNullability
             );
 
         }
