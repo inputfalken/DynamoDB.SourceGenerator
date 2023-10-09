@@ -82,7 +82,7 @@ public static class TypeExtensions
         return x => cache.TryGetValue(x, out var value) ? value : cache[x] = selector(x);
     }
     
-    public static Func<ITypeSymbol, string> SuffixedTypeSymbolNameFactory(string suffix, IEqualityComparer<ISymbol> comparer, bool useNullableAnnotationNaming)
+    public static Func<ITypeSymbol, string> SuffixedTypeSymbolNameFactory(string suffix, IEqualityComparer<ISymbol?> comparer, bool useNullableAnnotationNaming)
     {
         return x => Execution(
             new Dictionary<ITypeSymbol, string>(comparer),
@@ -150,18 +150,6 @@ public static class TypeExtensions
     {
         return type.IsValueType && type is INamedTypeSymbol {OriginalDefinition.SpecialType: SpecialType.System_Nullable_T} symbol ? symbol : null;
     }
-
-
-    public static string ToXmlComment(this ITypeSymbol typeSymbol)
-    {
-        if (typeSymbol is not INamedTypeSymbol {IsGenericType: true} namedTypeSymbol)
-            return typeSymbol.ToDisplayString();
-
-        var typeParameters = string.Join(",", namedTypeSymbol.TypeParameters.Select(x => x.Name));
-
-        return Regex.Replace(namedTypeSymbol.ToDisplayString(), "<.+>", $"{{{typeParameters}}}");
-    }
-
 
     public static KnownType? GetKnownType(this ITypeSymbol type)
     {

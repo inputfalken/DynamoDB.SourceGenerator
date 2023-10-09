@@ -30,7 +30,7 @@ public static class ExceptionHelper
         return new InvalidOperationException($"Value '{value}' from argument '{argumentName}' was provided but there's no corresponding DynamoDBKeyAttribute.");
     }
 
-    public static InvalidOperationException MissingDynamoDBAttribute(object pkReference, object rkReference)
+    public static InvalidOperationException MissingDynamoDBAttribute(object? pkReference, object? rkReference)
     {
         return new InvalidOperationException($"Unable to create keys with the provided arguments (PartitionKey: {{{pkReference}}}, RangeKey: {{{rkReference}}}) due to missing DynamoDBKeyAttributes.");
     }
