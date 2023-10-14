@@ -1,12 +1,12 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamoDBGenerator.SourceGenerator", "DynamoDBGenerator.SourceGenerator\DynamoDBGenerator.SourceGenerator.csproj", "{648B1DF4-9684-4422-95F5-74BB89862E4D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamoDBGenerator.SourceGenerator", "src\DynamoDBGenerator.SourceGenerator\DynamoDBGenerator.SourceGenerator.csproj", "{648B1DF4-9684-4422-95F5-74BB89862E4D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleApp", "SampleApp\SampleApp.csproj", "{834A7F6C-3C82-427F-9BFB-9686672A5BDE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleApp", "samples\SampleApp\SampleApp.csproj", "{834A7F6C-3C82-427F-9BFB-9686672A5BDE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamoDBGenerator", "DynamoDBGenerator\DynamoDBGenerator.csproj", "{53F899A8-28AA-450F-9C62-FD478119B2B7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamoDBGenerator", "src\DynamoDBGenerator\DynamoDBGenerator.csproj", "{53F899A8-28AA-450F-9C62-FD478119B2B7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamoDBGenerator.SourceGenerator.Tests", "DynamoDBGenerator.SourceGenerator.Tests\DynamoDBGenerator.SourceGenerator.Tests.csproj", "{D8EABA41-D014-49BD-B109-54829DB835E7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamoDBGenerator.SourceGenerator.Tests", "tests\DynamoDBGenerator.SourceGenerator.Tests\DynamoDBGenerator.SourceGenerator.Tests.csproj", "{D8EABA41-D014-49BD-B109-54829DB835E7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

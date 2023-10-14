@@ -4,6 +4,7 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <LangVersion>10</LangVersion>
         <Nullable>enable</Nullable>
+        <IsPackable>true</IsPackable>
         <LangVersion>10.0</LangVersion>
         <PackageVersion>0.0.0</PackageVersion>
         <Title>DynamoDBGenerator</Title>

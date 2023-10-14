@@ -7,7 +7,7 @@
         <LangVersion>10</LangVersion>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-
+        <IsPackable>true</IsPackable>
         <PackageVersion>0.0.0</PackageVersion>
         <Title>DynamoDBGenerator.SourceGenerator</Title>
         <Authors>Robert Andersson</Authors>
