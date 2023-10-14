@@ -14,7 +14,7 @@ env:
 
 defaults:
   run:
-    working-directory: src
+    working-directory: ./
     
 jobs:
   build:
