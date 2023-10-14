@@ -4,9 +4,20 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <LangVersion>10</LangVersion>
         <Nullable>enable</Nullable>
+        <LangVersion>10.0</LangVersion>
+        <PackageVersion>0.0.0</PackageVersion>
+        <Title>DynamoDBGenerator</Title>
+        <Authors>Robert Andersson</Authors>
+        <Description>Generate low-level DynamoDB code for any DTO via source generators.</Description>
+        <Copyright>Robert Anderson</Copyright>
+        <PackageProjectUrl>https://github.com/inputfalken/DynamoDB.SourceGenerator</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/inputfalken/DynamoDB.SourceGenerator</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.202.5" />
+        <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.202.5"/>
     </ItemGroup>
 </Project>
