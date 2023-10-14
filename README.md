@@ -1,11 +1,23 @@
 # DynamoDB.SourceGenerator
 
-This source generator is crafted to simplify DynamoDB integration for your projects. It's designed to effortlessly
-generate the low-level DynamoDB API tailored to any DTO you provide.
+This source generator is crafted to simplify DynamoDB integration for your projects. It's designed to effortlessly generate the low-level DynamoDB API tailored to any DTO you provide.
 
 ## Note
-
 This project has not been tested in any real scenario and currently serves as a hobby project.
+
+## Installation
+Install  the following packages from Nuget:
+
+[![DynamoDBGenerator][1]][2] 
+
+[![DynamoDBGenerator.SourceGenerator][3]][4]
+
+[1]: https://img.shields.io/nuget/v/DynamoDBGenerator.svg?label=DynamoDBGenerator
+[2]: https://www.nuget.org/packages/DynamoDBGenerator
+[3]: https://img.shields.io/nuget/v/DynamoDBGenerator.SourceGenerator.svg?label=DynamoDBGenerator.SourceGenerator
+[4]: https://www.nuget.org/packages/DynamoDBGenerator.SourceGenerator
+
+
 
 ## Goals:
 
@@ -154,11 +166,6 @@ public class Person
 [DynamoDBMarshaller(typeof(Person), PropertyName = "PersonMarshaller")]
 public partial class Repository { }
 ```
-
-## Installing
-
-There's no NuGet package available yet, In order to try it right now would be to clone this repository and play with
-the `SampleApp` assembly.
 
 ## Project structure
 
