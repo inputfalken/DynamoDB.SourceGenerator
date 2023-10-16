@@ -592,8 +592,7 @@ public class DynamoDbMarshaller
                     TryGetMatchedConstructorArguments(typeSymbol),
                     x => x.DDB.DataMember.Name,
                     x => x.DataMember,
-                    (x, y) => (x.Assignment, x.DDB, Constructor: y.OfType<(string DataMember, string ParameterName)?>().FirstOrDefault()),
-                    StringComparer.OrdinalIgnoreCase // Is Required for KeyValuePair to work.
+                    (x, y) => (x.Assignment, x.DDB, Constructor: y.OfType<(string DataMember, string ParameterName)?>().FirstOrDefault())
                 )
                 .GroupBy(x => x.Constructor.HasValue, (x, y) =>
                 {
@@ -627,11 +626,11 @@ public class DynamoDbMarshaller
             if (namedTypeSymbol.InstanceConstructors.Length is 0)
                 return Enumerable.Empty<(string, string )>();
 
-            if (namedTypeSymbol is {Name: "KeyValuePair", ContainingNamespace.Name: "Generic"})
+            if (namedTypeSymbol is {Name: "KeyValuePair", ContainingNamespace.Name: nameof(System.Collections.Generic)})
                 return namedTypeSymbol.InstanceConstructors
                     .First(x => x.Parameters.Length is 2)
                     .Parameters
-                    .Select(x => (MemberName: x.Name, ParameterName: x.Name));
+                    .Select(x => (MemberName: $"{char.ToUpperInvariant(x.Name[0])}{x.Name.Substring(1)}", ParameterName: x.Name));
 
             // Should not need to be looked at when it's a RecordDeclarationSyntax
             return namedTypeSymbol switch
