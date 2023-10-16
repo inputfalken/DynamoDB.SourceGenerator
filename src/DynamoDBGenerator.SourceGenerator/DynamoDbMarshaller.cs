@@ -594,6 +594,7 @@ public class DynamoDbMarshaller
                     x => x.DataMember,
                     (x, y) => (x.Assignment, x.DDB, Constructor: y.OfType<(string DataMember, string ParameterName)?>().FirstOrDefault())
                 )
+                .OrderByDescending(x => x.Constructor.HasValue) // Ensure constructor buildup is first in GroupBy.
                 .GroupBy(x => x.Constructor.HasValue, (x, y) =>
                 {
                     return x
