@@ -2,6 +2,9 @@ using System.Collections.Generic;
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator;
 
+/// <summary>
+/// Contains the necessary fields to create AttributeExpressions.
+/// </summary>
 public interface IAttributeExpression
 {
     /// <summary>

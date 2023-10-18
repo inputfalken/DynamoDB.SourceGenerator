@@ -10,6 +10,7 @@ namespace DynamoDBGenerator.Internal;
 /// </summary>
 public static class ExceptionHelper
 {
+#pragma warning disable CS1591
     public static DynamoDBMarshallingException NotNull(string memberName)
     {
         return new DynamoDBMarshallingException(memberName, "The data member is not supposed to be null, to allow this; make the data member nullable.");
@@ -49,4 +50,5 @@ public static class ExceptionHelper
     {
         return new ArgumentOutOfRangeException(paramName, $"Could not find any index match for value '{value}'.");
     }
+#pragma warning restore CS1591
 }

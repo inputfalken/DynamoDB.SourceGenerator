@@ -10,7 +10,7 @@ namespace DynamoDBGenerator;
 /// <typeparam name="TArg">The type of argument used for marshalling.</typeparam>
 /// <typeparam name="TEntityAttributeNameTracker">The type for tracking attribute names related to <typeparamref name="TEntity"/>.</typeparam>
 /// <typeparam name="TArgumentAttributeValueTracker">The type for tracking argument attribute values related to <typeparamref name="TArg"/>.</typeparam>
-public interface IDynamoDBMarshaller<TEntity, in TArg, out TEntityAttributeNameTracker, out TArgumentAttributeValueTracker> 
+public interface IDynamoDBMarshaller<TEntity, in TArg, out TEntityAttributeNameTracker, out TArgumentAttributeValueTracker>
     where TEntityAttributeNameTracker : IExpressionAttributeNameTracker
     where TArgumentAttributeValueTracker : IExpressionAttributeValueTracker<TArg>
 {
@@ -40,7 +40,10 @@ public interface IDynamoDBMarshaller<TEntity, in TArg, out TEntityAttributeNameT
     /// <returns>An object of type <typeparamref name="TEntity"/>.</returns>
     public TEntity Unmarshall(Dictionary<string, AttributeValue> attributes);
 
+    /// <inheritdoc cref="IDynamoDBKeyMarshaller"/>
     public IDynamoDBKeyMarshaller PrimaryKeyMarshaller { get; }
+
+    /// <inheritdoc cref="IDynamoDBKeyMarshaller"/> 
     public IDynamoDBIndexKeyMarshaller IndexKeyMarshaller(string index);
 }
 

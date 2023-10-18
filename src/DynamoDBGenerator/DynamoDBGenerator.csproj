@@ -16,6 +16,7 @@
         <RepositoryUrl>https://github.com/inputfalken/DynamoDB.SourceGenerator</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
     <ItemGroup>

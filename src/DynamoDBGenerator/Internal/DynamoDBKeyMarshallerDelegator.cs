@@ -11,9 +11,11 @@ namespace DynamoDBGenerator.Internal;
 /// </summary>
 public sealed class DynamoDBKeyMarshallerDelegator : IDynamoDBKeyMarshaller
 {
+#pragma warning disable CS1591
     private readonly Func<object?, object?, bool, bool, string?, Dictionary<string, AttributeValue>> _implementation;
     public DynamoDBKeyMarshallerDelegator(Func<object?, object?, bool, bool, string?, Dictionary<string, AttributeValue>> implementation) => _implementation = implementation;
     public Dictionary<string, AttributeValue> Keys(object partitionKey, object rangeKey) => _implementation(partitionKey, rangeKey, true, true, null);
     public Dictionary<string, AttributeValue> PartitionKey(object key) => _implementation(key, null, true, false, null);
     public Dictionary<string, AttributeValue> RangeKey(object key) => _implementation(null, key, false, true, null);
+#pragma warning restore CS1591
 }
