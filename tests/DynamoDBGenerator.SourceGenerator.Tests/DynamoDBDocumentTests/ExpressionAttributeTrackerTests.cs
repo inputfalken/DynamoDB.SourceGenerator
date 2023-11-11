@@ -1,11 +1,37 @@
 using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 
+[DynamoDBMarshaller(typeof(Person), ArgumentType = typeof((string firstName, DateTime timeStamp)), PropertyName = "PersonWithTupleArgument")]
 [DynamoDBMarshaller(typeof(Person))]
 [DynamoDBMarshaller(typeof(SelfReferencingClass))]
 [DynamoDBMarshaller(typeof(ClassWithOverriddenAttributeName))]
 public partial class ExpressionAttributeTrackerTests
 {
+    [Fact]
+    public void PersonWithTupleArgument_Tuple_CanBeParameterized()
+    {
+        var valueTracker = PersonWithTupleArgument.AttributeExpressionValueTracker();
+        var nameTracker = PersonWithTupleArgument.AttributeNameExpressionTracker();
+
+        valueTracker.firstName.Should().Be(":p1");
+        valueTracker.timeStamp.Should().Be(":p2");
+        nameTracker.FirstName.Should().Be("#FirstName");
+        nameTracker.CreatedAt.Should().Be("#CreatedAt");
+
+        IExpressionAttributeValueTracker<(string firstName, DateTime timeStamp)> convertedValueTracker = valueTracker;
+
+        var timeStamp = DateTime.Now;
+        convertedValueTracker.AccessedValues(("Rob", timeStamp)).Should().SatisfyRespectively(x =>
+        {
+            x.Key.Should().Be(":p1");
+            x.Value.S.Should().Be("Rob");
+        }, x =>
+        {
+            x.Key.Should().Be(":p2");
+            x.Value.S.Should().Be(timeStamp.ToString("O"));
+        });
+    }
+
     [Theory]
     [InlineData(5)]
     [InlineData(10)]

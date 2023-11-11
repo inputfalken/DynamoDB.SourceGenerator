@@ -1,5 +1,8 @@
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Linq;
 using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
@@ -68,30 +71,23 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
         foreach (var attributeData in attributes)
         {
             var entityType = attributeData.ConstructorArguments
-                .FirstOrDefault(x => x is {Kind: TypedConstantKind.Type, Value: not null});
+                .Select(x => x is {Kind: TypedConstantKind.Type, Value: not null} ? x.Value : null)
+                .FirstOrDefault(x => x is not null);
 
-            if (entityType.Value is null || entityType.IsNull)
-                continue;
-
-            var qualifiedMetadataName = entityType.Value.ToString();
-
-            var entityTypeSymbol = compilation.GetBestTypeByMetadataName(qualifiedMetadataName);
-
-            if (entityTypeSymbol is null)
-                continue;
+            if (entityType is not INamedTypeSymbol entityTypeSymbol)
+                throw new ArgumentException("Could not determine type conversion from attribute constructor.");
 
             var propertyName = attributeData.NamedArguments.FirstOrDefault(x => x.Key is nameof(DynamoDBMarshallerAttribute.PropertyName)).Value;
-            var argumentTypeSymbol = attributeData.NamedArguments.FirstOrDefault(x => x.Key is nameof(DynamoDBMarshallerAttribute.ArgumentType)).Value;
-
-            // When a `ValueTuple` arrives we get the following format `(T name, T2 otherName)` for example `(string name, int age)`
-            // To support this would be tricky but possible.
-            // We could produce and compile a custom type, take the tuple string and use it as the constructor arguments.
-            // like `private readonly record struct {SomeString} ({tupleString})` for example `private readonly record struct 5604E01E_9058_4A53_BCC4_B5A0FC1038F9(string name, int age)`;
-            // We would publicly accept the ValueTuple and internally build up conversion from compiled type.
             yield return new DynamoDBMarshallerArguments(
                 entityTypeSymbol,
-                argumentTypeSymbol is {IsNull: false, Value: not null}
-                    ? compilation.GetBestTypeByMetadataName(argumentTypeSymbol.Value.ToString())
+                attributeData.NamedArguments
+                    .Where(x => x.Key is nameof(DynamoDBMarshallerAttribute.ArgumentType))
+                    .Cast<KeyValuePair<string, TypedConstant>?>()
+                    .FirstOrDefault() is { } argumentType
+                    ? argumentType.Value is
+                        {Value : INamedTypeSymbol namedTypeSymbol}
+                        ? namedTypeSymbol
+                        : throw new ArgumentException($"Could not determine type conversion from argument '{argumentType.Key}'.")
                     : null,
                 propertyName.Value?.ToString(),
                 SymbolEqualityComparer.IncludeNullability
