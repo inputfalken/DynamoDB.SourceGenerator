@@ -22,20 +22,22 @@ public class DynamoDbMarshaller
     private readonly Func<ITypeSymbol, string> _fullTypeNameFactory;
     private readonly Func<ITypeSymbol, string> _keysMethodNameFactory;
     private readonly Func<ITypeSymbol, string> _serializationMethodNameFactory;
+    private readonly Func<ITypeSymbol, string> _attributeValueInterfaceNameFactory;
     private readonly IEqualityComparer<ITypeSymbol> _comparer;
 
     public DynamoDbMarshaller(in DynamoDBMarshallerArguments arguments)
     {
         _arguments = arguments;
         _comparer = _arguments.SymbolComparer;
-        _attributeNameAssignmentNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", _arguments.SymbolComparer, false);
-        _attributeValueAssignmentNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Values", _arguments.SymbolComparer, false);
         _cachedDataMembers = TypeExtensions.CacheFactory(_arguments.SymbolComparer, static x => x.GetDynamoDbProperties().ToArray());
         _deserializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("_U", _arguments.SymbolComparer, true);
         _fullTypeNameFactory = TypeExtensions.CacheFactory(_arguments.SymbolComparer, static x => x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
         _keysMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("_K", _arguments.SymbolComparer, false);
         _knownTypeFactory = TypeExtensions.CacheFactory(_arguments.SymbolComparer, static x => x.GetKnownType());
         _serializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("_M", _arguments.SymbolComparer, true);
+        _attributeNameAssignmentNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", _arguments.SymbolComparer, false);
+        _attributeValueAssignmentNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Values", _arguments.SymbolComparer, false);
+        _attributeValueInterfaceNameFactory = TypeExtensions.CacheFactory(_arguments.SymbolComparer, x => $"{nameof(IExpressionAttributeValueTracker<object>)}<{_fullTypeNameFactory(x)}>");
         _keyStructure = _cachedDataMembers(arguments.EntityTypeSymbol).GetKeyStructure();
     }
     private Assignment AttributeValueAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
@@ -277,6 +279,7 @@ public class DynamoDbMarshaller
     }
     private Conversion ExpressionAttributeName(ITypeSymbol typeSymbol)
     {
+        const string attributeInterFaceName = nameof(IExpressionAttributeNameTracker);
         var dataMembers = _cachedDataMembers(typeSymbol)
             .Where(static x => x.IsIgnored is false)
             .Select(x => (
@@ -284,7 +287,7 @@ public class DynamoDbMarshaller
                 DDB: x,
                 NameRef: $"_{x.DataMember.Name}NameRef",
                 AttributeReference: _attributeNameAssignmentNameFactory(x.DataMember.Type),
-                AttributeInterfaceName: AttributeInterfaceName()))
+                AttributeInterfaceName: attributeInterFaceName))
             .ToArray();
 
         var fieldDeclarations = dataMembers
@@ -319,13 +322,12 @@ public class DynamoDbMarshaller
             ? $@"       if ({x.NameRef}.IsValueCreated) yield return new ({x.NameRef}.Value, ""{x.DDB.AttributeName}"");"
             : $"       if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{nameof(IExpressionAttributeNameTracker.AccessedNames)}()) {{ yield return x; }}");
 
-        var interfaceName = AttributeInterfaceName();
         var @class = CodeGenerationExtensions.CreateStruct(
             Accessibility.Public,
-            $"{className} : {interfaceName}",
+            $"{className} : {attributeInterFaceName}",
             $@"{constructor}
 {string.Join(Constants.NewLine, fieldDeclarations)}
-    IEnumerable<KeyValuePair<string, string>> {interfaceName}.{nameof(IExpressionAttributeNameTracker.AccessedNames)}()
+    IEnumerable<KeyValuePair<string, string>> {attributeInterFaceName}.{nameof(IExpressionAttributeNameTracker.AccessedNames)}()
     {{
 {(string.Join(Constants.NewLine, expressionAttributeNameYields) is var joinedNames && joinedNames != string.Empty ? joinedNames : "return Enumerable.Empty<KeyValuePair<string, string>>();")}
     }}",
@@ -335,7 +337,6 @@ public class DynamoDbMarshaller
         );
         return new Conversion(@class, fieldAssignments);
 
-        string AttributeInterfaceName() => nameof(IExpressionAttributeNameTracker);
     }
 
     private Conversion ExpressionAttributeValue(ITypeSymbol typeSymbol)
@@ -347,7 +348,7 @@ public class DynamoDbMarshaller
                 DDB: x,
                 ValueRef: $"_{x.DataMember.Name}ValueRef",
                 AttributeReference: _attributeValueAssignmentNameFactory(x.DataMember.Type),
-                AttributeInterfaceName: AttributeInterfaceName(x.DataMember.Type)))
+                AttributeInterfaceName: _attributeValueInterfaceNameFactory(x.DataMember.Type)))
             .ToArray();
 
         var fieldDeclarations = dataMembers
@@ -385,7 +386,7 @@ public class DynamoDbMarshaller
                     : $"       if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{nameof(IExpressionAttributeValueTracker<object>.AccessedValues)}({accessPattern})) {{ yield return x; }}")}";
             });
 
-        var interfaceName = AttributeInterfaceName(typeSymbol);
+        var interfaceName = _attributeValueInterfaceNameFactory(typeSymbol);
         var @class = CodeGenerationExtensions.CreateStruct(
             Accessibility.Public,
             $"{className} : {interfaceName}",
@@ -401,7 +402,6 @@ public class DynamoDbMarshaller
         );
         return new Conversion(@class, fieldAssignments);
 
-        string AttributeInterfaceName(ITypeSymbol symbol) => $"{nameof(IExpressionAttributeValueTracker<object>)}<{_fullTypeNameFactory(symbol)}>";
     }
     private Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type)
     {
