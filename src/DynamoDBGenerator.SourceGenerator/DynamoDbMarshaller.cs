@@ -192,9 +192,8 @@ public class DynamoDbMarshaller
             public {Constants.IndexKeyMarshallerInterfaceName} IndexKeyMarshaller(string index) => new {Constants.IndexKeyMarshallerImplementationTypeName}({_keysMethodNameFactory(argument.EntityTypeSymbol)}, index);
             public {valueTrackerTypeName} {ValueTrackerName}()
             {{
-                var number = 0;
-                Func<string> valueIdProvider = () => $"":p{{++number}}"";
-                return new {valueTrackerTypeName}(valueIdProvider);
+                var incrementer = new DynamoExpressionValueIncrementer();
+                return new {valueTrackerTypeName}(incrementer.GetNext);
             }}
             public {nameTrackerTypeName} {NameTrackerName}()
             {{
