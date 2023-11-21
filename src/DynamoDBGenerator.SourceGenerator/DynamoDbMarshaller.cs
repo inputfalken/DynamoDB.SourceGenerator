@@ -186,10 +186,21 @@ public class DynamoDbMarshaller
             var nameTrackerTypeName = _attributeNameAssignmentNameFactory(argument.EntityTypeSymbol);
 
             var interfaceImplementation =
-                $@"            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({rootTypeName} entity) => {MarshallerClass}.{_serializationMethodNameFactory(argument.EntityTypeSymbol)}(entity);
-            public {rootTypeName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => {UnMarshallerClass}.{_deserializationMethodNameFactory(argument.EntityTypeSymbol)}(entity);
-            public {Constants.KeyMarshallerInterFaceName} PrimaryKeyMarshaller {{ get; }} = new {Constants.KeyMarshallerImplementationTypeName}({_keysMethodNameFactory(argument.EntityTypeSymbol)});
-            public {Constants.IndexKeyMarshallerInterfaceName} IndexKeyMarshaller(string index) => new {Constants.IndexKeyMarshallerImplementationTypeName}({_keysMethodNameFactory(argument.EntityTypeSymbol)}, index);
+                $@"            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({rootTypeName} entity)
+            {{
+                ArgumentNullException.ThrowIfNull(entity);
+                return {MarshallerClass}.{_serializationMethodNameFactory(argument.EntityTypeSymbol)}(entity);
+            }}
+            public {rootTypeName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity)
+            {{
+                ArgumentNullException.ThrowIfNull(entity);
+                return {UnMarshallerClass}.{_deserializationMethodNameFactory(argument.EntityTypeSymbol)}(entity);
+            }}
+            public {Constants.IndexKeyMarshallerInterfaceName} IndexKeyMarshaller(string index) 
+            {{
+                ArgumentNullException.ThrowIfNull(index);
+                return new {Constants.IndexKeyMarshallerImplementationTypeName}({_keysMethodNameFactory(argument.EntityTypeSymbol)}, index);
+            }}
             public {valueTrackerTypeName} {ValueTrackerName}()
             {{
                 var incrementer = new DynamoExpressionValueIncrementer();
@@ -198,7 +209,8 @@ public class DynamoDbMarshaller
             public {nameTrackerTypeName} {NameTrackerName}()
             {{
                 return new {nameTrackerTypeName}(null);
-            }}";
+            }}
+            public {Constants.KeyMarshallerInterFaceName} PrimaryKeyMarshaller {{ get; }} = new {Constants.KeyMarshallerImplementationTypeName}({_keysMethodNameFactory(argument.EntityTypeSymbol)});";
 
             var implementedClass = CodeGenerationExtensions
                 .CreateClass(
@@ -414,7 +426,6 @@ public class DynamoDbMarshaller
             isRecord: true
         );
         return new Conversion(@class, fieldAssignments);
-
     }
     private Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type)
     {
