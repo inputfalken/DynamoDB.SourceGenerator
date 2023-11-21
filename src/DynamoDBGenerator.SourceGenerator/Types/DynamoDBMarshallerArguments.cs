@@ -3,7 +3,7 @@ namespace DynamoDBGenerator.SourceGenerator.Types;
 
 public readonly struct DynamoDBMarshallerArguments
 {
-    public DynamoDBMarshallerArguments(INamedTypeSymbol entityTypeSymbol, INamedTypeSymbol? argumentType, string? propertyName, SymbolEqualityComparer comparer)
+    public DynamoDBMarshallerArguments(INamedTypeSymbol entityTypeSymbol, INamedTypeSymbol? argumentType, string? propertyName)
     {
         EntityTypeSymbol = (INamedTypeSymbol)entityTypeSymbol.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
         ArgumentType = argumentType is null
@@ -11,12 +11,10 @@ public readonly struct DynamoDBMarshallerArguments
             : (INamedTypeSymbol)argumentType.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
         PropertyName = propertyName ?? $"{EntityTypeSymbol.Name}Marshaller";
         ImplementationName = $"{PropertyName}Implementation";
-        SymbolComparer = comparer;
     }
     public string ImplementationName { get; }
     public INamedTypeSymbol EntityTypeSymbol { get; }
     public INamedTypeSymbol ArgumentType { get; }
     public string PropertyName { get; }
-    public SymbolEqualityComparer SymbolComparer { get; }
 
 }

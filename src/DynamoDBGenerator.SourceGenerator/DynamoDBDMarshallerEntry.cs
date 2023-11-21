@@ -39,11 +39,8 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
         foreach (var typeSymbol in compilation.GetTypeSymbols(documents))
         {
             var timestamp = Stopwatch.GetTimestamp();
-            var repository = string.Join(
-                Constants.NewLine,
-                CreateArguments(typeSymbol, compilation).Select(x => new DynamoDbMarshaller(x).CreateDynamoDbDocumentProperty(Accessibility.Public))
-            );
-            var code = typeSymbol.CreateNamespace(typeSymbol.CreateClass(repository), TimeSpan.FromTicks(Stopwatch.GetTimestamp() - timestamp));
+            var repository = new DynamoDbMarshaller(CreateArguments(typeSymbol, compilation), SymbolEqualityComparer.IncludeNullability).CreateRepository();
+            var code = typeSymbol.CreateNamespace(typeSymbol.CreateClass(repository, indentLevel:1), TimeSpan.FromTicks(Stopwatch.GetTimestamp() - timestamp));
             var typeNamespace = typeSymbol.ContainingNamespace.IsGlobalNamespace
                 ? null
                 : $"{typeSymbol.ContainingNamespace}.";
@@ -89,8 +86,7 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
                         ? namedTypeSymbol
                         : throw new ArgumentException($"Could not determine type conversion from argument '{argumentType.Key}'.")
                     : null,
-                propertyName.Value?.ToString(),
-                SymbolEqualityComparer.IncludeNullability
+                propertyName.Value?.ToString()
             );
 
         }
