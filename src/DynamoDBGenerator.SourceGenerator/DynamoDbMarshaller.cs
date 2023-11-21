@@ -30,11 +30,11 @@ public class DynamoDbMarshaller
     public DynamoDbMarshaller(in IEnumerable<DynamoDBMarshallerArguments> arguments, IEqualityComparer<ISymbol?> comparer)
     {
         _cachedDataMembers = TypeExtensions.CacheFactory(comparer, static x => x.GetDynamoDbProperties().ToArray());
-        _deserializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("_U", comparer, true);
+        _deserializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory(null, comparer, true);
         _fullTypeNameFactory = TypeExtensions.CacheFactory(comparer, static x => x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
-        _keysMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("_K", comparer, false);
+        _keysMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Keys", comparer, false);
         _knownTypeFactory = TypeExtensions.CacheFactory(comparer, static x => x.GetKnownType());
-        _serializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("_M", comparer, true);
+        _serializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory(null, comparer, true);
         _attributeNameAssignmentNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", comparer, false);
         _attributeValueAssignmentNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Values", comparer, false);
         _attributeValueInterfaceNameFactory = TypeExtensions.CacheFactory(comparer, x => $"{nameof(IExpressionAttributeValueTracker<object>)}<{_fullTypeNameFactory(x)}>");
@@ -133,52 +133,44 @@ public class DynamoDbMarshaller
             : elementType.ToInlineAssignment($"NS = new List<string>({newAccessPattern}.Select(x => x.ToString()))", knownType);
     }
 
-    private string CreateAttributePocoFactory(IEnumerable<DynamoDBMarshallerArguments> arguments)
+    private IEnumerable<string> CreateAttributePocoFactory(IEnumerable<DynamoDBMarshallerArguments> arguments)
     {
         var hashSet = new HashSet<ITypeSymbol>(_comparer);
-        var code = arguments.SelectMany(x =>
+        return arguments.SelectMany(x =>
             Conversion.ConversionMethods(
                 x.EntityTypeSymbol,
                 StaticPocoFactory,
                 hashSet
             )
         ).Select(x => x.Code);
-
-        return string.Join(Constants.NewLine, code);
     }
 
-    private string CreateAttributeValueFactory(IEnumerable<DynamoDBMarshallerArguments> arguments)
+    private IEnumerable<string> CreateAttributeValueFactory(IEnumerable<DynamoDBMarshallerArguments> arguments)
     {
         var hashset = new HashSet<ITypeSymbol>(_comparer);
 
-        var generation = arguments.Select(x =>
+        return arguments.SelectMany(x =>
         {
             var code = Conversion.ConversionMethods(
                 x.EntityTypeSymbol,
                 StaticAttributeValueDictionaryFactory,
                 hashset
             );
-            return string.Join(
-                Constants.NewLine,
-                (_comparer.Equals(x.EntityTypeSymbol, x.ArgumentType)
+
+            return (_comparer.Equals(x.EntityTypeSymbol, x.ArgumentType)
                     ? code
                     : code.Concat(Conversion.ConversionMethods(x.ArgumentType, StaticAttributeValueDictionaryFactory, hashset))
-                ).Select(y => y.Code)
-            );
+                ).Select(y => y.Code);
         });
-
-        return string.Join(Constants.NewLine, generation);
+        
     }
 
 
     public string CreateRepository()
     {
-        var marshaller = $"        {CodeGenerationExtensions.CreateClass(Accessibility.Private, MarshallerClass, CreateAttributeValueFactory(_arguments), 2)}";
-        var unMarshaller = $"        {CodeGenerationExtensions.CreateClass(Accessibility.Private, UnMarshallerClass, CreateAttributePocoFactory(_arguments), 2)}";
-
         var code = CreateImplementations()
-            .Append(marshaller)
-            .Append(unMarshaller)
+            .Concat(CodeGenerationExtensions.CreateClass(Accessibility.Private, MarshallerClass, CreateAttributeValueFactory(_arguments), 2))
+            .Concat(CodeGenerationExtensions.CreateClass(Accessibility.Private, UnMarshallerClass, CreateAttributePocoFactory(_arguments), 2))
             .Concat(CreateExpressionAttributeName(_arguments))
             .Concat(CreateExpressionAttributeValue(_arguments))
             .Concat(CreateKeys(_arguments));
@@ -485,7 +477,6 @@ public class DynamoDbMarshaller
 
     private Conversion StaticAttributeValueDictionaryKeys(ITypeSymbol typeSymbol)
     {
-
         const string pkReference = "partitionKey";
         const string rkReference = "rangeKey";
         const string enforcePkReference = "isPartitionKey";
@@ -526,7 +517,7 @@ public class DynamoDbMarshaller
         }
 
         var method =
-            @$"        public static Dictionary<string, AttributeValue> {_keysMethodNameFactory(typeSymbol)}(object? {pkReference}, object? {rkReference}, bool {enforcePkReference}, bool {enforceRkReference}, string? index = null)
+            @$"        private static Dictionary<string, AttributeValue> {_keysMethodNameFactory(typeSymbol)}(object? {pkReference}, object? {rkReference}, bool {enforcePkReference}, bool {enforceRkReference}, string? index = null)
         {{
             {body}
         }}";

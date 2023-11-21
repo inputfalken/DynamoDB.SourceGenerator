@@ -47,10 +47,22 @@ using DynamoDBGenerator.Internal;
 {content}
 {indent}}}";
     }
+
+    public static IEnumerable<string> CreateClass(Accessibility accessibility, string className, IEnumerable<string> content, int indentLevel, bool isPartial = false)
+    {
+        var indent = StringExtensions.Indent(indentLevel);
+        yield return $"{accessibility.ToCode()} sealed{(isPartial ? " partial" : null)} class {className}";
+        yield return $"{indent}{{";
+
+        foreach (var s in content)
+            yield return s;
+
+        yield return $"{indent}}}";
+    }
     public static string CreateStruct(in Accessibility accessibility, in string structName, in string content, in int indentLevel, in bool isPartial = false, in bool isReadonly = false, bool isRecord = false)
     {
         var indent = StringExtensions.Indent(indentLevel);
-        return $@"{indent}{accessibility.ToCode()}{(isPartial ? " partial" : null)}{(isReadonly ? " readonly" : null)}{(isRecord? " record" : null)} struct {structName}
+        return $@"{indent}{accessibility.ToCode()}{(isPartial ? " partial" : null)}{(isReadonly ? " readonly" : null)}{(isRecord ? " record" : null)} struct {structName}
 {indent}{{
 {content}
 {indent}}}";
