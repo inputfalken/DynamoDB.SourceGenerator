@@ -191,12 +191,11 @@ public class DynamoDbMarshaller
     {
         foreach (var argument in _arguments)
         {
-
             var rootTypeName = _fullTypeNameFactory(argument.EntityTypeSymbol);
             var valueTrackerTypeName = _attributeValueAssignmentNameFactory(argument.ArgumentType);
             var nameTrackerTypeName = _attributeNameAssignmentNameFactory(argument.EntityTypeSymbol);
 
-            var implementInterface =
+            var interfaceImplementation =
                 $@"            public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({rootTypeName} entity) => {MarshallerClass}.{_serializationMethodNameFactory(argument.EntityTypeSymbol)}(entity);
             public {rootTypeName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => {UnMarshallerClass}.{_deserializationMethodNameFactory(argument.EntityTypeSymbol)}(entity);
             public {Constants.KeyMarshallerInterFaceName} PrimaryKeyMarshaller {{ get; }} = new {Constants.KeyMarshallerImplementationTypeName}({_keysMethodNameFactory(argument.EntityTypeSymbol)});
@@ -212,16 +211,17 @@ public class DynamoDbMarshaller
                 return new {nameTrackerTypeName}(null);
             }}";
 
-            var @interface = $"{InterfaceName}<{rootTypeName}, {_fullTypeNameFactory(argument.ArgumentType)}, {nameTrackerTypeName}, {valueTrackerTypeName}>";
-            var @class = CodeGenerationExtensions.CreateClass(
-                Accessibility.Private,
-                $"{argument.ImplementationName}: {@interface}",
-                in implementInterface,
-                indentLevel: 2
+            var implementedClass = CodeGenerationExtensions
+                .CreateClass(
+                    Accessibility.Private,
+                    $"{argument.ImplementationName}: {InterfaceName}<{rootTypeName}, {_fullTypeNameFactory(argument.ArgumentType)}, {nameTrackerTypeName}, {valueTrackerTypeName}>",
+                    in interfaceImplementation,
+                    indentLevel: 2
                 );
-
-            yield return $@"        public {@interface} {argument.PropertyName} {{ get; }} = new {argument.ImplementationName}();
-        {@class}";
+            
+            yield return
+                $@"        public {$"{InterfaceName}<{rootTypeName}, {_fullTypeNameFactory(argument.ArgumentType)}, {nameTrackerTypeName}, {valueTrackerTypeName}>"} {argument.PropertyName} {{ get; }} = new {argument.ImplementationName}();
+        {implementedClass}";
         }
     }
     private IEnumerable<string> CreateExpressionAttributeName(IEnumerable<DynamoDBMarshallerArguments> arguments)
@@ -235,7 +235,7 @@ public class DynamoDbMarshaller
     private IEnumerable<string> CreateKeys(IEnumerable<DynamoDBMarshallerArguments> arguments)
     {
         var hashSet = new HashSet<ITypeSymbol>(_comparer);
-        
+
         return arguments
             .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, StaticAttributeValueDictionaryKeys, hashSet)).Select(x => x.Code);
     }
