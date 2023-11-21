@@ -9,23 +9,23 @@ public class DynamoDbMarshaller
 {
     private const string DeserializeName = "Unmarshall";
     private const string InterfaceName = "IDynamoDBMarshaller";
+    private const string MarshallerClass = "_Marshaller_";
     private const string NameTrackerName = "AttributeNameExpressionTracker";
     private const string SerializeName = "Marshall";
+    private const string UnMarshallerClass = "_Unmarshaller_";
 
     private const string ValueTrackerName = "AttributeExpressionValueTracker";
-
-    //private readonly DynamoDBKeyStructure? _keyStructure;
-    private readonly IEqualityComparer<ISymbol?> _comparer;
     private readonly IReadOnlyList<DynamoDBMarshallerArguments> _arguments;
-    private readonly Func<ITypeSymbol, DynamoDbDataMember[]> _cachedDataMembers;
-    private readonly Func<ITypeSymbol, KnownType?> _knownTypeFactory;
     private readonly Func<ITypeSymbol, string> _attributeNameAssignmentNameFactory;
     private readonly Func<ITypeSymbol, string> _attributeValueAssignmentNameFactory;
+    private readonly Func<ITypeSymbol, string> _attributeValueInterfaceNameFactory;
+    private readonly Func<ITypeSymbol, DynamoDbDataMember[]> _cachedDataMembers;
+    private readonly IEqualityComparer<ISymbol?> _comparer;
     private readonly Func<ITypeSymbol, string> _deserializationMethodNameFactory;
     private readonly Func<ITypeSymbol, string> _fullTypeNameFactory;
     private readonly Func<ITypeSymbol, string> _keysMethodNameFactory;
+    private readonly Func<ITypeSymbol, KnownType?> _knownTypeFactory;
     private readonly Func<ITypeSymbol, string> _serializationMethodNameFactory;
-    private readonly Func<ITypeSymbol, string> _attributeValueInterfaceNameFactory;
 
     public DynamoDbMarshaller(in IEnumerable<DynamoDBMarshallerArguments> arguments, IEqualityComparer<ISymbol?> comparer)
     {
@@ -133,10 +133,10 @@ public class DynamoDbMarshaller
             : elementType.ToInlineAssignment($"NS = new List<string>({newAccessPattern}.Select(x => x.ToString()))", knownType);
     }
 
-    private IEnumerable<string> CreateAttributePocoFactory(IEnumerable<DynamoDBMarshallerArguments> arguments)
+    private IEnumerable<string> CreateAttributePocoFactory()
     {
         var hashSet = new HashSet<ITypeSymbol>(_comparer);
-        return arguments.SelectMany(x =>
+        return _arguments.SelectMany(x =>
             Conversion.ConversionMethods(
                 x.EntityTypeSymbol,
                 StaticPocoFactory,
@@ -145,11 +145,11 @@ public class DynamoDbMarshaller
         ).Select(x => x.Code);
     }
 
-    private IEnumerable<string> CreateAttributeValueFactory(IEnumerable<DynamoDBMarshallerArguments> arguments)
+    private IEnumerable<string> CreateAttributeValueFactory()
     {
         var hashset = new HashSet<ITypeSymbol>(_comparer);
 
-        return arguments.SelectMany(x =>
+        return _arguments.SelectMany(x =>
         {
             var code = Conversion.ConversionMethods(
                 x.EntityTypeSymbol,
@@ -162,23 +162,25 @@ public class DynamoDbMarshaller
                     : code.Concat(Conversion.ConversionMethods(x.ArgumentType, StaticAttributeValueDictionaryFactory, hashset))
                 ).Select(y => y.Code);
         });
-        
+
     }
-
-
-    public string CreateRepository()
+    private IEnumerable<string> CreateExpressionAttributeName()
     {
-        var code = CreateImplementations()
-            .Concat(CodeGenerationExtensions.CreateClass(Accessibility.Private, MarshallerClass, CreateAttributeValueFactory(_arguments), 2))
-            .Concat(CodeGenerationExtensions.CreateClass(Accessibility.Private, UnMarshallerClass, CreateAttributePocoFactory(_arguments), 2))
-            .Concat(CreateExpressionAttributeName(_arguments))
-            .Concat(CreateExpressionAttributeValue(_arguments))
-            .Concat(CreateKeys(_arguments));
+        // Using _comparer can double classes when there's a None nullable property mixed with a nullable property
+        var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
 
-        return string.Join(Constants.NewLine, code);
+        return _arguments
+            .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, ExpressionAttributeName, hashSet)).Select(x => x.Code);
+
     }
-    private const string UnMarshallerClass = "_Unmarshaller_";
-    private const string MarshallerClass = "_Marshaller_";
+    private IEnumerable<string> CreateExpressionAttributeValue()
+    {
+        // Using _comparer can double classes when there's a None nullable property mixed with a nullable property
+        var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
+
+        return _arguments
+            .SelectMany(x => Conversion.ConversionMethods(x.ArgumentType, ExpressionAttributeValue, hashSet)).Select(x => x.Code);
+    }
     private IEnumerable<string> CreateImplementations()
     {
         foreach (var argument in _arguments)
@@ -208,35 +210,33 @@ public class DynamoDbMarshaller
                     Accessibility.Private,
                     $"{argument.ImplementationName}: {InterfaceName}<{rootTypeName}, {_fullTypeNameFactory(argument.ArgumentType)}, {nameTrackerTypeName}, {valueTrackerTypeName}>",
                     in interfaceImplementation,
-                    indentLevel: 2
+                    2
                 );
-            
+
             yield return
                 $@"        public {$"{InterfaceName}<{rootTypeName}, {_fullTypeNameFactory(argument.ArgumentType)}, {nameTrackerTypeName}, {valueTrackerTypeName}>"} {argument.PropertyName} {{ get; }} = new {argument.ImplementationName}();
         {implementedClass}";
         }
     }
-    private IEnumerable<string> CreateExpressionAttributeName(IEnumerable<DynamoDBMarshallerArguments> arguments)
+    private IEnumerable<string> CreateKeys()
     {
         var hashSet = new HashSet<ITypeSymbol>(_comparer);
 
-        return arguments
-            .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, ExpressionAttributeName, hashSet)).Select(x => x.Code);
-
-    }
-    private IEnumerable<string> CreateKeys(IEnumerable<DynamoDBMarshallerArguments> arguments)
-    {
-        var hashSet = new HashSet<ITypeSymbol>(_comparer);
-
-        return arguments
+        return _arguments
             .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, StaticAttributeValueDictionaryKeys, hashSet)).Select(x => x.Code);
     }
-    private IEnumerable<string> CreateExpressionAttributeValue(IEnumerable<DynamoDBMarshallerArguments> arguments)
-    {
-        var hashSet = new HashSet<ITypeSymbol>(_comparer);
 
-        return arguments
-            .SelectMany(x => Conversion.ConversionMethods(x.ArgumentType, ExpressionAttributeValue, hashSet)).Select(x => x.Code);
+
+    public string CreateRepository()
+    {
+        var code = CreateImplementations()
+            .Concat(CodeGenerationExtensions.CreateClass(Accessibility.Private, MarshallerClass, CreateAttributeValueFactory(), 2))
+            .Concat(CodeGenerationExtensions.CreateClass(Accessibility.Private, UnMarshallerClass, CreateAttributePocoFactory(), 2))
+            .Concat(CreateExpressionAttributeName())
+            .Concat(CreateExpressionAttributeValue())
+            .Concat(CreateKeys());
+
+        return string.Join(Constants.NewLine, code);
     }
 
     private Assignment DataMemberAssignment(in ITypeSymbol type, in string pattern, in string memberName)
@@ -539,17 +539,21 @@ public class DynamoDbMarshaller
             };
 
             foreach (var gsi in keyStructure.GlobalSecondaryIndices)
+            {
                 yield return gsi switch
                 {
                     {PartitionKey: var pk, SortKey: { } sortKey} => (gsi.Name, $"{CreateAssignment(enforcePartition, partition, pk)}{Constants.NewLine}{CreateAssignment(enforceRange, range, sortKey)}"),
                     {PartitionKey: var pk, SortKey: null} => (gsi.Name, $"{CreateAssignment(enforcePartition, partition, pk)}{Constants.NewLine}{MissingAssigment(enforceRange, range)}")
                 };
+            }
 
             foreach (var lsi in keyStructure.LocalSecondaryIndices)
+            {
                 yield return (lsi, keyStructure.PartitionKey) switch
                 {
                     {PartitionKey: var pk, lsi: var sortKey} => (lsi.Name, $"{CreateAssignment(enforcePartition, partition, pk)}{Constants.NewLine}{CreateAssignment(enforceRange, range, sortKey.SortKey)}")
                 };
+            }
 
             string MissingAssigment(string validateReference, string keyReference)
             {
