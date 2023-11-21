@@ -133,7 +133,7 @@ public class DynamoDbMarshaller
             : elementType.ToInlineAssignment($"NS = new List<string>({newAccessPattern}.Select(x => x.ToString()))", knownType);
     }
 
-    private string CreateAttributePocoFactoryBatched(IEnumerable<DynamoDBMarshallerArguments> arguments)
+    private string CreateAttributePocoFactory(IEnumerable<DynamoDBMarshallerArguments> arguments)
     {
         var hashSet = new HashSet<ITypeSymbol>(_comparer);
         var code = arguments.SelectMany(x =>
@@ -147,7 +147,7 @@ public class DynamoDbMarshaller
         return string.Join(Constants.NewLine, code);
     }
 
-    private string CreateAttributeValueFactoryBatched(IEnumerable<DynamoDBMarshallerArguments> arguments)
+    private string CreateAttributeValueFactory(IEnumerable<DynamoDBMarshallerArguments> arguments)
     {
         var hashset = new HashSet<ITypeSymbol>(_comparer);
 
@@ -173,9 +173,16 @@ public class DynamoDbMarshaller
 
     public string CreateDynamoDbDocumentProperty()
     {
-        var marshaller = CodeGenerationExtensions.CreateClass(Accessibility.Private, MarshallerClass, CreateAttributeValueFactoryBatched(_arguments), 2);
-        var unMarshaller = CodeGenerationExtensions.CreateClass(Accessibility.Private, UnMarshallerClass, CreateAttributePocoFactoryBatched(_arguments), 2);
-        return string.Join(Constants.NewLine, CreateImplementations().Append(marshaller).Append(unMarshaller));
+        var marshaller = CodeGenerationExtensions.CreateClass(Accessibility.Private, MarshallerClass, CreateAttributeValueFactory(_arguments), 2);
+        var unMarshaller = CodeGenerationExtensions.CreateClass(Accessibility.Private, UnMarshallerClass, CreateAttributePocoFactory(_arguments), 2);
+
+        var code = CreateImplementations()
+            .Concat(CreateExpressionAttributeName(_arguments))
+            .Concat(CreateExpressionAttributeValue(_arguments))
+            .Append(marshaller)
+            .Append(unMarshaller);
+
+        return string.Join(Constants.NewLine, code);
     }
     private const string UnMarshallerClass = "_Unmarshaller_";
     private const string MarshallerClass = "_Marshaller_";
@@ -194,26 +201,23 @@ public class DynamoDbMarshaller
             public {rootTypeName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => {UnMarshallerClass}.{_deserializationMethodNameFactory(argument.EntityTypeSymbol)}(entity);
             public {Constants.KeyMarshallerInterFaceName} PrimaryKeyMarshaller {{ get; }} = new {Constants.KeyMarshallerImplementationTypeName}({_keysMethodNameFactory(argument.EntityTypeSymbol)});
             public {Constants.IndexKeyMarshallerInterfaceName} IndexKeyMarshaller(string index) => new {Constants.IndexKeyMarshallerImplementationTypeName}({_keysMethodNameFactory(argument.EntityTypeSymbol)}, index);
-            public {argument.ImplementationName}.{valueTrackerTypeName} {ValueTrackerName}()
+            public {valueTrackerTypeName} {ValueTrackerName}()
             {{
                 var number = 0;
                 Func<string> valueIdProvider = () => $"":p{{++number}}"";
-                return new {argument.ImplementationName}.{valueTrackerTypeName}(valueIdProvider);
+                return new {valueTrackerTypeName}(valueIdProvider);
             }}
-            public {argument.ImplementationName}.{nameTrackerTypeName} {NameTrackerName}()
+            public {nameTrackerTypeName} {NameTrackerName}()
             {{
-                return new {argument.ImplementationName}.{nameTrackerTypeName}(null);
+                return new {nameTrackerTypeName}(null);
             }}
 {keysMethod}";
 
-            var sourceGeneratedCode = string.Join(Constants.NewLine, CreateExpressionAttributeTrackers(argument).Prepend(implementInterface));
-
-            var @interface =
-                $"{InterfaceName}<{rootTypeName}, {_fullTypeNameFactory(argument.ArgumentType)}, {argument.ImplementationName}.{nameTrackerTypeName}, {argument.ImplementationName}.{valueTrackerTypeName}>";
+            var @interface = $"{InterfaceName}<{rootTypeName}, {_fullTypeNameFactory(argument.ArgumentType)}, {nameTrackerTypeName}, {valueTrackerTypeName}>";
             var @class = CodeGenerationExtensions.CreateClass(
-                Accessibility.Public,
+                Accessibility.Private,
                 $"{argument.ImplementationName}: {@interface}",
-                in sourceGeneratedCode,
+                in implementInterface,
                 2
             );
 
@@ -223,20 +227,20 @@ public class DynamoDbMarshaller
 
         }
     }
-    private IEnumerable<string> CreateExpressionAttributeTrackers(DynamoDBMarshallerArguments arguments)
+    private IEnumerable<string> CreateExpressionAttributeName(IEnumerable<DynamoDBMarshallerArguments> arguments)
     {
-        return Conversion.ConversionMethods(
-                arguments.EntityTypeSymbol,
-                ExpressionAttributeName,
-                new HashSet<ITypeSymbol>(_comparer)
-            )
-            .Concat(Conversion.ConversionMethods(
-                    arguments.ArgumentType,
-                    ExpressionAttributeValue,
-                    new HashSet<ITypeSymbol>(_comparer)
-                )
-            )
-            .Select(static x => x.Code);
+        var hashSet = new HashSet<ITypeSymbol>(_comparer);
+
+        return arguments
+            .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, ExpressionAttributeName, hashSet)).Select(x => x.Code);
+
+    }
+    private IEnumerable<string> CreateExpressionAttributeValue(IEnumerable<DynamoDBMarshallerArguments> arguments)
+    {
+        var hashSet = new HashSet<ITypeSymbol>(_comparer);
+
+        return arguments
+            .SelectMany(x => Conversion.ConversionMethods(x.ArgumentType, ExpressionAttributeValue, hashSet)).Select(x => x.Code);
     }
 
     private Assignment DataMemberAssignment(in ITypeSymbol type, in string pattern, in string memberName)
