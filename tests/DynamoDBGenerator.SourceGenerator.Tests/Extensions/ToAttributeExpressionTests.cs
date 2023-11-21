@@ -9,6 +9,36 @@ public partial class ToAttributeExpressionTests
     private readonly Fixture _fixture = new();
 
     [Fact]
+    public void ToAttributeExpression_Object_Assignment()
+    {
+        var order = _fixture.Create<OrderAttributeExpressionTests>();
+        var result = OrderAttributeExpressionTestsMarshaller
+            .ToAttributeExpression(order, (x, y) => $"{x.UserEntity} = {y.UserEntity}");
+
+        result.Values.Should().SatisfyRespectively(x =>
+        {
+            x.Key.Should().Be(":p1");
+            x.Value.M.Should().SatisfyRespectively(y =>
+            {
+                y.Key.Should().Be(nameof(OrderAttributeExpressionTests.UserEntity.Id));
+                y.Value.S.Should().Be(order.UserEntity.Id);
+            }, y =>
+            {
+
+                y.Key.Should().Be(nameof(OrderAttributeExpressionTests.UserEntity.DisplayName));
+                y.Value.S.Should().Be(order.UserEntity.DisplayName);
+            });
+        });
+        result.Names.Should().SatisfyRespectively(x =>
+        {
+            x.Key.Should().Be("#User");
+            x.Value.Should().Be("Id");
+        });
+
+        result.Expressions.Should().SatisfyRespectively(x => x.Should().Be("#User = :p1"));
+
+    }
+    [Fact]
     public void ToAttributeExpression_Single_Expression()
     {
         var order = _fixture.Create<OrderAttributeExpressionTests>();
@@ -75,5 +105,14 @@ public class OrderAttributeExpressionTests
 
     public decimal TotalPrice { get; set; }
     public string ClientId { get; set; }
+
+    [DynamoDBProperty("User")]
+    public User UserEntity { get; set; }
+
+    public class User
+    {
+        public string Id { get; set; }
+        public string DisplayName { get; set; }
+    }
 
 }

@@ -358,7 +358,7 @@ public class DynamoDbMarshaller
             }}",
             2,
             isReadonly: true,
-            isRecord: true
+            isRecord: false
         );
         return new Conversion(@class, fieldAssignments);
 
@@ -376,13 +376,14 @@ public class DynamoDbMarshaller
                 AttributeInterfaceName: _attributeValueInterfaceNameFactory(x.DataMember.Type)))
             .ToArray();
 
+        const string self = "_self";
         var fieldDeclarations = dataMembers
             .Select(static x => x.KnownType is not null
                 ? $@"            private readonly Lazy<string> {x.ValueRef};
             public string {x.DDB.DataMember.Name} => {x.ValueRef}.Value;"
                 : $@"            private readonly Lazy<{x.AttributeReference}> _{x.DDB.DataMember.Name};
             public {x.AttributeReference} {x.DDB.DataMember.Name} => _{x.DDB.DataMember.Name}.Value;"
-            );
+            ).Append($"            private readonly Lazy<string> {self};");
 
         const string valueProvider = "valueIdProvider";
         var fieldAssignments = dataMembers
@@ -399,7 +400,7 @@ public class DynamoDbMarshaller
         var className = _attributeValueAssignmentNameFactory(typeSymbol);
         var constructor = $@"            public {className}(Func<string> {valueProvider})
             {{
-{string.Join(Constants.NewLine, fieldAssignments.Select(x => x.Value))}
+{string.Join(Constants.NewLine, fieldAssignments.Select(x => x.Value).Append($"                {self} = new({valueProvider});"))}
             }}";
 
         var expressionAttributeValueYields = dataMembers
@@ -409,7 +410,8 @@ public class DynamoDbMarshaller
                 return x.KnownType is not null
                     ? $"                if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {AttributeValueAssignment(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}").ToAttributeValue()});")}"
                     : $"                if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{nameof(IExpressionAttributeValueTracker<object>.AccessedValues)}({accessPattern})) {{ yield return x; }}")}";
-            });
+            })
+            .Append($"                if ({self}.IsValueCreated) yield return new ({self}.Value, {AttributeValueAssignment(typeSymbol, "entity").ToAttributeValue()});");
 
         var interfaceName = _attributeValueInterfaceNameFactory(typeSymbol);
         var @class = CodeGenerationExtensions.CreateStruct(
@@ -420,10 +422,11 @@ public class DynamoDbMarshaller
             IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{nameof(IExpressionAttributeValueTracker<int>.AccessedValues)}({_fullTypeNameFactory(typeSymbol)} entity)
             {{
 {(string.Join(Constants.NewLine, expressionAttributeValueYields) is var joinedValues && joinedValues != string.Empty ? joinedValues : "return Enumerable.Empty<KeyValuePair<string, AttributeValue>>();")}
-            }}",
+            }}
+            public override string ToString() => _self.Value;",
             2,
             isReadonly: true,
-            isRecord: true
+            isRecord: false
         );
         return new Conversion(@class, fieldAssignments);
     }
