@@ -39,8 +39,8 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
         foreach (var typeSymbol in compilation.GetTypeSymbols(documents))
         {
             var timestamp = Stopwatch.GetTimestamp();
-            var repository = new DynamoDbMarshaller(CreateArguments(typeSymbol, compilation), SymbolEqualityComparer.IncludeNullability).CreateDynamoDbDocumentProperty();
-            var code = typeSymbol.CreateNamespace(typeSymbol.CreateClass(repository), TimeSpan.FromTicks(Stopwatch.GetTimestamp() - timestamp));
+            var repository = new DynamoDbMarshaller(CreateArguments(typeSymbol, compilation), SymbolEqualityComparer.IncludeNullability).CreateRepository();
+            var code = typeSymbol.CreateNamespace(typeSymbol.CreateClass(repository, indentLevel:1), TimeSpan.FromTicks(Stopwatch.GetTimestamp() - timestamp));
             var typeNamespace = typeSymbol.ContainingNamespace.IsGlobalNamespace
                 ? null
                 : $"{typeSymbol.ContainingNamespace}.";
