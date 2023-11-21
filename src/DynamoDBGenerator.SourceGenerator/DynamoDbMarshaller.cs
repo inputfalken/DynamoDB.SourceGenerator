@@ -149,19 +149,15 @@ public class DynamoDbMarshaller
     {
         var hashset = new HashSet<ITypeSymbol>(_comparer);
 
-        return _arguments.SelectMany(x =>
-        {
-            var code = Conversion.ConversionMethods(
-                x.EntityTypeSymbol,
-                StaticAttributeValueDictionaryFactory,
-                hashset
-            );
-
-            return (_comparer.Equals(x.EntityTypeSymbol, x.ArgumentType)
-                    ? code
-                    : code.Concat(Conversion.ConversionMethods(x.ArgumentType, StaticAttributeValueDictionaryFactory, hashset))
-                ).Select(y => y.Code);
-        });
+        return _arguments.SelectMany(x => Conversion
+                .ConversionMethods(
+                    x.EntityTypeSymbol,
+                    StaticAttributeValueDictionaryFactory,
+                    hashset
+                )
+                .Concat(Conversion.ConversionMethods(x.ArgumentType, StaticAttributeValueDictionaryFactory, hashset))
+            )
+            .Select(x => x.Code);
 
     }
     private IEnumerable<string> CreateExpressionAttributeName()
