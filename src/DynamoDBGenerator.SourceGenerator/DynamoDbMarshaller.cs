@@ -86,7 +86,7 @@ public class DynamoDbMarshaller
         return assignment ?? ExternalAssignment(in typeSymbol, in accessPattern);
 
         Assignment ExternalAssignment(in ITypeSymbol typeSymbol, in string accessPattern) =>
-            typeSymbol.ToExternalDependencyAssignment($"M = {_serializationMethodNameFactory(typeSymbol)}({accessPattern})");
+            typeSymbol.ToExternalDependencyAssignment($"M = {MarshallerClass}.{_serializationMethodNameFactory(typeSymbol)}({accessPattern})");
     }
 
     private Assignment BuildList(in ITypeSymbol elementType, in string accessPattern)
@@ -133,42 +133,52 @@ public class DynamoDbMarshaller
             : elementType.ToInlineAssignment($"NS = new List<string>({newAccessPattern}.Select(x => x.ToString()))", knownType);
     }
 
-    private string CreateAttributePocoFactory(DynamoDBMarshallerArguments arguments)
+    private string CreateAttributePocoFactoryBatched(IEnumerable<DynamoDBMarshallerArguments> arguments)
     {
-        var enumerable = Conversion.ConversionMethods(
-                arguments.EntityTypeSymbol,
+        var hashSet = new HashSet<ITypeSymbol>(_comparer);
+        var code = arguments.SelectMany(x =>
+            Conversion.ConversionMethods(
+                x.EntityTypeSymbol,
                 StaticPocoFactory,
-                new HashSet<ITypeSymbol>()
+                hashSet
             )
-            .Select(static x => x.Code);
+        ).Select(x => x.Code);
 
-        return string.Join(Constants.NewLine, enumerable);
+        return string.Join(Constants.NewLine, code);
     }
 
-    private string CreateAttributeValueFactory(DynamoDBMarshallerArguments arguments)
+    private string CreateAttributeValueFactoryBatched(IEnumerable<DynamoDBMarshallerArguments> arguments)
     {
         var hashset = new HashSet<ITypeSymbol>(_comparer);
-        var code = Conversion.ConversionMethods(
-            arguments.EntityTypeSymbol,
-            StaticAttributeValueDictionaryFactory,
-            hashset
-        );
 
-        return string.Join(
-            Constants.NewLine,
-            (_comparer.Equals(arguments.EntityTypeSymbol, arguments.ArgumentType)
-                ? code
-                : code.Concat(Conversion.ConversionMethods(arguments.ArgumentType, StaticAttributeValueDictionaryFactory, hashset))
-            ).Select(x => x.Code)
-        );
+        var generation = arguments.Select(x =>
+        {
+            var code = Conversion.ConversionMethods(
+                x.EntityTypeSymbol,
+                StaticAttributeValueDictionaryFactory,
+                hashset
+            );
+            return string.Join(
+                Constants.NewLine,
+                (_comparer.Equals(x.EntityTypeSymbol, x.ArgumentType)
+                    ? code
+                    : code.Concat(Conversion.ConversionMethods(x.ArgumentType, StaticAttributeValueDictionaryFactory, hashset))
+                ).Select(y => y.Code)
+            );
+        });
 
+        return string.Join(Constants.NewLine, generation);
     }
 
 
     public string CreateDynamoDbDocumentProperty()
     {
-        return string.Join(Constants.NewLine, CreateImplementations());
+        var marshaller = CodeGenerationExtensions.CreateClass(Accessibility.Private, MarshallerClass, CreateAttributeValueFactoryBatched(_arguments), 2);
+        var unMarshaller = CodeGenerationExtensions.CreateClass(Accessibility.Private, UnMarshallerClass, CreateAttributePocoFactoryBatched(_arguments), 2);
+        return string.Join(Constants.NewLine, CreateImplementations().Append(marshaller).Append(unMarshaller));
     }
+    private const string UnMarshallerClass = "_Unmarshaller_";
+    private const string MarshallerClass = "_Marshaller_";
     private IEnumerable<string> CreateImplementations()
     {
         foreach (var argument in _arguments)
@@ -180,8 +190,8 @@ public class DynamoDbMarshaller
             var nameTrackerTypeName = _attributeNameAssignmentNameFactory(argument.EntityTypeSymbol);
 
             var implementInterface =
-                $@"public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({rootTypeName} entity) => {_serializationMethodNameFactory(argument.EntityTypeSymbol)}(entity);
-            public {rootTypeName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => {_deserializationMethodNameFactory(argument.EntityTypeSymbol)}(entity);
+                $@"public {nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> {SerializeName}({rootTypeName} entity) => {MarshallerClass}.{_serializationMethodNameFactory(argument.EntityTypeSymbol)}(entity);
+            public {rootTypeName} {DeserializeName}({nameof(Dictionary<int, int>)}<{nameof(String)}, {nameof(AttributeValue)}> entity) => {UnMarshallerClass}.{_deserializationMethodNameFactory(argument.EntityTypeSymbol)}(entity);
             public {Constants.KeyMarshallerInterFaceName} PrimaryKeyMarshaller {{ get; }} = new {Constants.KeyMarshallerImplementationTypeName}({_keysMethodNameFactory(argument.EntityTypeSymbol)});
             public {Constants.IndexKeyMarshallerInterfaceName} IndexKeyMarshaller(string index) => new {Constants.IndexKeyMarshallerImplementationTypeName}({_keysMethodNameFactory(argument.EntityTypeSymbol)}, index);
             public {argument.ImplementationName}.{valueTrackerTypeName} {ValueTrackerName}()
@@ -194,9 +204,7 @@ public class DynamoDbMarshaller
             {{
                 return new {argument.ImplementationName}.{nameTrackerTypeName}(null);
             }}
-{CreateAttributeValueFactory(argument)}
-{keysMethod}
-{CreateAttributePocoFactory(argument)}";
+{keysMethod}";
 
             var sourceGeneratedCode = string.Join(Constants.NewLine, CreateExpressionAttributeTrackers(argument).Prepend(implementInterface));
 
@@ -283,7 +291,7 @@ public class DynamoDbMarshaller
             return assignment ?? ExternalAssignment(in typeSymbol, in accessPattern);
 
             Assignment ExternalAssignment(in ITypeSymbol typeSymbol, in string accessPattern) =>
-                typeSymbol.ToExternalDependencyAssignment($"{accessPattern} switch {{ {{ M: {{ }} x }} => {_deserializationMethodNameFactory(typeSymbol)}(x), {@default} }}");
+                typeSymbol.ToExternalDependencyAssignment($"{accessPattern} switch {{ {{ M: {{ }} x }} => {UnMarshallerClass}.{_deserializationMethodNameFactory(typeSymbol)}(x), {@default} }}");
         }
 
     }
@@ -421,7 +429,7 @@ public class DynamoDbMarshaller
 
         const string indent = "                ";
         var method =
-            @$"            private static Dictionary<string, AttributeValue> {_serializationMethodNameFactory(type)}({_fullTypeNameFactory(type)} {paramReference})
+            @$"            public static Dictionary<string, AttributeValue> {_serializationMethodNameFactory(type)}({_fullTypeNameFactory(type)} {paramReference})
             {{
                 {InitializeDictionary(dictionaryName, properties.Select(static x => x.capacityTernary))}
                 {string.Join(Constants.NewLine + indent, properties.Select(static x => x.dictionaryPopulation))}
@@ -509,7 +517,7 @@ public class DynamoDbMarshaller
         }
 
         var method =
-            @$"            private static Dictionary<string, AttributeValue> {_keysMethodNameFactory(arguments.EntityTypeSymbol)}(object? {pkReference}, object? {rkReference}, bool {enforcePkValidation}, bool {enforceRkValidation}, string? index = null)
+            @$"            public static Dictionary<string, AttributeValue> {_keysMethodNameFactory(arguments.EntityTypeSymbol)}(object? {pkReference}, object? {rkReference}, bool {enforcePkValidation}, bool {enforceRkValidation}, string? index = null)
             {{
                 {body}
             }}";
@@ -578,7 +586,7 @@ public class DynamoDbMarshaller
         var values = GetAssignments(type);
         const string paramReference = "entity";
         var method =
-            @$"            private static {_fullTypeNameFactory(type)} {_deserializationMethodNameFactory(type)}(Dictionary<string, AttributeValue> {paramReference})
+            @$"            public static {_fullTypeNameFactory(type)} {_deserializationMethodNameFactory(type)}(Dictionary<string, AttributeValue> {paramReference})
             {{ 
                 return {values.objectInitialization};
             }}";
