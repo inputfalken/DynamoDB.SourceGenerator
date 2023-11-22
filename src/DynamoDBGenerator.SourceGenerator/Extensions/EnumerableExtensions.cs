@@ -11,6 +11,13 @@ public static class EnumerableExtensions
         foreach (var publicInstanceProperty in type.GetPublicInstanceProperties())
             yield return new DynamoDbDataMember(publicInstanceProperty);
     }
+
+    public static DynamoDbDataMember ToDynamoDbProperty(this ITypeSymbol typeSymbol)
+    {
+        return typeSymbol.OriginalDefinition
+            .GetDynamoDbProperties()
+            .Single(x => SymbolEqualityComparer.IncludeNullability.Equals(x.DataMember.Type, typeSymbol));
+    }
     
     private static IEnumerable<DataMember> GetPublicInstanceProperties(this INamespaceOrTypeSymbol symbol)
     {
