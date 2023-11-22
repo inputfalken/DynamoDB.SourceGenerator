@@ -14,17 +14,40 @@ public readonly struct DynamoDbDataMember
     public DynamoDbDataMember(DataMember dataMember)
     {
         Attributes = GetAttributes(dataMember.BaseSymbol).ToArray();
-        var attributeDatas = dataMember.BaseSymbol.GetAttributes();
-
-        IsIgnored = attributeDatas.Any(x => x.AttributeClass is
+        var attributes = dataMember.BaseSymbol.GetAttributes();
+        IsIgnored = attributes.Any(x => x.AttributeClass is
         {
             Name: "DynamoDBIgnoreAttribute",
             ContainingAssembly.Name: "AWSSDK.DynamoDBv2"
         });
-        AttributeName = Attributes
-            .OfType<DynamoDBRenamableAttribute>()
-            .FirstOrDefault(x => string.IsNullOrWhiteSpace(x.AttributeName) is false)?.AttributeName ?? dataMember.Name;
+
+        AttributeName = attributes
+            .Select(x => Search(x,
+                z => z is {Name: "DynamoDBRenamableAttribute", ContainingAssembly.Name: "AWSSDK.DynamoDBv2"}))
+            .Select(x =>
+            {
+                if (x is null)
+                    return null;
+
+                return x.ConstructorArguments.FirstOrDefault(y => y is
+                {
+                    Kind: TypedConstantKind.Primitive
+                }).Value as string;
+            })
+            .FirstOrDefault(x => string.IsNullOrWhiteSpace(x) is false) ?? dataMember.Name;
+
         DataMember = dataMember;
+    }
+
+    private static AttributeData? Search(AttributeData attributeData, Func<INamedTypeSymbol, bool> predicate)
+    {
+        var attributeClass = attributeData.AttributeClass;
+        while (true)
+        {
+            if (attributeClass is null) return null;
+            if (predicate(attributeClass)) return attributeData;
+            attributeClass = attributeClass.BaseType;
+        }
     }
 
 
