@@ -8,6 +8,37 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 public partial class ExpressionAttributeTrackerTests
 {
     [Fact]
+    public void PersonWithTupleArgument_AccessingRootExpressionAttributeName_ShouldThrow()
+    {
+        var nameTracker = PersonWithTupleArgument.AttributeNameExpressionTracker();
+
+        var act = () => nameTracker.ToString();
+
+        act.Should().Throw<NotImplementedException>();
+    }
+    [Fact]
+    public void PersonWithTupleArgument_AccessingRootExpressionAttributeValue_ShouldNotThrow()
+    {
+        var valueTracker = PersonWithTupleArgument.AttributeExpressionValueTracker();
+        var tracker = valueTracker as IExpressionAttributeValueTracker<(string firstName, DateTime timeStamp)>;
+        
+        var act = () => valueTracker.ToString();
+        act.Should().NotThrow();
+        tracker.ToString().Should().Be(":p1");
+    }
+    
+    [Fact]
+    public void PersonWithTupleArgument_AccessingNestedExpressionAttributeName_ShouldNotThrow()
+    {
+        var nameTracker = PersonWithTupleArgument.AttributeNameExpressionTracker();
+
+        var act = () => nameTracker.Address.ToString();
+
+        act.Should().NotThrow();
+        nameTracker.Address.ToString().Should().Be("#Address");
+    }
+    
+    [Fact]
     public void PersonWithTupleArgument_Tuple_CanBeParameterized()
     {
         var valueTracker = PersonWithTupleArgument.AttributeExpressionValueTracker();
