@@ -15,8 +15,8 @@ internal static class RequestFactory
         ReturnValue returnValue,
         string tableName
     )
-        where TReferences : IExpressionAttributeNameTracker
-        where TArgumentReferences : IExpressionAttributeValueTracker<TArg>
+        where TReferences : IAttributeExpressionNameTracker
+        where TArgumentReferences : IAttributeExpressionValueTracker<TArg>
     {
 
         Dictionary<string, AttributeValue>? expressionAttributeValues = null;
@@ -25,7 +25,7 @@ internal static class RequestFactory
 
         if (conditionExpressionBuilder is not null)
         {
-            var nameTracker = item.AttributeNameExpressionTracker();
+            var nameTracker = item.AttributeExpressionNameTracker();
             var valueTracker = item.AttributeExpressionValueTracker();
             conditionExpression = conditionExpressionBuilder.Invoke(nameTracker, valueTracker);
             expressionAttributeNames = nameTracker.AccessedNames().ToDictionary(x => x.Key, x => x.Value);
@@ -51,11 +51,11 @@ internal static class RequestFactory
         ReturnValue returnValue,
         string tableName
     )
-        where TReferences : IExpressionAttributeNameTracker
-        where TArgumentReferences : IExpressionAttributeValueTracker<TArg>
+        where TReferences : IAttributeExpressionNameTracker
+        where TArgumentReferences : IAttributeExpressionValueTracker<TArg>
     {
 
-        var nameTracker = item.AttributeNameExpressionTracker();
+        var nameTracker = item.AttributeExpressionNameTracker();
         var argumentTracker = item.AttributeExpressionValueTracker();
         var updateExpression = updateExpressionBuilder(nameTracker, argumentTracker);
         var conditionExpression = conditionExpressionBuilder?.Invoke(nameTracker, argumentTracker);

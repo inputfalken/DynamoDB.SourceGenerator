@@ -21,11 +21,11 @@ public static class DynamoDBMarshallerExtensions
         TArg arg,
         params Func<TReferences, TArgumentReferences, string>[] expressionBuilders
     )
-        where TReferences : IExpressionAttributeNameTracker
-        where TArgumentReferences : IExpressionAttributeValueTracker<TArg>
+        where TReferences : IAttributeExpressionNameTracker
+        where TArgumentReferences : IAttributeExpressionValueTracker<TArg>
     {
 
-        var nameTracker = item.AttributeNameExpressionTracker();
+        var nameTracker = item.AttributeExpressionNameTracker();
         var valueTracker = item.AttributeExpressionValueTracker();
         var expressions = Expressions(nameTracker, valueTracker, expressionBuilders).ToArray();
 
@@ -60,8 +60,8 @@ public static class DynamoDBMarshallerExtensions
         string tableName,
         IAmazonDynamoDB dynamoDB
     )
-        where TReferences : IExpressionAttributeNameTracker
-        where TArgumentReferences : IExpressionAttributeValueTracker<TArg>
+        where TReferences : IAttributeExpressionNameTracker
+        where TArgumentReferences : IAttributeExpressionValueTracker<TArg>
     {
         return new DynamoDBClient<T, TArg, TReferences, TArgumentReferences>(item, tableName, dynamoDB);
     }
@@ -75,8 +75,8 @@ public static class DynamoDBMarshallerExtensions
         ReturnValue returnValue,
         string tableName
     )
-        where TReferences : IExpressionAttributeNameTracker
-        where TArgumentReferences : IExpressionAttributeValueTracker<TArg>
+        where TReferences : IAttributeExpressionNameTracker
+        where TArgumentReferences : IAttributeExpressionValueTracker<TArg>
         where T : TArg
     {
         return item.ToPutItemRequestInternal(entity, entity, null, returnValue, tableName);
@@ -92,8 +92,8 @@ public static class DynamoDBMarshallerExtensions
         ReturnValue returnValue,
         string tableName
     )
-        where TReferences : IExpressionAttributeNameTracker
-        where TArgumentReferences : IExpressionAttributeValueTracker<TArg>
+        where TReferences : IAttributeExpressionNameTracker
+        where TArgumentReferences : IAttributeExpressionValueTracker<TArg>
         where T : TArg
     {
         return item.ToPutItemRequestInternal(entity, entity, conditionExpressionBuilder, returnValue, tableName);
@@ -110,8 +110,8 @@ public static class DynamoDBMarshallerExtensions
         ReturnValue returnValue,
         string tableName
     )
-        where TReferences : IExpressionAttributeNameTracker
-        where TArgumentReferences : IExpressionAttributeValueTracker<TArg>
+        where TReferences : IAttributeExpressionNameTracker
+        where TArgumentReferences : IAttributeExpressionValueTracker<TArg>
     {
         return item.ToUpdateItemRequestInternal(argument, keySelector, updateExpressionBuilder, null, returnValue, tableName);
     }
@@ -128,8 +128,8 @@ public static class DynamoDBMarshallerExtensions
         ReturnValue returnValue,
         string tableName
     )
-        where TReferences : IExpressionAttributeNameTracker
-        where TArgumentReferences : IExpressionAttributeValueTracker<TArg>
+        where TReferences : IAttributeExpressionNameTracker
+        where TArgumentReferences : IAttributeExpressionValueTracker<TArg>
     {
         return item.ToUpdateItemRequestInternal(argument, keySelector, updateExpressionBuilder, conditionExpressionBuilder, returnValue, tableName);
     }

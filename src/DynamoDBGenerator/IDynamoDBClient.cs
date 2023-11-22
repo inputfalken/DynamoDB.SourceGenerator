@@ -13,8 +13,8 @@ namespace DynamoDBGenerator;
 /// <typeparam name="TReferences">The type for tracking attribute names related to <typeparamref name="TEntity"/>.</typeparam>
 /// <typeparam name="TArgumentReferences">The type for tracking argument attribute values related to <typeparamref name="TArgument"/>.</typeparam>
 public interface IDynamoDBClient<TEntity, TArgument, out TReferences, out TArgumentReferences>
-    where TReferences : IExpressionAttributeNameTracker
-    where TArgumentReferences : IExpressionAttributeValueTracker<TArgument>
+    where TReferences : IAttributeExpressionNameTracker
+    where TArgumentReferences : IAttributeExpressionValueTracker<TArgument>
 {
     /// <summary>
     /// Saves an entity to DynamoDB with an optional condition expression builder.

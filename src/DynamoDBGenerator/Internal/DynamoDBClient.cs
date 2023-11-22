@@ -7,8 +7,8 @@ using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.Internal;
 
 internal class DynamoDBClient<T, TArg, TReferences, TArgumentReferences> : IDynamoDBClient<T, TArg, TReferences, TArgumentReferences>
-    where TReferences : IExpressionAttributeNameTracker
-    where TArgumentReferences : IExpressionAttributeValueTracker<TArg>
+    where TReferences : IAttributeExpressionNameTracker
+    where TArgumentReferences : IAttributeExpressionValueTracker<TArg>
 {
     private readonly IAmazonDynamoDB _amazonDynamoDB;
     private readonly IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> _marshaller;

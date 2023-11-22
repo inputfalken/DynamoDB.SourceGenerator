@@ -10,7 +10,7 @@ public partial class ExpressionAttributeTrackerTests
     [Fact]
     public void PersonWithTupleArgument_AccessingRootExpressionAttributeName_ShouldThrow()
     {
-        var nameTracker = PersonWithTupleArgument.AttributeNameExpressionTracker();
+        var nameTracker = PersonWithTupleArgument.AttributeExpressionNameTracker();
 
         var act = () => nameTracker.ToString();
 
@@ -20,7 +20,7 @@ public partial class ExpressionAttributeTrackerTests
     public void PersonWithTupleArgument_AccessingRootExpressionAttributeValue_ShouldNotThrow()
     {
         var valueTracker = PersonWithTupleArgument.AttributeExpressionValueTracker();
-        var tracker = valueTracker as IExpressionAttributeValueTracker<(string firstName, DateTime timeStamp)>;
+        var tracker = valueTracker as IAttributeExpressionValueTracker<(string firstName, DateTime timeStamp)>;
         
         var act = () => valueTracker.ToString();
         act.Should().NotThrow();
@@ -30,7 +30,7 @@ public partial class ExpressionAttributeTrackerTests
     [Fact]
     public void PersonWithTupleArgument_AccessingNestedExpressionAttributeName_ShouldNotThrow()
     {
-        var nameTracker = PersonWithTupleArgument.AttributeNameExpressionTracker();
+        var nameTracker = PersonWithTupleArgument.AttributeExpressionNameTracker();
 
         var act = () => nameTracker.Address.ToString();
 
@@ -42,14 +42,14 @@ public partial class ExpressionAttributeTrackerTests
     public void PersonWithTupleArgument_Tuple_CanBeParameterized()
     {
         var valueTracker = PersonWithTupleArgument.AttributeExpressionValueTracker();
-        var nameTracker = PersonWithTupleArgument.AttributeNameExpressionTracker();
+        var nameTracker = PersonWithTupleArgument.AttributeExpressionNameTracker();
 
         valueTracker.firstName.Should().Be(":p1");
         valueTracker.timeStamp.Should().Be(":p2");
         nameTracker.FirstName.Should().Be("#FirstName");
         nameTracker.CreatedAt.Should().Be("#CreatedAt");
 
-        IExpressionAttributeValueTracker<(string firstName, DateTime timeStamp)> convertedValueTracker = valueTracker;
+        IAttributeExpressionValueTracker<(string firstName, DateTime timeStamp)> convertedValueTracker = valueTracker;
 
         var timeStamp = DateTime.Now;
         convertedValueTracker.AccessedValues(("Rob", timeStamp)).Should().SatisfyRespectively(x =>
@@ -92,7 +92,7 @@ public partial class ExpressionAttributeTrackerTests
     [Fact]
     public void ClassWithOverriddenAttributeName_AttributeReferences_ShouldChangeNameValue()
     {
-        var nameTracker = ClassWithOverriddenAttributeNameMarshaller.AttributeNameExpressionTracker();
+        var nameTracker = ClassWithOverriddenAttributeNameMarshaller.AttributeExpressionNameTracker();
         var valueTracker = ClassWithOverriddenAttributeNameMarshaller.AttributeExpressionValueTracker();
 
         nameTracker.Foo.Should().Be("#SomethingElse");
@@ -102,7 +102,7 @@ public partial class ExpressionAttributeTrackerTests
     [Fact]
     public void Person_AttributeReferences_ShouldBeCorrectlySet()
     {
-        var nameTracker = PersonMarshaller.AttributeNameExpressionTracker();
+        var nameTracker = PersonMarshaller.AttributeExpressionNameTracker();
         var valueTracker = PersonMarshaller.AttributeExpressionValueTracker();
 
         nameTracker.FirstName.Should().Be("#FirstName");
@@ -143,8 +143,8 @@ public static class AssertionExtensions
 {
 
     public static IEnumerable<T4> TraverseByValueTracker<T, T2, T3, T4>(this IDynamoDBMarshaller<T, T2, T3, T4> source, Func<T4, T4> recursiveSelector, int count)
-        where T3 : IExpressionAttributeNameTracker
-        where T4 : IExpressionAttributeValueTracker<T2>
+        where T3 : IAttributeExpressionNameTracker
+        where T4 : IAttributeExpressionValueTracker<T2>
     {
         var attributeReferences = source.AttributeExpressionValueTracker();
 
@@ -160,10 +160,10 @@ public static class AssertionExtensions
         Func<T3, T3> recursiveSelector,
         int count
     )
-        where T3 : IExpressionAttributeNameTracker
-        where T4 : IExpressionAttributeValueTracker<T2>
+        where T3 : IAttributeExpressionNameTracker
+        where T4 : IAttributeExpressionValueTracker<T2>
     {
-        var attributeReferences = source.AttributeNameExpressionTracker();
+        var attributeReferences = source.AttributeExpressionNameTracker();
 
         for (var i = 0; i < count; i++)
         {

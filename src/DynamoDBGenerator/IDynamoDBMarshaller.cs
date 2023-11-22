@@ -3,19 +3,19 @@ using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator;
 
 /// <summary>
-/// Represents a marshaller responsible for converting objects of type <typeparamref name="TEntity"/> and <typeparamref name="TArg"/>
+/// Represents a marshaller responsible for converting objects of type <typeparamref name="TEntity"/> and <typeparamref name="TArgument"/>
 /// into a <see cref="Dictionary{TKey,TValue}"/> containing AttributeValues.
 /// </summary>
 /// <typeparam name="TEntity">The type of entity to be marshalled.</typeparam>
-/// <typeparam name="TArg">The type of argument used for marshalling.</typeparam>
+/// <typeparam name="TArgument">The type of argument used for marshalling.</typeparam>
 /// <typeparam name="TEntityAttributeNameTracker">The type for tracking attribute names related to <typeparamref name="TEntity"/>.</typeparam>
-/// <typeparam name="TArgumentAttributeValueTracker">The type for tracking argument attribute values related to <typeparamref name="TArg"/>.</typeparam>
-public interface IDynamoDBMarshaller<TEntity, in TArg, out TEntityAttributeNameTracker, out TArgumentAttributeValueTracker>
-    where TEntityAttributeNameTracker : IExpressionAttributeNameTracker
-    where TArgumentAttributeValueTracker : IExpressionAttributeValueTracker<TArg>
+/// <typeparam name="TArgumentAttributeValueTracker">The type for tracking argument attribute values related to <typeparamref name="TArgument"/>.</typeparam>
+public interface IDynamoDBMarshaller<TEntity, in TArgument, out TEntityAttributeNameTracker, out TArgumentAttributeValueTracker>
+    where TEntityAttributeNameTracker : IAttributeExpressionNameTracker
+    where TArgumentAttributeValueTracker : IAttributeExpressionValueTracker<TArgument>
 {
     /// <summary>
-    /// Creates a tracker for managing argument attribute values of type <typeparamref name="TArg"/> for DynamoDB operations.
+    /// Creates a tracker for managing argument attribute values of type <typeparamref name="TArgument"/> for DynamoDB operations.
     /// </summary>
     /// <returns>A tracker for argument attribute values.</returns>
     public TArgumentAttributeValueTracker AttributeExpressionValueTracker();
@@ -24,7 +24,7 @@ public interface IDynamoDBMarshaller<TEntity, in TArg, out TEntityAttributeNameT
     /// Creates a tracker for managing attribute names related to <typeparamref name="TEntity"/>.
     /// </summary>
     /// <returns>A tracker for attribute names.</returns>
-    public TEntityAttributeNameTracker AttributeNameExpressionTracker();
+    public TEntityAttributeNameTracker AttributeExpressionNameTracker();
 
     /// <summary>
     /// Marshals an object of type <typeparamref name="TEntity"/> into a collection of AttributeValues.
@@ -45,28 +45,4 @@ public interface IDynamoDBMarshaller<TEntity, in TArg, out TEntityAttributeNameT
 
     /// <inheritdoc cref="IDynamoDBKeyMarshaller"/> 
     public IDynamoDBIndexKeyMarshaller IndexKeyMarshaller(string index);
-}
-
-/// <summary>
-/// Represents a tracker for attribute values used in DynamoDB expression.
-/// </summary>
-/// <typeparam name="TArg">The type of argument used in DynamoDB operations.</typeparam>
-public interface IExpressionAttributeValueTracker<in TArg>
-{
-    /// <summary>
-    ///     An <see cref="IEnumerable{T}" /> whose elements are retrieved when the values have been programmatically accessed.
-    /// </summary>
-    public IEnumerable<KeyValuePair<string, AttributeValue>> AccessedValues(TArg arg);
-}
-
-/// <summary>
-/// Represents a tracker for attribute names used in DynamoDB expression.
-/// </summary>
-public interface IExpressionAttributeNameTracker
-{
-
-    /// <summary>
-    ///     An <see cref="IEnumerable{T}" /> whose elements are retrieved when the names have been programmatically accessed.
-    /// </summary>
-    public IEnumerable<KeyValuePair<string, string>> AccessedNames();
 }

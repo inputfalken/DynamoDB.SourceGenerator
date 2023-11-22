@@ -10,7 +10,7 @@ public class DynamoDbMarshaller
     private const string DeserializeName = "Unmarshall";
     private const string InterfaceName = "IDynamoDBMarshaller";
     private const string MarshallerClass = "_Marshaller_";
-    private const string NameTrackerName = "AttributeNameExpressionTracker";
+    private const string NameTrackerName = "AttributeExpressionNameTracker";
     private const string SerializeName = "Marshall";
     private const string UnMarshallerClass = "_Unmarshaller_";
 
@@ -37,7 +37,7 @@ public class DynamoDbMarshaller
         _serializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory(null, comparer, true);
         _attributeNameAssignmentNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", comparer, false);
         _attributeValueAssignmentNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Values", comparer, false);
-        _attributeValueInterfaceNameFactory = TypeExtensions.CacheFactory(comparer, x => $"{nameof(IExpressionAttributeValueTracker<object>)}<{_fullTypeNameFactory(x)}>");
+        _attributeValueInterfaceNameFactory = TypeExtensions.CacheFactory(comparer, x => $"{nameof(IAttributeExpressionValueTracker<object>)}<{_fullTypeNameFactory(x)}>");
         _arguments = arguments.ToArray();
         _comparer = comparer;
     }
@@ -304,7 +304,7 @@ public class DynamoDbMarshaller
     }
     private Conversion ExpressionAttributeName(ITypeSymbol typeSymbol)
     {
-        const string attributeInterFaceName = nameof(IExpressionAttributeNameTracker);
+        const string attributeInterFaceName = nameof(IAttributeExpressionNameTracker);
         var dataMembers = _cachedDataMembers(typeSymbol)
             .Where(static x => x.IsIgnored is false)
             .Select(x => (
@@ -346,7 +346,7 @@ public class DynamoDbMarshaller
 
         var expressionAttributeNameYields = dataMembers.Select(static x => x.KnownType is not null
             ? $@"               if ({x.NameRef}.IsValueCreated) yield return new ({x.NameRef}.Value, ""{x.DDB.AttributeName}"");"
-            : $"               if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{nameof(IExpressionAttributeNameTracker.AccessedNames)}()) {{ yield return x; }}")
+            : $"               if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{nameof(IAttributeExpressionNameTracker.AccessedNames)}()) {{ yield return x; }}")
             .Append($@"               if ({self}.IsValueCreated) yield return new ({self}.Value, ""{typeSymbol.Name}"");");
 
         var @class = CodeGenerationExtensions.CreateStruct(
@@ -354,7 +354,7 @@ public class DynamoDbMarshaller
             $"{className} : {attributeInterFaceName}",
             $@"{constructor}
 {string.Join(Constants.NewLine, fieldDeclarations)}
-            IEnumerable<KeyValuePair<string, string>> {attributeInterFaceName}.{nameof(IExpressionAttributeNameTracker.AccessedNames)}()
+            IEnumerable<KeyValuePair<string, string>> {attributeInterFaceName}.{nameof(IAttributeExpressionNameTracker.AccessedNames)}()
             {{
 {(string.Join(Constants.NewLine, expressionAttributeNameYields) is var joinedNames && joinedNames != string.Empty ? joinedNames : "return Enumerable.Empty<KeyValuePair<string, string>>();")}
             }}
@@ -412,7 +412,7 @@ public class DynamoDbMarshaller
                 var accessPattern = $"entity.{x.DDB.DataMember.Name}";
                 return x.KnownType is not null
                     ? $"                if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {AttributeValueAssignment(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}").ToAttributeValue()});")}"
-                    : $"                if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{nameof(IExpressionAttributeValueTracker<object>.AccessedValues)}({accessPattern})) {{ yield return x; }}")}";
+                    : $"                if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{nameof(IAttributeExpressionValueTracker<object>.AccessedValues)}({accessPattern})) {{ yield return x; }}")}";
             })
             .Append($"                if ({self}.IsValueCreated) yield return new ({self}.Value, {AttributeValueAssignment(typeSymbol, "entity").ToAttributeValue()});");
 
@@ -422,7 +422,7 @@ public class DynamoDbMarshaller
             $"{className} : {interfaceName}",
             $@"{constructor}
 {string.Join(Constants.NewLine, fieldDeclarations)}
-            IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{nameof(IExpressionAttributeValueTracker<int>.AccessedValues)}({_fullTypeNameFactory(typeSymbol)} entity)
+            IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{nameof(IAttributeExpressionValueTracker<int>.AccessedValues)}({_fullTypeNameFactory(typeSymbol)} entity)
             {{
 {(string.Join(Constants.NewLine, expressionAttributeValueYields) is var joinedValues && joinedValues != string.Empty ? joinedValues : "return Enumerable.Empty<KeyValuePair<string, AttributeValue>>();")}
             }}
