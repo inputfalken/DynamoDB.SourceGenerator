@@ -14,7 +14,13 @@ public readonly struct DynamoDbDataMember
     public DynamoDbDataMember(DataMember dataMember)
     {
         Attributes = GetAttributes(dataMember.BaseSymbol).ToArray();
-        IsIgnored = Attributes.OfType<DynamoDBIgnoreAttribute>().Any();
+        var attributeDatas = dataMember.BaseSymbol.GetAttributes();
+
+        IsIgnored = attributeDatas.Any(x => x.AttributeClass is
+        {
+            Name: "DynamoDBIgnoreAttribute",
+            ContainingAssembly.Name: "AWSSDK.DynamoDBv2"
+        });
         AttributeName = Attributes
             .OfType<DynamoDBRenamableAttribute>()
             .FirstOrDefault(x => string.IsNullOrWhiteSpace(x.AttributeName) is false)?.AttributeName ?? dataMember.Name;
@@ -69,13 +75,13 @@ public readonly struct DynamoDbDataMember
 
             if (CreateInstance<DynamoDBRangeKeyAttribute>(propertyAttribute) is { } rangeKey)
                 yield return rangeKey;
-            
+
             if (CreateInstance<DynamoDBGlobalSecondaryIndexHashKeyAttribute>(propertyAttribute) is { } gsiHashKey)
                 yield return gsiHashKey;
-            
+
             if (CreateInstance<DynamoDBGlobalSecondaryIndexRangeKeyAttribute>(propertyAttribute) is { } gsiRangeKey)
                 yield return gsiRangeKey;
-            
+
             if (CreateInstance<DynamoDBLocalSecondaryIndexRangeKeyAttribute>(propertyAttribute) is { } lsiRangeKey)
                 yield return lsiRangeKey;
 
