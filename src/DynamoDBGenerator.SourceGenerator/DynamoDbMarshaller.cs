@@ -495,7 +495,7 @@ public class DynamoDbMarshaller
         const string enforceRkReference = "isRangeKey";
 
         const string dictionaryName = "attributeValues";
-        var keyStructure = _cachedDataMembers(typeSymbol).GetKeyStructure();
+        var keyStructure = DynamoDbDataMember.GetKeyStructure(_cachedDataMembers(typeSymbol));
         string body;
         if (keyStructure is null)
             body = @$"throw {Constants.NoDynamoDBKeyAttributesExceptionMethod}(""{typeSymbol}"");";

@@ -8,8 +8,8 @@ public readonly struct DynamoDBKeyStructure
     public DynamoDBKeyStructure(
         DynamoDbDataMember partitionKey,
         DynamoDbDataMember? sortKey,
-        IReadOnlyList<LocalSecondaryIndex> localSecondaryIndices,
-        IReadOnlyList<GlobalSecondaryIndex> globalSecondaryIndices)
+        IEnumerable<LocalSecondaryIndex> localSecondaryIndices,
+        IEnumerable<GlobalSecondaryIndex> globalSecondaryIndices)
     {
         PartitionKey = partitionKey;
         SortKey = sortKey;
@@ -30,12 +30,12 @@ public readonly struct DynamoDBKeyStructure
     /// <summary>
     /// Represents 0 - N amount of LSI.
     /// </summary>
-    public IReadOnlyList<LocalSecondaryIndex> LocalSecondaryIndices { get; }
+    public IEnumerable<LocalSecondaryIndex> LocalSecondaryIndices { get; }
 
     /// <summary>
     /// Represents 0 - N amount of GSI.
     /// </summary>
-    public IReadOnlyList<GlobalSecondaryIndex> GlobalSecondaryIndices { get; }
+    public IEnumerable<GlobalSecondaryIndex> GlobalSecondaryIndices { get; }
 }
 
 /// <summary>
