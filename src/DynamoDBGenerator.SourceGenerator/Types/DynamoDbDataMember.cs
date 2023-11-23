@@ -1,6 +1,7 @@
 using Amazon.DynamoDBv2.DataModel;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace DynamoDBGenerator.SourceGenerator.Types;
 
@@ -14,42 +15,58 @@ public readonly struct DynamoDbDataMember
     public DynamoDbDataMember(DataMember dataMember)
     {
         Attributes = GetAttributes(dataMember.BaseSymbol).ToArray();
-        var attributes = dataMember.BaseSymbol.GetAttributes();
-        IsIgnored = attributes.Any(x => x.AttributeClass is
-        {
-            Name: "DynamoDBIgnoreAttribute",
-            ContainingAssembly.Name: "AWSSDK.DynamoDBv2"
-        });
-
-        AttributeName = attributes
-            .Select(x => Search(x,
-                z => z is {Name: "DynamoDBRenamableAttribute", ContainingAssembly.Name: "AWSSDK.DynamoDBv2"}))
-            .Select(x =>
-            {
-                if (x is null)
-                    return null;
-
-                return x.ConstructorArguments.FirstOrDefault(y => y is
-                {
-                    Kind: TypedConstantKind.Primitive
-                }).Value as string;
-            })
-            .FirstOrDefault(x => string.IsNullOrWhiteSpace(x) is false) ?? dataMember.Name;
-
+        var attributes = dataMember.BaseSymbol
+            .GetAttributes()
+            .Where(x => x.AttributeClass is {ContainingAssembly.Name: "AWSSDK.DynamoDBv2"})
+            .ToArray();
+        IsIgnored = attributes.Any(x => x.AttributeClass is {Name: "DynamoDBIgnoreAttribute"});
+        AttributeName = ExtractAttributeNameFromAttributes(attributes) is { } attribute && string.IsNullOrWhiteSpace(attribute) is false
+            ? attribute
+            : dataMember.Name;
         DataMember = dataMember;
     }
 
-    private static AttributeData? Search(AttributeData attributeData, Func<INamedTypeSymbol, bool> predicate)
+    private static string? ExtractAttributeNameFromAttributes(IEnumerable<AttributeData> attributes)
     {
-        var attributeClass = attributeData.AttributeClass;
-        while (true)
+        foreach (var attributeData in attributes)
         {
-            if (attributeClass is null) return null;
-            if (predicate(attributeClass)) return attributeData;
-            attributeClass = attributeClass.BaseType;
+            switch (attributeData)
+            {
+                case {AttributeClass: null}:
+                    continue;
+                case {AttributeClass.Name: "DynamoDBHashKeyAttribute", ConstructorArguments.Length: 1} when
+                    attributeData.ConstructorArguments[0] is
+                    {
+                        Kind: TypedConstantKind.Primitive,
+                        Value: string attributeName
+                    }:
+                    return attributeName;
+                case {AttributeClass.Name: "DynamoDBRangeKeyAttribute", ConstructorArguments.Length: 1} when
+                    attributeData.ConstructorArguments[0] is
+                    {
+                        Kind: TypedConstantKind.Primitive,
+                        Value: string attributeName
+                    }:
+                    return attributeName;
+                case {AttributeClass.Name: "DynamoDBPropertyAttribute", ConstructorArguments.Length: 1} when
+                    attributeData.ConstructorArguments[0] is
+                    {
+                        Kind: TypedConstantKind.Primitive,
+                        Value: string attributeName
+                    }:
+                    return attributeName;
+                case
+                {
+                    AttributeClass.Name: "DynamoDBPropertyAttribute" or "DynamoDBRangeKeyAttribute"
+                    or "DynamoDBHashKeyAttribute", ConstructorArguments.Length: > 0
+                }:
+                    throw new InvalidOperationException(
+                        "Unable to extract attributeName constructor argument from DynamoDBAttributes.");
+            }
         }
-    }
 
+        return null;
+    }
 
     /// <inheritdoc cref="Types.DataMember" />
     public DataMember DataMember { get; }
