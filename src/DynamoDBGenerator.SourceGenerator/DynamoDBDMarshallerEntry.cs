@@ -1,9 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Linq;
-using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
@@ -19,7 +15,7 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
     {
         var updateClassDeclarations = context.SyntaxProvider
             .ForAttributeWithMetadataName(
-                Constants.DynamoDbDocumentPropertyFullname,
+                Constants.DynamoDBGenerator.DynamoDbDocumentPropertyFullname,
                 static (node, _) => node is ClassDeclarationSyntax,
                 static (context, _) => (ClassDeclarationSyntax)context.TargetNode
             );
@@ -60,9 +56,9 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
             .GetAttributes()
             .Where(x => x.AttributeClass is
             {
-                ContainingNamespace.Name: Constants.AttributeNameSpace,
-                Name: Constants.MarshallerAttributeName,
-                ContainingAssembly.Name: Constants.AssemblyName
+                ContainingNamespace.Name: Constants.DynamoDBGenerator.AttributeNameSpace,
+                Name: Constants.DynamoDBGenerator.MarshallerAttributeName,
+                ContainingAssembly.Name: Constants.DynamoDBGenerator.AssemblyName
             });
 
         foreach (var attributeData in attributes)
@@ -74,11 +70,11 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
             if (entityType is not INamedTypeSymbol entityTypeSymbol)
                 throw new ArgumentException("Could not determine type conversion from attribute constructor.");
 
-            var propertyName = attributeData.NamedArguments.FirstOrDefault(x => x.Key is nameof(DynamoDBMarshallerAttribute.PropertyName)).Value;
+            var propertyName = attributeData.NamedArguments.FirstOrDefault(x => x.Key is Constants.DynamoDBGenerator.MarshallerConstructorAttributePropertyName).Value;
             yield return new DynamoDBMarshallerArguments(
                 entityTypeSymbol,
                 attributeData.NamedArguments
-                    .Where(x => x.Key is nameof(DynamoDBMarshallerAttribute.ArgumentType))
+                    .Where(x => x.Key is Constants.DynamoDBGenerator.MarshallerConstructorAttributeArgumentType)
                     .Cast<KeyValuePair<string, TypedConstant>?>()
                     .FirstOrDefault() is { } argumentType
                     ? argumentType.Value is

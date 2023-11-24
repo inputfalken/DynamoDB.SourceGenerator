@@ -26,28 +26,4 @@
         <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all"/>
     </ItemGroup>
 
-    <ItemGroup>
-        <!-- Generator dependencies -->
-        <ProjectReference Include="..\DynamoDBGenerator\DynamoDBGenerator.csproj" PrivateAssets="all"/>
-
-        <!-- We need to add *.dll here so all dlls would be packed inside NuGet package as our DependencyB.dll is not a NuGet package -->
-        <None Include="$(OutputPath)\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
-
-        <!-- Package the AWSSDK.DynamoDBv2 dependency alongside the generator assembly -->
-        <!-- AWSSDK.DynamoDBv2 should be added to our NuGet package with a different approach -->
-        <None Include="$(PKGAWSSDK_DynamoDBv2)\lib\netstandard2.0\AWSSDK.DynamoDBv2.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
-    </ItemGroup>
-
-
-    <PropertyGroup>
-        <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
-    </PropertyGroup>
-
-    <Target Name="GetDependencyTargetPaths">
-        <ItemGroup>
-            <TargetPathWithTargetPlatformMoniker Include="$(PKGAWSSDK_DynamoDBv2)\lib\netstandard2.0\AWSSDK.DynamoDBv2.dll" IncludeRuntimeDependency="false"/>
-            <!-- our local project will not generate path variable so we need to find it from it's own build output-->
-            <TargetPathWithTargetPlatformMoniker Include="$(ProjectDir)..\DynamoDBGenerator\$(OutputPath)\*.dll" IncludeRuntimeDependency="false"/>
-        </ItemGroup>
-    </Target>
 </Project>
