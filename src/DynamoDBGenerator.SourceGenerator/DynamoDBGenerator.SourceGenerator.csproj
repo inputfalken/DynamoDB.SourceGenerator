@@ -26,7 +26,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <!-- Generator dependencies -->
+        <!-- Is required in order to pack the analyzer correctly with NuGet -->
         <None Include="$(OutputPath)\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
     </ItemGroup>
 
