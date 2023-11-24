@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamoDBGenerator", "src\Dy
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamoDBGenerator.SourceGenerator.Tests", "tests\DynamoDBGenerator.SourceGenerator.Tests\DynamoDBGenerator.SourceGenerator.Tests.csproj", "{D8EABA41-D014-49BD-B109-54829DB835E7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamoDB.SourceGenerator.Benchmarks", "tests\DynamoDB.SourceGenerator.Benchmarks\DynamoDB.SourceGenerator.Benchmarks.csproj", "{A80AC940-3BD8-4377-BDB9-AE82FD4DF944}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{D8EABA41-D014-49BD-B109-54829DB835E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D8EABA41-D014-49BD-B109-54829DB835E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D8EABA41-D014-49BD-B109-54829DB835E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A80AC940-3BD8-4377-BDB9-AE82FD4DF944}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A80AC940-3BD8-4377-BDB9-AE82FD4DF944}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A80AC940-3BD8-4377-BDB9-AE82FD4DF944}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A80AC940-3BD8-4377-BDB9-AE82FD4DF944}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

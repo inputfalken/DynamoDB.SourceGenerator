@@ -1,5 +1,5 @@
-﻿using Amazon.DynamoDBv2.DataModel;
-namespace SampleApp;
+using Amazon.DynamoDBv2.DataModel;
+namespace DynamoDB.SourceGenerator.Benchmarks.Models;
 
 public class PersonEntity
 {
