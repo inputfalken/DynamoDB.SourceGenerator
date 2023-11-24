@@ -11,9 +11,9 @@ public readonly struct DynamoDbDataMember
     {
         Attributes = dataMember.BaseSymbol
             .GetAttributes()
-            .Where(x => x.AttributeClass is {ContainingAssembly.Name: Constants.DynamoDBAws.AssemblyName})
+            .Where(x => x.AttributeClass is {ContainingAssembly.Name: Constants.AWSSDK_DynamoDBv2.AssemblyName})
             .ToArray();
-        IsIgnored = Attributes.Any(x => x.AttributeClass is {Name: Constants.DynamoDBAws.DynamoDBIgnoreAttribute});
+        IsIgnored = Attributes.Any(x => x.AttributeClass is {Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBIgnore});
         AttributeName = ExtractAttributeNameFromAttributes(Attributes) is { } attribute &&
                         string.IsNullOrWhiteSpace(attribute) is false
             ? attribute
@@ -29,19 +29,19 @@ public readonly struct DynamoDbDataMember
             {
                 case {AttributeClass: null}:
                     continue;
-                case {AttributeClass.Name: Constants.DynamoDBAws.DynamoDBHashKeyAttribute, ConstructorArguments.Length: 1} when
+                case {AttributeClass.Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBHashKey, ConstructorArguments.Length: 1} when
                     FilterString(attributeData.ConstructorArguments[0]) is { } attributeName:
                     return attributeName;
-                case {AttributeClass.Name: Constants.DynamoDBAws.DynamoDBRangeKeyAttribute, ConstructorArguments.Length: 1} when
+                case {AttributeClass.Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBRangeKey, ConstructorArguments.Length: 1} when
                     FilterString(attributeData.ConstructorArguments[0]) is { } attributeName:
                     return attributeName;
-                case {AttributeClass.Name: Constants.DynamoDBAws.DynamoDBPropertyAttribute, ConstructorArguments.Length: 1} when
+                case {AttributeClass.Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBProperty, ConstructorArguments.Length: 1} when
                     FilterString(attributeData.ConstructorArguments[0]) is { } attributeName:
                     return attributeName;
                 case
                 {
-                    AttributeClass.Name: Constants.DynamoDBAws.DynamoDBHashKeyAttribute or Constants.DynamoDBAws.DynamoDBRangeKeyAttribute
-                    or Constants.DynamoDBAws.DynamoDBPropertyAttribute,
+                    AttributeClass.Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBHashKey or Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBRangeKey
+                    or Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBProperty,
                     ConstructorArguments.Length: > 0
                 }:
                     throw new InvalidOperationException(
@@ -69,7 +69,7 @@ public readonly struct DynamoDbDataMember
             .ToArray();
 
         var partitionKey = items
-            .Where(x => x.Attribute.AttributeClass is {Name: Constants.DynamoDBAws.DynamoDBHashKeyAttribute})
+            .Where(x => x.Attribute.AttributeClass is {Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBHashKey})
             .Select(x => x.DataMember)
             .Cast<DynamoDbDataMember?>()
             .FirstOrDefault();
@@ -78,41 +78,39 @@ public readonly struct DynamoDbDataMember
             return null;
 
         var rangeKey = items
-            .Where(x => x.Attribute.AttributeClass is {Name: Constants.DynamoDBAws.DynamoDBRangeKeyAttribute})
+            .Where(x => x.Attribute.AttributeClass is {Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBRangeKey})
             .Select(x => x.DataMember)
             .Cast<DynamoDbDataMember?>()
             .FirstOrDefault();
 
-
         var lsi = items
-            .Where(x => x.Attribute.AttributeClass is {Name: Constants.DynamoDBAws.DynamoDBLocalSecondaryIndexRangeKeyAttribute})
+            .Where(x => x.Attribute.AttributeClass is {Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBLocalSecondaryIndexRangeKey})
             .SelectMany(x => GetStringArrayFromConstructor(x.Attribute),
                 (x, y) => new LocalSecondaryIndex(x.DataMember, y!));
-
 
         var gsi = items
             .Where(x => x.Attribute.AttributeClass is
             {
-                Name: Constants.DynamoDBAws.DynamoDBGlobalSecondaryIndexHashKeyAttribute or Constants.DynamoDBAws.DynamoDBGlobalSecondaryIndexRangeKeyAttribute
+                Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBGlobalSecondaryIndexHashKey or Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBGlobalSecondaryIndexRangeKey
             })
             .GroupBy(x => x.Attribute.AttributeClass!.Name switch
             {
-                Constants.DynamoDBAws.DynamoDBGlobalSecondaryIndexHashKeyAttribute
+                Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBGlobalSecondaryIndexHashKey
                     when GetStringArrayFromConstructor(x.Attribute).FirstOrDefault() is { } index => index,
-                Constants.DynamoDBAws.DynamoDBGlobalSecondaryIndexRangeKeyAttribute
+                Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBGlobalSecondaryIndexRangeKey
                     when GetStringArrayFromConstructor(x.Attribute).FirstOrDefault() is { } index => index,
                 _ => throw new NotSupportedException(x.DataMember.DataMember.Type.ToDisplayString())
             })
             .Select(x =>
             {
                 var gsiPartitionKey = x
-                    .Where(y => y.Attribute.AttributeClass is {Name: Constants.DynamoDBAws.DynamoDBGlobalSecondaryIndexHashKeyAttribute})
+                    .Where(y => y.Attribute.AttributeClass is {Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBGlobalSecondaryIndexHashKey})
                     .Select(y => y.DataMember)
                     .Cast<DynamoDbDataMember?>()
                     .FirstOrDefault();
 
                 var gsiRangeKey = x
-                    .Where(y => y.Attribute.AttributeClass is {Name: Constants.DynamoDBAws.DynamoDBGlobalSecondaryIndexRangeKeyAttribute})
+                    .Where(y => y.Attribute.AttributeClass is {Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBGlobalSecondaryIndexRangeKey})
                     .Select(y => y.DataMember)
                     .Cast<DynamoDbDataMember?>()
                     .FirstOrDefault();
@@ -122,7 +120,6 @@ public readonly struct DynamoDbDataMember
 
                 return new GlobalSecondaryIndex(gsiPartitionKey.Value, gsiRangeKey, x.Key);
             });
-            
 
         return new DynamoDBKeyStructure(partitionKey.Value, rangeKey, lsi, gsi);
 

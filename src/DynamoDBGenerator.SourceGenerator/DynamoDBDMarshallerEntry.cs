@@ -56,8 +56,8 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
             .GetAttributes()
             .Where(x => x.AttributeClass is
             {
-                ContainingNamespace.Name: Constants.DynamoDBGenerator.AttributeNameSpace,
-                Name: Constants.DynamoDBGenerator.MarshallerAttributeName,
+                ContainingNamespace.Name: Constants.DynamoDBGenerator.Namespace.Attributes,
+                Name: Constants.DynamoDBGenerator.Attribute.DynamoDBMarshaller,
                 ContainingAssembly.Name: Constants.DynamoDBGenerator.AssemblyName
             });
 
@@ -70,11 +70,11 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
             if (entityType is not INamedTypeSymbol entityTypeSymbol)
                 throw new ArgumentException("Could not determine type conversion from attribute constructor.");
 
-            var propertyName = attributeData.NamedArguments.FirstOrDefault(x => x.Key is Constants.DynamoDBGenerator.MarshallerConstructorAttributePropertyName).Value;
+            var propertyName = attributeData.NamedArguments.FirstOrDefault(x => x.Key is Constants.DynamoDBGenerator.Attribute.DynamoDBMarshallerArgument.PropertyName).Value;
             yield return new DynamoDBMarshallerArguments(
                 entityTypeSymbol,
                 attributeData.NamedArguments
-                    .Where(x => x.Key is Constants.DynamoDBGenerator.MarshallerConstructorAttributeArgumentType)
+                    .Where(x => x.Key is Constants.DynamoDBGenerator.Attribute.DynamoDBMarshallerArgument.ArgumentType)
                     .Cast<KeyValuePair<string, TypedConstant>?>()
                     .FirstOrDefault() is { } argumentType
                     ? argumentType.Value is

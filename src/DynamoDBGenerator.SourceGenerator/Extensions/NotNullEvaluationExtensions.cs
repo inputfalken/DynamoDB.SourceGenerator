@@ -35,7 +35,7 @@ public static class NotNullEvaluationExtensions
 
     private static string CreateException(in string accessPattern)
     {
-        return $"throw {Constants.DynamoDBGenerator.NullExceptionMethod}(nameof({accessPattern}));";
+        return $"throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}(nameof({accessPattern}));";
     }
 
     public static string NotNullIfStatement(this ITypeSymbol typeSymbol, in string accessPattern, in string truthy)
