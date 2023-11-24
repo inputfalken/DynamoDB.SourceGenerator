@@ -1,9 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Linq;
-using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
@@ -19,7 +15,7 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
     {
         var updateClassDeclarations = context.SyntaxProvider
             .ForAttributeWithMetadataName(
-                Constants.DynamoDbDocumentPropertyFullname,
+                Constants.DynamoDBGenerator.DynamoDbDocumentPropertyFullname,
                 static (node, _) => node is ClassDeclarationSyntax,
                 static (context, _) => (ClassDeclarationSyntax)context.TargetNode
             );
@@ -39,7 +35,7 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
         foreach (var typeSymbol in compilation.GetTypeSymbols(documents))
         {
             var timestamp = Stopwatch.GetTimestamp();
-            var repository = new DynamoDbMarshaller(CreateArguments(typeSymbol, compilation), SymbolEqualityComparer.IncludeNullability).CreateRepository();
+            var repository = new DynamoDbMarshaller(CreateArguments(typeSymbol), SymbolEqualityComparer.IncludeNullability).CreateRepository();
             var code = typeSymbol.CreateNamespace(typeSymbol.CreateClass(repository, indentLevel:1), TimeSpan.FromTicks(Stopwatch.GetTimestamp() - timestamp));
             var typeNamespace = typeSymbol.ContainingNamespace.IsGlobalNamespace
                 ? null
@@ -54,15 +50,15 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
     // [DynamoDBDocument(typeof(Person))]
     // [DynamoDBDocument(typeof(Person), ArgumentType = typeof(ChangeName))]
     // With this scenario we would be able to use the Person type from the second attribute instead of source generating duplicated code.
-    private static IEnumerable<DynamoDBMarshallerArguments> CreateArguments(ISymbol typeSymbol, Compilation compilation)
+    private static IEnumerable<DynamoDBMarshallerArguments> CreateArguments(ISymbol typeSymbol)
     {
         var attributes = typeSymbol
             .GetAttributes()
             .Where(x => x.AttributeClass is
             {
-                ContainingNamespace.Name: Constants.AttributeNameSpace,
-                Name: Constants.MarshallerAttributeName,
-                ContainingAssembly.Name: Constants.AssemblyName
+                ContainingNamespace.Name: Constants.DynamoDBGenerator.Namespace.Attributes,
+                Name: Constants.DynamoDBGenerator.Attribute.DynamoDBMarshaller,
+                ContainingAssembly.Name: Constants.DynamoDBGenerator.AssemblyName
             });
 
         foreach (var attributeData in attributes)
@@ -74,11 +70,11 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
             if (entityType is not INamedTypeSymbol entityTypeSymbol)
                 throw new ArgumentException("Could not determine type conversion from attribute constructor.");
 
-            var propertyName = attributeData.NamedArguments.FirstOrDefault(x => x.Key is nameof(DynamoDBMarshallerAttribute.PropertyName)).Value;
+            var propertyName = attributeData.NamedArguments.FirstOrDefault(x => x.Key is Constants.DynamoDBGenerator.Attribute.DynamoDBMarshallerArgument.PropertyName).Value;
             yield return new DynamoDBMarshallerArguments(
                 entityTypeSymbol,
                 attributeData.NamedArguments
-                    .Where(x => x.Key is nameof(DynamoDBMarshallerAttribute.ArgumentType))
+                    .Where(x => x.Key is Constants.DynamoDBGenerator.Attribute.DynamoDBMarshallerArgument.ArgumentType)
                     .Cast<KeyValuePair<string, TypedConstant>?>()
                     .FirstOrDefault() is { } argumentType
                     ? argumentType.Value is

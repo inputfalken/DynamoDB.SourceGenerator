@@ -1,32 +1,99 @@
-using DynamoDBGenerator.Attributes;
-using DynamoDBGenerator.Exceptions;
-using DynamoDBGenerator.Internal;
-
 namespace DynamoDBGenerator.SourceGenerator;
 
 public static class Constants
 {
-    public const string AssemblyName = nameof(DynamoDBGenerator);
-    public const string AttributeNameSpace = nameof(Attributes);
-    public const string MarshallerAttributeName = nameof(DynamoDBMarshallerAttribute);
-    public const string MarshallerConstructorAttributeName = nameof(DynamoDBMarshallerConstructorAttribute);
-    public const string DynamoDbDocumentPropertyFullname = $"{AssemblyName}.{AttributeNameSpace}.{MarshallerAttributeName}";
-    public const string KeyMarshallerInterFaceName = nameof(IDynamoDBKeyMarshaller);
-    public const string KeyMarshallerImplementationTypeName = nameof(DynamoDBKeyMarshallerDelegator);
-    public const string IndexKeyMarshallerInterfaceName = nameof(IDynamoDBIndexKeyMarshaller);
-    public const string IndexKeyMarshallerImplementationTypeName = nameof(IndexDynamoDBMarshallerDelegator);
-    public const string NullExceptionMethod = $"{nameof(ExceptionHelper)}.{nameof(ExceptionHelper.NotNull)}";
-    public const string KeysArgumentNullExceptionMethod = $"{nameof(ExceptionHelper)}.{nameof(ExceptionHelper.KeysArgumentNotNull)}";
-    public const string KeysInvalidConversionExceptionMethod = $"{nameof(ExceptionHelper)}.{nameof(ExceptionHelper.KeysInvalidConversion)}";
-    public const string KeysValueWithNoCorrespondenceMethod = $"{nameof(ExceptionHelper)}.{nameof(ExceptionHelper.KeysValueWithNoCorrespondence)}";
-    public const string KeysMissingDynamoDBAttributeExceptionMethod = $"{nameof(ExceptionHelper)}.{nameof(ExceptionHelper.MissingDynamoDBAttribute)}";
-    public const string ShouldNeverHappenExceptionMethod = $"{nameof(ExceptionHelper)}.{nameof(ExceptionHelper.ShouldNeverHappen)}";
-    public const string MissMatchedIndexNameExceptionMethod = $"{nameof(ExceptionHelper)}.{nameof(ExceptionHelper.MissMatchedIndex)}";
-    public const string NoDynamoDBKeyAttributesExceptionMethod = $"{nameof(ExceptionHelper)}.{nameof(ExceptionHelper.NoDynamoDBAttributes)}";
+    public static class DynamoDBGenerator
+    {
+        public static class Attribute
+        {
+            public const string DynamoDBMarshallerConstructor = "DynamoDBMarshallerConstructorAttribute";
+            public const string DynamoDBMarshaller = "DynamoDBMarshallerAttribute";
+
+            public static class DynamoDBMarshallerArgument
+            {
+
+                public const string PropertyName = "PropertyName";
+                public const string ArgumentType = "ArgumentType";
+            }
+        }
+
+        public const string AssemblyName = "DynamoDBGenerator";
+        public const string DynamoDbDocumentPropertyFullname = $"{Namespace.AttributesFullName}.{Attribute.DynamoDBMarshaller}";
+
+        public static class Namespace
+        {
+            public const string Root = AssemblyName;
+            public const string Attributes = "Attributes";
+            public const string AttributesFullName = $"{AssemblyName}.{Attributes}";
+            public const string InternalFullName = $"{AssemblyName}.Internal";
+            public const string ExceptionsFullName = $"{AssemblyName}.Exceptions";
+        }
+
+        public static class Marshaller
+        {
+            public const string KeyMarshallerInterface = "IDynamoDBKeyMarshaller";
+            public const string Interface = "IDynamoDBMarshaller";
+            public const string IndexKeyMarshallerInterface = "IDynamoDBIndexKeyMarshaller";
+
+            public const string AttributeExpressionNameTrackerInterface = "IAttributeExpressionNameTracker";
+            public const string AttributeExpressionNameTrackerMethodName = "AttributeExpressionNameTracker";
+
+            public const string AttributeExpressionValueTrackerInterface = "IAttributeExpressionValueTracker";
+            public const string AttributeExpressionValueTrackerMethodName = "AttributeExpressionValueTracker";
+
+            public const string AttributeExpressionNameTrackerInterfaceAccessedNames = "AccessedNames";
+            public const string AttributeExpressionValueTrackerAccessedValues = "AccessedValues";
+
+            public const string UnmarshalMethodName = "Unmarshall";
+            public const string MarshallMethodName = "Marshall";
+        }
+
+
+        public const string KeyMarshallerImplementationTypeName = "DynamoDBKeyMarshallerDelegator";
+        public const string IndexKeyMarshallerImplementationTypeName = "IndexDynamoDBMarshallerDelegator";
+
+        public static class ExceptionHelper
+        {
+            private const string ExceptionHelperClass = "ExceptionHelper";
+            public const string NullExceptionMethod = $"{ExceptionHelperClass}.NotNull";
+            public const string KeysArgumentNullExceptionMethod = $"{ExceptionHelperClass}.KeysArgumentNotNull";
+            public const string KeysInvalidConversionExceptionMethod = $"{ExceptionHelperClass}.KeysInvalidConversion";
+            public const string KeysValueWithNoCorrespondenceMethod = $"{ExceptionHelperClass}.KeysValueWithNoCorrespondence";
+            public const string KeysMissingDynamoDBAttributeExceptionMethod = $"{ExceptionHelperClass}.MissingDynamoDBAttribute";
+            public const string ShouldNeverHappenExceptionMethod = $"{ExceptionHelperClass}.ShouldNeverHappen";
+            public const string MissMatchedIndexNameExceptionMethod = $"{ExceptionHelperClass}.MissMatchedIndex";
+            public const string NoDynamoDBKeyAttributesExceptionMethod = $"{ExceptionHelperClass}.NoDynamoDBAttributes";
+        }
+
+
+    }
+
+    // ReSharper disable once IdentifierTypo
+    // ReSharper disable once InconsistentNaming
+    public static class AWSSDK_DynamoDBv2
+    {
+        public const string AttributeValue = "AttributeValue";
+        public const string AssemblyName = "AWSSDK.DynamoDBv2";
+
+        public static class Namespace
+        {
+            public const string Model = "Model";
+            public const string ModelFullName = $"Amazon.DynamoDBv2.{Model}";
+        }
+
+        public static class Attribute
+        {
+            public const string DynamoDBIgnore = "DynamoDBIgnoreAttribute";
+            public const string DynamoDBHashKey = "DynamoDBHashKeyAttribute";
+            public const string DynamoDBRangeKey = "DynamoDBRangeKeyAttribute";
+            public const string DynamoDBProperty = "DynamoDBPropertyAttribute";
+            public const string DynamoDBLocalSecondaryIndexRangeKey = "DynamoDBLocalSecondaryIndexRangeKeyAttribute";
+            public const string DynamoDBGlobalSecondaryIndexHashKey = "DynamoDBGlobalSecondaryIndexHashKeyAttribute";
+            public const string DynamoDBGlobalSecondaryIndexRangeKey = "DynamoDBGlobalSecondaryIndexRangeKeyAttribute";
+        }
+
+    }
 
     public const string NewLine = @"
 ";
-
-    public const int MaxMethodNameLenght = 511;
-
 }

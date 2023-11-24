@@ -1,5 +1,3 @@
-using System.Text.RegularExpressions;
-using Amazon.DynamoDBv2.DataModel;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
@@ -7,74 +5,6 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class TypeExtensions
 {
-    public static DynamoDBKeyStructure? GetKeyStructure(this IEnumerable<DynamoDbDataMember> dataMembers)
-    {
-        var items = dataMembers
-            .SelectMany(x => x.Attributes, (x, y) => (DataMember: x, Attribute: y))
-            .ToArray();
-
-        var partitionKey = items
-            .Where(x => x.Attribute is DynamoDBHashKeyAttribute and not DynamoDBGlobalSecondaryIndexHashKeyAttribute)
-            .Select(x => x.DataMember)
-            .Cast<DynamoDbDataMember?>()
-            .FirstOrDefault();
-
-        var rangeKey = items
-            .Where(x => x.Attribute is DynamoDBRangeKeyAttribute and not DynamoDBGlobalSecondaryIndexRangeKeyAttribute)
-            .Select(x => x.DataMember)
-            .Cast<DynamoDbDataMember?>()
-            .FirstOrDefault();
-
-        if (partitionKey is null)
-            return null;
-
-        var lsi = items
-            .Where(x => x.Attribute is DynamoDBLocalSecondaryIndexRangeKeyAttribute)
-            .SelectMany(x =>
-                {
-                    var lsi = (DynamoDBLocalSecondaryIndexRangeKeyAttribute)x.Attribute;
-                    return lsi.IndexNames;
-                },
-                (x, y) => new LocalSecondaryIndex(x.DataMember, y)
-            )
-            .ToArray();
-
-        var gsi = items
-            .Where(x => x.Attribute is DynamoDBGlobalSecondaryIndexHashKeyAttribute or DynamoDBGlobalSecondaryIndexRangeKeyAttribute)
-            .GroupBy(x => x.Attribute switch
-            {
-                DynamoDBGlobalSecondaryIndexHashKeyAttribute hash
-                    when hash.IndexNames.FirstOrDefault(y => string.IsNullOrWhiteSpace(y) is false) is { } index => index,
-                DynamoDBGlobalSecondaryIndexRangeKeyAttribute range
-                    when range.IndexNames.FirstOrDefault(y => string.IsNullOrWhiteSpace(y) is false) is { } index => index,
-                _ => throw new NotSupportedException(x.DataMember.DataMember.Type.ToDisplayString())
-            })
-            .Select(x =>
-            {
-
-                var gsiPartitionKey = x
-                    .Where(y => y.Attribute is DynamoDBGlobalSecondaryIndexHashKeyAttribute)
-                    .Select(y => y.DataMember)
-                    .Cast<DynamoDbDataMember?>()
-                    .FirstOrDefault();
-
-                var gsiRangeKey = x
-                    .Where(y => y.Attribute is DynamoDBGlobalSecondaryIndexRangeKeyAttribute)
-                    .Select(y => y.DataMember)
-                    .Cast<DynamoDbDataMember?>()
-                    .FirstOrDefault();
-
-                if (gsiPartitionKey is null)
-                    throw new NotSupportedException("Could not determine GSI");
-
-                return new GlobalSecondaryIndex(gsiPartitionKey.Value, gsiRangeKey, x.Key);
-
-            })
-            .ToArray();
-
-        return new DynamoDBKeyStructure(partitionKey.Value, rangeKey, lsi, gsi);
-    }
-    
     public static Func<ITypeSymbol, T> CacheFactory<T>(IEqualityComparer<ISymbol> comparer, Func<ITypeSymbol, T> selector)
     {
         var cache = new Dictionary<ITypeSymbol, T>(comparer);

@@ -1,7 +1,7 @@
 using Microsoft.CodeAnalysis;
 namespace DynamoDBGenerator.SourceGenerator.Types;
 
-public readonly struct DynamoDBMarshallerArguments
+public readonly record struct DynamoDBMarshallerArguments
 {
     public DynamoDBMarshallerArguments(INamedTypeSymbol entityTypeSymbol, INamedTypeSymbol? argumentType, string? propertyName)
     {
