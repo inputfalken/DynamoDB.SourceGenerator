@@ -18,11 +18,11 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using {Constants.AWSSDK_DynamoDBv2.Namespace.Model};
+using {Constants.AWSSDK_DynamoDBv2.Namespace.ModelFullName};
 using {Constants.DynamoDBGenerator.Namespace.Root};
-using {Constants.DynamoDBGenerator.Namespace.Attributes};
-using {Constants.DynamoDBGenerator.Namespace.Exceptions};
-using {Constants.DynamoDBGenerator.Namespace.Internal};
+using {Constants.DynamoDBGenerator.Namespace.AttributesFullName};
+using {Constants.DynamoDBGenerator.Namespace.ExceptionsFullName};
+using {Constants.DynamoDBGenerator.Namespace.InternalFullName};
 
 {(nameSpace is null ? null : $@"namespace {nameSpace}
 {{")}

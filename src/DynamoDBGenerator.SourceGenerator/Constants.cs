@@ -18,14 +18,15 @@ public static class Constants
         }
 
         public const string AssemblyName = "DynamoDBGenerator";
-        public const string DynamoDbDocumentPropertyFullname = $"{Namespace.Attributes}.{Attribute.DynamoDBMarshaller}";
+        public const string DynamoDbDocumentPropertyFullname = $"{Namespace.AttributesFullName}.{Attribute.DynamoDBMarshaller}";
 
         public static class Namespace
         {
             public const string Root = AssemblyName;
-            public const string Attributes = $"{AssemblyName}.Attributes";
-            public const string Internal = $"{AssemblyName}.Internal";
-            public const string Exceptions = $"{AssemblyName}.Exceptions";
+            public const string Attributes = "Attributes";
+            public const string AttributesFullName = $"{AssemblyName}.{Attributes}";
+            public const string InternalFullName = $"{AssemblyName}.Internal";
+            public const string ExceptionsFullName = $"{AssemblyName}.Exceptions";
         }
 
         public static class Marshaller
@@ -76,7 +77,8 @@ public static class Constants
 
         public static class Namespace
         {
-            public const string Model = "Amazon.DynamoDBv2.Model";
+            public const string Model = "Model";
+            public const string ModelFullName = $"Amazon.DynamoDBv2.{Model}";
         }
 
         public static class Attribute

@@ -35,7 +35,7 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
         foreach (var typeSymbol in compilation.GetTypeSymbols(documents))
         {
             var timestamp = Stopwatch.GetTimestamp();
-            var repository = new DynamoDbMarshaller(CreateArguments(typeSymbol, compilation), SymbolEqualityComparer.IncludeNullability).CreateRepository();
+            var repository = new DynamoDbMarshaller(CreateArguments(typeSymbol), SymbolEqualityComparer.IncludeNullability).CreateRepository();
             var code = typeSymbol.CreateNamespace(typeSymbol.CreateClass(repository, indentLevel:1), TimeSpan.FromTicks(Stopwatch.GetTimestamp() - timestamp));
             var typeNamespace = typeSymbol.ContainingNamespace.IsGlobalNamespace
                 ? null
@@ -50,7 +50,7 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
     // [DynamoDBDocument(typeof(Person))]
     // [DynamoDBDocument(typeof(Person), ArgumentType = typeof(ChangeName))]
     // With this scenario we would be able to use the Person type from the second attribute instead of source generating duplicated code.
-    private static IEnumerable<DynamoDBMarshallerArguments> CreateArguments(ISymbol typeSymbol, Compilation compilation)
+    private static IEnumerable<DynamoDBMarshallerArguments> CreateArguments(ISymbol typeSymbol)
     {
         var attributes = typeSymbol
             .GetAttributes()

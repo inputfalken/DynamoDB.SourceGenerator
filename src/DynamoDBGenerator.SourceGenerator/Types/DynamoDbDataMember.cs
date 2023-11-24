@@ -83,10 +83,12 @@ public readonly struct DynamoDbDataMember
             .Cast<DynamoDbDataMember?>()
             .FirstOrDefault();
 
+
         var lsi = items
             .Where(x => x.Attribute.AttributeClass is {Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBLocalSecondaryIndexRangeKey})
             .SelectMany(x => GetStringArrayFromConstructor(x.Attribute),
                 (x, y) => new LocalSecondaryIndex(x.DataMember, y!));
+
 
         var gsi = items
             .Where(x => x.Attribute.AttributeClass is
@@ -120,6 +122,7 @@ public readonly struct DynamoDbDataMember
 
                 return new GlobalSecondaryIndex(gsiPartitionKey.Value, gsiRangeKey, x.Key);
             });
+            
 
         return new DynamoDBKeyStructure(partitionKey.Value, rangeKey, lsi, gsi);
 
