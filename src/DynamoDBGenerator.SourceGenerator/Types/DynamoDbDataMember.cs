@@ -7,7 +7,7 @@ namespace DynamoDBGenerator.SourceGenerator.Types;
 /// </summary>
 public readonly struct DynamoDbDataMember
 {
-    public DynamoDbDataMember(DataMember dataMember)
+    public DynamoDbDataMember(in DataMember dataMember)
     {
         Attributes = dataMember.BaseSymbol
             .GetAttributes()
@@ -21,36 +21,14 @@ public readonly struct DynamoDbDataMember
         DataMember = dataMember;
     }
 
-    private static string? ExtractAttributeNameFromAttributes(IEnumerable<AttributeData> attributes)
-    {
-        foreach (var attributeData in attributes)
-        {
-            switch (attributeData)
-            {
-                case {AttributeClass: null}:
-                    continue;
-                case {AttributeClass.Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBHashKey, ConstructorArguments.Length: 1} when
-                    FilterString(attributeData.ConstructorArguments[0]) is { } attributeName:
-                    return attributeName;
-                case {AttributeClass.Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBRangeKey, ConstructorArguments.Length: 1} when
-                    FilterString(attributeData.ConstructorArguments[0]) is { } attributeName:
-                    return attributeName;
-                case {AttributeClass.Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBProperty, ConstructorArguments.Length: 1} when
-                    FilterString(attributeData.ConstructorArguments[0]) is { } attributeName:
-                    return attributeName;
-                case
-                {
-                    AttributeClass.Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBHashKey or Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBRangeKey
-                    or Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBProperty,
-                    ConstructorArguments.Length: > 0
-                }:
-                    throw new InvalidOperationException(
-                        "Unable to extract attributeName constructor argument from DynamoDBAttributes.");
-            }
-        }
 
-        return null;
-    }
+    /// <summary>
+    ///     The name of a DynamoDB attribute
+    /// </summary>
+    /// <example>
+    ///     https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/WorkingWithItems.html
+    /// </example>
+    public string AttributeName { get; }
 
     /// <inheritdoc cref="Types.DataMember" />
     public DataMember DataMember { get; }
@@ -61,6 +39,32 @@ public readonly struct DynamoDbDataMember
     ///     Indicates whether the property should be ignored being sent to DynamoDB.
     /// </summary>
     public bool IsIgnored { get; }
+
+    private static string? ExtractAttributeNameFromAttributes(IEnumerable<AttributeData> attributes)
+    {
+        foreach (var attributeData in attributes)
+        {
+            switch (attributeData)
+            {
+                case {AttributeClass: null}:
+                    continue;
+                case {AttributeClass.Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBHashKey, ConstructorArguments.Length: 1} when FilterString(attributeData.ConstructorArguments[0]) is { } attributeName:
+                    return attributeName;
+                case {AttributeClass.Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBRangeKey, ConstructorArguments.Length: 1} when FilterString(attributeData.ConstructorArguments[0]) is { } attributeName:
+                    return attributeName;
+                case {AttributeClass.Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBProperty, ConstructorArguments.Length: 1} when FilterString(attributeData.ConstructorArguments[0]) is { } attributeName:
+                    return attributeName;
+                case
+                {
+                    AttributeClass.Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBHashKey or Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBRangeKey or Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBProperty,
+                    ConstructorArguments.Length: > 0
+                }:
+                    throw new InvalidOperationException("Unable to extract attributeName constructor argument from DynamoDBAttributes.");
+            }
+        }
+
+        return null;
+    }
 
     public static DynamoDBKeyStructure? GetKeyStructure(IEnumerable<DynamoDbDataMember> members)
     {
@@ -83,12 +87,10 @@ public readonly struct DynamoDbDataMember
             .Cast<DynamoDbDataMember?>()
             .FirstOrDefault();
 
-
         var lsi = items
             .Where(x => x.Attribute.AttributeClass is {Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBLocalSecondaryIndexRangeKey})
             .SelectMany(x => GetStringArrayFromConstructor(x.Attribute),
                 (x, y) => new LocalSecondaryIndex(x.DataMember, y!));
-
 
         var gsi = items
             .Where(x => x.Attribute.AttributeClass is
@@ -122,7 +124,6 @@ public readonly struct DynamoDbDataMember
 
                 return new GlobalSecondaryIndex(gsiPartitionKey.Value, gsiRangeKey, x.Key);
             });
-            
 
         return new DynamoDBKeyStructure(partitionKey.Value, rangeKey, lsi, gsi);
 
@@ -150,13 +151,4 @@ public readonly struct DynamoDbDataMember
         && string.IsNullOrWhiteSpace(str) is false
             ? str
             : null;
-
-
-    /// <summary>
-    ///     The name of a DynamoDB attribute
-    /// </summary>
-    /// <example>
-    ///     https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/WorkingWithItems.html
-    /// </example>
-    public string AttributeName { get; }
 }
