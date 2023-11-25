@@ -131,12 +131,13 @@ public class DynamoDbMarshaller
     {
         var hashSet = new HashSet<ITypeSymbol>(_comparer);
         return _arguments.SelectMany(x =>
-            Conversion.ConversionMethods(
-                x.EntityTypeSymbol,
-                StaticPocoFactory,
-                hashSet
+                Conversion.ConversionMethods(
+                    x.EntityTypeSymbol,
+                    StaticPocoFactory,
+                    hashSet
+                )
             )
-        ).Select(x => x.Code);
+            .SelectMany(x => x.Code);
     }
 
     private IEnumerable<string> CreateAttributeValueFactory()
@@ -151,7 +152,7 @@ public class DynamoDbMarshaller
                 )
                 .Concat(Conversion.ConversionMethods(x.ArgumentType, StaticAttributeValueDictionaryFactory, hashset))
             )
-            .Select(x => x.Code);
+            .SelectMany(x => x.Code);
 
     }
     private IEnumerable<string> CreateExpressionAttributeName()
@@ -160,7 +161,7 @@ public class DynamoDbMarshaller
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
 
         return _arguments
-            .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, ExpressionAttributeName, hashSet)).Select(x => x.Code);
+            .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, ExpressionAttributeName, hashSet)).SelectMany(x => x.Code);
 
     }
     private IEnumerable<string> CreateExpressionAttributeValue()
@@ -169,7 +170,7 @@ public class DynamoDbMarshaller
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
 
         return _arguments
-            .SelectMany(x => Conversion.ConversionMethods(x.ArgumentType, ExpressionAttributeValue, hashSet)).Select(x => x.Code);
+            .SelectMany(x => Conversion.ConversionMethods(x.ArgumentType, ExpressionAttributeValue, hashSet)).SelectMany(x => x.Code);
     }
     private IEnumerable<string> CreateImplementations()
     {
@@ -224,7 +225,7 @@ public class DynamoDbMarshaller
         var hashSet = new HashSet<ITypeSymbol>(_comparer);
 
         return _arguments
-            .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, StaticAttributeValueDictionaryKeys, hashSet)).Select(x => x.Code);
+            .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, StaticAttributeValueDictionaryKeys, hashSet)).SelectMany(x => x.Code);
     }
 
 
@@ -338,8 +339,8 @@ public class DynamoDbMarshaller
             }}";
 
         var expressionAttributeNameYields = dataMembers.Select(static x => x.KnownType is not null
-            ? $@"               if ({x.NameRef}.IsValueCreated) yield return new ({x.NameRef}.Value, ""{x.DDB.AttributeName}"");"
-            : $"               if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionNameTrackerInterfaceAccessedNames}()) {{ yield return x; }}")
+                ? $@"               if ({x.NameRef}.IsValueCreated) yield return new ({x.NameRef}.Value, ""{x.DDB.AttributeName}"");"
+                : $"               if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionNameTrackerInterfaceAccessedNames}()) {{ yield return x; }}")
             .Append($@"               if ({self}.IsValueCreated) yield return new ({self}.Value, ""{typeSymbol.Name}"");");
 
         var @class = CodeGenerationExtensions.CreateStruct(
@@ -356,7 +357,7 @@ public class DynamoDbMarshaller
             isReadonly: true,
             isRecord: false
         );
-        return new Conversion(@class, fieldAssignments);
+        return new Conversion(new []{@class}, fieldAssignments);
 
     }
 
@@ -424,7 +425,7 @@ public class DynamoDbMarshaller
             isReadonly: true,
             isRecord: false
         );
-        return new Conversion(@class, fieldAssignments);
+        return new Conversion(new []{@class}, fieldAssignments);
     }
     private Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type)
     {
@@ -442,7 +443,7 @@ public class DynamoDbMarshaller
             }}";
 
         return new Conversion(
-            in method,
+            new[] {method},
             properties.Select(static x => x.assignment)
         );
 
@@ -527,7 +528,7 @@ public class DynamoDbMarshaller
             {body}
         }}";
 
-        return new Conversion(method, Enumerable.Empty<Assignment>());
+        return new Conversion(new[] {method}, Enumerable.Empty<Assignment>());
 
         IEnumerable<(string? IndexName, string assignments)> GetAssignments(
             string partition,
@@ -600,7 +601,7 @@ public class DynamoDbMarshaller
                 return {values.objectInitialization};
             }}";
 
-        return new Conversion(method, values.Item1);
+        return new Conversion(new[] {method}, values.Item1);
 
         (IEnumerable<Assignment>, string objectInitialization) GetAssignments(ITypeSymbol typeSymbol)
         {
