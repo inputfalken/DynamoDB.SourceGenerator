@@ -5,8 +5,13 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 [DynamoDBMarshaller(typeof(Person))]
 [DynamoDBMarshaller(typeof(SelfReferencingClass))]
 [DynamoDBMarshaller(typeof(ClassWithOverriddenAttributeName))]
+[DynamoDBMarshaller(typeof(InheritedClass))]
 public partial class ExpressionAttributeTrackerTests
 {
+    [Fact]
+    public void Test()
+    {
+    }
     [Fact]
     public void PersonWithTupleArgument_AccessingRootExpressionAttributeName_ShouldThrow()
     {
@@ -100,6 +105,16 @@ public partial class ExpressionAttributeTrackerTests
 
     }
     [Fact]
+    public void InheritiedClassWithOverriddenAttributeName_AttributeReferences_ShouldChangeNameValue()
+    {
+        var nameTracker = InheritedClassMarshaller.AttributeExpressionNameTracker();
+        var valueTracker = InheritedClassMarshaller.AttributeExpressionValueTracker();
+
+        nameTracker.Foo.Should().Be("#SomethingElse");
+        valueTracker.Foo.Should().Be(":p1");
+
+    }
+    [Fact]
     public void Person_AttributeReferences_ShouldBeCorrectlySet()
     {
         var nameTracker = PersonMarshaller.AttributeExpressionNameTracker();
@@ -172,6 +187,11 @@ public static class AssertionExtensions
             attributeReferences = recursiveSelector(attributeReferences);
         }
     }
+}
+
+public class InheritedClass : ClassWithOverriddenAttributeName
+{
+    
 }
 
 public class ClassWithOverriddenAttributeName
