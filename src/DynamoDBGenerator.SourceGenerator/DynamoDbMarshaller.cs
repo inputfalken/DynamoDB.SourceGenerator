@@ -618,19 +618,17 @@ public class DynamoDbMarshaller
                     x => x.DataMember,
                     (x, y) => (x.Assignment, x.DDB, Constructor: y.OfType<(string DataMember, string ParameterName)?>().FirstOrDefault())
                 )
-                .OrderByDescending(x => x.Constructor.HasValue) // Ensure constructor buildup is first in GroupBy.
-                .GroupBy(x => x.Constructor.HasValue, (x, y) =>
-                {
-                    return x
-                        ? @$"
+                .GroupBy(x => x.Constructor.HasValue)
+                .OrderByDescending(x => x.Key) // Ensure Constructor is first.
+                .Select(x => x.Key
+                    ? @$"
                 (
-{string.Join($",{Constants.NewLine}", y.Select(z => $"                    {z.Constructor!.Value.ParameterName} : {z.Assignment.Value}"))}
+{string.Join($",{Constants.NewLine}", x.Select(z => $"                    {z.Constructor!.Value.ParameterName} : {z.Assignment.Value}"))}
                 )"
-                        : $@"
+                    : $@"
                 {{
-{string.Join($",{Constants.NewLine}", y.Where(z => z.DDB.DataMember.IsAssignable).Select(z => $"                    {z.DDB.DataMember.Name} = {z.Assignment.Value}"))}
-                }}";
-                });
+{string.Join($",{Constants.NewLine}", x.Where(z => z.DDB.DataMember.IsAssignable).Select(z => $"                    {z.DDB.DataMember.Name} = {z.Assignment.Value}"))}
+                }}");
 
             return (
                 assignments.Select(x => x.Assignment),
