@@ -346,18 +346,38 @@ public class DynamoDbMarshaller
         var @class = CodeGenerationExtensions.CreateStruct(
             Accessibility.Public,
             $"{className} : {Constants.DynamoDBGenerator.Marshaller.AttributeExpressionNameTrackerInterface}",
-            $@"{constructor}
-{string.Join(Constants.NewLine, fieldDeclarations)}
-            IEnumerable<KeyValuePair<string, string>> {Constants.DynamoDBGenerator.Marshaller.AttributeExpressionNameTrackerInterface}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionNameTrackerInterfaceAccessedNames}()
-            {{
-{(string.Join(Constants.NewLine, expressionAttributeNameYields) is var joinedNames && joinedNames != string.Empty ? joinedNames : "return Enumerable.Empty<KeyValuePair<string, string>>();")}
-            }}
-            public override string ToString() => {self}.Value;",
+            CreateCode(),
             2,
             isReadonly: true,
             isRecord: false
         );
-        return new Conversion(new []{@class}, fieldAssignments);
+        return new Conversion(@class, fieldAssignments);
+
+        IEnumerable<string> CreateCode()
+        {
+            yield return constructor;
+
+            foreach (var s in fieldDeclarations)
+                yield return s;
+
+            yield return
+                $"            IEnumerable<KeyValuePair<string, string>> {Constants.DynamoDBGenerator.Marshaller.AttributeExpressionNameTrackerInterface}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionNameTrackerInterfaceAccessedNames}()";
+            yield return "            {";
+
+            var isEmpty = true;
+            foreach (var s in expressionAttributeNameYields)
+            {
+                yield return s;
+
+                isEmpty = false;
+            }
+            if (isEmpty)
+                yield return "return Enumerable.Empty<KeyValuePair<string, string>>();";
+
+            yield return "            }";
+            yield return $"            public override string ToString() => {self}.Value;";
+
+        }
 
     }
 
@@ -414,18 +434,38 @@ public class DynamoDbMarshaller
         var @class = CodeGenerationExtensions.CreateStruct(
             Accessibility.Public,
             $"{className} : {interfaceName}",
-            $@"{constructor}
-{string.Join(Constants.NewLine, fieldDeclarations)}
-            IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({_fullTypeNameFactory(typeSymbol)} entity)
-            {{
-{(string.Join(Constants.NewLine, expressionAttributeValueYields) is var joinedValues && joinedValues != string.Empty ? joinedValues : "return Enumerable.Empty<KeyValuePair<string, AttributeValue>>();")}
-            }}
-            public override string ToString() => {self}.Value;",
+            CreateCode(),
             2,
             isReadonly: true,
             isRecord: false
         );
-        return new Conversion(new []{@class}, fieldAssignments);
+
+        return new Conversion(@class, fieldAssignments);
+
+        IEnumerable<string> CreateCode()
+        {
+            yield return constructor;
+
+            foreach (var s in fieldDeclarations)
+                yield return s;
+
+            yield return
+                $"            IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({_fullTypeNameFactory(typeSymbol)} entity)";
+            yield return "            {";
+
+            var isEmpty = true;
+            foreach (var s in expressionAttributeValueYields)
+            {
+                yield return s;
+
+                isEmpty = false;
+            }
+            if (isEmpty)
+                yield return "return Enumerable.Empty<KeyValuePair<string, AttributeValue>>();";
+
+            yield return "            }";
+            yield return $"            public override string ToString() => {self}.Value;";
+        }
     }
     private Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type)
     {
@@ -433,12 +473,11 @@ public class DynamoDbMarshaller
         const string dictionaryName = "attributeValues";
         var properties = GetAssignments(type).ToArray();
 
-        const string indent = "                ";
         var method =
             @$"            public static Dictionary<string, AttributeValue> {_serializationMethodNameFactory(type)}({_fullTypeNameFactory(type)} {paramReference})
             {{
                 {InitializeDictionary(dictionaryName, properties.Select(static x => x.capacityTernary))}
-                {string.Join(Constants.NewLine + indent, properties.Select(static x => x.dictionaryPopulation))}
+                {string.Join(Constants.NewLine + "                ", properties.Select(static x => x.dictionaryPopulation))}
                 return {dictionaryName};
             }}";
 
@@ -487,69 +526,73 @@ public class DynamoDbMarshaller
         const string rkReference = "rangeKey";
         const string enforcePkReference = "isPartitionKey";
         const string enforceRkReference = "isRangeKey";
-
         const string dictionaryName = "attributeValues";
-        var keyStructure = DynamoDbDataMember.GetKeyStructure(_cachedDataMembers(typeSymbol));
-        string body;
-        if (keyStructure is null)
-            body = @$"throw {Constants.DynamoDBGenerator.ExceptionHelper.NoDynamoDBKeyAttributesExceptionMethod}(""{typeSymbol}"");";
-        else
-        {
 
-            var switchCases = GetAssignments(pkReference, rkReference, enforcePkReference, enforceRkReference, keyStructure.Value)
-                .Select(x => @$"                    case {(x.IndexName is null ? "null" : @$"""{x.IndexName}""")}:
+        return new Conversion(CreateCode(), Enumerable.Empty<Assignment>());
+
+        IEnumerable<string> CreateCode()
+        {
+            yield return
+                $"        private static Dictionary<string, AttributeValue> {_keysMethodNameFactory(typeSymbol)}(object? {pkReference}, object? {rkReference}, bool {enforcePkReference}, bool {enforceRkReference}, string? index = null)";
+            yield return "        {";
+
+            foreach (var s in CreateBody())
+                yield return s;
+
+            yield return "        }";
+
+        }
+
+        IEnumerable<string> CreateBody()
+        {
+            var keyStructure = DynamoDbDataMember.GetKeyStructure(_cachedDataMembers(typeSymbol));
+            if (keyStructure is null)
+            {
+                yield return @$"throw {Constants.DynamoDBGenerator.ExceptionHelper.NoDynamoDBKeyAttributesExceptionMethod}(""{typeSymbol}"");";
+
+                yield break;
+            }
+
+            yield return $"            var {dictionaryName} = new Dictionary<string, AttributeValue>(2);";
+            yield return "            switch (index)";
+            yield return "            {";
+
+            foreach (var s in GetAssignments(keyStructure.Value)
+                         .Select(x => @$"                    case {(x.IndexName is null ? "null" : @$"""{x.IndexName}""")}:
                     {{
 {x.assignments}
                         break;
-                    }}");
+                    }}"))
+                yield return s;
 
-            body = @$"var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: 2);
-            switch (index)
-            {{
-{string.Join(Constants.NewLine, switchCases)}
-                default: 
-                    throw {Constants.DynamoDBGenerator.ExceptionHelper.MissMatchedIndexNameExceptionMethod}(nameof(index), index);
+            yield return @$"                    default: throw {Constants.DynamoDBGenerator.ExceptionHelper.MissMatchedIndexNameExceptionMethod}(nameof(index), index);
             }}
-            var keysCount = {dictionaryName}.Count;
-            if ({enforcePkReference} && {enforceRkReference} && keysCount == 2)
+            if ({enforcePkReference} && {enforceRkReference} && {dictionaryName}.Count == 2)
                 return {dictionaryName};
-            if ({enforcePkReference} && {enforceRkReference} is false && keysCount == 1)
+            if ({enforcePkReference} && {enforceRkReference} is false && {dictionaryName}.Count == 1)
                 return {dictionaryName};
-            if ({enforcePkReference} is false && {enforceRkReference} && keysCount == 1)
+            if ({enforcePkReference} is false && {enforceRkReference} && {dictionaryName}.Count == 1)
                 return {dictionaryName};
-            if ({enforcePkReference} && {enforceRkReference} && keysCount == 1)
+            if ({enforcePkReference} && {enforceRkReference} && {dictionaryName}.Count == 1)
                 throw {Constants.DynamoDBGenerator.ExceptionHelper.KeysMissingDynamoDBAttributeExceptionMethod}({pkReference}, {rkReference});
             throw {Constants.DynamoDBGenerator.ExceptionHelper.ShouldNeverHappenExceptionMethod}();";
+
         }
 
-        var method =
-            @$"        private static Dictionary<string, AttributeValue> {_keysMethodNameFactory(typeSymbol)}(object? {pkReference}, object? {rkReference}, bool {enforcePkReference}, bool {enforceRkReference}, string? index = null)
-        {{
-            {body}
-        }}";
-
-        return new Conversion(new[] {method}, Enumerable.Empty<Assignment>());
-
-        IEnumerable<(string? IndexName, string assignments)> GetAssignments(
-            string partition,
-            string range,
-            string enforcePartition,
-            string enforceRange,
-            DynamoDBKeyStructure keyStructure
-        )
+        IEnumerable<(string? IndexName, string assignments)> GetAssignments(DynamoDBKeyStructure keyStructure)
         {
             yield return keyStructure switch
             {
-                {PartitionKey: var pk, SortKey: { } sortKey} => (null, $"{CreateAssignment(enforcePartition, partition, pk)}{Constants.NewLine}{CreateAssignment(enforceRange, range, sortKey)}"),
-                {PartitionKey: var pk, SortKey: null} => (null, $"{CreateAssignment(enforcePartition, partition, pk)}{Constants.NewLine}{MissingAssigment(enforceRange, range)}")
+                {PartitionKey: var pk, SortKey: { } sortKey} => (null, $"{CreateAssignment(enforcePkReference, pkReference, pk)}{Constants.NewLine}{CreateAssignment(enforceRkReference, rkReference, sortKey)}"),
+                {PartitionKey: var pk, SortKey: null} => (null, $"{CreateAssignment(enforcePkReference, pkReference, pk)}{Constants.NewLine}{MissingAssigment(enforceRkReference, rkReference)}")
             };
 
             foreach (var gsi in keyStructure.GlobalSecondaryIndices)
             {
                 yield return gsi switch
                 {
-                    {PartitionKey: var pk, SortKey: { } sortKey} => (gsi.Name, $"{CreateAssignment(enforcePartition, partition, pk)}{Constants.NewLine}{CreateAssignment(enforceRange, range, sortKey)}"),
-                    {PartitionKey: var pk, SortKey: null} => (gsi.Name, $"{CreateAssignment(enforcePartition, partition, pk)}{Constants.NewLine}{MissingAssigment(enforceRange, range)}")
+                    {PartitionKey: var pk, SortKey: { } sortKey} => (gsi.Name, $"{CreateAssignment(enforcePkReference, pkReference, pk)}{Constants.NewLine}{CreateAssignment(enforceRkReference, rkReference, sortKey)}"),
+                    {PartitionKey: var pk, SortKey: null} => (gsi.Name, $"{CreateAssignment(enforcePkReference, pkReference, pk)}{Constants.NewLine}{MissingAssigment(enforceRkReference, rkReference)}")
                 };
             }
 
@@ -557,7 +600,7 @@ public class DynamoDbMarshaller
             {
                 yield return (lsi, keyStructure.PartitionKey) switch
                 {
-                    {PartitionKey: var pk, lsi: var sortKey} => (lsi.Name, $"{CreateAssignment(enforcePartition, partition, pk)}{Constants.NewLine}{CreateAssignment(enforceRange, range, sortKey.SortKey)}")
+                    {PartitionKey: var pk, lsi: var sortKey} => (lsi.Name, $"{CreateAssignment(enforcePkReference, pkReference, pk)}{Constants.NewLine}{CreateAssignment(enforceRkReference, rkReference, sortKey.SortKey)}")
                 };
             }
 

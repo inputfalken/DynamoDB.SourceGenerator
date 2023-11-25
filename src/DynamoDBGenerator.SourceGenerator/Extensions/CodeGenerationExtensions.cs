@@ -67,4 +67,24 @@ using {Constants.DynamoDBGenerator.Namespace.InternalFullName};
 {content}
 {indent}}}";
     }
+
+    public static IEnumerable<string> CreateStruct(
+        Accessibility accessibility,
+        string structName,
+        IEnumerable<string> content,
+        int indentLevel,
+        bool isPartial = false,
+        bool isReadonly = false,
+        bool isRecord = false)
+    {
+        var indent = StringExtensions.Indent(indentLevel);
+        yield return $"{indent}{accessibility.ToCode()}{(isPartial ? " partial" : null)}{(isReadonly ? " readonly" : null)}{(isRecord ? " record" : null)} struct {structName}";
+
+        yield return $"{indent}{{";
+
+        foreach (var s in content)
+            yield return s;
+
+        yield return $"{indent}}}";
+    }
 }
