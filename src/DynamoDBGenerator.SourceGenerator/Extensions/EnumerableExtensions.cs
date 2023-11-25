@@ -9,7 +9,14 @@ public static class EnumerableExtensions
     {
         // ReSharper disable once LoopCanBeConvertedToQuery
         foreach (var publicInstanceProperty in type.GetPublicInstanceProperties())
-            yield return new DynamoDbDataMember(in publicInstanceProperty);
+        {
+
+            var attributes = DynamoDbDataMember.GetDynamoDbAttributes(publicInstanceProperty.BaseSymbol);
+            if (DynamoDbDataMember.IsIgnored(attributes))
+                continue;
+
+            yield return new DynamoDbDataMember(publicInstanceProperty, attributes);
+        }
     }
 
     private static IEnumerable<DataMember> GetPublicInstanceProperties(this ITypeSymbol symbol)
@@ -40,11 +47,9 @@ public static class EnumerableExtensions
             {
                 case IPropertySymbol propertySymbol:
                     yield return DataMember.FromProperty(in propertySymbol);
-
                     break;
                 case IFieldSymbol fieldSymbol:
                     yield return DataMember.FromField(in fieldSymbol);
-
                     break;
             }
     }

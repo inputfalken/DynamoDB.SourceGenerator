@@ -7,15 +7,10 @@ namespace DynamoDBGenerator.SourceGenerator.Types;
 /// </summary>
 public readonly struct DynamoDbDataMember
 {
-    public DynamoDbDataMember(in DataMember dataMember)
+    public DynamoDbDataMember(in DataMember dataMember, IReadOnlyList<AttributeData> attributeData)
     {
-        Attributes = dataMember.BaseSymbol
-            .GetAttributes()
-            .Where(x => x.AttributeClass is {ContainingAssembly.Name: Constants.AWSSDK_DynamoDBv2.AssemblyName})
-            .ToArray();
-        IsIgnored = Attributes.Any(x => x.AttributeClass is {Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBIgnore});
-        AttributeName = ExtractAttributeNameFromAttributes(Attributes) is { } attribute &&
-                        string.IsNullOrWhiteSpace(attribute) is false
+        Attributes = attributeData;
+        AttributeName = ExtractAttributeNameFromAttributes(Attributes) is { } attribute && string.IsNullOrWhiteSpace(attribute) is false
             ? attribute
             : dataMember.Name;
         DataMember = dataMember;
@@ -35,11 +30,19 @@ public readonly struct DynamoDbDataMember
 
     private IReadOnlyList<AttributeData> Attributes { get; }
 
-    /// <summary>
-    ///     Indicates whether the property should be ignored being sent to DynamoDB.
-    /// </summary>
-    public bool IsIgnored { get; }
 
+    public static AttributeData[] GetDynamoDbAttributes(ISymbol symbol)
+    {
+        return symbol
+            .GetAttributes()
+            .Where(x => x.AttributeClass is {ContainingAssembly.Name: Constants.AWSSDK_DynamoDBv2.AssemblyName})
+            .ToArray();
+    }
+    public static bool IsIgnored(AttributeData[] attributes)
+    {
+        return attributes.Length is not 0 && attributes.Any(x => x.AttributeClass is {Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBIgnore});
+
+    }
     private static string? ExtractAttributeNameFromAttributes(IEnumerable<AttributeData> attributes)
     {
         foreach (var attributeData in attributes)

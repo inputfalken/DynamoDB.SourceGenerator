@@ -300,7 +300,6 @@ public class DynamoDbMarshaller
     private Conversion ExpressionAttributeName(ITypeSymbol typeSymbol)
     {
         var dataMembers = _cachedDataMembers(typeSymbol)
-            .Where(static x => x.IsIgnored is false)
             .Select(x => (
                 KnownType: _knownTypeFactory(x.DataMember.Type),
                 DDB: x,
@@ -384,7 +383,6 @@ public class DynamoDbMarshaller
     private Conversion ExpressionAttributeValue(ITypeSymbol typeSymbol)
     {
         var dataMembers = _cachedDataMembers(typeSymbol)
-            .Where(static x => x.IsIgnored is false)
             .Select(x => (
                 KnownType: _knownTypeFactory(x.DataMember.Type),
                 DDB: x,
@@ -476,23 +474,17 @@ public class DynamoDbMarshaller
         var method =
             @$"            public static Dictionary<string, AttributeValue> {_serializationMethodNameFactory(type)}({_fullTypeNameFactory(type)} {paramReference})
             {{
-                {InitializeDictionary(dictionaryName, properties.Select(static x => x.capacityTernary))}
+                {InitializeDictionary(properties.Select(static x => x.capacityTernary))}
                 {string.Join(Constants.NewLine + "                ", properties.Select(static x => x.dictionaryPopulation))}
                 return {dictionaryName};
             }}";
 
-        return new Conversion(
-            new[] {method},
-            properties.Select(static x => x.assignment)
-        );
+        return new Conversion(method, properties.Select(static x => x.assignment));
 
         IEnumerable<(string dictionaryPopulation, string capacityTernary, Assignment assignment)> GetAssignments(ITypeSymbol typeSymbol)
         {
             foreach (var x in _cachedDataMembers(typeSymbol))
             {
-                if (x.IsIgnored)
-                    continue;
-
                 var accessPattern = $"{paramReference}.{x.DataMember.Name}";
                 var attributeValue = AttributeValueAssignment(x.DataMember.Type, accessPattern);
 
@@ -507,7 +499,7 @@ public class DynamoDbMarshaller
             }
         }
 
-        static string InitializeDictionary(string dictionaryName, IEnumerable<string> capacityCalculations)
+        static string InitializeDictionary(IEnumerable<string> capacityCalculations)
         {
             var capacityCalculation = string.Join(" + ", capacityCalculations);
 
@@ -644,7 +636,7 @@ public class DynamoDbMarshaller
                 return {values.objectInitialization};
             }}";
 
-        return new Conversion(new[] {method}, values.Item1);
+        return new Conversion(method, values.Item1);
 
         (IEnumerable<Assignment>, string objectInitialization) GetAssignments(ITypeSymbol typeSymbol)
         {
