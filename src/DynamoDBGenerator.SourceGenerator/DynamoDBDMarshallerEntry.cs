@@ -34,22 +34,17 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
 
         foreach (var typeSymbol in compilation.GetTypeSymbols(documents))
         {
-            var timestamp = Stopwatch.GetTimestamp();
-            var repository = new DynamoDbMarshaller(CreateArguments(typeSymbol), SymbolEqualityComparer.IncludeNullability).CreateRepository();
-            var code = typeSymbol.CreateNamespace(typeSymbol.CreateClass(repository, indentLevel:1), TimeSpan.FromTicks(Stopwatch.GetTimestamp() - timestamp));
+            var enumerable = typeSymbol.CreateNamespace(typeSymbol.CreateClass(new DynamoDbMarshaller(CreateArguments(typeSymbol)).CreateRepository(), indentLevel: 1));
             var typeNamespace = typeSymbol.ContainingNamespace.IsGlobalNamespace
                 ? null
                 : $"{typeSymbol.ContainingNamespace}.";
+
+
+            var code = string.Join(Constants.NewLine, enumerable);
             context.AddSource($"{typeNamespace}{typeSymbol.Name}", code);
         }
     }
 
-
-    // If we can find duplicated types, we could access their properties instead of duplicating the source generator. 
-    // For example :
-    // [DynamoDBDocument(typeof(Person))]
-    // [DynamoDBDocument(typeof(Person), ArgumentType = typeof(ChangeName))]
-    // With this scenario we would be able to use the Person type from the second attribute instead of source generating duplicated code.
     private static IEnumerable<DynamoDBMarshallerArguments> CreateArguments(ISymbol typeSymbol)
     {
         var attributes = typeSymbol

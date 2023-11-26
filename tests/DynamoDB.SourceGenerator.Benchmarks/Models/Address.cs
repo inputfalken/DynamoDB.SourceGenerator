@@ -1,4 +1,4 @@
-﻿namespace SampleApp;
+namespace DynamoDB.SourceGenerator.Benchmarks.Models;
 
 public class Address
 {
