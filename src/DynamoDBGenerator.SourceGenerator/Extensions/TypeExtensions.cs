@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
@@ -5,6 +6,12 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class TypeExtensions
 {
+    public static Func<ITypeSymbol, T> StaticCacheFactory<T>(IEqualityComparer<ISymbol> comparer, Func<ITypeSymbol, T> selector)
+    {
+        var cache = new Dictionary<ITypeSymbol, T>(comparer);
+
+        return x => cache.TryGetValue(x, out var value) ? value : cache[x] = selector(x);
+    }
     public static Func<ITypeSymbol, T> CacheFactory<T>(IEqualityComparer<ISymbol> comparer, Func<ITypeSymbol, T> selector)
     {
         var cache = new Dictionary<ITypeSymbol, T>(comparer);

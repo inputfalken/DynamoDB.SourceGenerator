@@ -5,6 +5,16 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class EnumerableExtensions
 {
+    public static IEnumerable<string> CreateBlock(int indentLevel, IEnumerable<string> content)
+    {
+        var indent = StringExtensions.Indent(indentLevel);
+        yield return $"{indent}{{";
+        
+        foreach (var s in content)
+            yield return s;
+        yield return $"{indent}}}";
+
+    }
     public static IEnumerable<DynamoDbDataMember> GetDynamoDbProperties(this ITypeSymbol type)
     {
         // ReSharper disable once LoopCanBeConvertedToQuery
