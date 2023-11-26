@@ -19,7 +19,7 @@ public class DynamoDbMarshaller
     private static readonly Func<ITypeSymbol, string> KeysMethodNameFactory;
     private static readonly Func<ITypeSymbol, string> SerializationMethodNameFactory;
 
-    private readonly Func<ITypeSymbol, DynamoDbDataMember[]> _cachedDataMembers;
+    private readonly Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> _cachedDataMembers;
     private readonly IReadOnlyList<DynamoDBMarshallerArguments> _arguments;
 
     static DynamoDbMarshaller()
@@ -36,7 +36,7 @@ public class DynamoDbMarshaller
     }
     public DynamoDbMarshaller(in IEnumerable<DynamoDBMarshallerArguments> arguments)
     {
-        _cachedDataMembers = TypeExtensions.CacheFactory(Comparer, static x => x.GetDynamoDbProperties().ToArray());
+        _cachedDataMembers = TypeExtensions.CacheFactory(Comparer, static x => x.GetDynamoDbProperties());
         _arguments = arguments.ToArray();
     }
     private Assignment AttributeValueAssignment(in ITypeSymbol typeSymbol, in string accessPattern)

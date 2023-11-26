@@ -8,5 +8,7 @@ public class PersonEntity
 
     public string Firstname { get; set; }
     public string Lastname { get; set; }
+    public string Lastname2 { get; set; }
     public Address Address { get; set; }
+    
 }
