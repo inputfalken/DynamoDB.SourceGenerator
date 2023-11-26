@@ -7,6 +7,19 @@ public static class StringExtensions
 
     public static string Indent(int level)
     {
+        var @base = level switch
+        {
+            
+            1 => "    ",
+            2 => "        ",
+            3 => "            ",
+            4 => "                ",
+            _ => null
+        };
+
+        if (@base is not null)
+            return @base;
+
         if (IndentCache.TryGetValue(level, out var indent)) return indent;
         
         indent = new string(' ', level * 4);

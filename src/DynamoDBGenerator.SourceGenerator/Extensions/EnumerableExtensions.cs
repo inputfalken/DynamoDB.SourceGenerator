@@ -5,47 +5,62 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class EnumerableExtensions
 {
-    public static IEnumerable<DynamoDbDataMember> GetDynamoDbProperties(this ITypeSymbol type)
+    public static IEnumerable<string> CreateBlock(int indentLevel, IEnumerable<string> content)
     {
-        // ReSharper disable once LoopCanBeConvertedToQuery
-        foreach (var publicInstanceProperty in type.GetPublicInstanceProperties())
-            yield return new DynamoDbDataMember(in publicInstanceProperty);
+        var indent = StringExtensions.Indent(indentLevel);
+        yield return $"{indent}{{";
+
+        foreach (var s in content)
+            yield return s;
+
+        yield return $"{indent}}}";
+
     }
 
-    private static IEnumerable<DataMember> GetPublicInstanceProperties(this ITypeSymbol symbol)
+    public static IReadOnlyList<DynamoDbDataMember> GetDynamoDbProperties(this ITypeSymbol symbol)
     {
-
-        if (symbol.BaseType is {SpecialType: not SpecialType.System_Object})
-            foreach (var publicInstanceProperty in GetPublicInstanceProperties(symbol.BaseType))
-                yield return publicInstanceProperty;
-
-        var publicInstanceDataMembers = symbol
-            .GetMembers()
-            .Where(x => x.IsStatic is false)
-            .Where(x => x.DeclaredAccessibility == Accessibility.Public)
-            .Where(x => x.Kind is SymbolKind.Field or SymbolKind.Property)
-            .Where(x => x.CanBeReferencedByName);
         // A special rule when it comes to Tuples.
         // If we remove this we will get duplicated DataMembers when tuples are being used.
         if (symbol is INamedTypeSymbol {IsTupleType: true} namedTypeSymbol)
         {
-            foreach (var tupleElement in namedTypeSymbol.TupleElements)
-                yield return DataMember.FromField(in tupleElement);
+            var tupleElements = new List<DynamoDbDataMember>(namedTypeSymbol.TupleElements.Length);
+            tupleElements.AddRange(namedTypeSymbol.TupleElements.Select(tupleElement => Create(DataMember.FromField(tupleElement)))
+                .Where(dynamoDataMember => dynamoDataMember is not null)
+                .Select(dynamoDataMember => dynamoDataMember!.Value));
 
-            yield break;
+            return tupleElements;
         }
 
-        foreach (var member in publicInstanceDataMembers)
-            switch (member)
+        var members = symbol.GetMembers();
+        var list = new List<DynamoDbDataMember>(members.Length);
+        if (symbol.BaseType is {SpecialType: not SpecialType.System_Object})
+            list.AddRange(GetDynamoDbProperties(symbol.BaseType));
+
+        list.AddRange(members
+            .Where(x => x.IsStatic is false)
+            .Where(x => x.DeclaredAccessibility == Accessibility.Public)
+            .Where(x => x.Kind is SymbolKind.Field or SymbolKind.Property)
+            .Where(x => x.CanBeReferencedByName)
+            .Select(x => x switch
             {
-                case IPropertySymbol propertySymbol:
-                    yield return DataMember.FromProperty(in propertySymbol);
+                IPropertySymbol propertySymbol => Create(DataMember.FromProperty(in propertySymbol)),
+                IFieldSymbol fieldSymbol => Create(DataMember.FromField(in fieldSymbol)),
+                _ => null
+            })
+            .Where(x => x is not null)
+            .Select(x => x!.Value));
 
-                    break;
-                case IFieldSymbol fieldSymbol:
-                    yield return DataMember.FromField(in fieldSymbol);
+        return list;
 
-                    break;
-            }
+        static DynamoDbDataMember? Create(DataMember dataMember)
+        {
+
+            var attributes = DynamoDbDataMember.GetDynamoDbAttributes(dataMember.BaseSymbol);
+            if (DynamoDbDataMember.IsIgnored(attributes))
+                return null;
+
+            return new DynamoDbDataMember(dataMember, attributes);
+        }
+
     }
 }
