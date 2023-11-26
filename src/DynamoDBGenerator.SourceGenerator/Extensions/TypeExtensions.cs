@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
