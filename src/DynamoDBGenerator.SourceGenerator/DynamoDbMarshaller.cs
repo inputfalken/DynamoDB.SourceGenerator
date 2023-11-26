@@ -6,21 +6,21 @@ namespace DynamoDBGenerator.SourceGenerator;
 
 public class DynamoDbMarshaller
 {
-    private const string MarshallerClass = "_Marshaller_";
-    private const string UnMarshallerClass = "_Unmarshaller_";
-
-    private static readonly IEqualityComparer<ISymbol?> Comparer;
-    private static readonly Func<ITypeSymbol, string> FullTypeNameFactory;
-    private static readonly Func<ITypeSymbol, KnownType?> KnownTypeFactory;
     private static readonly Func<ITypeSymbol, string> AttributeNameAssignmentNameFactory;
     private static readonly Func<ITypeSymbol, string> AttributeValueAssignmentNameFactory;
     private static readonly Func<ITypeSymbol, string> AttributeValueInterfaceNameFactory;
+
+    private static readonly IEqualityComparer<ISymbol?> Comparer;
     private static readonly Func<ITypeSymbol, string> DeserializationMethodNameFactory;
+    private static readonly Func<ITypeSymbol, string> FullTypeNameFactory;
     private static readonly Func<ITypeSymbol, string> KeysMethodNameFactory;
+    private static readonly Func<ITypeSymbol, KnownType?> KnownTypeFactory;
+    private const string MarshallerClass = "_Marshaller_";
     private static readonly Func<ITypeSymbol, string> SerializationMethodNameFactory;
+    private const string UnMarshallerClass = "_Unmarshaller_";
+    private readonly IReadOnlyList<DynamoDBMarshallerArguments> _arguments;
 
     private readonly Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> _cachedDataMembers;
-    private readonly IReadOnlyList<DynamoDBMarshallerArguments> _arguments;
 
     static DynamoDbMarshaller()
     {

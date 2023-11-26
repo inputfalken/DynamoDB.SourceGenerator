@@ -10,12 +10,12 @@ public readonly record struct Conversion
     }
     public Conversion(in string code, in IEnumerable<Assignment> assignments)
     {
-        Code = Enumerable.Repeat(code, 1);
+        Code = Lift(code);
         Assignments = assignments;
     }
 
     /// <summary>
-    /// The code surrounding all assignments.
+    ///     The code surrounding all assignments.
     /// </summary>
     public IEnumerable<string> Code { get; }
 
@@ -44,9 +44,8 @@ public readonly record struct Conversion
                 yield return assignment;
         }
     }
-    public void Deconstruct(out IEnumerable<string> Code, out IEnumerable<Assignment> Assignments)
+    private static IEnumerable<string> Lift(string code)
     {
-        Code = this.Code;
-        Assignments = this.Assignments;
+        yield return code;
     }
 }
