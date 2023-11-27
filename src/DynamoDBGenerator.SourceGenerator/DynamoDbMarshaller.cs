@@ -220,8 +220,10 @@ public class DynamoDbMarshaller
                 );
 
             yield return
-                $@"        public {$"{Constants.DynamoDBGenerator.Marshaller.Interface}<{rootTypeName}, {FullTypeNameFactory(argument.ArgumentType)}, {nameTrackerTypeName}, {valueTrackerTypeName}>"} {argument.PropertyName} {{ get; }} = new {argument.ImplementationName}();
-        {implementedClass}";
+                $"        public {Constants.DynamoDBGenerator.Marshaller.Interface}<{rootTypeName}, {FullTypeNameFactory(argument.ArgumentType)}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.PropertyName} {{ get; }} = new {argument.ImplementationName}()";
+
+            foreach (var s in implementedClass)
+                yield return s;
         }
     }
     private IEnumerable<string> CreateKeys()
@@ -342,11 +344,10 @@ public class DynamoDbMarshaller
         IEnumerable<string> CreateCode()
         {
             const string self = "_self";
-            yield return $"            public {className}(string? {constructorAttributeName})";
-
-            foreach (var fieldAssignment in EnumerableExtensions.CreateBlock(3,
+            foreach (var fieldAssignment in EnumerableExtensions.CreateBlock(
                          fieldAssignments.Select(x => x.Value)
-                             .Append($@"                {self} = new(() => {constructorAttributeName} ?? throw new NotImplementedException(""Root element AttributeExpressionName reference.""));")))
+                             .Append($@"                {self} = new(() => {constructorAttributeName} ?? throw new NotImplementedException(""Root element AttributeExpressionName reference.""));"), 3,
+                         $"public {className}(string? {constructorAttributeName})"))
                 yield return fieldAssignment;
 
             foreach (var fieldDeclaration in dataMembers)
@@ -359,15 +360,13 @@ public class DynamoDbMarshaller
             }
             yield return $"            private readonly Lazy<string> {self};";
 
-            yield return
-                $"            IEnumerable<KeyValuePair<string, string>> {Constants.DynamoDBGenerator.Marshaller.AttributeExpressionNameTrackerInterface}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionNameTrackerInterfaceAccessedNames}()";
-
             var expressionAttributeNameYields = dataMembers
                 .Select(static x => x.KnownType is not null
                     ? $@"               if ({x.NameRef}.IsValueCreated) yield return new ({x.NameRef}.Value, ""{x.DDB.AttributeName}"");"
                     : $"               if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionNameTrackerInterfaceAccessedNames}()) {{ yield return x; }}")
                 .Append($@"               if ({self}.IsValueCreated) yield return new ({self}.Value, ""{typeSymbol.Name}"");");
-            foreach (var s in EnumerableExtensions.CreateBlock(3, expressionAttributeNameYields))
+            foreach (var s in EnumerableExtensions.CreateBlock(expressionAttributeNameYields, 3,
+                         $"IEnumerable<KeyValuePair<string, string>> {Constants.DynamoDBGenerator.Marshaller.AttributeExpressionNameTrackerInterface}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionNameTrackerInterfaceAccessedNames}()"))
                 yield return s;
 
             yield return $"            public override string ToString() => {self}.Value;";
@@ -407,9 +406,8 @@ public class DynamoDbMarshaller
         IEnumerable<string> CreateCode()
         {
             const string self = "_self";
-            yield return $"            public {className}(Func<string> {valueProvider})";
-
-            foreach (var fieldAssignment in EnumerableExtensions.CreateBlock(3, fieldAssignments.Select(x => x.Value).Append($"                {self} = new({valueProvider});")))
+            foreach (var fieldAssignment in EnumerableExtensions.CreateBlock(fieldAssignments.Select(x => x.Value).Append($"                {self} = new({valueProvider});"), 3,
+                         $"public {className}(Func<string> {valueProvider})"))
                 yield return fieldAssignment;
 
             foreach (var fieldDeclaration in dataMembers)
@@ -422,9 +420,6 @@ public class DynamoDbMarshaller
             }
             yield return $"            private readonly Lazy<string> {self};";
 
-            yield return
-                $"            IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({FullTypeNameFactory(typeSymbol)} entity)";
-
             var expressionAttributeValueYields = dataMembers
                 .Select(x =>
                 {
@@ -434,7 +429,8 @@ public class DynamoDbMarshaller
                         : $"                if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({accessPattern})) {{ yield return x; }}")}";
                 }).Append($"                if ({self}.IsValueCreated) yield return new ({self}.Value, {AttributeValueAssignment(typeSymbol, "entity").ToAttributeValue()});");
 
-            foreach (var yield in EnumerableExtensions.CreateBlock(3, expressionAttributeValueYields))
+            foreach (var yield in EnumerableExtensions.CreateBlock(expressionAttributeValueYields, 3,
+                         $"IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({FullTypeNameFactory(typeSymbol)} entity)"))
                 yield return yield;
 
             yield return $"            public override string ToString() => {self}.Value;";
@@ -499,10 +495,8 @@ public class DynamoDbMarshaller
 
         IEnumerable<string> CreateCode()
         {
-            yield return
-                $"        private static Dictionary<string, AttributeValue> {KeysMethodNameFactory(typeSymbol)}(object? {pkReference}, object? {rkReference}, bool {enforcePkReference}, bool {enforceRkReference}, string? index = null)";
-
-            foreach (var s in EnumerableExtensions.CreateBlock(2, CreateBody()))
+            foreach (var s in EnumerableExtensions.CreateBlock(CreateBody(), 3,
+                         $"private static Dictionary<string, AttributeValue> {KeysMethodNameFactory(typeSymbol)}(object? {pkReference}, object? {rkReference}, bool {enforcePkReference}, bool {enforceRkReference}, string? index = null)"))
                 yield return s;
         }
 
@@ -517,7 +511,6 @@ public class DynamoDbMarshaller
             }
 
             yield return $"            var {dictionaryName} = new Dictionary<string, AttributeValue>(2);";
-            yield return "            switch (index)";
 
             var switchBody = GetAssignments(keyStructure.Value)
                 .Select(x => @$"                    case {(x.IndexName is null ? "null" : @$"""{x.IndexName}""")}:
@@ -526,7 +519,7 @@ public class DynamoDbMarshaller
                         break;
                     }}")
                 .Append($"                    default: throw {Constants.DynamoDBGenerator.ExceptionHelper.MissMatchedIndexNameExceptionMethod}(nameof(index), index);");
-            foreach (var s in EnumerableExtensions.CreateBlock(3, switchBody))
+            foreach (var s in EnumerableExtensions.CreateBlock(switchBody, 3, "switch (index)"))
                 yield return s;
 
             yield return @$"            if ({enforcePkReference} && {enforceRkReference} && {dictionaryName}.Count == 2)

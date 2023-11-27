@@ -5,17 +5,41 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class EnumerableExtensions
 {
-    public static IEnumerable<string> CreateBlock(int indentLevel, IEnumerable<string> content)
+
+    private static readonly IDictionary<int, string> IndentCache = new Dictionary<int, string>();
+    private static string Indent(int level)
     {
-        var indent = StringExtensions.Indent(indentLevel);
-        
+        var @base = level switch
+        {
+
+            1 => "    ",
+            2 => "        ",
+            3 => "            ",
+            4 => "                ",
+            _ => null
+        };
+
+        if (@base is not null)
+            return @base;
+
+        if (IndentCache.TryGetValue(level, out var indent)) return indent;
+
+        indent = new string(' ', level * 4);
+        IndentCache[level] = indent;
+
+        return indent;
+    }
+    public static IEnumerable<string> CreateBlock(IEnumerable<string> content, int indentLevel, string header)
+    {
+        var indent = Indent(indentLevel);
+
+        yield return $"{indent}{header}";
         yield return $"{indent}{{";
 
         foreach (var s in content)
             yield return s;
 
         yield return $"{indent}}}";
-
     }
 
     public static IReadOnlyList<DynamoDbDataMember> GetDynamoDbProperties(this ITypeSymbol symbol)
