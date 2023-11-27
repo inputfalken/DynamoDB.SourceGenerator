@@ -497,7 +497,7 @@ public class DynamoDbMarshaller
 
         IEnumerable<string> CreateCode()
         {
-            foreach (var s in EnumerableExtensions.CreateBlock(CreateBody(), 3,
+            foreach (var s in EnumerableExtensions.CreateBlock(CreateBody(), 2,
                          $"private static Dictionary<string, AttributeValue> {KeysMethodNameFactory(typeSymbol)}(object? {pkReference}, object? {rkReference}, bool {enforcePkReference}, bool {enforceRkReference}, string? index = null)"))
                 yield return s;
         }
