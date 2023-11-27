@@ -8,22 +8,17 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 public static class EnumerableExtensions
 {
 
-    private static readonly IDictionary<int, string> IndentCache = new Dictionary<int, string>();
+    private static readonly IDictionary<int, string> IndentCache = new Dictionary<int, string>
+    {
+        {0, ""},
+        {1, "    "},
+        {2, "        "},
+        {3, "            "},
+        {4, "                "}
+    };
+
     private static string Indent(int level)
     {
-        var @base = level switch
-        {
-
-            1 => "    ",
-            2 => "        ",
-            3 => "            ",
-            4 => "                ",
-            _ => null
-        };
-
-        if (@base is not null)
-            return @base;
-
         if (IndentCache.TryGetValue(level, out var indent)) return indent;
 
         indent = new string(' ', level * 4);
