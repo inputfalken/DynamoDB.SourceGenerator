@@ -233,7 +233,7 @@ public class DynamoDbMarshaller
     }
 
 
-    public string CreateRepository()
+    public IEnumerable<string> CreateRepository()
     {
 
         var code = CreateImplementations()
@@ -243,7 +243,7 @@ public class DynamoDbMarshaller
             .Concat(CreateExpressionAttributeValue())
             .Concat(CreateKeys());
 
-        return string.Join(Constants.NewLine, code);
+        return code;
     }
 
     private Assignment DataMemberAssignment(in ITypeSymbol type, in string pattern, in string memberName)

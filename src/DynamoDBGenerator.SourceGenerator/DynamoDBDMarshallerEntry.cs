@@ -34,12 +34,13 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
 
         foreach (var typeSymbol in compilation.GetTypeSymbols(documents))
         {
-            var timestamp = Stopwatch.GetTimestamp();
-            var repository = new DynamoDbMarshaller(CreateArguments(typeSymbol)).CreateRepository();
-            var code = typeSymbol.CreateNamespace(typeSymbol.CreateClass(repository, indentLevel:1), TimeSpan.FromTicks(Stopwatch.GetTimestamp() - timestamp));
+            var enumerable = typeSymbol.CreateNamespace(typeSymbol.CreateClass(new DynamoDbMarshaller(CreateArguments(typeSymbol)).CreateRepository(), indentLevel: 1));
             var typeNamespace = typeSymbol.ContainingNamespace.IsGlobalNamespace
                 ? null
                 : $"{typeSymbol.ContainingNamespace}.";
+
+
+            var code = string.Join(Constants.NewLine, enumerable);
             context.AddSource($"{typeNamespace}{typeSymbol.Name}", code);
         }
     }

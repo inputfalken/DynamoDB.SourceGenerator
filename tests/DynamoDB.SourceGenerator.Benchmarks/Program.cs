@@ -5,16 +5,11 @@ using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.Model;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using DynamoDB.SourceGenerator.Benchmarks;
 using DynamoDB.SourceGenerator.Benchmarks.Models;
-using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.Extensions;
 
 BenchmarkRunner.Run<Marshalling>();
-
-[DynamoDBMarshaller(typeof(PersonEntity))]
-public partial class Repository
-{
-}
 
 [SimpleJob]
 [MemoryDiagnoser]

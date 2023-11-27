@@ -8,6 +8,7 @@ public static class EnumerableExtensions
     public static IEnumerable<string> CreateBlock(int indentLevel, IEnumerable<string> content)
     {
         var indent = StringExtensions.Indent(indentLevel);
+        
         yield return $"{indent}{{";
 
         foreach (var s in content)
