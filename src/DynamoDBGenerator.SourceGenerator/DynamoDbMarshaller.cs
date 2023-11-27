@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
@@ -449,7 +452,7 @@ public class DynamoDbMarshaller
 
             var body = properties.Select(x => x.dictionaryPopulation)
                 .Prepend(InitializeDictionary(properties.Select(static x => x.capacityTernary)))
-                .Append($"                return {dictionaryName}");
+                .Append($"                return {dictionaryName};");
 
             return EnumerableExtensions.CreateBlock(body, 3, $"public static Dictionary<string, AttributeValue> {SerializationMethodNameFactory(type)}({FullTypeNameFactory(type)} {paramReference})");
         }
@@ -507,7 +510,7 @@ public class DynamoDbMarshaller
             var keyStructure = DynamoDbDataMember.GetKeyStructure(_cachedDataMembers(typeSymbol));
             if (keyStructure is null)
             {
-                yield return @$"throw {Constants.DynamoDBGenerator.ExceptionHelper.NoDynamoDBKeyAttributesExceptionMethod}(""{typeSymbol}"");";
+                yield return @$"            throw {Constants.DynamoDBGenerator.ExceptionHelper.NoDynamoDBKeyAttributesExceptionMethod}(""{typeSymbol}"");";
 
                 yield break;
             }
@@ -593,53 +596,89 @@ public class DynamoDbMarshaller
     private Conversion StaticPocoFactory(ITypeSymbol type)
     {
 
-        var values = GetAssignments(type);
-        const string paramReference = "entity";
+        const string paramReference = "attributeValues";
+        var assignments = _cachedDataMembers(type)
+            .Select(x => (DDB: x, Assignment: DataMemberAssignment(x.DataMember.Type, @$"{paramReference}.GetValueOrDefault(""{x.AttributeName}"")", x.DataMember.Name)))
+            .ToArray();
         var method = EnumerableExtensions.CreateBlock(CreateCode(), 3, $"public static {FullTypeNameFactory(type)} {DeserializationMethodNameFactory(type)}(Dictionary<string, AttributeValue> {paramReference})");
-        return new Conversion(method, values.Item1);
+
+        return new Conversion(method, assignments.Select(x => x.Assignment));
 
         IEnumerable<string> CreateCode()
         {
-            yield return $"                return {values.objectInitialization}";
+            if (type.IsTupleType)
+                yield return "                var entity =";
+            else
+                yield return $"                var entity = new {FullTypeNameFactory(type)}";
+
+            var items = GetAssignments()
+                .DefaultAndLast(x => ObjectAssignmentBlock(x.useParentheses, x.assignments, false), x => ObjectAssignmentBlock(x.useParentheses, x.assignments, true))
+                .SelectMany(x => x);
+
+            foreach (var item in items.DefaultIfEmpty("                ();"))
+                yield return item;
+
+            yield return "                return entity;";
+
+            static IEnumerable<string> ObjectAssignmentBlock(bool useParentheses, IEnumerable<string> assignments, bool applySemiColon)
+            {
+
+                if (useParentheses)
+                {
+                    yield return "                (";
+
+                    foreach (var assignment in assignments.DefaultAndLast(s => $"{s},", s => s))
+                        yield return assignment;
+
+                    if (applySemiColon)
+                        yield return "                );";
+                    else
+                        yield return "                )";
+                }
+                else
+                {
+                    yield return "                {";
+
+                    foreach (var assignment in assignments.DefaultAndLast(s => $"{s},", s => s))
+                        yield return assignment;
+
+                    if (applySemiColon)
+                        yield return "                };";
+                    else
+                        yield return "                }";
+
+                }
+
+            }
         }
 
-
-        (IEnumerable<Assignment>, string objectInitialization) GetAssignments(ITypeSymbol typeSymbol)
+        IEnumerable<(bool useParentheses, IEnumerable<string> assignments)> GetAssignments()
         {
-            var assignments = _cachedDataMembers(typeSymbol)
-                .Select(x => (DDB: x, Assignment: DataMemberAssignment(x.DataMember.Type, @$"{paramReference}.GetValueOrDefault(""{x.AttributeName}"")", x.DataMember.Name)))
-                .ToArray();
+            if (type.IsTupleType)
+                yield return (true, assignments.Select(x => $"{x.DDB.DataMember.Name}: {x.Assignment.Value}"));
+            else
+            {
 
-            if (typeSymbol.IsTupleType)
-                return (assignments.Select(x => x.Assignment), $"({string.Join(", ", assignments.Select(x => $"{x.DDB.DataMember.Name}: {x.Assignment.Value}"))})");
+                var resolve = assignments
+                    .GroupJoin(
+                        TryGetMatchedConstructorArguments(type),
+                        x => x.DDB.DataMember.Name,
+                        x => x.DataMember,
+                        (x, y) => (x.Assignment, x.DDB, Constructor: y.OfType<(string DataMember, string ParameterName)?>().FirstOrDefault())
+                    )
+                    .GroupBy(x => x.Constructor.HasValue)
+                    .OrderByDescending(x => x.Key)
+                    .Select(x =>
+                    {
+                        return x.Key
+                            ? (x.Key, x.Select(z => $"                    {z.Constructor!.Value.ParameterName} : {z.Assignment.Value}"))
+                            : (x.Key, x.Where(z => z.DDB.DataMember.IsAssignable).Select(z => $"                    {z.DDB.DataMember.Name} = {z.Assignment.Value}"));
+                    });
 
-            var objectArguments = assignments
-                .GroupJoin(
-                    TryGetMatchedConstructorArguments(typeSymbol),
-                    x => x.DDB.DataMember.Name,
-                    x => x.DataMember,
-                    (x, y) => (x.Assignment, x.DDB, Constructor: y.OfType<(string DataMember, string ParameterName)?>().FirstOrDefault())
-                )
-                .GroupBy(x => x.Constructor.HasValue)
-                .OrderByDescending(x => x.Key) // Ensure Constructor is first.
-                .Select(x => x.Key
-                    ? @$"
-                (
-{string.Join($",{Constants.NewLine}", x.Select(z => $"                    {z.Constructor!.Value.ParameterName} : {z.Assignment.Value}"))}
-                )"
-                    : $@"
-                {{
-{string.Join($",{Constants.NewLine}", x.Where(z => z.DDB.DataMember.IsAssignable).Select(z => $"                    {z.DDB.DataMember.Name} = {z.Assignment.Value}"))}
-                }}");
+                foreach (var valueTuple in resolve)
+                    yield return valueTuple;
+            }
 
-            return (
-                assignments.Select(x => x.Assignment),
-                string.Join("", objectArguments) switch
-                {
-                    "" => $"new {FullTypeNameFactory(typeSymbol)}()",
-                    var args => $"new {FullTypeNameFactory(typeSymbol)}{args}"
-                }
-            );
         }
 
         static IEnumerable<(string DataMember, string ParameterName)> TryGetMatchedConstructorArguments(ITypeSymbol typeSymbol)
