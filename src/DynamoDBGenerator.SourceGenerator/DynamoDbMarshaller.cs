@@ -220,7 +220,7 @@ public class DynamoDbMarshaller
                 );
 
             yield return
-                $"        public {Constants.DynamoDBGenerator.Marshaller.Interface}<{rootTypeName}, {FullTypeNameFactory(argument.ArgumentType)}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.PropertyName} {{ get; }} = new {argument.ImplementationName}()";
+                $"        public {Constants.DynamoDBGenerator.Marshaller.Interface}<{rootTypeName}, {FullTypeNameFactory(argument.ArgumentType)}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.PropertyName} {{ get; }} = new {argument.ImplementationName}();";
 
             foreach (var s in implementedClass)
                 yield return s;
