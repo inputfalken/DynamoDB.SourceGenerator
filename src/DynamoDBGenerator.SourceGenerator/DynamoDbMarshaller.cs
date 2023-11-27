@@ -442,15 +442,17 @@ public class DynamoDbMarshaller
         const string dictionaryName = "attributeValues";
         var properties = GetAssignments(type).ToArray();
 
-        var method =
-            @$"            public static Dictionary<string, AttributeValue> {SerializationMethodNameFactory(type)}({FullTypeNameFactory(type)} {paramReference})
-            {{
-                {InitializeDictionary(properties.Select(static x => x.capacityTernary))}
-                {string.Join(Constants.NewLine + "                ", properties.Select(static x => x.dictionaryPopulation))}
-                return {dictionaryName};
-            }}";
+        return new Conversion(CreateCode(), properties.Select(static x => x.assignment));
 
-        return new Conversion(method, properties.Select(static x => x.assignment));
+        IEnumerable<string> CreateCode()
+        {
+
+            var body = properties.Select(x => x.dictionaryPopulation)
+                .Prepend(InitializeDictionary(properties.Select(static x => x.capacityTernary)))
+                .Append($"                return {dictionaryName}");
+
+            return EnumerableExtensions.CreateBlock(body, 3, $"public static Dictionary<string, AttributeValue> {SerializationMethodNameFactory(type)}({FullTypeNameFactory(type)} {paramReference})");
+        }
 
         IEnumerable<(string dictionaryPopulation, string capacityTernary, Assignment assignment)> GetAssignments(ITypeSymbol typeSymbol)
         {
@@ -466,7 +468,7 @@ public class DynamoDbMarshaller
 
                 var capacityTernaries = x.DataMember.Type.NotNullTernaryExpression(in accessPattern, "1", "0");
 
-                yield return (dictionaryAssignment, capacityTernaries, attributeValue);
+                yield return ($"                {dictionaryAssignment}", capacityTernaries, attributeValue);
             }
         }
 
@@ -476,8 +478,8 @@ public class DynamoDbMarshaller
 
             return string.Join(" + ", capacityCalculation)switch
             {
-                "" => $"var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: 0);",
-                var capacities => $@"var capacity = {capacities};
+                "" => $"                var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: 0);",
+                var capacities => $@"                var capacity = {capacities};
                 var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity: capacity);"
             };
         }
@@ -593,13 +595,14 @@ public class DynamoDbMarshaller
 
         var values = GetAssignments(type);
         const string paramReference = "entity";
-        var method =
-            @$"            public static {FullTypeNameFactory(type)} {DeserializationMethodNameFactory(type)}(Dictionary<string, AttributeValue> {paramReference})
-            {{ 
-                return {values.objectInitialization};
-            }}";
-
+        var method = EnumerableExtensions.CreateBlock(CreateCode(), 3, $"public static {FullTypeNameFactory(type)} {DeserializationMethodNameFactory(type)}(Dictionary<string, AttributeValue> {paramReference})");
         return new Conversion(method, values.Item1);
+
+        IEnumerable<string> CreateCode()
+        {
+            yield return $"                return {values.objectInitialization}";
+        }
+
 
         (IEnumerable<Assignment>, string objectInitialization) GetAssignments(ITypeSymbol typeSymbol)
         {

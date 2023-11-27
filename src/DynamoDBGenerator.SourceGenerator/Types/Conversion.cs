@@ -8,12 +8,6 @@ public readonly record struct Conversion
         Code = code;
         Assignments = assignments;
     }
-    public Conversion(in string code, in IEnumerable<Assignment> assignments)
-    {
-        Code = Lift(code);
-        Assignments = assignments;
-    }
-
     /// <summary>
     ///     The code surrounding all assignments.
     /// </summary>
