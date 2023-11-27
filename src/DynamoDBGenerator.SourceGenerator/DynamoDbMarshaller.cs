@@ -445,17 +445,12 @@ public class DynamoDbMarshaller
         const string dictionaryName = "attributeValues";
         var properties = GetAssignments(type).ToArray();
 
-        return new Conversion(CreateCode(), properties.Select(static x => x.assignment));
+        var body = properties.Select(x => x.dictionaryPopulation)
+            .Prepend(InitializeDictionary(properties.Select(static x => x.capacityTernary)))
+            .Append($"                return {dictionaryName};");
 
-        IEnumerable<string> CreateCode()
-        {
-
-            var body = properties.Select(x => x.dictionaryPopulation)
-                .Prepend(InitializeDictionary(properties.Select(static x => x.capacityTernary)))
-                .Append($"                return {dictionaryName};");
-
-            return EnumerableExtensions.CreateBlock(body, 3, $"public static Dictionary<string, AttributeValue> {SerializationMethodNameFactory(type)}({FullTypeNameFactory(type)} {paramReference})");
-        }
+        var code = EnumerableExtensions.CreateBlock(body, 3, $"public static Dictionary<string, AttributeValue> {SerializationMethodNameFactory(type)}({FullTypeNameFactory(type)} {paramReference})");
+        return new Conversion(code, properties.Select(static x => x.assignment));
 
         IEnumerable<(string dictionaryPopulation, string capacityTernary, Assignment assignment)> GetAssignments(ITypeSymbol typeSymbol)
         {
@@ -496,14 +491,10 @@ public class DynamoDbMarshaller
         const string enforceRkReference = "isRangeKey";
         const string dictionaryName = "attributeValues";
 
-        return new Conversion(CreateCode(), Enumerable.Empty<Assignment>());
-
-        IEnumerable<string> CreateCode()
-        {
-            foreach (var s in EnumerableExtensions.CreateBlock(CreateBody(), 2,
-                         $"private static Dictionary<string, AttributeValue> {KeysMethodNameFactory(typeSymbol)}(object? {pkReference}, object? {rkReference}, bool {enforcePkReference}, bool {enforceRkReference}, string? index = null)"))
-                yield return s;
-        }
+        var code = EnumerableExtensions.CreateBlock(
+            CreateBody(), 2,
+            $"private static Dictionary<string, AttributeValue> {KeysMethodNameFactory(typeSymbol)}(object? {pkReference}, object? {rkReference}, bool {enforcePkReference}, bool {enforceRkReference}, string? index = null)");
+        return new Conversion(code, Enumerable.Empty<Assignment>());
 
         IEnumerable<string> CreateBody()
         {

@@ -38,8 +38,4 @@ public readonly record struct Conversion
                 yield return assignment;
         }
     }
-    private static IEnumerable<string> Lift(string code)
-    {
-        yield return code;
-    }
 }
