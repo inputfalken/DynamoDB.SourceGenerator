@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
@@ -34,12 +36,13 @@ public static class EnumerableExtensions
         var indent = Indent(indentLevel);
 
         yield return $"{indent}{header}";
-        yield return $"{indent}{{";
+
+        yield return string.Intern($"{indent}{{");
 
         foreach (var s in content)
             yield return s;
 
-        yield return $"{indent}}}";
+        yield return string.Intern($"{indent}}}");
     }
 
     public static IReadOnlyList<DynamoDbDataMember> GetDynamoDbProperties(this ITypeSymbol symbol)
