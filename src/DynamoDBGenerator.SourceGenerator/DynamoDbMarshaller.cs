@@ -600,62 +600,52 @@ public class DynamoDbMarshaller
         var assignments = _cachedDataMembers(type)
             .Select(x => (DDB: x, Assignment: DataMemberAssignment(x.DataMember.Type, @$"{paramReference}.GetValueOrDefault(""{x.AttributeName}"")", x.DataMember.Name)))
             .ToArray();
-        var method = EnumerableExtensions.CreateBlock(CreateCode(), 3, $"public static {FullTypeNameFactory(type)} {DeserializationMethodNameFactory(type)}(Dictionary<string, AttributeValue> {paramReference})");
+
+        var blockBody = GetAssignments()
+            .DefaultAndLast(x => ObjectAssignmentBlock(x.useParentheses, x.assignments, false), x => ObjectAssignmentBlock(x.useParentheses, x.assignments, true))
+            .SelectMany(x => x)
+            .DefaultIfEmpty("                ();")
+            .Prepend(type.IsTupleType ? "                return" : $"                return new {FullTypeNameFactory(type)}");
+
+        var method = EnumerableExtensions.CreateBlock(blockBody, 3, $"public static {FullTypeNameFactory(type)} {DeserializationMethodNameFactory(type)}(Dictionary<string, AttributeValue> {paramReference})");
 
         return new Conversion(method, assignments.Select(x => x.Assignment));
 
-        IEnumerable<string> CreateCode()
+        static IEnumerable<string> ObjectAssignmentBlock(bool useParentheses, IEnumerable<string> assignments, bool applySemiColon)
         {
-            if (type.IsTupleType)
-                yield return "                var entity =";
-            else
-                yield return $"                var entity = new {FullTypeNameFactory(type)}";
 
-            var items = GetAssignments()
-                .DefaultAndLast(x => ObjectAssignmentBlock(x.useParentheses, x.assignments, false), x => ObjectAssignmentBlock(x.useParentheses, x.assignments, true))
-                .SelectMany(x => x);
-
-            foreach (var item in items.DefaultIfEmpty("                ();"))
-                yield return item;
-
-            yield return "                return entity;";
-
-            static IEnumerable<string> ObjectAssignmentBlock(bool useParentheses, IEnumerable<string> assignments, bool applySemiColon)
+            if (useParentheses)
             {
+                yield return "                (";
 
-                if (useParentheses)
-                {
-                    yield return "                (";
+                foreach (var assignment in assignments.DefaultAndLast(s => $"{s},", s => s))
+                    yield return assignment;
 
-                    foreach (var assignment in assignments.DefaultAndLast(s => $"{s},", s => s))
-                        yield return assignment;
-
-                    if (applySemiColon)
-                        yield return "                );";
-                    else
-                        yield return "                )";
-                }
+                if (applySemiColon)
+                    yield return "                );";
                 else
-                {
-                    yield return "                {";
+                    yield return "                )";
+            }
+            else
+            {
+                yield return "                {";
 
-                    foreach (var assignment in assignments.DefaultAndLast(s => $"{s},", s => s))
-                        yield return assignment;
+                foreach (var assignment in assignments.DefaultAndLast(s => $"{s},", s => s))
+                    yield return assignment;
 
-                    if (applySemiColon)
-                        yield return "                };";
-                    else
-                        yield return "                }";
-
-                }
+                if (applySemiColon)
+                    yield return "                };";
+                else
+                    yield return "                }";
 
             }
+
         }
 
         IEnumerable<(bool useParentheses, IEnumerable<string> assignments)> GetAssignments()
         {
             if (type.IsTupleType)
-                yield return (true, assignments.Select(x => $"{x.DDB.DataMember.Name}: {x.Assignment.Value}"));
+                yield return (true, assignments.Select(x => $"                    {x.DDB.DataMember.Name}: {x.Assignment.Value}"));
             else
             {
 
