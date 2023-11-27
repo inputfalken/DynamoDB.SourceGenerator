@@ -2,16 +2,18 @@
 
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
+using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.DynamoDBv2.Model;
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
 using DynamoDB.SourceGenerator.Benchmarks;
 using DynamoDB.SourceGenerator.Benchmarks.Models;
-using DynamoDBGenerator.Extensions;
 
 BenchmarkRunner.Run<Marshalling>();
 
-[SimpleJob]
+[SimpleJob(RuntimeMoniker.Net80)]
+[SimpleJob(RuntimeMoniker.Net60)]
 [MemoryDiagnoser]
 public class Marshalling
 {
@@ -52,21 +54,27 @@ public class Marshalling
 
 
     [Benchmark]
-    public PutItemRequest PutByAws()
+    public Dictionary<string, AttributeValue> Marshall_AWS()
     {
-        return new PutItemRequest("TABLE", _context.ToDocument(_singleElement, _dynamoDbOperationConfig).ToAttributeMap(_dynamoDbOperationConfig.Conversion));
+        return _context.ToDocument(_singleElement, _dynamoDbOperationConfig).ToAttributeMap(_dynamoDbOperationConfig.Conversion);
     }
 
     [Benchmark]
-    public PutItemRequest PutBySourceGeneration()
+    public Dictionary<string, AttributeValue> Marshall_SG()
     {
-        return _repository.PersonEntityMarshaller.ToPutItemRequest(_singleElement, ReturnValue.NONE, "TABLE");
+        return _repository.PersonEntityMarshaller.Marshall(_singleElement);
     }
 
     [Benchmark]
-    public PersonEntity DeserializeBySourceGeneration()
+    public PersonEntity Unmarshall_SG()
     {
         return _repository.PersonEntityMarshaller.Unmarshall(_attributeValues);
+    }
+    
+    [Benchmark]
+    public PersonEntity Unmarshall_AWS()
+    {
+        return _context.FromDocument<PersonEntity>(Document.FromAttributeMap(_attributeValues));
     }
 
 }
