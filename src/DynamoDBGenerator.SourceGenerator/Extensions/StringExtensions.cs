@@ -44,6 +44,27 @@ public static class StringExtensions
         yield return "}";
     }
 
+    public static IEnumerable<string> CreateBlock(this string header, string content)
+    {
+        yield return header;
+        yield return "{";
+
+        yield return $"    {content}";
+
+        yield return "}";
+    }
+    
+    public static IEnumerable<string> CreateBlock(this string header, string content, string second)
+    {
+        yield return header;
+        yield return "{";
+
+        yield return $"    {content}";
+        yield return $"    {second}";
+
+        yield return "}";
+    }
+
     public static string ToAlphaNumericMethodName(this string txt)
     {
         var arr = new char[txt.Length];
@@ -59,10 +80,5 @@ public static class StringExtensions
         }
 
         return new string(arr, 0, index);
-    }
-
-    public static IEnumerable<T> Yield<T>(this T item)
-    {
-        yield return item;
     }
 }
