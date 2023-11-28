@@ -58,7 +58,6 @@ public static class EnumerableExtensions
             else
                 yield return $"{Indent(indentLevel + 1)}{content}";
 
-            yield return $"{Indent(indentLevel + 1)}{content}";
             yield return string.Intern($"{indent}}}");
 
         }

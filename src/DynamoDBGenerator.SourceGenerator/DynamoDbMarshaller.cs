@@ -537,7 +537,7 @@ public class DynamoDbMarshaller
                     .CreateBlock($"return {dictionaryName};", 0))
                 .Concat($"if ({enforcePkReference} is false && {enforceRkReference} && {dictionaryName}.Count == 1)"
                     .CreateBlock($"return {dictionaryName};", 0))
-                .Concat($"if ({enforcePkReference} && {enforceRkReference} && {dictionaryName}.Count == 1"
+                .Concat($"if ({enforcePkReference} && {enforceRkReference} && {dictionaryName}.Count == 1)"
                     .CreateBlock($"throw {Constants.DynamoDBGenerator.ExceptionHelper.KeysMissingDynamoDBAttributeExceptionMethod}({pkReference}, {rkReference});", 0))
                 .Append($"throw {Constants.DynamoDBGenerator.ExceptionHelper.ShouldNeverHappenExceptionMethod}();");
 
@@ -587,9 +587,9 @@ public class DynamoDbMarshaller
 
                 var innerContent = $"if ({expression}) "
                     .CreateBlock($@"{dictionaryName}.Add(""{dataMember.AttributeName}"", {attributeConversion.ToAttributeValue()});", 0)
-                    .Concat($"else if ({keyReference} is null) ".CreateBlock($@"throw {Constants.DynamoDBGenerator.ExceptionHelper.KeysArgumentNullExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"")", 0))
+                    .Concat($"else if ({keyReference} is null) ".CreateBlock($@"throw {Constants.DynamoDBGenerator.ExceptionHelper.KeysArgumentNullExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"");", 0))
                     .Concat("else".CreateBlock(
-                        $@"throw {Constants.DynamoDBGenerator.ExceptionHelper.KeysInvalidConversionExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"", {keyReference}, ""{expectedType}"")", 0));
+                        $@"throw {Constants.DynamoDBGenerator.ExceptionHelper.KeysInvalidConversionExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"", {keyReference}, ""{expectedType}"");", 0));
 
                 return $"if({validateReference})".CreateBlock(innerContent, 0);
 
