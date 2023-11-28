@@ -65,7 +65,7 @@ using {Constants.DynamoDBGenerator.Namespace.InternalFullName};";
         var classContent = $"public sealed partial class {type.Name}".CreateBlock(marshaller.CreateRepository());
         var content = type.ContainingNamespace.IsGlobalNamespace
             ? classContent
-            : $"namespace {type.ContainingNamespace.Name}".CreateBlock(classContent);
+            : $"namespace {type.ContainingNamespace.ToDisplayString()}".CreateBlock(classContent);
 
         foreach (var s in content)
             yield return s;
