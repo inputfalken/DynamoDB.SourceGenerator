@@ -134,7 +134,7 @@ public class DynamoDbMarshaller
             : elementType.ToInlineAssignment($"NS = new List<string>({newAccessPattern}.Select(x => x.ToString()))", knownType);
     }
 
-    private IEnumerable<string> CreateAttributePocoFactory()
+    private IEnumerable<string> CreateUnmarshaller()
     {
         var hashSet = new HashSet<ITypeSymbol>(Comparer);
         return _arguments.SelectMany(x =>
@@ -147,7 +147,7 @@ public class DynamoDbMarshaller
             .SelectMany(x => x.Code);
     }
 
-    private IEnumerable<string> CreateAttributeValueFactory()
+    private IEnumerable<string> CreateMarshaller()
     {
         var hashset = new HashSet<ITypeSymbol>(Comparer);
 
@@ -210,14 +210,9 @@ public class DynamoDbMarshaller
                 .Append(
                     $"public {Constants.DynamoDBGenerator.Marshaller.KeyMarshallerInterface} PrimaryKeyMarshaller {{ get; }} = new {Constants.DynamoDBGenerator.KeyMarshallerImplementationTypeName}({KeysMethodNameFactory(argument.EntityTypeSymbol)});");
 
-            
-            var classImplementation = CodeGenerationExtensions
-                .CreateClass(
-                    Accessibility.Private,
-                    $"{argument.ImplementationName}: {Constants.DynamoDBGenerator.Marshaller.Interface}<{rootTypeName}, {FullTypeNameFactory(argument.ArgumentType)}, {nameTrackerTypeName}, {valueTrackerTypeName}>",
-                    interfaceImplementation,
-                    0
-                );
+
+            var classImplementation = $"private sealed class {argument.ImplementationName}: {Constants.DynamoDBGenerator.Marshaller.Interface}<{rootTypeName}, {FullTypeNameFactory(argument.ArgumentType)}, {nameTrackerTypeName}, {valueTrackerTypeName}>"
+                .CreateBlock(interfaceImplementation);
 
             yield return
                 $"public {Constants.DynamoDBGenerator.Marshaller.Interface}<{rootTypeName}, {FullTypeNameFactory(argument.ArgumentType)}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.PropertyName} {{ get; }} = new {argument.ImplementationName}();";
@@ -238,10 +233,9 @@ public class DynamoDbMarshaller
 
     public IEnumerable<string> CreateRepository()
     {
-
         var code = CreateImplementations()
-            .Concat(CodeGenerationExtensions.CreateClass(Accessibility.Private, MarshallerClass, CreateAttributeValueFactory(), 0))
-            .Concat(CodeGenerationExtensions.CreateClass(Accessibility.Private, UnMarshallerClass, CreateAttributePocoFactory(), 0))
+            .Concat($"private sealed class {MarshallerClass}".CreateBlock(CreateMarshaller()))
+            .Concat($"private sealed class {UnMarshallerClass}".CreateBlock(CreateUnmarshaller()))
             .Concat(CreateExpressionAttributeName())
             .Concat(CreateExpressionAttributeValue())
             .Concat(CreateKeys());
@@ -330,22 +324,16 @@ public class DynamoDbMarshaller
             })
             .ToArray();
 
-        var className = AttributeNameAssignmentNameFactory(typeSymbol);
+        var structName = AttributeNameAssignmentNameFactory(typeSymbol);
 
-        var @class = CodeGenerationExtensions.CreateStruct(
-            Accessibility.Public,
-            $"{className} : {Constants.DynamoDBGenerator.Marshaller.AttributeExpressionNameTrackerInterface}",
-            CreateCode(),
-            0,
-            isReadonly: true,
-            isRecord: false
-        );
+        var @class = $"public readonly struct {structName} : {Constants.DynamoDBGenerator.Marshaller.AttributeExpressionNameTrackerInterface}"
+            .CreateBlock(CreateCode());
         return new Conversion(@class, fieldAssignments);
 
         IEnumerable<string> CreateCode()
         {
             const string self = "_self";
-            foreach (var fieldAssignment in $"public {className}(string? {constructorAttributeName})".CreateBlock(fieldAssignments.Select(x => x.Value)
+            foreach (var fieldAssignment in $"public {structName}(string? {constructorAttributeName})".CreateBlock(fieldAssignments.Select(x => x.Value)
                          .Append($@"{self} = new(() => {constructorAttributeName} ?? throw new NotImplementedException(""Root element AttributeExpressionName reference.""));")))
                 yield return fieldAssignment;
 
@@ -405,8 +393,11 @@ public class DynamoDbMarshaller
         var className = AttributeValueAssignmentNameFactory(typeSymbol);
 
         var interfaceName = AttributeValueInterfaceNameFactory(typeSymbol);
-        var @class = CodeGenerationExtensions.CreateStruct(Accessibility.Public, $"{className} : {interfaceName}", CreateCode(), 0, isReadonly: true, isRecord: false);
-        return new Conversion(@class, fieldAssignments);
+
+
+        var @struct = $"public readonly struct {className} : {interfaceName}".CreateBlock(CreateCode());
+        
+        return new Conversion(@struct, fieldAssignments);
 
         IEnumerable<string> CreateCode()
         {
@@ -472,9 +463,9 @@ public class DynamoDbMarshaller
                     @$"{dictionaryName}.Add(""{x.AttributeName}"", {attributeValue.ToAttributeValue()});"
                 );
 
-                var capacityTernaries = x.DataMember.Type.NotNullTernaryExpression(in accessPattern, "1", "0");
+                var capacityTernary = x.DataMember.Type.NotNullTernaryExpression(in accessPattern, "1", "0");
 
-                yield return ($"{dictionaryAssignment}", capacityTernaries, attributeValue);
+                yield return ($"{dictionaryAssignment}", capacityTernary, attributeValue);
             }
         }
 
