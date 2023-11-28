@@ -21,45 +21,29 @@ public static class StringExtensions
 
         return indent;
     }
-    public static IEnumerable<string> CreateBlock(this string header, IEnumerable<string> content, int indentLevel) => CreateBlockPrivate(header, content, indentLevel);
-    public static IEnumerable<string> CreateBlock(this string header, IEnumerable<string> content) => CreateBlockPrivate(header, content, 0);
-
-    public static IEnumerable<string> CreateBlock(this string header, string content, int indentLevel) => CreateBlockPrivate(header, content, indentLevel);
-    public static IEnumerable<string> CreateBlock(this string header, string content) => CreateBlockPrivate(header, content, 0);
-
-    private static IEnumerable<string> CreateBlockPrivate(string header, object content, int indentLevel)
+    public static IEnumerable<string> CreateBlock(this string header, IEnumerable<string> content, int indentLevel)
     {
-        if (indentLevel is 0)
-        {
-            yield return header;
-            yield return "{";
+        var indent = Indent(indentLevel);
 
-            if (content is IEnumerable<string> enumerable)
-                foreach (var s in enumerable)
-                    yield return $"    {s}";
-            else
-                yield return $"    {content}";
+        yield return $"{indent}{header}";
+        yield return string.Intern($"{indent}{{");
 
-            yield return "}";
-        }
-        else
-        {
-            var indent = Indent(indentLevel);
+        foreach (var s in content)
+            yield return $"{Indent(indentLevel + 1)}{s}";
 
-            yield return $"{indent}{header}";
-            yield return string.Intern($"{indent}{{");
-
-            if (content is IEnumerable<string> enumerable)
-                foreach (var s in enumerable)
-                    yield return $"{Indent(indentLevel + 1)}{s}";
-            else
-                yield return $"{Indent(indentLevel + 1)}{content}";
-
-            yield return string.Intern($"{indent}}}");
-
-        }
-
+        yield return string.Intern($"{indent}}}");
     }
+    public static IEnumerable<string> CreateBlock(this string header, IEnumerable<string> content)
+    {
+        yield return header;
+        yield return "{";
+
+        foreach (var s in content)
+            yield return $"    {s}";
+
+        yield return "}";
+    }
+
     public static string ToAlphaNumericMethodName(this string txt)
     {
         var arr = new char[txt.Length];

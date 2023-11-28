@@ -516,13 +516,13 @@ public class DynamoDbMarshaller
             foreach (var s in "switch (index)".CreateBlock(switchBody))
                 yield return s;
 
-            var validateSwitch = $"if ({enforcePkReference} && {enforceRkReference} && {dictionaryName}.Count == 2)".CreateBlock($"return {dictionaryName};")
+            var validateSwitch = $"if ({enforcePkReference} && {enforceRkReference} && {dictionaryName}.Count == 2)".CreateBlock($"return {dictionaryName};".Yield())
                 .Concat($"if ({enforcePkReference} && {enforceRkReference} is false && {dictionaryName}.Count == 1)"
-                    .CreateBlock($"return {dictionaryName};"))
+                    .CreateBlock($"return {dictionaryName};".Yield()))
                 .Concat($"if ({enforcePkReference} is false && {enforceRkReference} && {dictionaryName}.Count == 1)"
-                    .CreateBlock($"return {dictionaryName};"))
+                    .CreateBlock($"return {dictionaryName};".Yield()))
                 .Concat($"if ({enforcePkReference} && {enforceRkReference} && {dictionaryName}.Count == 1)"
-                    .CreateBlock($"throw {Constants.DynamoDBGenerator.ExceptionHelper.KeysMissingDynamoDBAttributeExceptionMethod}({pkReference}, {rkReference});"))
+                    .CreateBlock($"throw {Constants.DynamoDBGenerator.ExceptionHelper.KeysMissingDynamoDBAttributeExceptionMethod}({pkReference}, {rkReference});".Yield()))
                 .Append($"throw {Constants.DynamoDBGenerator.ExceptionHelper.ShouldNeverHappenExceptionMethod}();");
 
             foreach (var s in validateSwitch)
@@ -570,10 +570,10 @@ public class DynamoDbMarshaller
                 var expression = $"{keyReference} is {expectedType} {{ }} {reference}";
 
                 var innerContent = $"if ({expression}) "
-                    .CreateBlock($@"{dictionaryName}.Add(""{dataMember.AttributeName}"", {attributeConversion.ToAttributeValue()});")
-                    .Concat($"else if ({keyReference} is null) ".CreateBlock($@"throw {Constants.DynamoDBGenerator.ExceptionHelper.KeysArgumentNullExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"");"))
+                    .CreateBlock($@"{dictionaryName}.Add(""{dataMember.AttributeName}"", {attributeConversion.ToAttributeValue()});".Yield())
+                    .Concat($"else if ({keyReference} is null) ".CreateBlock($@"throw {Constants.DynamoDBGenerator.ExceptionHelper.KeysArgumentNullExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"");".Yield()))
                     .Concat("else".CreateBlock(
-                        $@"throw {Constants.DynamoDBGenerator.ExceptionHelper.KeysInvalidConversionExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"", {keyReference}, ""{expectedType}"");"));
+                        $@"throw {Constants.DynamoDBGenerator.ExceptionHelper.KeysInvalidConversionExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"", {keyReference}, ""{expectedType}"");".Yield()));
 
                 return $"if({validateReference})".CreateBlock(innerContent);
 
