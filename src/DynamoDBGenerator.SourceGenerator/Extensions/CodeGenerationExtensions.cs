@@ -27,7 +27,7 @@ using {Constants.DynamoDBGenerator.Namespace.InternalFullName};";
             : type.ContainingNamespace.ToString();
         if (nameSpace is not null)
         {
-            foreach (var s in EnumerableExtensions.CreateBlock(content, 0, $"namespace {type.ContainingNamespace}"))
+            foreach (var s in $"namespace {type.ContainingNamespace}".CreateBlock(content, 0))
                 yield return s;
         }
         else
@@ -60,7 +60,7 @@ using {Constants.DynamoDBGenerator.Namespace.InternalFullName};";
 
     public static IEnumerable<string> CreateClass(Accessibility accessibility, string className, IEnumerable<string> content, int indentLevel, bool isPartial = false)
     {
-        return EnumerableExtensions.CreateBlock(content, indentLevel, $"{accessibility.ToCode()} sealed{(isPartial ? " partial" : null)} class {className}");
+        return $"{accessibility.ToCode()} sealed{(isPartial ? " partial" : null)} class {className}".CreateBlock(content, indentLevel);
 
     }
 
@@ -73,6 +73,6 @@ using {Constants.DynamoDBGenerator.Namespace.InternalFullName};";
         bool isReadonly = false,
         bool isRecord = false)
     {
-        return EnumerableExtensions.CreateBlock(content, indentLevel, $"{accessibility.ToCode()}{(isPartial ? " partial" : null)}{(isReadonly ? " readonly" : null)}{(isRecord ? " record" : null)} struct {structName}");
+        return $"{accessibility.ToCode()}{(isPartial ? " partial" : null)}{(isReadonly ? " readonly" : null)}{(isRecord ? " record" : null)} struct {structName}".CreateBlock(content, indentLevel);
     }
 }

@@ -26,20 +26,44 @@ public static class EnumerableExtensions
 
         return indent;
     }
-    public static IEnumerable<string> CreateBlock(IEnumerable<string> content, int indentLevel, string header)
+    public static IEnumerable<string> CreateBlock(this string header, IEnumerable<string> content, int indentLevel) => CreateBlockPrivate(header, content, indentLevel);
+
+    public static IEnumerable<string> CreateBlock(this string header, string content, int indentLevel) => CreateBlockPrivate(header, content, indentLevel);
+
+    private static IEnumerable<string> CreateBlockPrivate(string header, object content, int indentLevel)
     {
-        var indent = Indent(indentLevel);
+        if (indentLevel is 0)
+        {
+            yield return header;
+            yield return "{";
 
-        yield return $"{indent}{header}";
+            if (content is IEnumerable<string> enumerable)
+                foreach (var s in enumerable)
+                    yield return $"{Indent(1)}{s}";
+            else
+                yield return $"{Indent(1)}{content}";
 
-        yield return string.Intern($"{indent}{{");
+            yield return "}";
+        }
+        else
+        {
+            var indent = Indent(indentLevel);
 
-        foreach (var s in content)
-            yield return s;
+            yield return $"{indent}{header}";
+            yield return string.Intern($"{indent}{{");
 
-        yield return string.Intern($"{indent}}}");
+            if (content is IEnumerable<string> enumerable)
+                foreach (var s in enumerable)
+                    yield return $"{Indent(indentLevel + 1)}{s}";
+            else
+                yield return $"{Indent(indentLevel + 1)}{content}";
+
+            yield return $"{Indent(indentLevel + 1)}{content}";
+            yield return string.Intern($"{indent}}}");
+
+        }
+
     }
-
     public static IEnumerable<TResult> DefaultAndLast<T, TResult>(this IEnumerable<T> enumerable, Func<T, TResult> @default, Func<T, TResult> onLast)
     {
         var buffer = default(T);

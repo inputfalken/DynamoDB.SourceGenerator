@@ -18,4 +18,9 @@ public static class StringExtensions
 
         return new string(arr, 0, index);
     }
+
+    public static IEnumerable<T> Yield<T>(this T item)
+    {
+        yield return item;
+    }
 }
