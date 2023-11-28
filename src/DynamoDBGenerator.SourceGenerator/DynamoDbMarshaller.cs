@@ -190,7 +190,7 @@ public class DynamoDbMarshaller
             var interfaceImplementation = $"public Dictionary<{nameof(String)}, {Constants.AWSSDK_DynamoDBv2.AttributeValue}> {Constants.DynamoDBGenerator.Marshaller.MarshallMethodName}({rootTypeName} entity)"
                 .CreateBlock(
                     "ArgumentNullException.ThrowIfNull(entity);".Yield()
-                        .Append($"return {MarshallerClass}.{SerializationMethodNameFactory(argument.EntityTypeSymbol)}(entity)"),
+                        .Append($"return {MarshallerClass}.{SerializationMethodNameFactory(argument.EntityTypeSymbol)}(entity);"),
                     0
                 )
                 .Concat(
@@ -202,7 +202,7 @@ public class DynamoDbMarshaller
                 )
                 .Concat($"public {Constants.DynamoDBGenerator.Marshaller.IndexKeyMarshallerInterface} IndexKeyMarshaller(string index)"
                     .CreateBlock(
-                        "ArgumentNullException.ThrowIfNull(index)".Yield()
+                        "ArgumentNullException.ThrowIfNull(index);".Yield()
                             .Append($"return new {Constants.DynamoDBGenerator.IndexKeyMarshallerImplementationTypeName}({KeysMethodNameFactory(argument.EntityTypeSymbol)}, index);"),
                         0
                     )
@@ -214,7 +214,7 @@ public class DynamoDbMarshaller
                         0
                     )
                 )
-                .Append($"public {nameTrackerTypeName} {Constants.DynamoDBGenerator.Marshaller.AttributeExpressionNameTrackerMethodName}() => return new {nameTrackerTypeName}(null);")
+                .Append($"public {nameTrackerTypeName} {Constants.DynamoDBGenerator.Marshaller.AttributeExpressionNameTrackerMethodName}() => new {nameTrackerTypeName}(null);")
                 .Append(
                     $"public {Constants.DynamoDBGenerator.Marshaller.KeyMarshallerInterface} PrimaryKeyMarshaller {{ get; }} = new {Constants.DynamoDBGenerator.KeyMarshallerImplementationTypeName}({KeysMethodNameFactory(argument.EntityTypeSymbol)});");
 
