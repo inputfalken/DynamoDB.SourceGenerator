@@ -27,7 +27,7 @@ using {Constants.DynamoDBGenerator.Namespace.InternalFullName};";
             : type.ContainingNamespace.ToString();
         if (nameSpace is not null)
         {
-            foreach (var s in $"namespace {type.ContainingNamespace}".CreateBlock(content, 0))
+            foreach (var s in $"namespace {type.ContainingNamespace}".CreateBlock(content))
                 yield return s;
         }
         else

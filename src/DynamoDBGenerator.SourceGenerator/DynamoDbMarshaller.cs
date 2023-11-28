@@ -190,34 +190,27 @@ public class DynamoDbMarshaller
             var interfaceImplementation = $"public Dictionary<{nameof(String)}, {Constants.AWSSDK_DynamoDBv2.AttributeValue}> {Constants.DynamoDBGenerator.Marshaller.MarshallMethodName}({rootTypeName} entity)"
                 .CreateBlock(
                     "ArgumentNullException.ThrowIfNull(entity);".Yield()
-                        .Append($"return {MarshallerClass}.{SerializationMethodNameFactory(argument.EntityTypeSymbol)}(entity);"),
-                    0
-                )
+                        .Append($"return {MarshallerClass}.{SerializationMethodNameFactory(argument.EntityTypeSymbol)}(entity);"))
                 .Concat(
                     $"public {rootTypeName} {Constants.DynamoDBGenerator.Marshaller.UnmarshalMethodName}(Dictionary<{nameof(String)}, {Constants.AWSSDK_DynamoDBv2.AttributeValue}> entity)"
                         .CreateBlock("ArgumentNullException.ThrowIfNull(entity);".Yield()
-                                .Append($"return {UnMarshallerClass}.{DeserializationMethodNameFactory(argument.EntityTypeSymbol)}(entity);"),
-                            0
-                        )
+                            .Append($"return {UnMarshallerClass}.{DeserializationMethodNameFactory(argument.EntityTypeSymbol)}(entity);"))
                 )
                 .Concat($"public {Constants.DynamoDBGenerator.Marshaller.IndexKeyMarshallerInterface} IndexKeyMarshaller(string index)"
                     .CreateBlock(
                         "ArgumentNullException.ThrowIfNull(index);".Yield()
-                            .Append($"return new {Constants.DynamoDBGenerator.IndexKeyMarshallerImplementationTypeName}({KeysMethodNameFactory(argument.EntityTypeSymbol)}, index);"),
-                        0
-                    )
+                            .Append($"return new {Constants.DynamoDBGenerator.IndexKeyMarshallerImplementationTypeName}({KeysMethodNameFactory(argument.EntityTypeSymbol)}, index);"))
                 )
                 .Concat($"public {valueTrackerTypeName} {Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerMethodName}()"
                     .CreateBlock(
                         "var incrementer = new DynamoExpressionValueIncrementer();".Yield()
-                            .Append($"return new {valueTrackerTypeName}(incrementer.GetNext);"),
-                        0
-                    )
+                            .Append($"return new {valueTrackerTypeName}(incrementer.GetNext);"))
                 )
                 .Append($"public {nameTrackerTypeName} {Constants.DynamoDBGenerator.Marshaller.AttributeExpressionNameTrackerMethodName}() => new {nameTrackerTypeName}(null);")
                 .Append(
                     $"public {Constants.DynamoDBGenerator.Marshaller.KeyMarshallerInterface} PrimaryKeyMarshaller {{ get; }} = new {Constants.DynamoDBGenerator.KeyMarshallerImplementationTypeName}({KeysMethodNameFactory(argument.EntityTypeSymbol)});");
 
+            
             var classImplementation = CodeGenerationExtensions
                 .CreateClass(
                     Accessibility.Private,
@@ -353,7 +346,7 @@ public class DynamoDbMarshaller
         {
             const string self = "_self";
             foreach (var fieldAssignment in $"public {className}(string? {constructorAttributeName})".CreateBlock(fieldAssignments.Select(x => x.Value)
-                         .Append($@"{self} = new(() => {constructorAttributeName} ?? throw new NotImplementedException(""Root element AttributeExpressionName reference.""));"), 0))
+                         .Append($@"{self} = new(() => {constructorAttributeName} ?? throw new NotImplementedException(""Root element AttributeExpressionName reference.""));")))
                 yield return fieldAssignment;
 
             foreach (var fieldDeclaration in dataMembers)
@@ -378,7 +371,7 @@ public class DynamoDbMarshaller
                 .Append($@"if ({self}.IsValueCreated) yield return new ({self}.Value, ""{typeSymbol.Name}"");");
             foreach (var s in
                      $"IEnumerable<KeyValuePair<string, string>> {Constants.DynamoDBGenerator.Marshaller.AttributeExpressionNameTrackerInterface}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionNameTrackerInterfaceAccessedNames}()"
-                         .CreateBlock(expressionAttributeNameYields, 0))
+                         .CreateBlock(expressionAttributeNameYields))
                 yield return s;
 
             yield return $"public override string ToString() => {self}.Value;";
@@ -418,7 +411,7 @@ public class DynamoDbMarshaller
         IEnumerable<string> CreateCode()
         {
             const string self = "_self";
-            foreach (var fieldAssignment in $"public {className}(Func<string> {valueProvider})".CreateBlock(fieldAssignments.Select(x => x.Value).Append($"{self} = new({valueProvider});"), 0))
+            foreach (var fieldAssignment in $"public {className}(Func<string> {valueProvider})".CreateBlock(fieldAssignments.Select(x => x.Value).Append($"{self} = new({valueProvider});")))
                 yield return fieldAssignment;
 
             foreach (var fieldDeclaration in dataMembers)
@@ -447,7 +440,7 @@ public class DynamoDbMarshaller
 
             foreach (var yield in
                      $"IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({FullTypeNameFactory(typeSymbol)} entity)"
-                         .CreateBlock(expressionAttributeValueYields, 0))
+                         .CreateBlock(expressionAttributeValueYields))
                 yield return yield;
 
             yield return $"public override string ToString() => {self}.Value;";
@@ -463,7 +456,7 @@ public class DynamoDbMarshaller
             .Concat(properties.Select(x => x.dictionaryPopulation))
             .Append($"return {dictionaryName};");
 
-        var code = $"public static Dictionary<string, AttributeValue> {SerializationMethodNameFactory(type)}({FullTypeNameFactory(type)} {paramReference})".CreateBlock(body, 0);
+        var code = $"public static Dictionary<string, AttributeValue> {SerializationMethodNameFactory(type)}({FullTypeNameFactory(type)} {paramReference})".CreateBlock(body);
 
         return new Conversion(code, properties.Select(static x => x.assignment));
 
@@ -510,7 +503,7 @@ public class DynamoDbMarshaller
 
         var code =
             $"private static Dictionary<string, AttributeValue> {KeysMethodNameFactory(typeSymbol)}(object? {pkReference}, object? {rkReference}, bool {enforcePkReference}, bool {enforceRkReference}, string? index = null)"
-                .CreateBlock(CreateBody(), 0);
+                .CreateBlock(CreateBody());
         return new Conversion(code, Enumerable.Empty<Assignment>());
 
         IEnumerable<string> CreateBody()
@@ -526,19 +519,19 @@ public class DynamoDbMarshaller
             yield return $"var {dictionaryName} = new Dictionary<string, AttributeValue>(2);";
 
             var switchBody = GetAssignments(keyStructure.Value)
-                .SelectMany(x => $"case {(x.IndexName is null ? "null" : @$"""{x.IndexName}""")}:".CreateBlock(x.assignments, 0).Append("break;"))
+                .SelectMany(x => $"case {(x.IndexName is null ? "null" : @$"""{x.IndexName}""")}:".CreateBlock(x.assignments).Append("break;"))
                 .Append($"default: throw {Constants.DynamoDBGenerator.ExceptionHelper.MissMatchedIndexNameExceptionMethod}(nameof(index), index);");
 
-            foreach (var s in "switch (index)".CreateBlock(switchBody, 0))
+            foreach (var s in "switch (index)".CreateBlock(switchBody))
                 yield return s;
 
-            var validateSwitch = $"if ({enforcePkReference} && {enforceRkReference} && {dictionaryName}.Count == 2)".CreateBlock($"return {dictionaryName};", 0)
+            var validateSwitch = $"if ({enforcePkReference} && {enforceRkReference} && {dictionaryName}.Count == 2)".CreateBlock($"return {dictionaryName};")
                 .Concat($"if ({enforcePkReference} && {enforceRkReference} is false && {dictionaryName}.Count == 1)"
-                    .CreateBlock($"return {dictionaryName};", 0))
+                    .CreateBlock($"return {dictionaryName};"))
                 .Concat($"if ({enforcePkReference} is false && {enforceRkReference} && {dictionaryName}.Count == 1)"
-                    .CreateBlock($"return {dictionaryName};", 0))
+                    .CreateBlock($"return {dictionaryName};"))
                 .Concat($"if ({enforcePkReference} && {enforceRkReference} && {dictionaryName}.Count == 1)"
-                    .CreateBlock($"throw {Constants.DynamoDBGenerator.ExceptionHelper.KeysMissingDynamoDBAttributeExceptionMethod}({pkReference}, {rkReference});", 0))
+                    .CreateBlock($"throw {Constants.DynamoDBGenerator.ExceptionHelper.KeysMissingDynamoDBAttributeExceptionMethod}({pkReference}, {rkReference});"))
                 .Append($"throw {Constants.DynamoDBGenerator.ExceptionHelper.ShouldNeverHappenExceptionMethod}();");
 
             foreach (var s in validateSwitch)
@@ -586,12 +579,12 @@ public class DynamoDbMarshaller
                 var expression = $"{keyReference} is {expectedType} {{ }} {reference}";
 
                 var innerContent = $"if ({expression}) "
-                    .CreateBlock($@"{dictionaryName}.Add(""{dataMember.AttributeName}"", {attributeConversion.ToAttributeValue()});", 0)
-                    .Concat($"else if ({keyReference} is null) ".CreateBlock($@"throw {Constants.DynamoDBGenerator.ExceptionHelper.KeysArgumentNullExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"");", 0))
+                    .CreateBlock($@"{dictionaryName}.Add(""{dataMember.AttributeName}"", {attributeConversion.ToAttributeValue()});")
+                    .Concat($"else if ({keyReference} is null) ".CreateBlock($@"throw {Constants.DynamoDBGenerator.ExceptionHelper.KeysArgumentNullExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"");"))
                     .Concat("else".CreateBlock(
-                        $@"throw {Constants.DynamoDBGenerator.ExceptionHelper.KeysInvalidConversionExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"", {keyReference}, ""{expectedType}"");", 0));
+                        $@"throw {Constants.DynamoDBGenerator.ExceptionHelper.KeysInvalidConversionExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"", {keyReference}, ""{expectedType}"");"));
 
-                return $"if({validateReference})".CreateBlock(innerContent, 0);
+                return $"if({validateReference})".CreateBlock(innerContent);
 
             }
 
@@ -613,7 +606,7 @@ public class DynamoDbMarshaller
             .DefaultIfEmpty("();")
             .Prepend(type.IsTupleType ? "return" : $"return new {FullTypeNameFactory(type)}");
 
-        var method = $"public static {FullTypeNameFactory(type)} {DeserializationMethodNameFactory(type)}(Dictionary<string, AttributeValue> {paramReference})".CreateBlock(blockBody, 0);
+        var method = $"public static {FullTypeNameFactory(type)} {DeserializationMethodNameFactory(type)}(Dictionary<string, AttributeValue> {paramReference})".CreateBlock(blockBody);
 
         return new Conversion(method, assignments.Select(x => x.Assignment));
 

@@ -22,8 +22,10 @@ public static class StringExtensions
         return indent;
     }
     public static IEnumerable<string> CreateBlock(this string header, IEnumerable<string> content, int indentLevel) => CreateBlockPrivate(header, content, indentLevel);
+    public static IEnumerable<string> CreateBlock(this string header, IEnumerable<string> content) => CreateBlockPrivate(header, content, 0);
 
     public static IEnumerable<string> CreateBlock(this string header, string content, int indentLevel) => CreateBlockPrivate(header, content, indentLevel);
+    public static IEnumerable<string> CreateBlock(this string header, string content) => CreateBlockPrivate(header, content, 0);
 
     private static IEnumerable<string> CreateBlockPrivate(string header, object content, int indentLevel)
     {
@@ -34,9 +36,9 @@ public static class StringExtensions
 
             if (content is IEnumerable<string> enumerable)
                 foreach (var s in enumerable)
-                    yield return $"{Indent(1)}{s}";
+                    yield return $"    {s}";
             else
-                yield return $"{Indent(1)}{content}";
+                yield return $"    {content}";
 
             yield return "}";
         }
