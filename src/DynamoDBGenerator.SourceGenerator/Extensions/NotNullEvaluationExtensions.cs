@@ -59,7 +59,7 @@ public static class NotNullEvaluationExtensions
     private static string? Expression(in ITypeSymbol typeSymbol, in string accessPattern)
     {
         return typeSymbol.IsReferenceType
-            ? OnReferenceType(in typeSymbol, in accessPattern)
+            ? OnReferenceType(in accessPattern)
             : OnValueType(in typeSymbol, in accessPattern);
     }
 
@@ -78,7 +78,7 @@ public static class NotNullEvaluationExtensions
             : $"{accessPattern}.HasValue && {expression}";
     }
 
-    private static string? OnReferenceType(in ITypeSymbol typeSymbol, in string accessPattern)
+    private static string? OnReferenceType(in string accessPattern)
     {
         return $"{accessPattern} is not null";
     }
