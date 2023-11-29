@@ -3,9 +3,15 @@ using Microsoft.CodeAnalysis;
 
 namespace DynamoDBGenerator.SourceGenerator.Types;
 
-public abstract record KnownType;
+public abstract record TypeIdentifier;
 
-public record KeyValueGeneric : KnownType
+public record UnknownType(ITypeSymbol TypeSymbol) : TypeIdentifier
+{
+    public ITypeSymbol TypeSymbol { get; } = TypeSymbol;
+
+}
+
+public record KeyValueGeneric : TypeIdentifier
 {
     public SupportedType Type { get; }
 
@@ -48,7 +54,7 @@ public record KeyValueGeneric : KnownType
     }
 }
 
-public record SingleGeneric : KnownType
+public record SingleGeneric : TypeIdentifier
 {
     public SupportedType Type { get; }
     public ITypeSymbol T { get; }
@@ -99,15 +105,13 @@ public record SingleGeneric : KnownType
     }
 }
 
-public record BaseType : KnownType
+public record BaseType : TypeIdentifier
 {
     public SupportedType Type { get; }
-    private readonly ITypeSymbol _typeSymbol;
 
-    private BaseType(in ITypeSymbol typeSymbol, in SupportedType type)
+    private BaseType( in SupportedType type)
     {
         Type = type;
-        _typeSymbol = typeSymbol;
     }
 
     public static BaseType? CreateInstance(in ITypeSymbol type)
@@ -136,7 +140,7 @@ public record BaseType : KnownType
             _ => null
         };
 
-        return primitiveTypeAssignment is null ? null : new BaseType(in type, primitiveTypeAssignment.Value);
+        return primitiveTypeAssignment is null ? null : new BaseType(primitiveTypeAssignment.Value);
     }
 
     public enum SupportedType

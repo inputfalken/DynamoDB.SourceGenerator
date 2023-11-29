@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
@@ -67,14 +70,14 @@ public static class TypeExtensions
             return result;
         }
     }
-    public static Assignment ToInlineAssignment(this ITypeSymbol typeSymbol, string value, KnownType knownType)
+    public static Assignment ToInlineAssignment(this TypeIdentifier typeSymbol, string value)
     {
-        return new Assignment(in value, typeSymbol, knownType);
+        return new Assignment(value, typeSymbol);
     }
 
-    public static Assignment ToExternalDependencyAssignment(this ITypeSymbol typeSymbol, string value)
+    public static Assignment ToExternalDependencyAssignment(this TypeIdentifier typeIdentifier,  string value)
     {
-        return new Assignment(in value, in typeSymbol, null);
+        return new Assignment(value, typeIdentifier);
     }
 
     public static INamedTypeSymbol? TryGetNullableValueType(this ITypeSymbol type)
@@ -82,7 +85,7 @@ public static class TypeExtensions
         return type.IsValueType && type is INamedTypeSymbol {OriginalDefinition.SpecialType: SpecialType.System_Nullable_T} symbol ? symbol : null;
     }
 
-    public static KnownType? GetKnownType(this ITypeSymbol type)
+    public static TypeIdentifier GetKnownType(this ITypeSymbol type)
     {
         if (BaseType.CreateInstance(type) is { } baseType)
             return baseType;
@@ -93,7 +96,7 @@ public static class TypeExtensions
         if (KeyValueGeneric.CreateInstance(type) is { } keyValueGeneric)
             return keyValueGeneric;
 
-        return null;
+        return new UnknownType(type);
     }
     public static bool IsNumeric(this ITypeSymbol typeSymbol)
     {
