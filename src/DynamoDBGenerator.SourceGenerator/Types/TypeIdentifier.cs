@@ -1,12 +1,29 @@
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using Microsoft.CodeAnalysis;
-
 namespace DynamoDBGenerator.SourceGenerator.Types;
 
-public abstract record KnownType;
-
-public record KeyValueGeneric : KnownType
+public abstract record TypeIdentifier(ITypeSymbol TypeSymbol)
 {
+    public ITypeSymbol TypeSymbol { get; } = TypeSymbol;
+}
+
+public record UnknownType(ITypeSymbol TypeSymbol) : TypeIdentifier(TypeSymbol);
+
+public record KeyValueGeneric : TypeIdentifier
+{
+
+    public enum SupportedType
+    {
+        LookUp = 1,
+        Dictionary = 2
+    }
+
+    private KeyValueGeneric(in ITypeSymbol typeSymbol, in ITypeSymbol tKey, in ITypeSymbol tValue, in SupportedType supportedType) : base(typeSymbol)
+    {
+        Type = supportedType;
+        TKey = tKey;
+        TValue = tValue;
+    }
     public SupportedType Type { get; }
 
     // ReSharper disable once InconsistentNaming
@@ -14,13 +31,6 @@ public record KeyValueGeneric : KnownType
 
     // ReSharper disable once InconsistentNaming
     public ITypeSymbol TValue { get; }
-
-    private KeyValueGeneric(in ITypeSymbol tKey, in ITypeSymbol tValue, in SupportedType supportedType)
-    {
-        Type = supportedType;
-        TKey = tKey;
-        TValue = tValue;
-    }
 
     public static KeyValueGeneric? CreateInstance(in ITypeSymbol typeSymbol)
     {
@@ -38,33 +48,37 @@ public record KeyValueGeneric : KnownType
         };
         return supported is null
             ? null
-            : new KeyValueGeneric(type.TypeArguments[0], type.TypeArguments[1], supported.Value);
-    }
-
-    public enum SupportedType
-    {
-        LookUp = 1,
-        Dictionary = 2
+            : new KeyValueGeneric(typeSymbol, type.TypeArguments[0], type.TypeArguments[1], supported.Value);
     }
 }
 
-public record SingleGeneric : KnownType
+public record SingleGeneric : TypeIdentifier
 {
-    public SupportedType Type { get; }
-    public ITypeSymbol T { get; }
 
-    private SingleGeneric(ITypeSymbol innerType, in SupportedType supportedType)
+    public enum SupportedType
+    {
+        Nullable = 1,
+        Set = 2,
+        Array = 3,
+        ICollection = 4,
+        IReadOnlyCollection = 5,
+        IEnumerable = 6
+    }
+
+    private SingleGeneric(ITypeSymbol type, ITypeSymbol innerType, in SupportedType supportedType) : base(type)
 
     {
         Type = supportedType;
         T = innerType;
     }
+    public SupportedType Type { get; }
+    public ITypeSymbol T { get; }
 
 
     public static SingleGeneric? CreateInstance(in ITypeSymbol typeSymbol)
     {
         if (typeSymbol is IArrayTypeSymbol arrayTypeSymbol)
-            return new SingleGeneric(arrayTypeSymbol.ElementType, SupportedType.Array);
+            return new SingleGeneric(typeSymbol, arrayTypeSymbol.ElementType, SupportedType.Array);
 
         if (typeSymbol is not INamedTypeSymbol type)
             return null;
@@ -85,30 +99,41 @@ public record SingleGeneric : KnownType
             _ => null
         };
 
-        return supported is null ? null : new SingleGeneric(type.TypeArguments[0], supported.Value);
-    }
-
-    public enum SupportedType
-    {
-        Nullable = 1,
-        Set = 2,
-        Array = 3,
-        ICollection = 4,
-        IReadOnlyCollection = 5,
-        IEnumerable = 6
+        return supported is null ? null : new SingleGeneric(type, type.TypeArguments[0], supported.Value);
     }
 }
 
-public record BaseType : KnownType
+public record BaseType : TypeIdentifier
 {
-    public SupportedType Type { get; }
-    private readonly ITypeSymbol _typeSymbol;
 
-    private BaseType(in ITypeSymbol typeSymbol, in SupportedType type)
+    public enum SupportedType
+    {
+        String = 1,
+        Bool = 2,
+        Char = 3,
+        Enum = 4,
+        Int16 = 5,
+        Byte = 6,
+        Int32 = 7,
+        Int64 = 8,
+        SByte = 9,
+        UInt16 = 10,
+        UInt32 = 11,
+        UInt64 = 12,
+        Decimal = 13,
+        Double = 14,
+        Single = 15,
+        DateTime = 16,
+        DateTimeOffset = 17,
+        DateOnly = 18,
+        MemoryStream = 19
+    }
+
+    private BaseType(ITypeSymbol typeSymbol, in SupportedType type) : base(typeSymbol)
     {
         Type = type;
-        _typeSymbol = typeSymbol;
     }
+    public SupportedType Type { get; }
 
     public static BaseType? CreateInstance(in ITypeSymbol type)
     {
@@ -136,29 +161,6 @@ public record BaseType : KnownType
             _ => null
         };
 
-        return primitiveTypeAssignment is null ? null : new BaseType(in type, primitiveTypeAssignment.Value);
-    }
-
-    public enum SupportedType
-    {
-        String = 1,
-        Bool = 2,
-        Char = 3,
-        Enum = 4,
-        Int16 = 5,
-        Byte = 6,
-        Int32 = 7,
-        Int64 = 8,
-        SByte = 9,
-        UInt16 = 10,
-        UInt32 = 11,
-        UInt64 = 12,
-        Decimal = 13,
-        Double = 14,
-        Single = 15,
-        DateTime = 16,
-        DateTimeOffset = 17,
-        DateOnly = 18,
-        MemoryStream = 19
+        return primitiveTypeAssignment is null ? null : new BaseType(type, primitiveTypeAssignment.Value);
     }
 }

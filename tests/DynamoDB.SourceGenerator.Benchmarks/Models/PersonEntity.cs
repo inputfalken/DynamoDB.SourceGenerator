@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Amazon.DynamoDBv2.DataModel;
 namespace DynamoDB.SourceGenerator.Benchmarks.Models;
 

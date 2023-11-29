@@ -1,17 +1,14 @@
-using Microsoft.CodeAnalysis;
 namespace DynamoDBGenerator.SourceGenerator.Types;
 
-public readonly record struct Assignment(in string Value, in ITypeSymbol Type, in KnownType? KnownType)
+public readonly record struct Assignment(string Value, TypeIdentifier TypeIdentifier)
 {
-    public string Value { get; } = Value;
-
     /// <summary>
-    ///     The type the assignment was based on.
+    /// The assignment value
     /// </summary>
-    public ITypeSymbol Type { get; } = Type;
+    public string Value { get; } = Value;
 
     /// <summary>
     ///     Determines whether the type was handled.
     /// </summary>
-    public KnownType? KnownType { get; } = KnownType;
+    public TypeIdentifier TypeIdentifier { get; } = TypeIdentifier;
 }
