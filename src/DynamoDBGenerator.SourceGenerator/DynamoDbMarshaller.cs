@@ -310,13 +310,14 @@ public class DynamoDbMarshaller
                 var typeIdentifier = GetTypeIdentifier(x.DataMember.Type);
                 var nameRef = $"_{x.DataMember.Name}NameRef";
                 var attributeReference = AttributeNameAssignmentNameFactory(x.DataMember.Type);
+                var isUnknown = typeIdentifier is UnknownType;
 
-                var assignment = typeIdentifier is UnknownType
+                var assignment = isUnknown
                     ? $"_{x.DataMember.Name} = new (() => new {attributeReference}({ternaryExpressionName}));"
                     : $"{nameRef} = new (() => {ternaryExpressionName});";
 
                 return (
-                    TypeIdentifier: typeIdentifier,
+                    IsUnknown: isUnknown,
                     DDB: x,
                     NameRef: nameRef,
                     AttributeReference: attributeReference,
@@ -344,7 +345,7 @@ public class DynamoDbMarshaller
 
             foreach (var fieldDeclaration in dataMembers)
             {
-                if (fieldDeclaration.TypeIdentifier is UnknownType)
+                if (fieldDeclaration.IsUnknown)
                 {
                     yield return $"private readonly Lazy<{fieldDeclaration.AttributeReference}> _{fieldDeclaration.DDB.DataMember.Name};";
                     yield return $"public {fieldDeclaration.AttributeReference} {fieldDeclaration.DDB.DataMember.Name} => _{fieldDeclaration.DDB.DataMember.Name}.Value;";
@@ -359,7 +360,7 @@ public class DynamoDbMarshaller
             yield return $"private readonly Lazy<string> {self};";
 
             var yields = dataMembers
-                .Select(static x => x.TypeIdentifier is UnknownType
+                .Select(static x => x.IsUnknown
                     ? $"if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{AttributeExpressionNameTrackerInterfaceAccessedNames}()) {{ yield return x; }}"
                     : $@"if ({x.NameRef}.IsValueCreated) yield return new ({x.NameRef}.Value, ""{x.DDB.AttributeName}"");"
                 )
@@ -382,12 +383,13 @@ public class DynamoDbMarshaller
                 var typeIdentifier = GetTypeIdentifier(x.DataMember.Type);
                 var valueRef = $"_{x.DataMember.Name}ValueRef";
                 var attributeReference = AttributeValueAssignmentNameFactory(x.DataMember.Type);
-                var assignment = typeIdentifier is UnknownType
+                var isUnknown = typeIdentifier is UnknownType;
+                var assignment = isUnknown
                     ? $"_{x.DataMember.Name} = new (() => new {attributeReference}({valueProvider}));"
                     : $"{valueRef} = new ({valueProvider});";
 
                 return (
-                    TypeIdentifier: typeIdentifier,
+                    IsUnknown: isUnknown,
                     DDB: x,
                     ValueRef: valueRef,
                     AttributeReference: attributeReference,
@@ -414,7 +416,7 @@ public class DynamoDbMarshaller
 
             foreach (var fieldDeclaration in dataMembers)
             {
-                if (fieldDeclaration.TypeIdentifier is UnknownType)
+                if (fieldDeclaration.IsUnknown)
                 {
                     yield return $"private readonly Lazy<{fieldDeclaration.AttributeReference}> _{fieldDeclaration.DDB.DataMember.Name};";
                     yield return $"public {fieldDeclaration.AttributeReference} {fieldDeclaration.DDB.DataMember.Name} => _{fieldDeclaration.DDB.DataMember.Name}.Value;";
@@ -431,7 +433,7 @@ public class DynamoDbMarshaller
                 .Select(x =>
                     {
                         var accessPattern = $"entity.{x.DDB.DataMember.Name}";
-                        return x.TypeIdentifier is UnknownType
+                        return x.IsUnknown
                             ? $"if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{AttributeExpressionValueTrackerAccessedValues}({accessPattern})) {{ yield return x; }}")}"
                             : $"if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {AttributeValueAssignment(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}").ToAttributeValue()});")}";
                     }
