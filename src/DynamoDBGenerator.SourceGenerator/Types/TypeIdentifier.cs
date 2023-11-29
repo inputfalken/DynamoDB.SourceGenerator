@@ -1,6 +1,5 @@
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using Microsoft.CodeAnalysis;
-
 namespace DynamoDBGenerator.SourceGenerator.Types;
 
 public abstract record TypeIdentifier(ITypeSymbol TypeSymbol)
@@ -12,13 +11,12 @@ public record UnknownType(ITypeSymbol TypeSymbol) : TypeIdentifier(TypeSymbol);
 
 public record KeyValueGeneric : TypeIdentifier
 {
-    public SupportedType Type { get; }
 
-    // ReSharper disable once InconsistentNaming
-    public ITypeSymbol TKey { get; }
-
-    // ReSharper disable once InconsistentNaming
-    public ITypeSymbol TValue { get; }
+    public enum SupportedType
+    {
+        LookUp = 1,
+        Dictionary = 2
+    }
 
     private KeyValueGeneric(in ITypeSymbol typeSymbol, in ITypeSymbol tKey, in ITypeSymbol tValue, in SupportedType supportedType) : base(typeSymbol)
     {
@@ -26,6 +24,13 @@ public record KeyValueGeneric : TypeIdentifier
         TKey = tKey;
         TValue = tValue;
     }
+    public SupportedType Type { get; }
+
+    // ReSharper disable once InconsistentNaming
+    public ITypeSymbol TKey { get; }
+
+    // ReSharper disable once InconsistentNaming
+    public ITypeSymbol TValue { get; }
 
     public static KeyValueGeneric? CreateInstance(in ITypeSymbol typeSymbol)
     {
@@ -45,18 +50,20 @@ public record KeyValueGeneric : TypeIdentifier
             ? null
             : new KeyValueGeneric(typeSymbol, type.TypeArguments[0], type.TypeArguments[1], supported.Value);
     }
-
-    public enum SupportedType
-    {
-        LookUp = 1,
-        Dictionary = 2
-    }
 }
 
 public record SingleGeneric : TypeIdentifier
 {
-    public SupportedType Type { get; }
-    public ITypeSymbol T { get; }
+
+    public enum SupportedType
+    {
+        Nullable = 1,
+        Set = 2,
+        Array = 3,
+        ICollection = 4,
+        IReadOnlyCollection = 5,
+        IEnumerable = 6
+    }
 
     private SingleGeneric(ITypeSymbol type, ITypeSymbol innerType, in SupportedType supportedType) : base(type)
 
@@ -64,6 +71,8 @@ public record SingleGeneric : TypeIdentifier
         Type = supportedType;
         T = innerType;
     }
+    public SupportedType Type { get; }
+    public ITypeSymbol T { get; }
 
 
     public static SingleGeneric? CreateInstance(in ITypeSymbol typeSymbol)
@@ -92,26 +101,39 @@ public record SingleGeneric : TypeIdentifier
 
         return supported is null ? null : new SingleGeneric(type, type.TypeArguments[0], supported.Value);
     }
-
-    public enum SupportedType
-    {
-        Nullable = 1,
-        Set = 2,
-        Array = 3,
-        ICollection = 4,
-        IReadOnlyCollection = 5,
-        IEnumerable = 6
-    }
 }
 
 public record BaseType : TypeIdentifier
 {
-    public SupportedType Type { get; }
+
+    public enum SupportedType
+    {
+        String = 1,
+        Bool = 2,
+        Char = 3,
+        Enum = 4,
+        Int16 = 5,
+        Byte = 6,
+        Int32 = 7,
+        Int64 = 8,
+        SByte = 9,
+        UInt16 = 10,
+        UInt32 = 11,
+        UInt64 = 12,
+        Decimal = 13,
+        Double = 14,
+        Single = 15,
+        DateTime = 16,
+        DateTimeOffset = 17,
+        DateOnly = 18,
+        MemoryStream = 19
+    }
 
     private BaseType(ITypeSymbol typeSymbol, in SupportedType type) : base(typeSymbol)
     {
         Type = type;
     }
+    public SupportedType Type { get; }
 
     public static BaseType? CreateInstance(in ITypeSymbol type)
     {
@@ -140,28 +162,5 @@ public record BaseType : TypeIdentifier
         };
 
         return primitiveTypeAssignment is null ? null : new BaseType(type, primitiveTypeAssignment.Value);
-    }
-
-    public enum SupportedType
-    {
-        String = 1,
-        Bool = 2,
-        Char = 3,
-        Enum = 4,
-        Int16 = 5,
-        Byte = 6,
-        Int32 = 7,
-        Int64 = 8,
-        SByte = 9,
-        UInt16 = 10,
-        UInt32 = 11,
-        UInt64 = 12,
-        Decimal = 13,
-        Double = 14,
-        Single = 15,
-        DateTime = 16,
-        DateTimeOffset = 17,
-        DateOnly = 18,
-        MemoryStream = 19
     }
 }
