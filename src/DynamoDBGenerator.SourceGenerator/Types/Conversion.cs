@@ -32,7 +32,7 @@ public readonly record struct Conversion
 
         yield return rootConversion;
 
-        foreach (var unknownAssignment in rootConversion.Assignments.Select(x => x.KnownType).OfType<UnknownType>())
+        foreach (var unknownAssignment in rootConversion.Assignments.Select(x => x.TypeIdentifier).OfType<UnknownType>())
         {
             foreach (var assignment in ConversionMethods(unknownAssignment.TypeSymbol, conversionSelector, typeSymbols))
                 yield return assignment;

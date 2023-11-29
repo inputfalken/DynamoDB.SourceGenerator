@@ -3,13 +3,12 @@ using Microsoft.CodeAnalysis;
 
 namespace DynamoDBGenerator.SourceGenerator.Types;
 
-public abstract record TypeIdentifier;
-
-public record UnknownType(ITypeSymbol TypeSymbol) : TypeIdentifier
+public abstract record TypeIdentifier(ITypeSymbol TypeSymbol)
 {
     public ITypeSymbol TypeSymbol { get; } = TypeSymbol;
-
 }
+
+public record UnknownType(ITypeSymbol TypeSymbol) : TypeIdentifier(TypeSymbol);
 
 public record KeyValueGeneric : TypeIdentifier
 {
@@ -21,7 +20,7 @@ public record KeyValueGeneric : TypeIdentifier
     // ReSharper disable once InconsistentNaming
     public ITypeSymbol TValue { get; }
 
-    private KeyValueGeneric(in ITypeSymbol tKey, in ITypeSymbol tValue, in SupportedType supportedType)
+    private KeyValueGeneric(in ITypeSymbol typeSymbol, in ITypeSymbol tKey, in ITypeSymbol tValue, in SupportedType supportedType) : base(typeSymbol)
     {
         Type = supportedType;
         TKey = tKey;
@@ -44,7 +43,7 @@ public record KeyValueGeneric : TypeIdentifier
         };
         return supported is null
             ? null
-            : new KeyValueGeneric(type.TypeArguments[0], type.TypeArguments[1], supported.Value);
+            : new KeyValueGeneric(typeSymbol, type.TypeArguments[0], type.TypeArguments[1], supported.Value);
     }
 
     public enum SupportedType
@@ -59,7 +58,7 @@ public record SingleGeneric : TypeIdentifier
     public SupportedType Type { get; }
     public ITypeSymbol T { get; }
 
-    private SingleGeneric(ITypeSymbol innerType, in SupportedType supportedType)
+    private SingleGeneric(ITypeSymbol type, ITypeSymbol innerType, in SupportedType supportedType) : base(type)
 
     {
         Type = supportedType;
@@ -70,7 +69,7 @@ public record SingleGeneric : TypeIdentifier
     public static SingleGeneric? CreateInstance(in ITypeSymbol typeSymbol)
     {
         if (typeSymbol is IArrayTypeSymbol arrayTypeSymbol)
-            return new SingleGeneric(arrayTypeSymbol.ElementType, SupportedType.Array);
+            return new SingleGeneric(typeSymbol, arrayTypeSymbol.ElementType, SupportedType.Array);
 
         if (typeSymbol is not INamedTypeSymbol type)
             return null;
@@ -91,7 +90,7 @@ public record SingleGeneric : TypeIdentifier
             _ => null
         };
 
-        return supported is null ? null : new SingleGeneric(type.TypeArguments[0], supported.Value);
+        return supported is null ? null : new SingleGeneric(type, type.TypeArguments[0], supported.Value);
     }
 
     public enum SupportedType
@@ -109,7 +108,7 @@ public record BaseType : TypeIdentifier
 {
     public SupportedType Type { get; }
 
-    private BaseType( in SupportedType type)
+    private BaseType(ITypeSymbol typeSymbol, in SupportedType type) : base(typeSymbol)
     {
         Type = type;
     }
@@ -140,7 +139,7 @@ public record BaseType : TypeIdentifier
             _ => null
         };
 
-        return primitiveTypeAssignment is null ? null : new BaseType(primitiveTypeAssignment.Value);
+        return primitiveTypeAssignment is null ? null : new BaseType(type, primitiveTypeAssignment.Value);
     }
 
     public enum SupportedType

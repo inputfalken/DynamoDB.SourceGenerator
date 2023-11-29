@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
@@ -19,7 +16,7 @@ public class DynamoDbMarshaller
     private static readonly Func<ITypeSymbol, string> DeserializationMethodNameFactory;
     private static readonly Func<ITypeSymbol, string> FullTypeNameFactory;
     private static readonly Func<ITypeSymbol, string> KeysMethodNameFactory;
-    private static readonly Func<ITypeSymbol, TypeIdentifier> KnownTypeFactory;
+    private static readonly Func<ITypeSymbol, TypeIdentifier> typeIdentifierFactory;
     private const string MarshallerClass = "_Marshaller_";
     private static readonly Func<ITypeSymbol, string> SerializationMethodNameFactory;
     private const string UnMarshallerClass = "_Unmarshaller_";
@@ -31,7 +28,7 @@ public class DynamoDbMarshaller
     {
         Comparer = SymbolEqualityComparer.IncludeNullability;
         FullTypeNameFactory = TypeExtensions.CacheFactory(Comparer, x => x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
-        KnownTypeFactory = TypeExtensions.CacheFactory(Comparer, x => x.GetKnownType());
+        typeIdentifierFactory = TypeExtensions.CacheFactory(Comparer, x => x.GetKnownType());
         DeserializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory(null, Comparer, true);
         KeysMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Keys", Comparer, false);
         SerializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory(null, Comparer, true);
@@ -46,8 +43,8 @@ public class DynamoDbMarshaller
     }
     private Assignment AttributeValueAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
     {
-        var knownTypeFactory = KnownTypeFactory(typeSymbol);
-        var assignment = knownTypeFactory switch
+        var typeIdentifier = typeIdentifierFactory(typeSymbol);
+        var assignment = typeIdentifier switch
         {
             BaseType baseType => baseType.Type switch
             {
@@ -83,13 +80,15 @@ public class DynamoDbMarshaller
                 _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
             },
             KeyValueGeneric keyValueGeneric => StringKeyedValuedGeneric(in keyValueGeneric, in accessPattern),
-            _ => throw new Exception()
+            _ => null
         };
 
-        return assignment ?? ExternalAssignment(new UnknownType(typeSymbol), accessPattern);
+        return assignment ?? ExternalAssignment(typeIdentifier, accessPattern);
 
-        Assignment ExternalAssignment(UnknownType unknownType, in string accessPattern) =>
-            unknownType.ToExternalDependencyAssignment($"M = {MarshallerClass}.{SerializationMethodNameFactory(unknownType.TypeSymbol)}({accessPattern})");
+        Assignment ExternalAssignment(TypeIdentifier unknownType, in string accessPattern)
+        {
+            return unknownType.ToExternalDependencyAssignment($"M = {MarshallerClass}.{SerializationMethodNameFactory(unknownType.TypeSymbol)}({accessPattern})");
+        }
     }
 
     private Assignment BuildList(in ITypeSymbol elementType, in string accessPattern)
@@ -100,7 +99,7 @@ public class DynamoDbMarshaller
             ? $"L = new List<AttributeValue>({accessPattern}.Where({whereBody}).{select}"
             : $"L = new List<AttributeValue>({accessPattern}.{select}";
 
-        return new Assignment(outerAssignment, innerAssignment.KnownType);
+        return new Assignment(outerAssignment, innerAssignment.TypeIdentifier);
     }
 
     private Assignment BuildPocoList(in SingleGeneric singleGeneric, in string? operation, in string accessPattern, in string defaultCause, in string memberName)
@@ -108,7 +107,7 @@ public class DynamoDbMarshaller
         var innerAssignment = DataMemberAssignment(singleGeneric.T, "y", in memberName);
         var outerAssignment = $"{accessPattern} switch {{ {{ L: {{ }} x }} => x.Select(y => {innerAssignment.Value}){operation}, {defaultCause} }}";
 
-        return new Assignment(outerAssignment, innerAssignment.KnownType);
+        return new Assignment(outerAssignment, innerAssignment.TypeIdentifier);
     }
 
     private static Assignment? BuildPocoSet(in ITypeSymbol elementType, in string accessPattern, in string defaultCase, TypeIdentifier typeIdentifier)
@@ -251,7 +250,7 @@ public class DynamoDbMarshaller
 
         Assignment Execution(in ITypeSymbol typeSymbol, in string accessPattern, string @default, in string memberName)
         {
-            var typeIdentifier = KnownTypeFactory(typeSymbol);
+            var typeIdentifier = typeIdentifierFactory(typeSymbol);
             var assignment = typeIdentifier switch
             {
                 BaseType baseType => baseType.Type switch
@@ -292,10 +291,12 @@ public class DynamoDbMarshaller
                 _ => null
             };
 
-            return assignment ?? ExternalAssignment(new UnknownType(typeSymbol), in accessPattern);
+            return assignment ?? ExternalAssignment(typeIdentifier, accessPattern);
 
-            Assignment ExternalAssignment(in UnknownType unknownType, in string accessPattern) =>
-                unknownType.ToExternalDependencyAssignment($"{accessPattern} switch {{ {{ M: {{ }} x }} => {UnMarshallerClass}.{DeserializationMethodNameFactory(unknownType.TypeSymbol)}(x), {@default} }}");
+            Assignment ExternalAssignment(TypeIdentifier unknownType, string accessPattern)
+            {
+                return unknownType.ToExternalDependencyAssignment($"{accessPattern} switch {{ {{ M: {{ }} x }} => {UnMarshallerClass}.{DeserializationMethodNameFactory(unknownType.TypeSymbol)}(x), {@default} }}");
+            }
         }
 
     }
@@ -306,7 +307,7 @@ public class DynamoDbMarshaller
             .Select(x =>
             {
                 var ternaryExpressionName = $"{constructorAttributeName} is null ? {@$"""#{x.AttributeName}"""}: {@$"$""{{{constructorAttributeName}}}.#{x.AttributeName}"""}";
-                var knownType = KnownTypeFactory(x.DataMember.Type);
+                var knownType = typeIdentifierFactory(x.DataMember.Type);
                 var nameRef = $"_{x.DataMember.Name}NameRef";
                 var attributeReference = AttributeNameAssignmentNameFactory(x.DataMember.Type);
 
@@ -377,7 +378,7 @@ public class DynamoDbMarshaller
         var dataMembers = _cachedDataMembers(typeSymbol)
             .Select(x =>
             {
-                var knownType = KnownTypeFactory(x.DataMember.Type);
+                var knownType = typeIdentifierFactory(x.DataMember.Type);
                 var valueRef = $"_{x.DataMember.Name}ValueRef";
                 var attributeReference = AttributeValueAssignmentNameFactory(x.DataMember.Type);
                 var assignment = knownType is not null
@@ -725,13 +726,13 @@ public class DynamoDbMarshaller
                 var lookupValueAssignment = DataMemberAssignment(keyValueGeneric.TValue, "y.z", in memberName);
                 return new Assignment(
                     $"{accessPattern} switch {{ {{ M: {{ }} x }} => x.SelectMany(y => y.Value.L, (y, z) => (y.Key, z)).ToLookup(y => y.Key, y => {lookupValueAssignment.Value}), {defaultCase} }}",
-                    lookupValueAssignment.KnownType
+                    lookupValueAssignment.TypeIdentifier
                 );
             case {Type: KeyValueGeneric.SupportedType.Dictionary}:
                 var dictionaryValueAssignment = DataMemberAssignment(keyValueGeneric.TValue, "y.Value", in memberName);
                 return new Assignment(
                     $"{accessPattern} switch {{ {{ M: {{ }} x }} => x.ToDictionary(y => y.Key, y => {dictionaryValueAssignment.Value}), {defaultCase} }}",
-                    dictionaryValueAssignment.KnownType
+                    dictionaryValueAssignment.TypeIdentifier
                 );
             default:
                 return null;
@@ -747,13 +748,13 @@ public class DynamoDbMarshaller
                 var lookupValueAssignment = BuildList(keyValueGeneric.TValue, "x");
                 return new Assignment(
                     $"M = {accessPattern}.ToDictionary(x => x.Key, x => {lookupValueAssignment.ToAttributeValue()})",
-                    lookupValueAssignment.KnownType
+                    lookupValueAssignment.TypeIdentifier
                 );
             case {Type: KeyValueGeneric.SupportedType.Dictionary}:
                 var dictionaryValueAssignment = AttributeValueAssignment(keyValueGeneric.TValue, "x.Value");
                 return new Assignment(
                     $"M = {accessPattern}.ToDictionary(x => x.Key, x => {dictionaryValueAssignment.ToAttributeValue()})",
-                    dictionaryValueAssignment.KnownType
+                    dictionaryValueAssignment.TypeIdentifier
                 );
             default:
                 return null;
