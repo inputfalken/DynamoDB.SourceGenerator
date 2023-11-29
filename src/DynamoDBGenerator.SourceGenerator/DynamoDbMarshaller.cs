@@ -16,7 +16,7 @@ public class DynamoDbMarshaller
     private static readonly Func<ITypeSymbol, string> DeserializationMethodNameFactory;
     private static readonly Func<ITypeSymbol, string> FullTypeNameFactory;
     private static readonly Func<ITypeSymbol, string> KeysMethodNameFactory;
-    private static readonly Func<ITypeSymbol, TypeIdentifier> TypeIdentifierFactory;
+    private static readonly Func<ITypeSymbol, TypeIdentifier> GetTypeIdentifier;
     private const string MarshallerClass = "_Marshaller_";
     private static readonly Func<ITypeSymbol, string> SerializationMethodNameFactory;
     private const string UnMarshallerClass = "_Unmarshaller_";
@@ -28,7 +28,7 @@ public class DynamoDbMarshaller
     {
         Comparer = SymbolEqualityComparer.IncludeNullability;
         FullTypeNameFactory = TypeExtensions.CacheFactory(Comparer, x => x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
-        TypeIdentifierFactory = TypeExtensions.CacheFactory(Comparer, x => x.GetKnownType());
+        GetTypeIdentifier = TypeExtensions.CacheFactory(Comparer, x => x.GetKnownType());
         DeserializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory(null, Comparer, true);
         KeysMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory("Keys", Comparer, false);
         SerializationMethodNameFactory = TypeExtensions.SuffixedTypeSymbolNameFactory(null, Comparer, true);
@@ -43,7 +43,7 @@ public class DynamoDbMarshaller
     }
     private Assignment AttributeValueAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
     {
-        var typeIdentifier = TypeIdentifierFactory(typeSymbol);
+        var typeIdentifier = GetTypeIdentifier(typeSymbol);
         var assignment = typeIdentifier switch
         {
             BaseType baseType => baseType.Type switch
@@ -250,7 +250,7 @@ public class DynamoDbMarshaller
 
         Assignment Execution(in ITypeSymbol typeSymbol, in string accessPattern, string @default, in string memberName)
         {
-            var typeIdentifier = TypeIdentifierFactory(typeSymbol);
+            var typeIdentifier = GetTypeIdentifier(typeSymbol);
             var assignment = typeIdentifier switch
             {
                 BaseType baseType => baseType.Type switch
@@ -307,7 +307,7 @@ public class DynamoDbMarshaller
             .Select(x =>
             {
                 var ternaryExpressionName = $"{constructorAttributeName} is null ? {@$"""#{x.AttributeName}"""}: {@$"$""{{{constructorAttributeName}}}.#{x.AttributeName}"""}";
-                var typeIdentifier = TypeIdentifierFactory(x.DataMember.Type);
+                var typeIdentifier = GetTypeIdentifier(x.DataMember.Type);
                 var nameRef = $"_{x.DataMember.Name}NameRef";
                 var attributeReference = AttributeNameAssignmentNameFactory(x.DataMember.Type);
 
@@ -379,12 +379,12 @@ public class DynamoDbMarshaller
         var dataMembers = _cachedDataMembers(typeSymbol)
             .Select(x =>
             {
-                var typeIdentifier = TypeIdentifierFactory(x.DataMember.Type);
+                var typeIdentifier = GetTypeIdentifier(x.DataMember.Type);
                 var valueRef = $"_{x.DataMember.Name}ValueRef";
                 var attributeReference = AttributeValueAssignmentNameFactory(x.DataMember.Type);
                 var assignment = typeIdentifier is UnknownType
-                    ? $"{valueRef} = new ({valueProvider});"
-                    : $"_{x.DataMember.Name} = new (() => new {attributeReference}({valueProvider}));";
+                    ? $"_{x.DataMember.Name} = new (() => new {attributeReference}({valueProvider}));"
+                    : $"{valueRef} = new ({valueProvider});";
 
                 return (
                     TypeIdentifier: typeIdentifier,
