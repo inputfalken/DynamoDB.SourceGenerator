@@ -9,6 +9,8 @@ using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
 using DynamoDB.SourceGenerator.Benchmarks;
 using DynamoDB.SourceGenerator.Benchmarks.Models;
+using Microsoft.Diagnostics.Tracing.Parsers.MicrosoftWindowsTCPIP;
+
 
 BenchmarkRunner.Run<Marshalling>();
 
