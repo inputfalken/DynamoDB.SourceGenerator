@@ -42,8 +42,7 @@ public class DynamoDbMarshaller
     }
     private Assignment AttributeValueAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
     {
-        var typeIdentifier = GetTypeIdentifier(typeSymbol);
-        var assignment = typeIdentifier switch
+        return GetTypeIdentifier(typeSymbol) switch
         {
             BaseType baseType => baseType.Type switch
             {
@@ -75,24 +74,24 @@ public class DynamoDbMarshaller
                     or SingleGeneric.SupportedType.Array
                     or SingleGeneric.SupportedType.IEnumerable
                     or SingleGeneric.SupportedType.ICollection => BuildList(singleGeneric.T, in accessPattern),
-                SingleGeneric.SupportedType.Set => BuildSet(singleGeneric.T, accessPattern, singleGeneric),
+                SingleGeneric.SupportedType.Set => BuildSet(singleGeneric, accessPattern),
                 _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
             },
             KeyValueGeneric keyValueGeneric => StringKeyedValuedGeneric(in keyValueGeneric, in accessPattern),
-            _ => null
+            var typeIdentifier => throw new ArgumentOutOfRangeException($"The TypeIdentifer '{typeIdentifier.GetType().FullName}' with type '{typeIdentifier.TypeSymbol.ToDisplayString()}' has not been covered for marshalling.")
         };
 
-        return assignment ?? ExternalAssignment(typeIdentifier, accessPattern);
-
-        Assignment ExternalAssignment(TypeIdentifier unknownType, in string accessPattern) =>
-            unknownType.ToExternalDependencyAssignment($"M = {MarshallerClass}.{GetSerializationMethodName(unknownType.TypeSymbol)}({accessPattern})");
+        Assignment ExternalAssignment(TypeIdentifier unknownType, in string accessPattern)
+        {
+            return unknownType.ToExternalDependencyAssignment($"M = {MarshallerClass}.{GetSerializationMethodName(unknownType.TypeSymbol)}({accessPattern})");
+        }
     }
 
-    private Assignment BuildList(in ITypeSymbol elementType, in string accessPattern)
+    private Assignment BuildList(in ITypeSymbol typeSymbol, in string accessPattern)
     {
-        var innerAssignment = AttributeValueAssignment(elementType, "x");
+        var innerAssignment = AttributeValueAssignment(typeSymbol, "x");
         var select = $"Select(x => {innerAssignment.ToAttributeValue()}))";
-        var outerAssignment = elementType.NotNullLambdaExpression() is { } whereBody
+        var outerAssignment = typeSymbol.NotNullLambdaExpression() is { } whereBody
             ? $"L = new List<AttributeValue>({accessPattern}.Where({whereBody}).{select}"
             : $"L = new List<AttributeValue>({accessPattern}.{select}";
 
@@ -107,29 +106,29 @@ public class DynamoDbMarshaller
         return new Assignment(outerAssignment, innerAssignment.TypeIdentifier);
     }
 
-    private static Assignment? BuildPocoSet(in ITypeSymbol elementType, in string accessPattern, in string defaultCase, TypeIdentifier typeIdentifier)
+    private static Assignment BuildPocoSet(in SingleGeneric typeIdentifier, in string accessPattern, in string defaultCase)
     {
-        if (elementType.IsNumeric())
-            return typeIdentifier.ToInlineAssignment($"{accessPattern} switch {{ {{ NS: {{ }} x }} =>  new HashSet<{elementType.Name}>(x.Select(y => {elementType.Name}.Parse(y))), {defaultCase} }}");
+        if (typeIdentifier.T.IsNumeric())
+            return typeIdentifier.ToInlineAssignment($"{accessPattern} switch {{ {{ NS: {{ }} x }} =>  new HashSet<{typeIdentifier.T.Name}>(x.Select(y => {typeIdentifier.T.Name}.Parse(y))), {defaultCase} }}");
 
-        if (elementType.SpecialType is SpecialType.System_String)
+        if (typeIdentifier.T.SpecialType is SpecialType.System_String)
             return typeIdentifier.ToInlineAssignment($"{accessPattern} switch {{ {{ SS: {{ }} x }} =>  new HashSet<string>(x), {defaultCase} }}");
 
-        return null;
+        throw new ArgumentException($"Unable to create '{typeIdentifier.TypeSymbol.ToDisplayString()}'. only string and integers are supported for sets.");
     }
 
-    private static Assignment? BuildSet(in ITypeSymbol elementType, in string accessPattern, TypeIdentifier typeIdentifier)
+    private static Assignment BuildSet(in SingleGeneric typeIdentifier, in string accessPattern)
     {
-        var newAccessPattern = elementType.NotNullLambdaExpression() is { } expression
+        var newAccessPattern = typeIdentifier.T.NotNullLambdaExpression() is { } expression
             ? $"{accessPattern}.Where({expression})"
             : accessPattern;
 
-        if (elementType.SpecialType is SpecialType.System_String)
+        if (typeIdentifier.T.SpecialType is SpecialType.System_String)
             return typeIdentifier.ToInlineAssignment($"SS = new List<string>({newAccessPattern})");
 
-        return elementType.IsNumeric() is false
-            ? null
-            : typeIdentifier.ToInlineAssignment($"NS = new List<string>({newAccessPattern}.Select(x => x.ToString()))");
+        return typeIdentifier.T.IsNumeric()
+            ? typeIdentifier.ToInlineAssignment($"NS = new List<string>({newAccessPattern}.Select(x => x.ToString()))")
+            : throw new ArgumentException($"Unable to create '{typeIdentifier.TypeSymbol.ToDisplayString()}'. only string and integers are supported for sets.");
     }
     private IEnumerable<string> CreateExpressionAttributeName()
     {
@@ -247,8 +246,7 @@ public class DynamoDbMarshaller
 
         Assignment Execution(in ITypeSymbol typeSymbol, in string accessPattern, string @default, in string memberName)
         {
-            var typeIdentifier = GetTypeIdentifier(typeSymbol);
-            var assignment = typeIdentifier switch
+            return GetTypeIdentifier(typeSymbol) switch
             {
                 BaseType baseType => baseType.Type switch
                 {
@@ -277,7 +275,7 @@ public class DynamoDbMarshaller
                 SingleGeneric singleGeneric => singleGeneric.Type switch
                 {
                     SingleGeneric.SupportedType.Nullable => Execution(singleGeneric.T, in accessPattern, @default, in memberName),
-                    SingleGeneric.SupportedType.Set => BuildPocoSet(singleGeneric.T, in accessPattern, in @default, singleGeneric),
+                    SingleGeneric.SupportedType.Set => BuildPocoSet(singleGeneric, accessPattern, @default),
                     SingleGeneric.SupportedType.Array => BuildPocoList(in singleGeneric, ".ToArray()", in accessPattern, in @default, in memberName),
                     SingleGeneric.SupportedType.ICollection => BuildPocoList(in singleGeneric, ".ToList()", in accessPattern, in @default, in memberName),
                     SingleGeneric.SupportedType.IReadOnlyCollection => BuildPocoList(in singleGeneric, ".ToArray()", in accessPattern, in @default, in memberName),
@@ -285,10 +283,10 @@ public class DynamoDbMarshaller
                     _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
                 },
                 KeyValueGeneric keyValueGeneric => StringKeyedPocoGeneric(in keyValueGeneric, in accessPattern, in @default, in memberName),
-                _ => null
+                var typeIdentifier => throw new ArgumentOutOfRangeException(
+                    $"The TypeIdentifer '{typeIdentifier.GetType().FullName}' with type '{typeIdentifier.TypeSymbol.ToDisplayString()}' has not been covered for unmarshalling.")
             };
 
-            return assignment ?? ExternalAssignment(typeIdentifier, accessPattern);
 
             Assignment ExternalAssignment(TypeIdentifier unknownType, string accessPattern) =>
                 unknownType.ToExternalDependencyAssignment($"{accessPattern} switch {{ {{ M: {{ }} x }} => {UnMarshallerClass}.{GetDeserializationMethodName(unknownType.TypeSymbol)}(x), {@default} }}");
@@ -714,12 +712,12 @@ public class DynamoDbMarshaller
 
     }
 
-    private Assignment? StringKeyedPocoGeneric(in KeyValueGeneric keyValueGeneric, in string accessPattern, in string defaultCase, in string memberName)
+    private Assignment StringKeyedPocoGeneric(in KeyValueGeneric keyValueGeneric, in string accessPattern, in string defaultCase, in string memberName)
     {
         switch (keyValueGeneric)
         {
             case {TKey: not {SpecialType: SpecialType.System_String}}:
-                return null;
+                throw new ArgumentException($"Unable to create '{keyValueGeneric.TypeSymbol.ToDisplayString()}'. only strings are supported for for TKey.");
             case {Type: KeyValueGeneric.SupportedType.LookUp}:
                 var lookupValueAssignment = DataMemberAssignment(keyValueGeneric.TValue, "y.z", in memberName);
                 return new Assignment(
@@ -733,15 +731,15 @@ public class DynamoDbMarshaller
                     dictionaryValueAssignment.TypeIdentifier
                 );
             default:
-                return null;
+                throw new NotImplementedException($"Type conversion for '{keyValueGeneric.TypeSymbol.ToDisplayString()}'.");
         }
     }
-    private Assignment? StringKeyedValuedGeneric(in KeyValueGeneric keyValueGeneric, in string accessPattern)
+    private Assignment StringKeyedValuedGeneric(in KeyValueGeneric keyValueGeneric, in string accessPattern)
     {
         switch (keyValueGeneric)
         {
             case {TKey: not {SpecialType: SpecialType.System_String}}:
-                return null;
+                throw new ArgumentException($"Unable to create '{keyValueGeneric.TypeSymbol.ToDisplayString()}'. only strings are supported for for TKey.");
             case {Type: KeyValueGeneric.SupportedType.LookUp}:
                 var lookupValueAssignment = BuildList(keyValueGeneric.TValue, "x");
                 return new Assignment(
@@ -755,7 +753,7 @@ public class DynamoDbMarshaller
                     dictionaryValueAssignment.TypeIdentifier
                 );
             default:
-                return null;
+                throw new NotImplementedException($"Type conversion for '{keyValueGeneric.TypeSymbol.ToDisplayString()}'.");
         }
     }
 }
