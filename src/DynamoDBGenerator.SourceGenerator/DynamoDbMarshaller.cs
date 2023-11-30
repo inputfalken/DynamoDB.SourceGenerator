@@ -153,23 +153,18 @@ public class DynamoDbMarshaller
         var dataMembers = _cachedDataMembers(typeSymbol)
             .Select(x =>
             {
-                var ternaryExpressionName = $"{constructorAttributeName} is null ? {@$"""#{x.AttributeName}"""}: {@$"$""{{{constructorAttributeName}}}.#{x.AttributeName}"""}";
                 var typeIdentifier = GetTypeIdentifier(x.DataMember.Type);
                 var nameRef = $"_{x.DataMember.Name}NameRef";
                 var attributeReference = GetAttributeExpressionNameTypeName(x.DataMember.Type);
                 var isUnknown = typeIdentifier is UnknownType;
 
-                var assignment = isUnknown
-                    ? $"_{x.DataMember.Name} = new (() => new {attributeReference}({ternaryExpressionName}));"
-                    : $"{nameRef} = new (() => {ternaryExpressionName});";
-
                 return (
                     IsUnknown: isUnknown,
+                    typeIdentifier,
                     DDB: x,
                     NameRef: nameRef,
                     AttributeReference: attributeReference,
-                    AttributeInterfaceName: AttributeExpressionNameTrackerInterface,
-                    Assignment: new Assignment(assignment, typeIdentifier)
+                    AttributeInterfaceName: AttributeExpressionNameTrackerInterface
                 );
             })
             .ToArray();
@@ -178,13 +173,19 @@ public class DynamoDbMarshaller
 
         var @class = $"public readonly struct {structName} : {AttributeExpressionNameTrackerInterface}"
             .CreateBlock(CreateCode());
-        return new Conversion(@class, dataMembers.Select(x => x.Assignment));
+        return new Conversion(@class, dataMembers.Select(x => x.typeIdentifier));
 
         IEnumerable<string> CreateCode()
         {
             const string self = "_self";
             var constructorFieldAssignments = dataMembers
-                .Select(x => x.Assignment.Value)
+                .Select(x =>
+                {
+                    var ternaryExpressionName = $"{constructorAttributeName} is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{{constructorAttributeName}}}.#{x.DDB.AttributeName}"""}";
+                    return x.IsUnknown
+                        ? $"_{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({ternaryExpressionName}));"
+                        : $"{x.NameRef} = new (() => {ternaryExpressionName});";
+                })
                 .Append($@"{self} = new(() => {constructorAttributeName} ?? throw new NotImplementedException(""Root element AttributeExpressionName reference.""));");
 
             foreach (var fieldAssignment in $"public {structName}(string? {constructorAttributeName})".CreateBlock(constructorFieldAssignments))
@@ -231,9 +232,6 @@ public class DynamoDbMarshaller
                 var valueRef = $"_{x.DataMember.Name}ValueRef";
                 var attributeReference = GetAttributeExpressionValueTypeName(x.DataMember.Type);
                 var isUnknown = typeIdentifier is UnknownType;
-                var assignment = isUnknown
-                    ? $"_{x.DataMember.Name} = new (() => new {attributeReference}({valueProvider}));"
-                    : $"{valueRef} = new ({valueProvider});";
 
                 return (
                     IsUnknown: isUnknown,
@@ -241,7 +239,7 @@ public class DynamoDbMarshaller
                     ValueRef: valueRef,
                     AttributeReference: attributeReference,
                     AttributeInterfaceName: GetAttributeValueInterfaceName(x.DataMember.Type),
-                    Assignment: new Assignment(assignment, typeIdentifier)
+                    typeIdentifier
                 );
             })
             .ToArray();
@@ -252,12 +250,16 @@ public class DynamoDbMarshaller
 
         var @struct = $"public readonly struct {className} : {interfaceName}".CreateBlock(CreateCode());
 
-        return new Conversion(@struct, dataMembers.Select(x => x.Assignment));
+        return new Conversion(@struct, dataMembers.Select(x => x.typeIdentifier));
 
         IEnumerable<string> CreateCode()
         {
             const string self = "_self";
-            var constructorFieldAssignments = dataMembers.Select(x => x.Assignment.Value).Append($"{self} = new({valueProvider});");
+            var constructorFieldAssignments = dataMembers
+                .Select(x => x.IsUnknown
+                    ? $"_{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({valueProvider}));"
+                    : $"{x.ValueRef} = new ({valueProvider});")
+                .Append($"{self} = new({valueProvider});");
             foreach (var fieldAssignment in $"public {className}(Func<string> {valueProvider})".CreateBlock(constructorFieldAssignments))
                 yield return fieldAssignment;
 
@@ -395,7 +397,7 @@ public class DynamoDbMarshaller
 
         var code = $"public static Dictionary<string, AttributeValue> {GetSerializationMethodName(type)}({GetFullTypeName(type)} {paramReference})".CreateBlock(body);
 
-        return new Conversion(code, properties.Select(static x => x.assignment));
+        return new Conversion(code, properties.Select(x => x.assignment.TypeIdentifier));
 
         IEnumerable<(string dictionaryPopulation, string capacityTernary, Assignment assignment)> GetAssignments(ITypeSymbol typeSymbol)
         {
@@ -441,8 +443,8 @@ public class DynamoDbMarshaller
         var code =
             $"private static Dictionary<string, AttributeValue> {GetKeysMethodName(typeSymbol)}(object? {pkReference}, object? {rkReference}, bool {enforcePkReference}, bool {enforceRkReference}, string? index = null)"
                 .CreateBlock(CreateBody());
-        return new Conversion(code, Enumerable.Empty<Assignment>());
-
+        
+        return new Conversion(code);
         IEnumerable<string> CreateBody()
         {
             var keyStructure = DynamoDbDataMember.GetKeyStructure(_cachedDataMembers(typeSymbol));
@@ -542,7 +544,7 @@ public class DynamoDbMarshaller
 
         var method = $"public static {GetFullTypeName(type)} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue> {paramReference})".CreateBlock(blockBody);
 
-        return new Conversion(method, assignments.Select(x => x.Assignment));
+        return new Conversion(method, assignments.Select(x => x.Assignment.TypeIdentifier));
 
         static IEnumerable<string> ObjectAssignmentBlock(bool useParentheses, IEnumerable<string> assignments, bool applySemiColon)
         {
