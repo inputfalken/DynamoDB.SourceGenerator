@@ -20,9 +20,8 @@ public static class NotNullEvaluationExtensions
 
         return typeSymbol.NullableAnnotation switch
         {
-            NullableAnnotation.None => true,
+            NullableAnnotation.None or NullableAnnotation.Annotated => true,
             NullableAnnotation.NotAnnotated => false,
-            NullableAnnotation.Annotated => true,
             _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
         };
     }
@@ -46,12 +45,12 @@ public static class NotNullEvaluationExtensions
         var ifClause = $"if ({expression}) {{ {truthy} }}";
         return typeSymbol.NullableAnnotation switch
         {
-            NullableAnnotation.None => ifClause,
+            NullableAnnotation.None or NullableAnnotation.Annotated => ifClause,
             NullableAnnotation.NotAnnotated => $"{ifClause} else {{ {CreateException(in accessPattern)} }}",
-            NullableAnnotation.Annotated => ifClause,
             _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
         };
     }
+
 
     /// <summary>
     ///     If this expression returns null it means that the evaluation determined the expression to be truthy.
@@ -59,27 +58,24 @@ public static class NotNullEvaluationExtensions
     private static string? Expression(in ITypeSymbol typeSymbol, in string accessPattern)
     {
         return typeSymbol.IsReferenceType
-            ? OnReferenceType(in accessPattern)
+            ? $"{accessPattern} is not null"
             : OnValueType(in typeSymbol, in accessPattern);
+
+        static string? OnValueType(in ITypeSymbol typeSymbol, in string accessPattern)
+        {
+
+            if (typeSymbol.TryGetNullableValueType() is not { } namedTypeSymbol)
+                return null;
+
+            var T = namedTypeSymbol.TypeArguments[0];
+
+            var expression = Expression(in T, $"{accessPattern}.Value");
+
+            return expression is null
+                ? $"{accessPattern} is not null"
+                : $"{accessPattern} is not null && {expression}";
+        }
     }
 
-    private static string? OnValueType(in ITypeSymbol typeSymbol, in string accessPattern)
-    {
 
-        if (typeSymbol.TryGetNullableValueType() is not { } namedTypeSymbol)
-            return null;
-
-        var T = namedTypeSymbol.TypeArguments[0];
-
-        var expression = Expression(in T, $"{accessPattern}.Value");
-
-        return expression is null
-            ? $"{accessPattern}.HasValue"
-            : $"{accessPattern}.HasValue && {expression}";
-    }
-
-    private static string? OnReferenceType(in string accessPattern)
-    {
-        return $"{accessPattern} is not null";
-    }
 }
