@@ -30,7 +30,7 @@ public class DynamoDbMarshaller
         GetTypeIdentifier = TypeExtensions.CacheFactory(Comparer, x => x.GetKnownType());
         GetDeserializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory(null, Comparer, true);
         GetKeysMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("Keys", Comparer, false);
-        GetSerializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory(null, Comparer, true);
+        GetSerializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_M", Comparer, true);
         GetAttributeExpressionNameTypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", Comparer, false);
         GetAttributeExpressionValueTypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Values", Comparer, false);
         GetAttributeValueInterfaceName = TypeExtensions.CacheFactory(Comparer, x => $"{AttributeExpressionValueTrackerInterface}<{GetFullTypeName(x)}>");
@@ -173,7 +173,7 @@ public class DynamoDbMarshaller
 
         var @class = $"public readonly struct {structName} : {AttributeExpressionNameTrackerInterface}"
             .CreateBlock(CreateCode());
-        return new Conversion(@class, dataMembers.Select(x => x.typeIdentifier));
+        return new Conversion(@class, dataMembers.Select(x => x.typeIdentifier).OfType<UnknownType>());
 
         IEnumerable<string> CreateCode()
         {
@@ -250,7 +250,7 @@ public class DynamoDbMarshaller
 
         var @struct = $"public readonly struct {className} : {interfaceName}".CreateBlock(CreateCode());
 
-        return new Conversion(@struct, dataMembers.Select(x => x.typeIdentifier));
+        return new Conversion(@struct, dataMembers.Select(x => x.typeIdentifier).OfType<UnknownType>());
 
         IEnumerable<string> CreateCode()
         {
@@ -389,6 +389,43 @@ public class DynamoDbMarshaller
     {
         const string paramReference = "entity";
         const string dictionaryName = "attributeValues";
+        const string x = "x";
+
+        static string CreateAttributeValueMethodSignature(TypeIdentifier typeIdentifier) =>
+            $"public static AttributeValue {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({GetFullTypeName(typeIdentifier.TypeSymbol)} {x})";
+
+        Conversion? foo = GetTypeIdentifier(type) switch
+        {
+            BaseType baseType => baseType.Type switch
+            {
+                BaseType.SupportedType.String => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ S = {x} }};").ToConversion(),
+                BaseType.SupportedType.Bool => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ BOOL = {x} }};").ToConversion(),
+                BaseType.SupportedType.Int16
+                    or BaseType.SupportedType.Int32
+                    or BaseType.SupportedType.Int64
+                    or BaseType.SupportedType.UInt16
+                    or BaseType.SupportedType.UInt32
+                    or BaseType.SupportedType.UInt64
+                    or BaseType.SupportedType.Double
+                    or BaseType.SupportedType.Decimal
+                    or BaseType.SupportedType.Single
+                    or BaseType.SupportedType.SByte
+                    or BaseType.SupportedType.Byte
+                    => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ N = {x}.ToString() }};").ToConversion(),
+                BaseType.SupportedType.Char => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ S = {x}.ToString() }};").ToConversion(),
+                BaseType.SupportedType.DateOnly or BaseType.SupportedType.DateTimeOffset or BaseType.SupportedType.DateTime
+                    => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ S = {x}.ToString(\"O\") }};").ToConversion(),
+                BaseType.SupportedType.Enum => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ N = ((int){x}).ToString() }};").ToConversion(),
+                BaseType.SupportedType.MemoryStream => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ B = {x} }};").ToConversion(),
+                _ => throw UncoveredConversionException(baseType, nameof(CreateAttributeValueMethodSignature))
+            },
+            _ => null
+
+        };
+        if (foo is not null)
+        {
+            return foo.Value;
+        }
         var properties = GetAssignments(type).ToArray();
 
         var body = InitializeDictionary(properties.Select(static x => x.capacityTernary))
@@ -443,8 +480,9 @@ public class DynamoDbMarshaller
         var code =
             $"private static Dictionary<string, AttributeValue> {GetKeysMethodName(typeSymbol)}(object? {pkReference}, object? {rkReference}, bool {enforcePkReference}, bool {enforceRkReference}, string? index = null)"
                 .CreateBlock(CreateBody());
-        
+
         return new Conversion(code);
+
         IEnumerable<string> CreateBody()
         {
             var keyStructure = DynamoDbDataMember.GetKeyStructure(_cachedDataMembers(typeSymbol));
@@ -544,7 +582,7 @@ public class DynamoDbMarshaller
 
         var method = $"public static {GetFullTypeName(type)} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue> {paramReference})".CreateBlock(blockBody);
 
-        return new Conversion(method, assignments.Select(x => x.Assignment.TypeIdentifier));
+        return new Conversion(method, assignments.Select(x => x.Assignment.TypeIdentifier).OfType<UnknownType>());
 
         static IEnumerable<string> ObjectAssignmentBlock(bool useParentheses, IEnumerable<string> assignments, bool applySemiColon)
         {

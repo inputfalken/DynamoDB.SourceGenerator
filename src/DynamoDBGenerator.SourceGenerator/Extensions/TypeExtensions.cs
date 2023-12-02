@@ -70,6 +70,11 @@ public static class TypeExtensions
             return result;
         }
     }
+
+    public static Conversion ToConversion(this IEnumerable<string> enumerable)
+    {
+        return new Conversion(enumerable);
+    }
     public static Assignment ToInlineAssignment(this TypeIdentifier typeSymbol, string value)
     {
         return new Assignment(value, typeSymbol);

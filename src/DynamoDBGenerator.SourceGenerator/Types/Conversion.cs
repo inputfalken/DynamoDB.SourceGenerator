@@ -40,7 +40,7 @@ public readonly record struct Conversion
         yield return rootConversion;
 
         var assignments = rootConversion.TypeIdentifiers
-            .OfType<UnknownType>()
+            //.OfType<UnknownType>()
             .SelectMany(x => ConversionMethods(x.TypeSymbol, conversionSelector, typeSymbols));
 
         foreach (var assignment in assignments)
