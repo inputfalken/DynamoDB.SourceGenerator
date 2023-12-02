@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
@@ -299,9 +300,17 @@ public class DynamoDbMarshaller
             yield return $"public override string ToString() => {self}.Value;";
         }
     }
-    private static string InvokeMarshallerMethod(ITypeSymbol typeSymbol, string parameterReference) => GetTypeIdentifier(typeSymbol) is UnknownType
-        ? $"new AttributeValue {{ M = {MarshallerClass}.{GetSerializationMethodName(typeSymbol)}({parameterReference}) }}"
-        : $"{MarshallerClass}.{GetSerializationMethodName(typeSymbol)}({parameterReference})";
+    private static string InvokeMarshallerMethod(ITypeSymbol typeSymbol, string parameterReference, [CallerMemberName] string caller = "")
+    {
+        if (caller is nameof(StaticAttributeValueDictionaryFactory))
+            return GetTypeIdentifier(typeSymbol) is UnknownType
+                ? $"new AttributeValue {{ M = {GetSerializationMethodName(typeSymbol)}({parameterReference}) }}"
+                : $"{GetSerializationMethodName(typeSymbol)}({parameterReference})";
+
+        return GetTypeIdentifier(typeSymbol) is UnknownType
+            ? $"new AttributeValue {{ M = {MarshallerClass}.{GetSerializationMethodName(typeSymbol)}({parameterReference}) }}"
+            : $"{MarshallerClass}.{GetSerializationMethodName(typeSymbol)}({parameterReference})";
+    }
     private Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type)
     {
         const string paramReference = "entity";
