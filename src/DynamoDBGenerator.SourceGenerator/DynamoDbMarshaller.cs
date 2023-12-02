@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static DynamoDBGenerator.SourceGenerator.Constants.DynamoDBGenerator.ExceptionHelper;
 using static DynamoDBGenerator.SourceGenerator.Constants.DynamoDBGenerator.Marshaller;
+using KeyValueGeneric = DynamoDBGenerator.SourceGenerator.Types.KeyValueGeneric;
 namespace DynamoDBGenerator.SourceGenerator;
 
 public class DynamoDbMarshaller
@@ -394,6 +395,12 @@ public class DynamoDbMarshaller
         static string CreateAttributeValueMethodSignature(TypeIdentifier typeIdentifier) =>
             $"public static AttributeValue {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({GetFullTypeName(typeIdentifier.TypeSymbol)} {x})";
 
+        static string InvokeExternalMethod(ITypeSymbol typeSymbol)
+        {
+            return GetTypeIdentifier(typeSymbol) is UnknownType 
+                ? $"return new AttributeValue {{ M = {GetSerializationMethodName(typeSymbol)} }}" 
+                : $"{GetSerializationMethodName(typeSymbol)})";
+        }
         Conversion? foo = GetTypeIdentifier(type) switch
         {
             BaseType baseType => baseType.Type switch
@@ -428,20 +435,33 @@ public class DynamoDbMarshaller
                     or SingleGeneric.SupportedType.Array
                     or SingleGeneric.SupportedType.IEnumerable
                     or SingleGeneric.SupportedType.ICollection => CreateAttributeValueMethodSignature(singleGeneric)
-                        .CreateBlock($"return new AttributeValue {{ L = {x}.Select({GetSerializationMethodName(singleGeneric.T)}) }};")
+                        .CreateBlock($"return new AttributeValue {{ L = new List<AttributeValue>({x}.Select({GetSerializationMethodName(singleGeneric.T)})) }};")
                         .ToConversion(singleGeneric.T),
-                SingleGeneric.SupportedType.Set  when singleGeneric.T.SpecialType is SpecialType.System_String 
+                SingleGeneric.SupportedType.Set when singleGeneric.T.SpecialType is SpecialType.System_String
                     => CreateAttributeValueMethodSignature(singleGeneric)
                         .CreateBlock($"return new AttributeValue {{ SS = new List<string>({x}) }};")
                         .ToConversion(singleGeneric.T),
-                SingleGeneric.SupportedType.Set  when singleGeneric.T.IsNumeric() 
+                SingleGeneric.SupportedType.Set when singleGeneric.T.IsNumeric()
                     => CreateAttributeValueMethodSignature(singleGeneric)
                         .CreateBlock($"return new AttributeValue {{ SS = new List<string>({x}.Select(y => y.ToString())) }};")
                         .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(StaticAttributeValueDictionaryFactory))),
                 _ => throw UncoveredConversionException(singleGeneric, nameof(StaticAttributeValueDictionaryFactory))
             },
-            _ => null
+            KeyValueGeneric {TKey.SpecialType: not SpecialType.System_String} keyValueGeneric => throw new ArgumentException("Only strings are supported for for TKey",
+                UncoveredConversionException(keyValueGeneric, nameof(StaticAttributeValueDictionaryFactory))),
+            KeyValueGeneric keyValueGeneric => keyValueGeneric.Type switch
+            {
+                KeyValueGeneric.SupportedType.Dictionary => CreateAttributeValueMethodSignature(keyValueGeneric)
+                    .CreateBlock($"return new AttributeValue {{ M = {x}.ToDictionary(y => y.Key, y => {GetSerializationMethodName(keyValueGeneric.TValue)}(y.Value)) }};")
+                    .ToConversion(keyValueGeneric.TValue),
+                KeyValueGeneric.SupportedType.LookUp => CreateAttributeValueMethodSignature(keyValueGeneric)
+                    .CreateBlock($"return new AttributeValue {{ M = {x}.ToDictionary(y => y.Key, y => {GetSerializationMethodName(keyValueGeneric.TValue)}(y.Value)) }};")
+                    .ToConversion(keyValueGeneric.TValue),
+                _ => throw UncoveredConversionException(keyValueGeneric, nameof(StaticAttributeValueDictionaryFactory))
+            },
+            UnknownType => null,
+            var typeIdentifier => throw UncoveredConversionException(typeIdentifier, nameof(MarshallingAssignment))
 
         };
         if (foo is not null)
@@ -456,23 +476,22 @@ public class DynamoDbMarshaller
 
         var code = $"public static Dictionary<string, AttributeValue> {GetSerializationMethodName(type)}({GetFullTypeName(type)} {paramReference})".CreateBlock(body);
 
-        return new Conversion(code, properties.Select(y => y.assignment.TypeIdentifier.TypeSymbol));
+        return new Conversion(code, properties.Select(y => y.assignment));
 
-        IEnumerable<(string dictionaryPopulation, string capacityTernary, Assignment assignment)> GetAssignments(ITypeSymbol typeSymbol)
+        IEnumerable<(string dictionaryPopulation, string capacityTernary, ITypeSymbol assignment)> GetAssignments(ITypeSymbol typeSymbol)
         {
             foreach (var x in _cachedDataMembers(typeSymbol))
             {
                 var accessPattern = $"{paramReference}.{x.DataMember.Name}";
-                var attributeValue = MarshallingAssignment(x.DataMember.Type, accessPattern);
 
                 var dictionaryAssignment = x.DataMember.Type.NotNullIfStatement(
                     in accessPattern,
-                    @$"{dictionaryName}.Add(""{x.AttributeName}"", {attributeValue.ToAttributeValue()});"
+                    @$"{dictionaryName}.Add(""{x.AttributeName}"", {GetSerializationMethodName(x.DataMember.Type)}({accessPattern}));"
                 );
 
                 var capacityTernary = x.DataMember.Type.NotNullTernaryExpression(in accessPattern, "1", "0");
 
-                yield return ($"{dictionaryAssignment}", capacityTernary, attributeValue);
+                yield return ($"{dictionaryAssignment}", capacityTernary, x.DataMember.Type);
             }
         }
 
