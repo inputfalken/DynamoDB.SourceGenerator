@@ -75,6 +75,10 @@ public static class TypeExtensions
     {
         return new Conversion(enumerable);
     }
+    public static Conversion ToConversion(this IEnumerable<string> enumerable, ITypeSymbol typeSymbol)
+    {
+        return new Conversion(enumerable, new []{typeSymbol});
+    }
     public static Assignment ToInlineAssignment(this TypeIdentifier typeSymbol, string value)
     {
         return new Assignment(value, typeSymbol);

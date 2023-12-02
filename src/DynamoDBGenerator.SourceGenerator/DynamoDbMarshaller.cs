@@ -173,7 +173,7 @@ public class DynamoDbMarshaller
 
         var @class = $"public readonly struct {structName} : {AttributeExpressionNameTrackerInterface}"
             .CreateBlock(CreateCode());
-        return new Conversion(@class, dataMembers.Select(x => x.typeIdentifier).OfType<UnknownType>());
+        return new Conversion(@class, dataMembers.Select(x => x.typeIdentifier).OfType<UnknownType>().Select(x => x.TypeSymbol));
 
         IEnumerable<string> CreateCode()
         {
@@ -250,7 +250,7 @@ public class DynamoDbMarshaller
 
         var @struct = $"public readonly struct {className} : {interfaceName}".CreateBlock(CreateCode());
 
-        return new Conversion(@struct, dataMembers.Select(x => x.typeIdentifier).OfType<UnknownType>());
+        return new Conversion(@struct, dataMembers.Select(x => x.typeIdentifier).OfType<UnknownType>().Select(x => x.TypeSymbol));
 
         IEnumerable<string> CreateCode()
         {
@@ -417,7 +417,29 @@ public class DynamoDbMarshaller
                     => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ S = {x}.ToString(\"O\") }};").ToConversion(),
                 BaseType.SupportedType.Enum => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ N = ((int){x}).ToString() }};").ToConversion(),
                 BaseType.SupportedType.MemoryStream => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ B = {x} }};").ToConversion(),
-                _ => throw UncoveredConversionException(baseType, nameof(CreateAttributeValueMethodSignature))
+                _ => throw UncoveredConversionException(baseType, nameof(StaticAttributeValueDictionaryFactory))
+            },
+            SingleGeneric singleGeneric => singleGeneric.Type switch
+            {
+                SingleGeneric.SupportedType.Nullable => CreateAttributeValueMethodSignature(singleGeneric)
+                    .CreateBlock($"return {x} is null ? new AttributeValue {{ NULL = true }} : {GetSerializationMethodName(singleGeneric.T)}({x}.Value);")
+                    .ToConversion(singleGeneric.T),
+                SingleGeneric.SupportedType.IReadOnlyCollection
+                    or SingleGeneric.SupportedType.Array
+                    or SingleGeneric.SupportedType.IEnumerable
+                    or SingleGeneric.SupportedType.ICollection => CreateAttributeValueMethodSignature(singleGeneric)
+                        .CreateBlock($"return new AttributeValue {{ L = {x}.Select({GetSerializationMethodName(singleGeneric.T)}) }};")
+                        .ToConversion(singleGeneric.T),
+                SingleGeneric.SupportedType.Set  when singleGeneric.T.SpecialType is SpecialType.System_String 
+                    => CreateAttributeValueMethodSignature(singleGeneric)
+                        .CreateBlock($"return new AttributeValue {{ SS = new List<string>({x}) }};")
+                        .ToConversion(singleGeneric.T),
+                SingleGeneric.SupportedType.Set  when singleGeneric.T.IsNumeric() 
+                    => CreateAttributeValueMethodSignature(singleGeneric)
+                        .CreateBlock($"return new AttributeValue {{ SS = new List<string>({x}.Select(y => y.ToString())) }};")
+                        .ToConversion(singleGeneric.T),
+                SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(StaticAttributeValueDictionaryFactory))),
+                _ => throw UncoveredConversionException(singleGeneric, nameof(StaticAttributeValueDictionaryFactory))
             },
             _ => null
 
@@ -434,7 +456,7 @@ public class DynamoDbMarshaller
 
         var code = $"public static Dictionary<string, AttributeValue> {GetSerializationMethodName(type)}({GetFullTypeName(type)} {paramReference})".CreateBlock(body);
 
-        return new Conversion(code, properties.Select(x => x.assignment.TypeIdentifier));
+        return new Conversion(code, properties.Select(y => y.assignment.TypeIdentifier.TypeSymbol));
 
         IEnumerable<(string dictionaryPopulation, string capacityTernary, Assignment assignment)> GetAssignments(ITypeSymbol typeSymbol)
         {
@@ -582,7 +604,7 @@ public class DynamoDbMarshaller
 
         var method = $"public static {GetFullTypeName(type)} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue> {paramReference})".CreateBlock(blockBody);
 
-        return new Conversion(method, assignments.Select(x => x.Assignment.TypeIdentifier).OfType<UnknownType>());
+        return new Conversion(method, assignments.Select(x => x.Assignment.TypeIdentifier).OfType<UnknownType>().Select(x => x.TypeSymbol));
 
         static IEnumerable<string> ObjectAssignmentBlock(bool useParentheses, IEnumerable<string> assignments, bool applySemiColon)
         {

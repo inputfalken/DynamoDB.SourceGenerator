@@ -11,3 +11,9 @@ public class PersonEntity
     public string Lastname { get; set; }
     public Address Address { get; set; }
 }
+
+public class Test
+{
+    public (string Foo, int Abc)? Foo { get; set; }
+    public IReadOnlyList<int> ListTest { get; set; }
+}

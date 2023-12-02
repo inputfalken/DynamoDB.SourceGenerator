@@ -3,7 +3,7 @@ namespace DynamoDBGenerator.SourceGenerator.Types;
 
 public readonly record struct Conversion
 {
-    public Conversion(IEnumerable<string> code, IEnumerable<TypeIdentifier> typeIdentifiers)
+    public Conversion(IEnumerable<string> code, IEnumerable<ITypeSymbol> typeIdentifiers)
     {
         Code = code;
         TypeIdentifiers = typeIdentifiers;
@@ -12,7 +12,7 @@ public readonly record struct Conversion
     public Conversion(IEnumerable<string> code)
     {
         Code = code;
-        TypeIdentifiers = Enumerable.Empty<TypeIdentifier>();
+        TypeIdentifiers = Enumerable.Empty<ITypeSymbol>();
     }
 
     /// <summary>
@@ -23,7 +23,7 @@ public readonly record struct Conversion
     /// <summary>
     ///     The assignments that occur within the method.
     /// </summary>
-    private IEnumerable<TypeIdentifier> TypeIdentifiers { get; }
+    private IEnumerable<ITypeSymbol> TypeIdentifiers { get; }
 
     public static IEnumerable<Conversion> ConversionMethods(
         ITypeSymbol typeSymbol,
@@ -39,11 +39,7 @@ public readonly record struct Conversion
 
         yield return rootConversion;
 
-        var assignments = rootConversion.TypeIdentifiers
-            //.OfType<UnknownType>()
-            .SelectMany(x => ConversionMethods(x.TypeSymbol, conversionSelector, typeSymbols));
-
-        foreach (var assignment in assignments)
+        foreach (var assignment in rootConversion.TypeIdentifiers .SelectMany(x => ConversionMethods(x, conversionSelector, typeSymbols)))
             yield return assignment;
     }
 }
