@@ -444,7 +444,7 @@ public class DynamoDbMarshaller
                         .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.IsNumeric()
                     => CreateAttributeValueMethodSignature(singleGeneric)
-                        .CreateBlock($"return new AttributeValue {{ SS = new List<string>({x}.Select(y => y.ToString())) }};")
+                        .CreateBlock($"return new AttributeValue {{ NS = new List<string>({x}.Select(y => y.ToString())) }};")
                         .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(StaticAttributeValueDictionaryFactory))),
                 _ => throw UncoveredConversionException(singleGeneric, nameof(StaticAttributeValueDictionaryFactory))
