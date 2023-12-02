@@ -528,18 +528,14 @@ public class DynamoDbMarshaller
 
         const string dict = "dict";
         const string key = "key";
-        const string value = $"AttributeValue";
+        const string value = "AttributeValue";
 
-        static string Failure(ITypeSymbol typeSymbol)
-        {
-            return typeSymbol.IsNullable() ? "null" : $"throw {NullExceptionMethod}({key})";
-        }
+        static string Failure(ITypeSymbol typeSymbol) => typeSymbol.IsNullable() ? "null" : $"throw {NullExceptionMethod}({key})";
 
         static string CreateMethodSignature(TypeIdentifier typeIdentifier) =>
             $"public static {GetFullTypeName(typeIdentifier.TypeSymbol)} {GetDeserializationMethodName(typeIdentifier.TypeSymbol)}(AttributeValue {value}, string {key})";
 
-        //new AttributeValue() is {S: { } x} ? throw new Exception("");
-        Conversion? foo = GetTypeIdentifier(type) switch
+        return GetTypeIdentifier(type) switch
         {
             BaseType baseType => baseType.Type switch
             {
@@ -576,7 +572,7 @@ public class DynamoDbMarshaller
             SingleGeneric singleGeneric => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => CreateMethodSignature(singleGeneric)
-                    .CreateBlock($"return {dict}.ContainsKey({key}) ? {GetDeserializationMethodName(singleGeneric.T)}({dict}, {key}) : null;").ToConversion(singleGeneric.T),
+                    .CreateBlock($"return {dict}.ContainsKey({key}) ? {GetDeserializationMethodName(singleGeneric.T)}({value}, {key}) : null;").ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.ICollection => CreateMethodSignature(singleGeneric)
                     .CreateBlock($"return {value} is {{ L: {{ }} x }} ? L.Select((y, i) => ${GetDeserializationMethodName(singleGeneric.T)})({value}, $\"{{{key}}}[{{i}}]\").ToList();").ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Array or SingleGeneric.SupportedType.IReadOnlyCollection => CreateMethodSignature(singleGeneric)
@@ -590,139 +586,149 @@ public class DynamoDbMarshaller
                 SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(StaticPocoFactory))),
                 _ => throw UncoveredConversionException(singleGeneric, nameof(UnmarshallingAssignment))
             },
-            _ => null
+            KeyValueGeneric {TKey.SpecialType: not SpecialType.System_String} keyValueGeneric => throw new ArgumentException("Only strings are supported for for TKey",
+                UncoveredConversionException(keyValueGeneric, nameof(StaticPocoFactory))),
+            KeyValueGeneric keyValueGeneric => keyValueGeneric.Type switch
+            {
+                KeyValueGeneric.SupportedType.Dictionary => CreateMethodSignature(keyValueGeneric)
+                    .CreateBlock($"return {value} is {{ M: {{ }} x }} ? x.ToDictionary(y => y.Key, y => {GetDeserializationMethodName(keyValueGeneric.TValue)}(y.Value, y.Key)) : {Failure(keyValueGeneric.TypeSymbol)};")
+                    .ToConversion(keyValueGeneric.TValue),
+                KeyValueGeneric.SupportedType.LookUp => CreateMethodSignature(keyValueGeneric)
+                    .CreateBlock($"return {value} is {{ M: {{ }} x }} ? x.SelectMany(y => y.Value.L, (y, z) => (y.Key, z)).ToLookup(y => y.Key, y => y.z) : {Failure(keyValueGeneric.TypeSymbol)};")
+                    .ToConversion(keyValueGeneric.TValue),
+                _ => throw UncoveredConversionException(keyValueGeneric, nameof(StaticPocoFactory))
+
+            },
+            UnknownType => CreateCode(),
+            var typeIdentifier => throw UncoveredConversionException(typeIdentifier, nameof(StaticPocoFactory))
         };
 
-//new AttributeValue() is {S: { } x} ? throw new Exception("");
-        if (foo is not null)
+
+        Conversion CreateCode()
         {
-            return foo.Value;
-        }
+            var assignments = _cachedDataMembers(type)
+                .Select(x => (DDB: x, Assignment: UnmarshallingAssignment(x.DataMember.Type, @$"{dict}.GetValueOrDefault(""{x.AttributeName}"")", x.DataMember.Name)))
+                .ToArray();
 
-        const string paramReference = "attributeValues";
-        var assignments = _cachedDataMembers(type)
-            .Select(x => (DDB: x, Assignment: UnmarshallingAssignment(x.DataMember.Type, @$"{paramReference}.GetValueOrDefault(""{x.AttributeName}"")", x.DataMember.Name)))
-            .ToArray();
+            var blockBody = GetAssignments()
+                .DefaultAndLast(x => ObjectAssignmentBlock(x.useParentheses, x.assignments, false), x => ObjectAssignmentBlock(x.useParentheses, x.assignments, true))
+                .SelectMany(x => x)
+                .DefaultIfEmpty("();")
+                .Prepend(type.IsTupleType ? "return" : $"return new {GetFullTypeName(type)}");
 
-        var blockBody = GetAssignments()
-            .DefaultAndLast(x => ObjectAssignmentBlock(x.useParentheses, x.assignments, false), x => ObjectAssignmentBlock(x.useParentheses, x.assignments, true))
-            .SelectMany(x => x)
-            .DefaultIfEmpty("();")
-            .Prepend(type.IsTupleType ? "return" : $"return new {GetFullTypeName(type)}");
+            var method = $"public static {GetFullTypeName(type)} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue> {dict})".CreateBlock(blockBody);
 
-        var method = $"public static {GetFullTypeName(type)} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue> {paramReference})".CreateBlock(blockBody);
+            return new Conversion(method, assignments.Select(x => x.Assignment.TypeIdentifier).Select(x => x.TypeSymbol));
 
-        return new Conversion(method, assignments.Select(x => x.Assignment.TypeIdentifier).Select(x => x.TypeSymbol));
-
-        static IEnumerable<string> ObjectAssignmentBlock(bool useParentheses, IEnumerable<string> assignments, bool applySemiColon)
-        {
-
-            if (useParentheses)
+            static IEnumerable<string> ObjectAssignmentBlock(bool useParentheses, IEnumerable<string> assignments, bool applySemiColon)
             {
-                yield return "(";
 
-                foreach (var assignment in assignments.DefaultAndLast(s => $"{s},", s => s))
-                    yield return assignment;
+                if (useParentheses)
+                {
+                    yield return "(";
 
-                if (applySemiColon)
-                    yield return ");";
+                    foreach (var assignment in assignments.DefaultAndLast(s => $"{s},", s => s))
+                        yield return assignment;
+
+                    if (applySemiColon)
+                        yield return ");";
+                    else
+                        yield return ")";
+                }
                 else
-                    yield return ")";
+                {
+                    yield return "{";
+
+                    foreach (var assignment in assignments.DefaultAndLast(s => $"{s},", s => s))
+                        yield return assignment;
+
+                    if (applySemiColon)
+                        yield return "};";
+                    else
+                        yield return "}";
+
+                }
+
             }
-            else
+
+            IEnumerable<(bool useParentheses, IEnumerable<string> assignments)> GetAssignments()
             {
-                yield return "{";
-
-                foreach (var assignment in assignments.DefaultAndLast(s => $"{s},", s => s))
-                    yield return assignment;
-
-                if (applySemiColon)
-                    yield return "};";
+                if (type.IsTupleType)
+                    yield return (true, assignments.Select(x => $"{x.DDB.DataMember.Name}: {x.Assignment.Value}"));
                 else
-                    yield return "}";
-
-            }
-
-        }
-
-        IEnumerable<(bool useParentheses, IEnumerable<string> assignments)> GetAssignments()
-        {
-            if (type.IsTupleType)
-                yield return (true, assignments.Select(x => $"{x.DDB.DataMember.Name}: {x.Assignment.Value}"));
-            else
-            {
-                var resolve = assignments
-                    .GroupJoin(
-                        TryGetMatchedConstructorArguments(type),
-                        x => x.DDB.DataMember.Name,
-                        x => x.DataMember,
-                        (x, y) => (x.Assignment, x.DDB, Constructor: y.OfType<(string DataMember, string ParameterName)?>().FirstOrDefault())
-                    )
-                    .GroupBy(x => x.Constructor.HasValue)
-                    .OrderByDescending(x => x.Key)
-                    .Select(x =>
-                    {
-                        return x.Key
-                            ? (x.Key, x.Select(z => $"{z.Constructor!.Value.ParameterName} : {z.Assignment.Value}"))
-                            : (x.Key, x.Where(z => z.DDB.DataMember.IsAssignable).Select(z => $"{z.DDB.DataMember.Name} = {z.Assignment.Value}"));
-                    });
-
-                foreach (var valueTuple in resolve)
-                    yield return valueTuple;
-            }
-
-        }
-
-        static IEnumerable<(string DataMember, string ParameterName)> TryGetMatchedConstructorArguments(ITypeSymbol typeSymbol)
-        {
-
-            if (typeSymbol is not INamedTypeSymbol namedTypeSymbol)
-                return Enumerable.Empty<(string, string )>();
-
-            if (namedTypeSymbol.InstanceConstructors.Length is 0)
-                return Enumerable.Empty<(string, string )>();
-
-            if (namedTypeSymbol is {Name: "KeyValuePair", ContainingNamespace.Name: nameof(System.Collections.Generic)})
-                return namedTypeSymbol.InstanceConstructors
-                    .First(x => x.Parameters.Length is 2)
-                    .Parameters
-                    .Select(x => (MemberName: $"{char.ToUpperInvariant(x.Name[0])}{x.Name.Substring(1)}", ParameterName: x.Name));
-
-            // Should not need to be looked at when it's a RecordDeclarationSyntax
-            return namedTypeSymbol switch
-            {
-                _ when namedTypeSymbol.InstanceConstructors
-                    .SelectMany(
-                        x => x.GetAttributes().Where(y => y.AttributeClass is
+                {
+                    var resolve = assignments
+                        .GroupJoin(
+                            TryGetMatchedConstructorArguments(type),
+                            x => x.DDB.DataMember.Name,
+                            x => x.DataMember,
+                            (x, y) => (x.Assignment, x.DDB, Constructor: y.OfType<(string DataMember, string ParameterName)?>().FirstOrDefault())
+                        )
+                        .GroupBy(x => x.Constructor.HasValue)
+                        .OrderByDescending(x => x.Key)
+                        .Select(x =>
                         {
-                            ContainingNamespace.Name: Constants.DynamoDBGenerator.Namespace.Attributes,
-                            Name: Constants.DynamoDBGenerator.Attribute.DynamoDBMarshallerConstructor,
-                            ContainingAssembly.Name: Constants.DynamoDBGenerator.AssemblyName
-                        }),
-                        (x, _) => x
-                    )
-                    .FirstOrDefault() is { } ctor => ctor.DeclaringSyntaxReferences
-                    .Select(x => x.GetSyntax())
-                    .OfType<ConstructorDeclarationSyntax>()
-                    .Select(
-                        x => x.DescendantNodes()
-                            .OfType<AssignmentExpressionSyntax>()
-                            .Select(y => (MemberName: y.Left.ToString(), ParameterName: y.Right.ToString()))
-                    )
-                    .FirstOrDefault() ?? Enumerable.Empty<(string, string)>(),
-                {IsRecord: true} when namedTypeSymbol.InstanceConstructors[0]
-                    .DeclaringSyntaxReferences
-                    .Select(x => x.GetSyntax())
-                    .OfType<RecordDeclarationSyntax>()
-                    .FirstOrDefault() is { } ctor => ctor
-                    .DescendantNodes()
-                    .OfType<ParameterSyntax>()
-                    .Select(x => (MemberName: x.Identifier.Text, ParameterName: x.Identifier.Text)),
-                _ => Array.Empty<(string, string)>()
-            };
+                            return x.Key
+                                ? (x.Key, x.Select(z => $"{z.Constructor!.Value.ParameterName} : {z.Assignment.Value}"))
+                                : (x.Key, x.Where(z => z.DDB.DataMember.IsAssignable).Select(z => $"{z.DDB.DataMember.Name} = {z.Assignment.Value}"));
+                        });
 
+                    foreach (var valueTuple in resolve)
+                        yield return valueTuple;
+                }
+
+            }
+
+            static IEnumerable<(string DataMember, string ParameterName)> TryGetMatchedConstructorArguments(ITypeSymbol typeSymbol)
+            {
+
+                if (typeSymbol is not INamedTypeSymbol namedTypeSymbol)
+                    return Enumerable.Empty<(string, string )>();
+
+                if (namedTypeSymbol.InstanceConstructors.Length is 0)
+                    return Enumerable.Empty<(string, string )>();
+
+                if (namedTypeSymbol is {Name: "KeyValuePair", ContainingNamespace.Name: nameof(System.Collections.Generic)})
+                    return namedTypeSymbol.InstanceConstructors
+                        .First(x => x.Parameters.Length is 2)
+                        .Parameters
+                        .Select(x => (MemberName: $"{char.ToUpperInvariant(x.Name[0])}{x.Name.Substring(1)}", ParameterName: x.Name));
+
+                // Should not need to be looked at when it's a RecordDeclarationSyntax
+                return namedTypeSymbol switch
+                {
+                    _ when namedTypeSymbol.InstanceConstructors
+                        .SelectMany(
+                            x => x.GetAttributes().Where(y => y.AttributeClass is
+                            {
+                                ContainingNamespace.Name: Constants.DynamoDBGenerator.Namespace.Attributes,
+                                Name: Constants.DynamoDBGenerator.Attribute.DynamoDBMarshallerConstructor,
+                                ContainingAssembly.Name: Constants.DynamoDBGenerator.AssemblyName
+                            }),
+                            (x, _) => x
+                        )
+                        .FirstOrDefault() is { } ctor => ctor.DeclaringSyntaxReferences
+                        .Select(x => x.GetSyntax())
+                        .OfType<ConstructorDeclarationSyntax>()
+                        .Select(
+                            x => x.DescendantNodes()
+                                .OfType<AssignmentExpressionSyntax>()
+                                .Select(y => (MemberName: y.Left.ToString(), ParameterName: y.Right.ToString()))
+                        )
+                        .FirstOrDefault() ?? Enumerable.Empty<(string, string)>(),
+                    {IsRecord: true} when namedTypeSymbol.InstanceConstructors[0]
+                        .DeclaringSyntaxReferences
+                        .Select(x => x.GetSyntax())
+                        .OfType<RecordDeclarationSyntax>()
+                        .FirstOrDefault() is { } ctor => ctor
+                        .DescendantNodes()
+                        .OfType<ParameterSyntax>()
+                        .Select(x => (MemberName: x.Identifier.Text, ParameterName: x.Identifier.Text)),
+                    _ => Array.Empty<(string, string)>()
+                };
+
+            }
         }
-
     }
 
     private static ArgumentException UncoveredConversionException(TypeIdentifier typeIdentifier, string method)
