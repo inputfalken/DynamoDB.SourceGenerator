@@ -300,8 +300,8 @@ public class DynamoDbMarshaller
         }
     }
     private static string InvokeMarshallerMethod(ITypeSymbol typeSymbol, string parameterReference) => GetTypeIdentifier(typeSymbol) is UnknownType
-        ? $"new AttributeValue {{ M = {GetSerializationMethodName(typeSymbol)}({parameterReference}) }}"
-        : $" {GetSerializationMethodName(typeSymbol)}({parameterReference})";
+        ? $"new AttributeValue {{ M = {MarshallerClass}.{GetSerializationMethodName(typeSymbol)}({parameterReference}) }}"
+        : $"{MarshallerClass}.{GetSerializationMethodName(typeSymbol)}({parameterReference})";
     private Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type)
     {
         const string paramReference = "entity";
