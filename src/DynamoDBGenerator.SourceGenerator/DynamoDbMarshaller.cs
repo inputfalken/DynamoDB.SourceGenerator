@@ -288,10 +288,10 @@ public class DynamoDbMarshaller
                         var accessPattern = $"entity.{x.DDB.DataMember.Name}";
                         return x.IsUnknown
                             ? $"if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{AttributeExpressionValueTrackerAccessedValues}({accessPattern})) {{ yield return x; }}")}"
-                            : $"if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {MarshallingAssignment(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}").ToAttributeValue()});")}";
+                            : $"if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}")});")}";
                     }
                 )
-                .Append($"if ({self}.IsValueCreated) yield return new ({self}.Value, {MarshallingAssignment(typeSymbol, "entity").ToAttributeValue()});");
+                .Append($"if ({self}.IsValueCreated) yield return new ({self}.Value, {InvokeMarshallerMethod(typeSymbol, "entity")});");
 
             foreach (var yield in $"IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{AttributeExpressionValueTrackerAccessedValues}({GetFullTypeName(typeSymbol)} entity)".CreateBlock(yields))
                 yield return yield;
@@ -299,96 +299,9 @@ public class DynamoDbMarshaller
             yield return $"public override string ToString() => {self}.Value;";
         }
     }
-    private Assignment MarshallingAssignment(in ITypeSymbol typeSymbol, in string accessPattern)
-    {
-        return GetTypeIdentifier(typeSymbol) switch
-        {
-            BaseType baseType => baseType.Type switch
-            {
-                BaseType.SupportedType.String => baseType.ToInlineAssignment($"S = {accessPattern}"),
-                BaseType.SupportedType.Bool => baseType.ToInlineAssignment($"BOOL = {accessPattern}"),
-                BaseType.SupportedType.Int16
-                    or BaseType.SupportedType.Int32
-                    or BaseType.SupportedType.Int64
-                    or BaseType.SupportedType.UInt16
-                    or BaseType.SupportedType.UInt32
-                    or BaseType.SupportedType.UInt64
-                    or BaseType.SupportedType.Double
-                    or BaseType.SupportedType.Decimal
-                    or BaseType.SupportedType.Single
-                    or BaseType.SupportedType.SByte
-                    or BaseType.SupportedType.Byte
-                    => baseType.ToInlineAssignment($"N = {accessPattern}.ToString()"),
-                BaseType.SupportedType.Char => baseType.ToInlineAssignment($"S = {accessPattern}.ToString()"),
-                BaseType.SupportedType.DateOnly or BaseType.SupportedType.DateTimeOffset or BaseType.SupportedType.DateTime => baseType.ToInlineAssignment($@"S = {accessPattern}.ToString(""O"")"),
-                BaseType.SupportedType.Enum => baseType.ToInlineAssignment($"N = ((int){accessPattern}).ToString()"),
-                BaseType.SupportedType.MemoryStream => baseType.ToInlineAssignment($"B = {accessPattern}"),
-                _ => throw UncoveredConversionException(baseType, nameof(MarshallingAssignment))
-            },
-            UnknownType unknownType => unknownType.ToExternalDependencyAssignment($"M = {MarshallerClass}.{GetSerializationMethodName(unknownType.TypeSymbol)}({accessPattern})"),
-            SingleGeneric singleGeneric => singleGeneric.Type switch
-            {
-                SingleGeneric.SupportedType.Nullable => MarshallingAssignment(singleGeneric.T, $"{accessPattern}.Value"),
-                SingleGeneric.SupportedType.IReadOnlyCollection
-                    or SingleGeneric.SupportedType.Array
-                    or SingleGeneric.SupportedType.IEnumerable
-                    or SingleGeneric.SupportedType.ICollection => MarshallList(singleGeneric.T, in accessPattern),
-                SingleGeneric.SupportedType.Set => MarshallSet(singleGeneric, accessPattern),
-                _ => throw UncoveredConversionException(singleGeneric, nameof(MarshallingAssignment))
-            },
-            KeyValueGeneric keyValueGeneric => MarshallKeyValue(in keyValueGeneric, in accessPattern),
-            var typeIdentifier => throw UncoveredConversionException(typeIdentifier, nameof(MarshallingAssignment))
-        };
-
-        static Assignment MarshallSet(in SingleGeneric typeIdentifier, in string ap)
-        {
-            var newAccessPattern = typeIdentifier.T.NotNullLambdaExpression() is { } expression
-                ? $"{ap}.Where({expression})"
-                : ap;
-
-            if (typeIdentifier.T.SpecialType is SpecialType.System_String)
-                return typeIdentifier.ToInlineAssignment($"SS = new List<string>({newAccessPattern})");
-
-            return typeIdentifier.T.IsNumeric()
-                ? typeIdentifier.ToInlineAssignment($"NS = new List<string>({newAccessPattern}.Select(x => x.ToString()))")
-                : throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(typeIdentifier, nameof(MarshallSet)));
-
-        }
-
-        Assignment MarshallList(in ITypeSymbol typeSymbol, in string ap)
-        {
-            var innerAssignment = MarshallingAssignment(typeSymbol, "x");
-            var select = $"Select(x => {innerAssignment.ToAttributeValue()}))";
-            var outerAssignment = typeSymbol.NotNullLambdaExpression() is { } whereBody
-                ? $"L = new List<AttributeValue>({ap}.Where({whereBody}).{select}"
-                : $"L = new List<AttributeValue>({ap}.{select}";
-
-            return new Assignment(outerAssignment, innerAssignment.TypeIdentifier);
-        }
-
-        Assignment MarshallKeyValue(in KeyValueGeneric keyValueGeneric, in string ap)
-        {
-            switch (keyValueGeneric)
-            {
-                case {TKey: not {SpecialType: SpecialType.System_String}}:
-                    throw new ArgumentException("Only strings are supported for for TKey", UncoveredConversionException(keyValueGeneric, nameof(MarshallKeyValue)));
-                case {Type: KeyValueGeneric.SupportedType.LookUp}:
-                    var lookupValueAssignment = MarshallList(keyValueGeneric.TValue, "x");
-                    return new Assignment(
-                        $"M = {ap}.ToDictionary(x => x.Key, x => {lookupValueAssignment.ToAttributeValue()})",
-                        lookupValueAssignment.TypeIdentifier
-                    );
-                case {Type: KeyValueGeneric.SupportedType.Dictionary}:
-                    var dictionaryValueAssignment = MarshallingAssignment(keyValueGeneric.TValue, "x.Value");
-                    return new Assignment(
-                        $"M = {ap}.ToDictionary(x => x.Key, x => {dictionaryValueAssignment.ToAttributeValue()})",
-                        dictionaryValueAssignment.TypeIdentifier
-                    );
-                default:
-                    throw UncoveredConversionException(keyValueGeneric, nameof(MarshallingAssignment));
-            }
-        }
-    }
+    private static string InvokeMarshallerMethod(ITypeSymbol typeSymbol, string parameterReference) => GetTypeIdentifier(typeSymbol) is UnknownType
+        ? $"new AttributeValue {{ M = {GetSerializationMethodName(typeSymbol)}({parameterReference}) }}"
+        : $" {GetSerializationMethodName(typeSymbol)}({parameterReference})";
     private Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type)
     {
         const string paramReference = "entity";
@@ -397,10 +310,6 @@ public class DynamoDbMarshaller
 
         static string CreateAttributeValueMethodSignature(TypeIdentifier typeIdentifier) =>
             $"public static AttributeValue {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({GetFullTypeName(typeIdentifier.TypeSymbol)} {x})";
-
-        static string InvokeExternalMethod(ITypeSymbol typeSymbol, string parameterReference) => GetTypeIdentifier(typeSymbol) is UnknownType
-            ? $"new AttributeValue {{ M = {GetSerializationMethodName(typeSymbol)}({parameterReference}) }}"
-            : $" {GetSerializationMethodName(typeSymbol)}({parameterReference})";
 
         return GetTypeIdentifier(type) switch
         {
@@ -430,13 +339,13 @@ public class DynamoDbMarshaller
             SingleGeneric singleGeneric => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => CreateAttributeValueMethodSignature(singleGeneric)
-                    .CreateBlock($"return {x} is null ? new AttributeValue {{ NULL = true }} : {InvokeExternalMethod(singleGeneric.T, $"{x}.Value")};")
+                    .CreateBlock($"return {x} is null ? new AttributeValue {{ NULL = true }} : {InvokeMarshallerMethod(singleGeneric.T, $"{x}.Value")};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.IReadOnlyCollection
                     or SingleGeneric.SupportedType.Array
                     or SingleGeneric.SupportedType.IEnumerable
                     or SingleGeneric.SupportedType.ICollection => CreateAttributeValueMethodSignature(singleGeneric)
-                        .CreateBlock($"return new AttributeValue {{ L = new List<AttributeValue>({x}.Select(y => {InvokeExternalMethod(singleGeneric.T, "y")})) }};")
+                        .CreateBlock($"return new AttributeValue {{ L = new List<AttributeValue>({x}.Select(y => {InvokeMarshallerMethod(singleGeneric.T, "y")})) }};")
                         .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.SpecialType is SpecialType.System_String
                     => CreateAttributeValueMethodSignature(singleGeneric)
@@ -454,15 +363,16 @@ public class DynamoDbMarshaller
             KeyValueGeneric keyValueGeneric => keyValueGeneric.Type switch
             {
                 KeyValueGeneric.SupportedType.Dictionary => CreateAttributeValueMethodSignature(keyValueGeneric)
-                    .CreateBlock($"return new AttributeValue {{ M = {x}.ToDictionary(y => y.Key, y => {InvokeExternalMethod(keyValueGeneric.TValue, "y.Value")}) }};")
+                    .CreateBlock($"return new AttributeValue {{ M = {x}.ToDictionary(y => y.Key, y => {InvokeMarshallerMethod(keyValueGeneric.TValue, "y.Value")}) }};")
                     .ToConversion(keyValueGeneric.TValue),
                 KeyValueGeneric.SupportedType.LookUp => CreateAttributeValueMethodSignature(keyValueGeneric)
-                    .CreateBlock($"return new AttributeValue {{ M = {x}.ToDictionary(y => y.Key, y => new AttributeValue {{ L = new List<AttributeValue>(y.Select(z => {InvokeExternalMethod(keyValueGeneric.TValue, "z")})) }}) }};")
+                    .CreateBlock(
+                        $"return new AttributeValue {{ M = {x}.ToDictionary(y => y.Key, y => new AttributeValue {{ L = new List<AttributeValue>(y.Select(z => {InvokeMarshallerMethod(keyValueGeneric.TValue, "z")})) }}) }};")
                     .ToConversion(keyValueGeneric.TValue),
                 _ => throw UncoveredConversionException(keyValueGeneric, nameof(StaticAttributeValueDictionaryFactory))
             },
             UnknownType unknownType => CreateDictionaryMethod(unknownType.TypeSymbol),
-            var typeIdentifier => throw UncoveredConversionException(typeIdentifier, nameof(MarshallingAssignment))
+            var typeIdentifier => throw UncoveredConversionException(typeIdentifier, nameof(StaticAttributeValueDictionaryFactory))
 
         };
 
@@ -476,7 +386,7 @@ public class DynamoDbMarshaller
                     return (
                         dictionaryAssignment: x.DataMember.Type.NotNullIfStatement(
                             in accessPattern,
-                            @$"{dictionaryName}.Add(""{x.AttributeName}"", {InvokeExternalMethod(x.DataMember.Type, accessPattern)});"
+                            @$"{dictionaryName}.Add(""{x.AttributeName}"", {InvokeMarshallerMethod(x.DataMember.Type, accessPattern)});"
                         ),
                         capacityTernary: x.DataMember.Type.NotNullTernaryExpression(in accessPattern, "1", "0"),
                         x.DataMember.Type
@@ -588,12 +498,11 @@ public class DynamoDbMarshaller
             IEnumerable<string> CreateAssignment(string validateReference, string keyReference, DynamoDbDataMember dataMember)
             {
                 const string reference = "value";
-                var attributeConversion = MarshallingAssignment(dataMember.DataMember.Type, reference);
                 var expectedType = GetFullTypeName(dataMember.DataMember.Type);
                 var expression = $"{keyReference} is {expectedType} {{ }} {reference}";
 
                 var innerContent = $"if ({expression}) "
-                    .CreateBlock($@"{dictionaryName}.Add(""{dataMember.AttributeName}"", {attributeConversion.ToAttributeValue()});")
+                    .CreateBlock($@"{dictionaryName}.Add(""{dataMember.AttributeName}"", {InvokeMarshallerMethod(dataMember.DataMember.Type, reference)});")
                     .Concat($"else if ({keyReference} is null) ".CreateBlock($@"throw {KeysArgumentNullExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"");"))
                     .Concat("else".CreateBlock($@"throw {KeysInvalidConversionExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"", {keyReference}, ""{expectedType}"");"));
 
