@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
@@ -395,13 +398,11 @@ public class DynamoDbMarshaller
         static string CreateAttributeValueMethodSignature(TypeIdentifier typeIdentifier) =>
             $"public static AttributeValue {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({GetFullTypeName(typeIdentifier.TypeSymbol)} {x})";
 
-        static string InvokeExternalMethod(ITypeSymbol typeSymbol)
-        {
-            return GetTypeIdentifier(typeSymbol) is UnknownType 
-                ? $"return new AttributeValue {{ M = {GetSerializationMethodName(typeSymbol)} }}" 
-                : $"{GetSerializationMethodName(typeSymbol)})";
-        }
-        Conversion? foo = GetTypeIdentifier(type) switch
+        static string InvokeExternalMethod(ITypeSymbol typeSymbol, string parameterReference) => GetTypeIdentifier(typeSymbol) is UnknownType
+            ? $"new AttributeValue {{ M = {GetSerializationMethodName(typeSymbol)}({parameterReference}) }}"
+            : $" {GetSerializationMethodName(typeSymbol)}({parameterReference})";
+
+        return GetTypeIdentifier(type) switch
         {
             BaseType baseType => baseType.Type switch
             {
@@ -429,13 +430,13 @@ public class DynamoDbMarshaller
             SingleGeneric singleGeneric => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => CreateAttributeValueMethodSignature(singleGeneric)
-                    .CreateBlock($"return {x} is null ? new AttributeValue {{ NULL = true }} : {GetSerializationMethodName(singleGeneric.T)}({x}.Value);")
+                    .CreateBlock($"return {x} is null ? new AttributeValue {{ NULL = true }} : {InvokeExternalMethod(singleGeneric.T, $"{x}.Value")};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.IReadOnlyCollection
                     or SingleGeneric.SupportedType.Array
                     or SingleGeneric.SupportedType.IEnumerable
                     or SingleGeneric.SupportedType.ICollection => CreateAttributeValueMethodSignature(singleGeneric)
-                        .CreateBlock($"return new AttributeValue {{ L = new List<AttributeValue>({x}.Select({GetSerializationMethodName(singleGeneric.T)})) }};")
+                        .CreateBlock($"return new AttributeValue {{ L = new List<AttributeValue>({x}.Select(y => {InvokeExternalMethod(singleGeneric.T, "y")})) }};")
                         .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.SpecialType is SpecialType.System_String
                     => CreateAttributeValueMethodSignature(singleGeneric)
@@ -453,59 +454,56 @@ public class DynamoDbMarshaller
             KeyValueGeneric keyValueGeneric => keyValueGeneric.Type switch
             {
                 KeyValueGeneric.SupportedType.Dictionary => CreateAttributeValueMethodSignature(keyValueGeneric)
-                    .CreateBlock($"return new AttributeValue {{ M = {x}.ToDictionary(y => y.Key, y => {GetSerializationMethodName(keyValueGeneric.TValue)}(y.Value)) }};")
+                    .CreateBlock($"return new AttributeValue {{ M = {x}.ToDictionary(y => y.Key, y => {InvokeExternalMethod(keyValueGeneric.TValue, "y.Value")}) }};")
                     .ToConversion(keyValueGeneric.TValue),
                 KeyValueGeneric.SupportedType.LookUp => CreateAttributeValueMethodSignature(keyValueGeneric)
-                    .CreateBlock($"return new AttributeValue {{ M = {x}.ToDictionary(y => y.Key, y => {GetSerializationMethodName(keyValueGeneric.TValue)}(y.Value)) }};")
+                    .CreateBlock($"return new AttributeValue {{ M = {x}.ToDictionary(y => y.Key, y => new AttributeValue {{ L = new List<AttributeValue>(y.Select(z => {InvokeExternalMethod(keyValueGeneric.TValue, "z")})) }}) }};")
                     .ToConversion(keyValueGeneric.TValue),
                 _ => throw UncoveredConversionException(keyValueGeneric, nameof(StaticAttributeValueDictionaryFactory))
             },
-            UnknownType => null,
+            UnknownType unknownType => CreateDictionaryMethod(unknownType.TypeSymbol),
             var typeIdentifier => throw UncoveredConversionException(typeIdentifier, nameof(MarshallingAssignment))
 
         };
-        if (foo is not null)
+
+        Conversion CreateDictionaryMethod(ITypeSymbol typeSymbol)
         {
-            return foo.Value;
-        }
-        var properties = GetAssignments(type).ToArray();
 
-        var body = InitializeDictionary(properties.Select(static x => x.capacityTernary))
-            .Concat(properties.Select(x => x.dictionaryPopulation))
-            .Append($"return {dictionaryName};");
+            var properties = _cachedDataMembers(typeSymbol)
+                .Select(x =>
+                {
+                    var accessPattern = $"{paramReference}.{x.DataMember.Name}";
+                    return (
+                        dictionaryAssignment: x.DataMember.Type.NotNullIfStatement(
+                            in accessPattern,
+                            @$"{dictionaryName}.Add(""{x.AttributeName}"", {InvokeExternalMethod(x.DataMember.Type, accessPattern)});"
+                        ),
+                        capacityTernary: x.DataMember.Type.NotNullTernaryExpression(in accessPattern, "1", "0"),
+                        x.DataMember.Type
+                    );
+                })
+                .ToArray();
 
-        var code = $"public static Dictionary<string, AttributeValue> {GetSerializationMethodName(type)}({GetFullTypeName(type)} {paramReference})".CreateBlock(body);
+            var body = InitializeDictionary(properties.Select(static x => x.capacityTernary))
+                .Concat(properties.Select(x => x.dictionaryAssignment))
+                .Append($"return {dictionaryName};");
 
-        return new Conversion(code, properties.Select(y => y.assignment));
+            var code = $"public static Dictionary<string, AttributeValue> {GetSerializationMethodName(type)}({GetFullTypeName(type)} {paramReference})".CreateBlock(body);
 
-        IEnumerable<(string dictionaryPopulation, string capacityTernary, ITypeSymbol assignment)> GetAssignments(ITypeSymbol typeSymbol)
-        {
-            foreach (var x in _cachedDataMembers(typeSymbol))
+            return new Conversion(code, properties.Select(y => y.Type));
+
+            static IEnumerable<string> InitializeDictionary(IEnumerable<string> capacityCalculations)
             {
-                var accessPattern = $"{paramReference}.{x.DataMember.Name}";
-
-                var dictionaryAssignment = x.DataMember.Type.NotNullIfStatement(
-                    in accessPattern,
-                    @$"{dictionaryName}.Add(""{x.AttributeName}"", {GetSerializationMethodName(x.DataMember.Type)}({accessPattern}));"
-                );
-
-                var capacityTernary = x.DataMember.Type.NotNullTernaryExpression(in accessPattern, "1", "0");
-
-                yield return ($"{dictionaryAssignment}", capacityTernary, x.DataMember.Type);
-            }
-        }
-
-        static IEnumerable<string> InitializeDictionary(IEnumerable<string> capacityCalculations)
-        {
-            var capacityCalculation = string.Join(" + ", capacityCalculations);
-            if (capacityCalculation is "")
-            {
-                yield return $"var {dictionaryName} = new Dictionary<string, AttributeValue>(0);";
-            }
-            else
-            {
-                yield return $"var capacity = {capacityCalculation};";
-                yield return $"var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity);";
+                var capacityCalculation = string.Join(" + ", capacityCalculations);
+                if (capacityCalculation is "")
+                {
+                    yield return $"var {dictionaryName} = new Dictionary<string, AttributeValue>(0);";
+                }
+                else
+                {
+                    yield return $"var capacity = {capacityCalculation};";
+                    yield return $"var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity);";
+                }
             }
         }
     }
