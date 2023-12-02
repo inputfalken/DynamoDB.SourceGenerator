@@ -313,19 +313,17 @@ public class DynamoDbMarshaller
     }
     private Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type)
     {
-        const string paramReference = "entity";
-        const string dictionaryName = "attributeValues";
-        const string x = "x";
+        const string param = "x";
 
         static string CreateAttributeValueMethodSignature(TypeIdentifier typeIdentifier) =>
-            $"public static AttributeValue {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({GetFullTypeName(typeIdentifier.TypeSymbol)} {x})";
+            $"public static AttributeValue {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({GetFullTypeName(typeIdentifier.TypeSymbol)} {param})";
 
         return GetTypeIdentifier(type) switch
         {
             BaseType baseType => baseType.Type switch
             {
-                BaseType.SupportedType.String => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ S = {x} }};").ToConversion(),
-                BaseType.SupportedType.Bool => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ BOOL = {x} }};").ToConversion(),
+                BaseType.SupportedType.String => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ S = {param} }};").ToConversion(),
+                BaseType.SupportedType.Bool => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ BOOL = {param} }};").ToConversion(),
                 BaseType.SupportedType.Int16
                     or BaseType.SupportedType.Int32
                     or BaseType.SupportedType.Int64
@@ -337,32 +335,32 @@ public class DynamoDbMarshaller
                     or BaseType.SupportedType.Single
                     or BaseType.SupportedType.SByte
                     or BaseType.SupportedType.Byte
-                    => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ N = {x}.ToString() }};").ToConversion(),
-                BaseType.SupportedType.Char => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ S = {x}.ToString() }};").ToConversion(),
+                    => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ N = {param}.ToString() }};").ToConversion(),
+                BaseType.SupportedType.Char => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ S = {param}.ToString() }};").ToConversion(),
                 BaseType.SupportedType.DateOnly or BaseType.SupportedType.DateTimeOffset or BaseType.SupportedType.DateTime
-                    => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ S = {x}.ToString(\"O\") }};").ToConversion(),
-                BaseType.SupportedType.Enum => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ N = ((int){x}).ToString() }};").ToConversion(),
-                BaseType.SupportedType.MemoryStream => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ B = {x} }};").ToConversion(),
+                    => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ S = {param}.ToString(\"O\") }};").ToConversion(),
+                BaseType.SupportedType.Enum => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ N = ((int){param}).ToString() }};").ToConversion(),
+                BaseType.SupportedType.MemoryStream => CreateAttributeValueMethodSignature(baseType).CreateBlock($"return new AttributeValue {{ B = {param} }};").ToConversion(),
                 _ => throw UncoveredConversionException(baseType, nameof(StaticAttributeValueDictionaryFactory))
             },
             SingleGeneric singleGeneric => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => CreateAttributeValueMethodSignature(singleGeneric)
-                    .CreateBlock($"return {x} is null ? new AttributeValue {{ NULL = true }} : {InvokeMarshallerMethod(singleGeneric.T, $"{x}.Value")};")
+                    .CreateBlock($"return {param} is null ? new AttributeValue {{ NULL = true }} : {InvokeMarshallerMethod(singleGeneric.T, $"{param}.Value")};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.IReadOnlyCollection
                     or SingleGeneric.SupportedType.Array
                     or SingleGeneric.SupportedType.IEnumerable
                     or SingleGeneric.SupportedType.ICollection => CreateAttributeValueMethodSignature(singleGeneric)
-                        .CreateBlock($"return new AttributeValue {{ L = new List<AttributeValue>({x}.Select(y => {InvokeMarshallerMethod(singleGeneric.T, "y")})) }};")
+                        .CreateBlock($"return new AttributeValue {{ L = new List<AttributeValue>({param}.Select(y => {InvokeMarshallerMethod(singleGeneric.T, "y")})) }};")
                         .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.SpecialType is SpecialType.System_String
                     => CreateAttributeValueMethodSignature(singleGeneric)
-                        .CreateBlock($"return new AttributeValue {{ SS = new List<string>({x}) }};")
+                        .CreateBlock($"return new AttributeValue {{ SS = new List<string>({param}) }};")
                         .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.IsNumeric()
                     => CreateAttributeValueMethodSignature(singleGeneric)
-                        .CreateBlock($"return new AttributeValue {{ NS = new List<string>({x}.Select(y => y.ToString())) }};")
+                        .CreateBlock($"return new AttributeValue {{ NS = new List<string>({param}.Select(y => y.ToString())) }};")
                         .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(StaticAttributeValueDictionaryFactory))),
                 _ => throw UncoveredConversionException(singleGeneric, nameof(StaticAttributeValueDictionaryFactory))
@@ -372,11 +370,11 @@ public class DynamoDbMarshaller
             KeyValueGeneric keyValueGeneric => keyValueGeneric.Type switch
             {
                 KeyValueGeneric.SupportedType.Dictionary => CreateAttributeValueMethodSignature(keyValueGeneric)
-                    .CreateBlock($"return new AttributeValue {{ M = {x}.ToDictionary(y => y.Key, y => {InvokeMarshallerMethod(keyValueGeneric.TValue, "y.Value")}) }};")
+                    .CreateBlock($"return new AttributeValue {{ M = {param}.ToDictionary(y => y.Key, y => {InvokeMarshallerMethod(keyValueGeneric.TValue, "y.Value")}) }};")
                     .ToConversion(keyValueGeneric.TValue),
                 KeyValueGeneric.SupportedType.LookUp => CreateAttributeValueMethodSignature(keyValueGeneric)
                     .CreateBlock(
-                        $"return new AttributeValue {{ M = {x}.ToDictionary(y => y.Key, y => new AttributeValue {{ L = new List<AttributeValue>(y.Select(z => {InvokeMarshallerMethod(keyValueGeneric.TValue, "z")})) }}) }};")
+                        $"return new AttributeValue {{ M = {param}.ToDictionary(y => y.Key, y => new AttributeValue {{ L = new List<AttributeValue>(y.Select(z => {InvokeMarshallerMethod(keyValueGeneric.TValue, "z")})) }}) }};")
                     .ToConversion(keyValueGeneric.TValue),
                 _ => throw UncoveredConversionException(keyValueGeneric, nameof(StaticAttributeValueDictionaryFactory))
             },
@@ -387,6 +385,8 @@ public class DynamoDbMarshaller
 
         Conversion CreateDictionaryMethod(ITypeSymbol typeSymbol)
         {
+            const string paramReference = "entity";
+            const string dictionaryReference = "attributeValues";
 
             var properties = _cachedDataMembers(typeSymbol)
                 .Select(x =>
@@ -395,7 +395,7 @@ public class DynamoDbMarshaller
                     return (
                         dictionaryAssignment: x.DataMember.Type.NotNullIfStatement(
                             in accessPattern,
-                            @$"{dictionaryName}.Add(""{x.AttributeName}"", {InvokeMarshallerMethod(x.DataMember.Type, accessPattern)});"
+                            @$"{dictionaryReference}.Add(""{x.AttributeName}"", {InvokeMarshallerMethod(x.DataMember.Type, accessPattern)});"
                         ),
                         capacityTernary: x.DataMember.Type.NotNullTernaryExpression(in accessPattern, "1", "0"),
                         x.DataMember.Type
@@ -403,9 +403,9 @@ public class DynamoDbMarshaller
                 })
                 .ToArray();
 
-            var body = InitializeDictionary(properties.Select(static x => x.capacityTernary))
+            var body = InitializeDictionary(properties.Select(x => x.capacityTernary))
                 .Concat(properties.Select(x => x.dictionaryAssignment))
-                .Append($"return {dictionaryName};");
+                .Append($"return {dictionaryReference};");
 
             var code = $"public static Dictionary<string, AttributeValue> {GetSerializationMethodName(type)}({GetFullTypeName(type)} {paramReference})".CreateBlock(body);
 
@@ -416,12 +416,12 @@ public class DynamoDbMarshaller
                 var capacityCalculation = string.Join(" + ", capacityCalculations);
                 if (capacityCalculation is "")
                 {
-                    yield return $"var {dictionaryName} = new Dictionary<string, AttributeValue>(0);";
+                    yield return $"var {dictionaryReference} = new Dictionary<string, AttributeValue>(0);";
                 }
                 else
                 {
                     yield return $"var capacity = {capacityCalculation};";
-                    yield return $"var {dictionaryName} = new Dictionary<string, AttributeValue>(capacity);";
+                    yield return $"var {dictionaryReference} = new Dictionary<string, AttributeValue>(capacity);";
                 }
             }
         }
