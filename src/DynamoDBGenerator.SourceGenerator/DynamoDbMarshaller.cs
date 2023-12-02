@@ -584,7 +584,7 @@ public class DynamoDbMarshaller
                 SingleGeneric.SupportedType.Set when singleGeneric.T.IsNumeric() => CreateMethodSignature(singleGeneric)
                     .CreateBlock($"return {value} is {{ NS : {{ }} x }} ? x.Select(y => {GetFullTypeName(singleGeneric.T)}.Parse(y)).ToHashSet() : {Failure(singleGeneric.TypeSymbol)};").ToConversion(singleGeneric.TypeSymbol),
                 SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(StaticPocoFactory))),
-                _ => throw UncoveredConversionException(singleGeneric, nameof(UnmarshallingAssignment))
+                _ => throw UncoveredConversionException(singleGeneric, nameof(StaticPocoFactory))
             },
             KeyValueGeneric {TKey.SpecialType: not SpecialType.System_String} keyValueGeneric => throw new ArgumentException("Only strings are supported for for TKey",
                 UncoveredConversionException(keyValueGeneric, nameof(StaticPocoFactory))),
@@ -607,7 +607,7 @@ public class DynamoDbMarshaller
         Conversion CreateCode()
         {
             var assignments = _cachedDataMembers(type)
-                .Select(x => (DDB: x, Assignment: UnmarshallingAssignment(x.DataMember.Type, @$"{dict}.GetValueOrDefault(""{x.AttributeName}"")", x.DataMember.Name)))
+                .Select(x => (DDB: x, MethodCall: $@"{GetDeserializationMethodName(x.DataMember.Type)}({dict}.GetValueOrDefault(""{x.AttributeName}""), ""{x.AttributeName}"")" , x.DataMember.Name))
                 .ToArray();
 
             var blockBody = GetAssignments()
@@ -618,7 +618,7 @@ public class DynamoDbMarshaller
 
             var method = $"public static {GetFullTypeName(type)} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue> {dict})".CreateBlock(blockBody);
 
-            return new Conversion(method, assignments.Select(x => x.Assignment.TypeIdentifier).Select(x => x.TypeSymbol));
+            return new Conversion(method, assignments.Select(x => x.DDB.DataMember.Type));
 
             static IEnumerable<string> ObjectAssignmentBlock(bool useParentheses, IEnumerable<string> assignments, bool applySemiColon)
             {
@@ -654,7 +654,7 @@ public class DynamoDbMarshaller
             IEnumerable<(bool useParentheses, IEnumerable<string> assignments)> GetAssignments()
             {
                 if (type.IsTupleType)
-                    yield return (true, assignments.Select(x => $"{x.DDB.DataMember.Name}: {x.Assignment.Value}"));
+                    yield return (true, assignments.Select(x => $"{x.DDB.DataMember.Name}: {x.MethodCall}"));
                 else
                 {
                     var resolve = assignments
@@ -662,15 +662,15 @@ public class DynamoDbMarshaller
                             TryGetMatchedConstructorArguments(type),
                             x => x.DDB.DataMember.Name,
                             x => x.DataMember,
-                            (x, y) => (x.Assignment, x.DDB, Constructor: y.OfType<(string DataMember, string ParameterName)?>().FirstOrDefault())
+                            (x, y) => (x.MethodCall, x.DDB, Constructor: y.OfType<(string DataMember, string ParameterName)?>().FirstOrDefault())
                         )
                         .GroupBy(x => x.Constructor.HasValue)
                         .OrderByDescending(x => x.Key)
                         .Select(x =>
                         {
                             return x.Key
-                                ? (x.Key, x.Select(z => $"{z.Constructor!.Value.ParameterName} : {z.Assignment.Value}"))
-                                : (x.Key, x.Where(z => z.DDB.DataMember.IsAssignable).Select(z => $"{z.DDB.DataMember.Name} = {z.Assignment.Value}"));
+                                ? (x.Key, x.Select(z => $"{z.Constructor!.Value.ParameterName} : {z.MethodCall}"))
+                                : (x.Key, x.Where(z => z.DDB.DataMember.IsAssignable).Select(z => $"{z.DDB.DataMember.Name} = {z.MethodCall}"));
                         });
 
                     foreach (var valueTuple in resolve)
@@ -734,99 +734,5 @@ public class DynamoDbMarshaller
     private static ArgumentException UncoveredConversionException(TypeIdentifier typeIdentifier, string method)
     {
         return new ArgumentException($"The '{typeIdentifier.GetType().FullName}' with backing type '{typeIdentifier.TypeSymbol.ToDisplayString()}' has not been covered in method '{method}'.");
-    }
-
-    private Assignment UnmarshallingAssignment(in ITypeSymbol type, in string pattern, in string memberName)
-    {
-
-        var defaultCase = type.IsNullable() ? "_ => null" : @$"_ => throw {NullExceptionMethod}(""{memberName}"")";
-        return Execution(in type, in pattern, defaultCase, in memberName);
-
-        Assignment Execution(in ITypeSymbol typeSymbol, in string accessPattern, string @default, in string memberName)
-        {
-            return GetTypeIdentifier(typeSymbol) switch
-            {
-                BaseType baseType => baseType.Type switch
-                {
-                    BaseType.SupportedType.String => baseType.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => x, {@default} }}"),
-                    BaseType.SupportedType.Bool => baseType.ToInlineAssignment($"{accessPattern} switch {{ {{ BOOL: var x }} => x, {@default} }}"),
-                    BaseType.SupportedType.Char => baseType.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => x[0], {@default} }}"),
-                    BaseType.SupportedType.Enum => baseType.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} when Int32.Parse(x) is var y =>({GetFullTypeName(typeSymbol)})y, {@default} }}"),
-                    BaseType.SupportedType.Int16 => baseType.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Int16.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.Byte => baseType.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Byte.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.Int32 => baseType.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Int32.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.Int64 => baseType.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Int64.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.SByte => baseType.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => SByte.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.UInt16 => baseType.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => UInt16.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.UInt32 => baseType.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => UInt32.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.UInt64 => baseType.ToInlineAssignment($"{accessPattern} switch {{  {{ N: {{ }} x }} => UInt64.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.Decimal => baseType.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Decimal.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.Double => baseType.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Double.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.Single => baseType.ToInlineAssignment($"{accessPattern} switch {{ {{ N: {{ }} x }} => Single.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.DateTime => baseType.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => DateTime.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.DateTimeOffset => baseType.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => DateTimeOffset.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.DateOnly => baseType.ToInlineAssignment($"{accessPattern} switch {{ {{ S: {{ }} x }} => DateOnly.Parse(x), {@default} }}"),
-                    BaseType.SupportedType.MemoryStream => baseType.ToInlineAssignment($"{accessPattern} switch {{ {{ B: {{ }} x }} => x, {@default} }}"),
-                    _ => throw UncoveredConversionException(baseType, nameof(UnmarshallingAssignment))
-                },
-                UnknownType x => x.ToExternalDependencyAssignment($"{accessPattern} switch {{ {{ M: {{ }} x }} => {UnMarshallerClass}.{GetDeserializationMethodName(x.TypeSymbol)}(x), {@default} }}"),
-                SingleGeneric singleGeneric => singleGeneric.Type switch
-                {
-                    SingleGeneric.SupportedType.Nullable => Execution(singleGeneric.T, in accessPattern, @default, in memberName),
-                    SingleGeneric.SupportedType.Set => UnmarshallSet(singleGeneric, accessPattern, @default),
-                    SingleGeneric.SupportedType.Array => UnMarshalList(in singleGeneric, ".ToArray()", in accessPattern, in @default, in memberName),
-                    SingleGeneric.SupportedType.ICollection => UnMarshalList(in singleGeneric, ".ToList()", in accessPattern, in @default, in memberName),
-                    SingleGeneric.SupportedType.IReadOnlyCollection => UnMarshalList(in singleGeneric, ".ToArray()", in accessPattern, in @default, in memberName),
-                    SingleGeneric.SupportedType.IEnumerable => UnMarshalList(in singleGeneric, null, in accessPattern, in @default, in memberName),
-                    _ => throw UncoveredConversionException(singleGeneric, nameof(UnmarshallingAssignment))
-                },
-                KeyValueGeneric keyValueGeneric => UnmarshallKeyValue(in keyValueGeneric, in accessPattern, in @default, in memberName),
-                var typeIdentifier => throw UncoveredConversionException(typeIdentifier, nameof(UnmarshallingAssignment))
-            };
-
-        }
-
-        static Assignment UnmarshallSet(in SingleGeneric typeIdentifier, in string ap, in string dc)
-        {
-            if (typeIdentifier.T.IsNumeric())
-                return typeIdentifier.ToInlineAssignment($"{ap} switch {{ {{ NS: {{ }} x }} =>  new HashSet<{typeIdentifier.T.Name}>(x.Select(y => {typeIdentifier.T.Name}.Parse(y))), {dc} }}");
-
-            if (typeIdentifier.T.SpecialType is SpecialType.System_String)
-                return typeIdentifier.ToInlineAssignment($"{ap} switch {{ {{ SS: {{ }} x }} =>  new HashSet<string>(x), {dc} }}");
-
-            throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(typeIdentifier, nameof(UnmarshallSet)));
-        }
-
-        Assignment UnMarshalList(in SingleGeneric singleGeneric, in string? operation, in string ap, in string dc, in string mn)
-        {
-            var innerAssignment = UnmarshallingAssignment(singleGeneric.T, "y", in mn);
-            var outerAssignment = $"{ap} switch {{ {{ L: {{ }} x }} => x.Select(y => {innerAssignment.Value}){operation}, {dc} }}";
-
-            return new Assignment(outerAssignment, innerAssignment.TypeIdentifier);
-        }
-
-        Assignment UnmarshallKeyValue(in KeyValueGeneric keyValueGeneric, in string ap, in string dc, in string mn)
-        {
-            switch (keyValueGeneric)
-            {
-                case {TKey: not {SpecialType: SpecialType.System_String}}:
-                    throw new ArgumentException("Only strings are supported for for TKey", UncoveredConversionException(keyValueGeneric, nameof(UnmarshallKeyValue)));
-                case {Type: KeyValueGeneric.SupportedType.LookUp}:
-                    var lookupValueAssignment = UnmarshallingAssignment(keyValueGeneric.TValue, "y.z", in mn);
-                    return new Assignment(
-                        $"{ap} switch {{ {{ M: {{ }} x }} => x.SelectMany(y => y.Value.L, (y, z) => (y.Key, z)).ToLookup(y => y.Key, y => {lookupValueAssignment.Value}), {dc} }}",
-                        lookupValueAssignment.TypeIdentifier
-                    );
-                case {Type: KeyValueGeneric.SupportedType.Dictionary}:
-                    var dictionaryValueAssignment = UnmarshallingAssignment(keyValueGeneric.TValue, "y.Value", in mn);
-                    return new Assignment(
-                        $"{ap} switch {{ {{ M: {{ }} x }} => x.ToDictionary(y => y.Key, y => {dictionaryValueAssignment.Value}), {dc} }}",
-                        dictionaryValueAssignment.TypeIdentifier
-                    );
-                default:
-                    throw UncoveredConversionException(keyValueGeneric, nameof(UnmarshallingAssignment));
-            }
-        }
-
     }
 }
