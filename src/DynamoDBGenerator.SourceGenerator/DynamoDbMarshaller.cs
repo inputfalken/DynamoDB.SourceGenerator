@@ -33,7 +33,7 @@ public class DynamoDbMarshaller
         Comparer = SymbolEqualityComparer.IncludeNullability;
         GetFullTypeName = TypeExtensions.CacheFactory(Comparer, x => x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
         GetTypeIdentifier = TypeExtensions.CacheFactory(Comparer, x => x.GetKnownType());
-        GetDeserializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory(null, Comparer, true);
+        GetDeserializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_U", Comparer, true);
         GetKeysMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("Keys", Comparer, false);
         GetSerializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_M", Comparer, true);
         GetAttributeExpressionNameTypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", Comparer, false);
@@ -526,6 +526,63 @@ public class DynamoDbMarshaller
     private Conversion StaticPocoFactory(ITypeSymbol type)
     {
 
+        const string dict = "dict";
+        const string key = "key";
+        const string dictElement = "x";
+        const string value = $"{dict}.GetValueOrDefault({key})";
+
+        static string Failure(ITypeSymbol typeSymbol)
+        {
+            return typeSymbol.IsNullable() ? "null" : $"throw {NullExceptionMethod}({key})";
+        }
+
+        static string CreateAttributeValueMethodSignature(TypeIdentifier typeIdentifier) =>
+            $"public static {GetFullTypeName(typeIdentifier.TypeSymbol)} {GetDeserializationMethodName(typeIdentifier.TypeSymbol)}(Dictionary<string, AttributeValue> {dict}, string {key})";
+
+        //new AttributeValue() is {S: { } x} ? throw new Exception("");
+        Conversion? foo = GetTypeIdentifier(type) switch
+        {
+            BaseType baseType => baseType.Type switch
+            {
+                BaseType.SupportedType.String => CreateAttributeValueMethodSignature(baseType)
+                    .CreateBlock($"return {value} is {{ S: {{ }} x }} ? x : {Failure(baseType.TypeSymbol)};").ToConversion(),
+                BaseType.SupportedType.Bool => CreateAttributeValueMethodSignature(baseType)
+                    .CreateBlock($"return {value} is {{ BOOl: var x }} ? x : {Failure(baseType.TypeSymbol)};").ToConversion(),
+                BaseType.SupportedType.Char => CreateAttributeValueMethodSignature(baseType)
+                    .CreateBlock($"return {value} is {{ S: {{ }} x }} ? x[0] : {Failure(baseType.TypeSymbol)};").ToConversion(),
+                BaseType.SupportedType.Enum => CreateAttributeValueMethodSignature(baseType)
+                    .CreateBlock($"return {value} is {{ N: {{ }} x }} ? ({GetFullTypeName(baseType.TypeSymbol)})Int32.Parse(x) : {Failure(baseType.TypeSymbol)};").ToConversion(),
+                BaseType.SupportedType.Int16
+                    or BaseType.SupportedType.Byte
+                    or BaseType.SupportedType.Int32
+                    or BaseType.SupportedType.Int64
+                    or BaseType.SupportedType.SByte
+                    or BaseType.SupportedType.UInt16
+                    or BaseType.SupportedType.UInt32
+                    or BaseType.SupportedType.UInt64
+                    or BaseType.SupportedType.Decimal
+                    or BaseType.SupportedType.Double
+                    or BaseType.SupportedType.Single
+                    => CreateAttributeValueMethodSignature(baseType)
+                        .CreateBlock($"return {value} is {{ N: {{ }} x }} ? {GetFullTypeName(baseType.TypeSymbol)}.Parse(x) : {Failure(baseType.TypeSymbol)};").ToConversion(),
+                BaseType.SupportedType.DateTime
+                    or BaseType.SupportedType.DateTimeOffset
+                    or BaseType.SupportedType.DateOnly
+                    => CreateAttributeValueMethodSignature(baseType)
+                        .CreateBlock($"return {value} is {{ S: {{ }} x }} ? {GetFullTypeName(baseType.TypeSymbol)}.Parse(x) : {Failure(baseType.TypeSymbol)};").ToConversion(),
+                BaseType.SupportedType.MemoryStream => CreateAttributeValueMethodSignature(baseType)
+                    .CreateBlock($"return {value} is {{ B: {{ }} x }} ? x : {Failure(baseType.TypeSymbol)};").ToConversion(),
+                _ => throw UncoveredConversionException(baseType, nameof(UnmarshallingAssignment))
+            },
+            _ => null
+        };
+
+//new AttributeValue() is {S: { } x} ? throw new Exception("");
+        if (foo is not null)
+        {
+            return foo.Value;
+        }
+
         const string paramReference = "attributeValues";
         var assignments = _cachedDataMembers(type)
             .Select(x => (DDB: x, Assignment: UnmarshallingAssignment(x.DataMember.Type, @$"{paramReference}.GetValueOrDefault(""{x.AttributeName}"")", x.DataMember.Name)))
@@ -539,7 +596,7 @@ public class DynamoDbMarshaller
 
         var method = $"public static {GetFullTypeName(type)} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue> {paramReference})".CreateBlock(blockBody);
 
-        return new Conversion(method, assignments.Select(x => x.Assignment.TypeIdentifier).OfType<UnknownType>().Select(x => x.TypeSymbol));
+        return new Conversion(method, assignments.Select(x => x.Assignment.TypeIdentifier).Select(x => x.TypeSymbol));
 
         static IEnumerable<string> ObjectAssignmentBlock(bool useParentheses, IEnumerable<string> assignments, bool applySemiColon)
         {
