@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
@@ -33,7 +30,7 @@ public class DynamoDbMarshaller
         Comparer = SymbolEqualityComparer.IncludeNullability;
         GetFullTypeName = TypeExtensions.CacheFactory(Comparer, x => x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
         GetTypeIdentifier = TypeExtensions.CacheFactory(Comparer, x => x.GetKnownType());
-        GetDeserializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_U", SymbolEqualityComparer.Default, true);
+        GetDeserializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_U", SymbolEqualityComparer.Default, false);
         GetKeysMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("Keys", Comparer, false);
         GetSerializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_M", Comparer, true);
         GetAttributeExpressionNameTypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", Comparer, false);
@@ -527,7 +524,6 @@ public class DynamoDbMarshaller
     {
 
         const string value = "attributeValue";
-        const string key = "key";
 
         static string InvokeMethod(ITypeSymbol typeSymbol)
         {
@@ -581,6 +577,7 @@ public class DynamoDbMarshaller
             {
                 SingleGeneric.SupportedType.Nullable => Enumerable.Empty<string>().ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.ICollection => CreateMethodSignature(singleGeneric)
+                    // TODO check for null list elements
                     .CreateBlock($"return {value} is {{ L: {{ }} x }} ? L.Select({GetDeserializationMethodName(singleGeneric.T)})({InvokeMethod(singleGeneric.T)}).ToList();")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Array or SingleGeneric.SupportedType.IReadOnlyCollection => CreateMethodSignature(singleGeneric)
@@ -616,13 +613,6 @@ public class DynamoDbMarshaller
         Conversion CreateCode()
         {
 
-            static string Invocation(DynamoDbDataMember typeSymbol)
-            {
-                return typeSymbol.DataMember.Type.IsNullable()
-                    ? $"{GetDeserializationMethodName(typeSymbol.DataMember.Type)}({dict}.GetValueOrDefault(\"{typeSymbol.AttributeName}\"))"
-                    : $"{GetDeserializationMethodName(typeSymbol.DataMember.Type)}({dict}.GetValueOrDefault(\"{typeSymbol.AttributeName}\")) ?? throw {NullExceptionMethod}(\"{typeSymbol.AttributeName}\")";
-            }
-
             var assignments = _cachedDataMembers(type)
                 .Select(x => (DDB: x, MethodCall: Invocation(x), x.DataMember.Name))
                 .ToArray();
@@ -636,6 +626,20 @@ public class DynamoDbMarshaller
             var method = $"public static {GetFullTypeName(type)} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue> {dict})".CreateBlock(blockBody);
 
             return new Conversion(method, assignments.Select(x => x.DDB.DataMember.Type));
+
+            static string Invocation(DynamoDbDataMember typeSymbol)
+            {
+                if (GetTypeIdentifier(typeSymbol.DataMember.Type) is UnknownType)
+                {
+
+                    return typeSymbol.DataMember.Type.IsNullable()
+                        ? $"{dict}.GetValueOrDefault(\"{typeSymbol.AttributeName}\") switch {{ {{ M: {{ }} x }} => {GetDeserializationMethodName(typeSymbol.DataMember.Type)}(x), _ =>  null}}"
+                        : $"{dict}.GetValueOrDefault(\"{typeSymbol.AttributeName}\") switch {{ {{ M: {{ }} x }} => {GetDeserializationMethodName(typeSymbol.DataMember.Type)}(x), _ =>  throw {NullExceptionMethod}(\"{typeSymbol.AttributeName}\")}} ";
+                }
+                return typeSymbol.DataMember.Type.IsNullable()
+                    ? $"{GetDeserializationMethodName(typeSymbol.DataMember.Type)}({dict}.GetValueOrDefault(\"{typeSymbol.AttributeName}\"))"
+                    : $"{GetDeserializationMethodName(typeSymbol.DataMember.Type)}({dict}.GetValueOrDefault(\"{typeSymbol.AttributeName}\")) ?? throw {NullExceptionMethod}(\"{typeSymbol.AttributeName}\")";
+            }
 
             static IEnumerable<string> ObjectAssignmentBlock(bool useParentheses, IEnumerable<string> assignments, bool applySemiColon)
             {
