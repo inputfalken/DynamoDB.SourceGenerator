@@ -43,8 +43,8 @@ public class DynamoDbMarshaller
         });
         GetKeysMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("Keys", Comparer);
         GetSerializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_M", Comparer);
-        GetAttributeExpressionNameTypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", Comparer);
-        GetAttributeExpressionValueTypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Values", Comparer);
+        GetAttributeExpressionNameTypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", SymbolEqualityComparer.Default);
+        GetAttributeExpressionValueTypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Values", SymbolEqualityComparer.Default);
         GetAttributeValueInterfaceName = TypeExtensions.CacheFactory(Comparer, x => $"{AttributeExpressionValueTrackerInterface}<{GetFullTypeName(x)}>");
     }
     public DynamoDbMarshaller(in IEnumerable<DynamoDBMarshallerArguments> arguments)
