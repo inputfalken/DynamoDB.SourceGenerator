@@ -142,7 +142,7 @@ public class DynamoDbMarshaller
 
     private IEnumerable<string> CreateUnMarshaller()
     {
-        var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
+        var hashSet = new HashSet<ITypeSymbol>(Comparer);
         return _arguments.SelectMany(x =>
                 Conversion.ConversionMethods(
                     x.EntityTypeSymbol,
