@@ -82,15 +82,12 @@ public partial class EnumTests
     }
 
     [Fact]
-    public void Deserialize_OptionalWeekDayClass_ValueExplicitlySetToNull()
+    public void Deserialize_OptionalWeekDayClass_NoValueMappedShouldThrow()
     {
-        OptionalWeekDayClassMarshaller
-            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(OptionalWeekDayClass.DayOfWeek), new AttributeValue {N = null}}})
-            .Should()
-            .BeOfType<OptionalWeekDayClass>()
-            .Which
-            .DayOfWeek.Should()
-            .BeNull();
+        // If we have an AttributeValue that can not be be mapped when we have the key, then we should throw.
+        var act = () => OptionalWeekDayClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue> {{nameof(OptionalWeekDayClass.DayOfWeek), new AttributeValue {N = null}}});
+
+        act.Should().Throw<DynamoDBMarshallingException>();
     }
 
 }
