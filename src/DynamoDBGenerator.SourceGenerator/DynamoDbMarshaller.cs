@@ -308,6 +308,17 @@ public class DynamoDbMarshaller
             ? $"new AttributeValue {{ M = {MarshallerClass}.{GetSerializationMethodName(typeSymbol)}({parameterReference}) }}"
             : $"{MarshallerClass}.{GetSerializationMethodName(typeSymbol)}({parameterReference})";
     }
+    private static string InvokeUnmarshallMethod(ITypeSymbol typeSymbol, string paramReference, string dataMember)
+    {
+        if (GetTypeIdentifier(typeSymbol) is UnknownType)
+            return typeSymbol.IsNullable()
+                ? $"{paramReference} switch {{ {{ M: {{ }} x }} => {GetDeserializationMethodName(typeSymbol)}(x), _ =>  null}}"
+                : $"{paramReference} switch {{ {{ M: {{ }} x }} => {GetDeserializationMethodName(typeSymbol)}(x), _ =>  throw {NullExceptionMethod}({dataMember})}} ";
+
+        return typeSymbol.IsNullable()
+            ? $"{GetDeserializationMethodName(typeSymbol)}({paramReference})"
+            : $"{GetDeserializationMethodName(typeSymbol)}({paramReference}) ?? throw {NullExceptionMethod}({dataMember})";
+    }
     private Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type)
     {
         const string param = "x";
@@ -525,19 +536,10 @@ public class DynamoDbMarshaller
 
         const string value = "attributeValue";
 
-        static string InvokeMethod(ITypeSymbol typeSymbol)
-        {
-            return GetTypeIdentifier(typeSymbol) is UnknownType
-                ? $"{value}.M"
-                : value;
-        }
 
         const string dict = "dict";
 
-        static string CreateMethodSignature(TypeIdentifier typeIdentifier)
-        {
-            return $"public static {GetFullTypeName(typeIdentifier.TypeSymbol)}? {GetDeserializationMethodName(typeIdentifier.TypeSymbol)}(AttributeValue? {value})";
-        }
+        static string CreateMethodSignature(TypeIdentifier typeIdentifier) => $"public static {GetFullTypeName(typeIdentifier.TypeSymbol)}? {GetDeserializationMethodName(typeIdentifier.TypeSymbol)}(AttributeValue? {value})";
 
         return GetTypeIdentifier(type) switch
         {
@@ -578,13 +580,13 @@ public class DynamoDbMarshaller
                 SingleGeneric.SupportedType.Nullable => Enumerable.Empty<string>().ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.ICollection => CreateMethodSignature(singleGeneric)
                     // TODO check for null list elements
-                    .CreateBlock($"return {value} is {{ L: {{ }} x }} ? L.Select({GetDeserializationMethodName(singleGeneric.T)})({InvokeMethod(singleGeneric.T)}).ToList();")
+                    .CreateBlock($"return {value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", "i.ToString()")}).ToList() : null;")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Array or SingleGeneric.SupportedType.IReadOnlyCollection => CreateMethodSignature(singleGeneric)
-                    .CreateBlock($"return {value} is {{ L: {{ }} x }} ? L.Select({GetDeserializationMethodName(singleGeneric.T)})({InvokeMethod(singleGeneric.T)}).ToArray();")
+                    .CreateBlock($"return {value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", "i.ToString()")}).ToArray() : null;")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.IEnumerable => CreateMethodSignature(singleGeneric)
-                    .CreateBlock($"return {value} is {{ L: {{ }} x }} ? L.Select({GetDeserializationMethodName(singleGeneric.T)})({InvokeMethod(singleGeneric.T)});")
+                    .CreateBlock($"return {value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", "i.ToString()")}) : null;")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.SpecialType is SpecialType.System_String => CreateMethodSignature(singleGeneric)
                     .CreateBlock($"return {value} is {{ SS : {{ }} x }} ? new HashSet<string>(x) : null;").ToConversion(),
@@ -612,9 +614,8 @@ public class DynamoDbMarshaller
 
         Conversion CreateCode()
         {
-
             var assignments = _cachedDataMembers(type)
-                .Select(x => (DDB: x, MethodCall: Invocation(x), x.DataMember.Name))
+                .Select(x => (DDB: x, MethodCall: InvokeUnmarshallMethod(x.DataMember.Type, $"{dict}.GetValueOrDefault(\"{x.AttributeName}\")", $"\"{x.AttributeName}\""), x.DataMember.Name))
                 .ToArray();
 
             var blockBody = GetAssignments()
@@ -626,20 +627,6 @@ public class DynamoDbMarshaller
             var method = $"public static {GetFullTypeName(type)} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue> {dict})".CreateBlock(blockBody);
 
             return new Conversion(method, assignments.Select(x => x.DDB.DataMember.Type));
-
-            static string Invocation(DynamoDbDataMember typeSymbol)
-            {
-                if (GetTypeIdentifier(typeSymbol.DataMember.Type) is UnknownType)
-                {
-
-                    return typeSymbol.DataMember.Type.IsNullable()
-                        ? $"{dict}.GetValueOrDefault(\"{typeSymbol.AttributeName}\") switch {{ {{ M: {{ }} x }} => {GetDeserializationMethodName(typeSymbol.DataMember.Type)}(x), _ =>  null}}"
-                        : $"{dict}.GetValueOrDefault(\"{typeSymbol.AttributeName}\") switch {{ {{ M: {{ }} x }} => {GetDeserializationMethodName(typeSymbol.DataMember.Type)}(x), _ =>  throw {NullExceptionMethod}(\"{typeSymbol.AttributeName}\")}} ";
-                }
-                return typeSymbol.DataMember.Type.IsNullable()
-                    ? $"{GetDeserializationMethodName(typeSymbol.DataMember.Type)}({dict}.GetValueOrDefault(\"{typeSymbol.AttributeName}\"))"
-                    : $"{GetDeserializationMethodName(typeSymbol.DataMember.Type)}({dict}.GetValueOrDefault(\"{typeSymbol.AttributeName}\")) ?? throw {NullExceptionMethod}(\"{typeSymbol.AttributeName}\")";
-            }
 
             static IEnumerable<string> ObjectAssignmentBlock(bool useParentheses, IEnumerable<string> assignments, bool applySemiColon)
             {
