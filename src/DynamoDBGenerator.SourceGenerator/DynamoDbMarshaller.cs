@@ -320,9 +320,7 @@ public class DynamoDbMarshaller
                 : $"{paramReference} switch {{ {{ M: {{ }} x }} => {GetDeserializationMethodName(typeSymbol)}(x, {dataMember}), _ =>  throw {NullExceptionMethod}({dataMember})}}";
 
 
-        return typeSymbol.IsNullable()
-            ? $"{GetDeserializationMethodName(typeSymbol)}({paramReference}, {dataMember})"
-            : $"{GetDeserializationMethodName(typeSymbol)}({paramReference}) ?? throw {NullExceptionMethod}({dataMember})";
+        return $"{GetDeserializationMethodName(typeSymbol)}({paramReference}, {dataMember})";
     }
     private Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type)
     {
@@ -546,7 +544,7 @@ public class DynamoDbMarshaller
 
         static string CreateMethodSignature(TypeIdentifier typeIdentifier) => $"public static {GetFullTypeName(typeIdentifier.TypeSymbol)} {GetDeserializationMethodName(typeIdentifier.TypeSymbol)}(AttributeValue? {value}, string? {key} = null)";
 
-        static string Else(TypeIdentifier typeIdentifier) => typeIdentifier.TypeSymbol.IsNullable() ? "null" : $"throw {NullExceptionMethod}({key})}}";
+        static string Else(TypeIdentifier typeIdentifier) => typeIdentifier.TypeSymbol.IsNullable() ? "null" : $"throw {NullExceptionMethod}({key})";
 
         return GetTypeIdentifier(type) switch
         {
@@ -585,7 +583,7 @@ public class DynamoDbMarshaller
             SingleGeneric singleGeneric => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => CreateMethodSignature(singleGeneric)
-                    .CreateBlock($"return {value} is null or {{ NULL: true}} ? {Else(singleGeneric)} : {InvokeUnmarshallMethod(singleGeneric.T, value, "key")}")
+                    .CreateBlock($"return {value} is null or {{ NULL: true}} ? {Else(singleGeneric)} : {InvokeUnmarshallMethod(singleGeneric.T, value, key)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.ICollection => CreateMethodSignature(singleGeneric)
                     .CreateBlock($"return {value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", "i.ToString()")}).ToList() : {Else(singleGeneric)};")
