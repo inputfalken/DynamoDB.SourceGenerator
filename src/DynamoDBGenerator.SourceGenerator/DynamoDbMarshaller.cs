@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
@@ -32,12 +35,10 @@ public class DynamoDbMarshaller
         GetTypeIdentifier = TypeExtensions.CacheFactory(Comparer, x => x.GetKnownType());
         GetDeserializationMethodName = TypeExtensions.CacheFactory(SymbolEqualityComparer.Default, x =>
         {
-            
             if (x is IArrayTypeSymbol)
             {
                 return $"U_{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}Array";
             }
-            
             return $"U_{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}";
         });
         GetKeysMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("Keys", Comparer, false);
@@ -319,7 +320,8 @@ public class DynamoDbMarshaller
     }
     private static string InvokeUnmarshallMethod(ITypeSymbol typeSymbol, string paramReference, string dataMember)
     {
-        if (GetTypeIdentifier(typeSymbol) is UnknownType)
+        var typeIdentifier = GetTypeIdentifier(typeSymbol);
+        if (typeIdentifier is UnknownType || typeIdentifier is SingleGeneric {Type: SingleGeneric.SupportedType.Nullable, T: { } a} && GetTypeIdentifier(a) is UnknownType)
             return typeSymbol.IsNullable()
                 ? $"{paramReference} switch {{ {{ M: {{ }} x }} => {GetDeserializationMethodName(typeSymbol)}(x), _ =>  null}}"
                 : $"{paramReference} switch {{ {{ M: {{ }} x }} => {GetDeserializationMethodName(typeSymbol)}(x), _ =>  throw {NullExceptionMethod}({dataMember})}} ";
@@ -545,7 +547,6 @@ public class DynamoDbMarshaller
 
         const string value = "attributeValue";
 
-
         const string dict = "dict";
 
         static string CreateMethodSignature(TypeIdentifier typeIdentifier) => $"public static {GetFullTypeName(typeIdentifier.TypeSymbol)}? {GetDeserializationMethodName(typeIdentifier.TypeSymbol)}(AttributeValue? {value})";
@@ -586,7 +587,8 @@ public class DynamoDbMarshaller
             },
             SingleGeneric singleGeneric => singleGeneric.Type switch
             {
-                SingleGeneric.SupportedType.Nullable => Enumerable.Empty<string>().ToConversion(singleGeneric.T),
+                SingleGeneric.SupportedType.Nullable => Enumerable.Empty<string>()
+                    .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.ICollection => CreateMethodSignature(singleGeneric)
                     // TODO check for null list elements
                     .CreateBlock($"return {value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", "i.ToString()")}).ToList() : null;")
