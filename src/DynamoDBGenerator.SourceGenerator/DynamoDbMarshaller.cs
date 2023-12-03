@@ -30,7 +30,16 @@ public class DynamoDbMarshaller
         Comparer = SymbolEqualityComparer.IncludeNullability;
         GetFullTypeName = TypeExtensions.CacheFactory(Comparer, x => x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
         GetTypeIdentifier = TypeExtensions.CacheFactory(Comparer, x => x.GetKnownType());
-        GetDeserializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_U", SymbolEqualityComparer.Default, false);
+        GetDeserializationMethodName = TypeExtensions.CacheFactory(SymbolEqualityComparer.Default, x =>
+        {
+            
+            if (x is IArrayTypeSymbol)
+            {
+                return $"U_{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}Array";
+            }
+            
+            return $"U_{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}";
+        });
         GetKeysMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("Keys", Comparer, false);
         GetSerializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_M", Comparer, true);
         GetAttributeExpressionNameTypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", Comparer, false);
@@ -600,10 +609,10 @@ public class DynamoDbMarshaller
             KeyValueGeneric keyValueGeneric => keyValueGeneric.Type switch
             {
                 KeyValueGeneric.SupportedType.Dictionary => CreateMethodSignature(keyValueGeneric)
-                    .CreateBlock($"return {value} is {{ M: {{ }} x }} ? x.ToDictionary(y => y.Key, y => {GetDeserializationMethodName(keyValueGeneric.TValue)}(y.Value, y.Key)) null;")
+                    .CreateBlock($"return {value} is {{ M: {{ }} x }} ? x.ToDictionary(y => y.Key, y => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "y.Value", "y.Key")}) : null;")
                     .ToConversion(keyValueGeneric.TValue),
                 KeyValueGeneric.SupportedType.LookUp => CreateMethodSignature(keyValueGeneric)
-                    .CreateBlock($"return {value} is {{ M: {{ }} x }} ? x.SelectMany(y => y.Value.L, (y, z) => (y.Key, z)).ToLookup(y => y.Key, y => y.z) : null;")
+                    .CreateBlock($"return {value} is {{ M: {{ }} x }} ? x.SelectMany(y => y.Value.L, (y, z) => (y.Key, z)).ToLookup(y => y.Key, y => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "y.z", "y.Key")}) : null;")
                     .ToConversion(keyValueGeneric.TValue),
                 _ => throw UncoveredConversionException(keyValueGeneric, nameof(StaticPocoFactory))
 
