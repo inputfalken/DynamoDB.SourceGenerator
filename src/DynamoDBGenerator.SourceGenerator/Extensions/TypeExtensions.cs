@@ -79,15 +79,6 @@ public static class TypeExtensions
     {
         return new Conversion(enumerable, new []{typeSymbol});
     }
-    public static Assignment ToInlineAssignment(this TypeIdentifier typeSymbol, string value)
-    {
-        return new Assignment(value, typeSymbol);
-    }
-
-    public static Assignment ToExternalDependencyAssignment(this TypeIdentifier typeIdentifier,  string value)
-    {
-        return new Assignment(value, typeIdentifier);
-    }
 
     public static INamedTypeSymbol? TryGetNullableValueType(this ITypeSymbol type)
     {

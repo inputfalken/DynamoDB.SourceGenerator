@@ -321,7 +321,7 @@ public class DynamoDbMarshaller
     private static string InvokeUnmarshallMethod(ITypeSymbol typeSymbol, string paramReference, string dataMember)
     {
         var typeIdentifier = GetTypeIdentifier(typeSymbol);
-        if (typeIdentifier is UnknownType || typeIdentifier is SingleGeneric {Type: SingleGeneric.SupportedType.Nullable, T: { } a} && GetTypeIdentifier(a) is UnknownType)
+        if (typeIdentifier is UnknownType || typeIdentifier is SingleGeneric { Type: SingleGeneric.SupportedType.Nullable, T: { } a} && GetTypeIdentifier(a) is UnknownType)
             return typeSymbol.IsNullable()
                 ? $"{paramReference} switch {{ {{ M: {{ }} x }} => {GetDeserializationMethodName(typeSymbol)}(x), _ =>  null}}"
                 : $"{paramReference} switch {{ {{ M: {{ }} x }} => {GetDeserializationMethodName(typeSymbol)}(x), _ =>  throw {NullExceptionMethod}({dataMember})}} ";
