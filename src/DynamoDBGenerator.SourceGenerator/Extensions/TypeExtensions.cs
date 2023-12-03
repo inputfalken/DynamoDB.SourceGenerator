@@ -16,59 +16,42 @@ public static class TypeExtensions
         return x => cache.TryGetValue(x, out var value) ? value : cache[x] = selector(x);
     }
 
-    public static Func<ITypeSymbol, string> SuffixedTypeSymbolNameFactory(string? suffix, IEqualityComparer<ISymbol?> comparer, bool useNullableAnnotationNaming)
+    public static Func<ITypeSymbol, string> SuffixedTypeSymbolNameFactory(string? suffix, IEqualityComparer<ISymbol?> comparer)
     {
-        return x => Execution(
-            new Dictionary<ITypeSymbol, string>(comparer),
-            x,
-            false,
-            suffix,
-            useNullableAnnotationNaming
-        );
+        var dict = new Dictionary<ITypeSymbol, string>(comparer);
 
-        static string Execution(
-            IDictionary<ITypeSymbol, string> cache,
-            ITypeSymbol typeSymbol,
-            bool isRecursive,
-            string? suffix,
-            bool useNullableAnnotationNaming
-        )
+        Func<ITypeSymbol, string> implementation;
+        if (Equals(comparer, SymbolEqualityComparer.IncludeNullability))
         {
-            if (cache.TryGetValue(typeSymbol, out var methodName))
-                return methodName;
+            implementation = x =>
+            {
+                if (dict.TryGetValue(x, out var res))
+                    return res;
 
-            var displayString = typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-
-            var str = useNullableAnnotationNaming
-                ? (typeSymbol.NullableAnnotation, typeDisplay: displayString) switch
+                var displayString = x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+                return dict[x] = (x.NullableAnnotation, typeDisplay: displayString) switch
                 {
                     (NullableAnnotation.NotAnnotated, _) => $"NN_{displayString.ToAlphaNumericMethodName()}{suffix}",
                     (NullableAnnotation.None, _) => $"{displayString.ToAlphaNumericMethodName()}{suffix}",
                     (NullableAnnotation.Annotated, _) => $"N_{displayString.ToAlphaNumericMethodName()}{suffix}",
-                    _ => throw new NotImplementedException(typeSymbol.ToDisplayString())
-                }
-                : $"{displayString.ToAlphaNumericMethodName()}{suffix}";
+                    _ => throw new NotImplementedException(x.ToDisplayString())
+                };
 
-            if (typeSymbol is not INamedTypeSymbol namedTypeSymbol)
-            {
-                // We do not need to populate the dictionary if the execution originates from recursion.
-                if (isRecursive is false)
-                    cache[typeSymbol] = str;
-
-                return str;
-            }
-
-            var result = string.Join(
-                "_",
-                namedTypeSymbol.TypeArguments.Select(x => Execution(cache, x, true, suffix, useNullableAnnotationNaming)).Prepend(str)
-            );
-
-            // We do not need to populate the dictionary if the execution originates from recursion.
-            if (isRecursive is false)
-                cache[typeSymbol] = result;
-
-            return result;
+            };
         }
+        else
+        {
+            implementation = x =>
+            {
+                if (dict.TryGetValue(x, out var res))
+                    return res;
+
+                return dict[x] = $"{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}{suffix}";
+            };
+        }
+
+        return implementation;
+
     }
 
     public static Conversion ToConversion(this IEnumerable<string> enumerable)
@@ -77,7 +60,7 @@ public static class TypeExtensions
     }
     public static Conversion ToConversion(this IEnumerable<string> enumerable, ITypeSymbol typeSymbol)
     {
-        return new Conversion(enumerable, new []{typeSymbol});
+        return new Conversion(enumerable, new[] {typeSymbol});
     }
 
     public static INamedTypeSymbol? TryGetNullableValueType(this ITypeSymbol type)
