@@ -15,7 +15,6 @@ public static class DynamoDbMarshaller
     private static readonly Func<ITypeSymbol, string> GetAttributeValueInterfaceName;
     private static readonly Func<ITypeSymbol, string> GetDeserializationMethodName;
     private static readonly Func<ITypeSymbol, string> GetTypeName;
-    private static readonly Func<ITypeSymbol, string> GetNullableTypeName;
     private static readonly Func<ITypeSymbol, string> GetKeysMethodName;
     private static readonly Func<ITypeSymbol, string> GetSerializationMethodName;
     private static readonly Func<ITypeSymbol, TypeIdentifier> GetTypeIdentifier;
@@ -25,15 +24,6 @@ public static class DynamoDbMarshaller
     static DynamoDbMarshaller()
     {
         GetTypeName = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, x => x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
-        GetNullableTypeName = TypeExtensions.CacheFactory(
-            SymbolEqualityComparer.IncludeNullability,
-            x => x switch
-            {
-                {NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated, IsReferenceType: true} => $"{GetTypeName(x)}?",
-                {NullableAnnotation: NullableAnnotation.NotAnnotated} or {IsValueType: true} => GetTypeName(x),
-                _ => throw new ArgumentException($"Could not determine nullability for '{nameof(GetNullableTypeName)}'.")
-            }
-        );
         GetTypeIdentifier = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, x => x.GetKnownType());
         GetDeserializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_U", SymbolEqualityComparer.IncludeNullability);
         GetKeysMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("Keys", SymbolEqualityComparer.IncludeNullability);
@@ -540,7 +530,7 @@ public static class DynamoDbMarshaller
         const string key = "key";
 
         static string CreateMethodSignature(TypeIdentifier typeIdentifier) =>
-            $"public static {GetNullableTypeName(typeIdentifier.TypeSymbol)} {GetDeserializationMethodName(typeIdentifier.TypeSymbol)}(AttributeValue? {value}, string? {key} = null)";
+            $"public static {GetTypeName(typeIdentifier.TypeSymbol)} {GetDeserializationMethodName(typeIdentifier.TypeSymbol)}(AttributeValue? {value}, string? {key} = null)";
 
         static string Else(TypeIdentifier typeIdentifier) => typeIdentifier.TypeSymbol.IsNullable() ? "null" : $"throw {NullExceptionMethod}({key})";
 
