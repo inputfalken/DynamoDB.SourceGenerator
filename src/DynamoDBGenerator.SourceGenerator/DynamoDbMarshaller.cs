@@ -30,7 +30,7 @@ public static class DynamoDbMarshaller
         GetSerializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_M", SymbolEqualityComparer.IncludeNullability);
         GetAttributeExpressionNameTypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", SymbolEqualityComparer.Default);
         GetAttributeExpressionValueTypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Values", SymbolEqualityComparer.Default);
-        GetAttributeValueInterfaceName = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, x => $"{AttributeExpressionValueTrackerInterface}<{GetTypeName(x).original}>");
+        GetAttributeValueInterfaceName = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, x => $"{AttributeExpressionValueTrackerInterface}<{GetTypeName(x).annotated}>");
     }
 
     private static IEnumerable<string> CreateExpressionAttributeName(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties)
@@ -54,7 +54,7 @@ public static class DynamoDbMarshaller
     {
         foreach (var argument in arguments)
         {
-            var rootTypeName = GetTypeName(argument.EntityTypeSymbol).original;
+            var rootTypeName = GetTypeName(argument.EntityTypeSymbol).annotated;
             var valueTrackerTypeName = GetAttributeExpressionValueTypeName(argument.ArgumentType);
             var nameTrackerTypeName = GetAttributeExpressionNameTypeName(argument.EntityTypeSymbol);
 
@@ -80,11 +80,11 @@ public static class DynamoDbMarshaller
                 .Append($"public {nameTrackerTypeName} {AttributeExpressionNameTrackerMethodName}() => new {nameTrackerTypeName}(null);")
                 .Append($"public {KeyMarshallerInterface} PrimaryKeyMarshaller {{ get; }} = new {Constants.DynamoDBGenerator.KeyMarshallerImplementationTypeName}({GetKeysMethodName(argument.EntityTypeSymbol)});");
 
-            var classImplementation = $"private sealed class {argument.ImplementationName}: {Interface}<{rootTypeName}, {GetTypeName(argument.ArgumentType).original}, {nameTrackerTypeName}, {valueTrackerTypeName}>"
+            var classImplementation = $"private sealed class {argument.ImplementationName}: {Interface}<{rootTypeName}, {GetTypeName(argument.ArgumentType).annotated}, {nameTrackerTypeName}, {valueTrackerTypeName}>"
                 .CreateBlock(interfaceImplementation);
 
             yield return
-                $"public {Interface}<{rootTypeName}, {GetTypeName(argument.ArgumentType).original}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.PropertyName} {{ get; }} = new {argument.ImplementationName}();";
+                $"public {Interface}<{rootTypeName}, {GetTypeName(argument.ArgumentType).annotated}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.PropertyName} {{ get; }} = new {argument.ImplementationName}();";
 
             foreach (var s in classImplementation)
                 yield return s;
@@ -283,7 +283,7 @@ public static class DynamoDbMarshaller
                 )
                 .Append($"if ({self}.IsValueCreated) yield return new ({self}.Value, {InvokeMarshallerMethod(typeSymbol, "entity", $"\"{className}\"")} ?? new AttributeValue {{ NULL = true }});");
 
-            foreach (var yield in $"IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{AttributeExpressionValueTrackerAccessedValues}({GetTypeName(typeSymbol).original} entity)".CreateBlock(yields))
+            foreach (var yield in $"IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{AttributeExpressionValueTrackerAccessedValues}({GetTypeName(typeSymbol).annotated} entity)".CreateBlock(yields))
                 yield return yield;
 
             yield return $"public override string ToString() => {self}.Value;";
@@ -420,7 +420,7 @@ public static class DynamoDbMarshaller
                 .Concat(properties.SelectMany(x => x.dictionaryAssignment))
                 .Append($"return {dictionaryReference};");
 
-            var code = $"public static Dictionary<string, AttributeValue> {GetSerializationMethodName(type)}({GetTypeName(type).original} {paramReference}, string? {dataMember} = null)".CreateBlock(body);
+            var code = $"public static Dictionary<string, AttributeValue> {GetSerializationMethodName(type)}({GetTypeName(type).annotated} {paramReference}, string? {dataMember} = null)".CreateBlock(body);
 
             return new Conversion(code, properties.Select(y => y.Type));
 
@@ -631,7 +631,7 @@ public static class DynamoDbMarshaller
                 .DefaultAndLast(x => ObjectAssignmentBlock(x.useParentheses, x.assignments, false), x => ObjectAssignmentBlock(x.useParentheses, x.assignments, true))
                 .SelectMany(x => x)
                 .DefaultIfEmpty("();")
-                .Prepend(type.IsTupleType ? "return" : $"return new {GetTypeName(type).original}");
+                .Prepend(type.IsTupleType ? "return" : $"return new {GetTypeName(type).annotated}");
 
             var method = $"public static {GetTypeName(type).annotated} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue> {dict}, string? {dataMember} = null)".CreateBlock(blockBody);
 
