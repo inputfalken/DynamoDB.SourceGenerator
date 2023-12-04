@@ -20,7 +20,7 @@ public static class TypeExtensions
         string TypeIdentifier(ITypeSymbol x, string displayString)
         {
 
-            if (x is not INamedTypeSymbol namedTypeSymbol || namedTypeSymbol.TypeArguments.Length is 0)
+            if (x is not INamedTypeSymbol namedTypeSymbol ||  namedTypeSymbol.TypeArguments.Length is 0 || namedTypeSymbol.BaseType?.SpecialType is SpecialType.System_Nullable_T )
             {
                 return x.NullableAnnotation switch
                 {
@@ -36,11 +36,12 @@ public static class TypeExtensions
 
             var typeWithoutGenerics = displayString.Substring(0, index);
 
+            
             return namedTypeSymbol.NullableAnnotation switch
             {
                 NullableAnnotation.Annotated => $"{typeWithoutGenerics}<{string.Join(", ", namedTypeSymbol.TypeArguments.Select(y => TypeIdentifier(y, y.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))}>?",
                 NullableAnnotation.None or NullableAnnotation.NotAnnotated =>
-                    $"{typeWithoutGenerics}<{string.Join(", ", namedTypeSymbol.TypeArguments.Select(y => TypeIdentifier(y, y.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))}>?",
+                    $"{typeWithoutGenerics}<{string.Join(", ", namedTypeSymbol.TypeArguments.Select(y => TypeIdentifier(y, y.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))}>",
                 _ => throw new ArgumentException(ExceptionMessage(namedTypeSymbol))
             };
         }
