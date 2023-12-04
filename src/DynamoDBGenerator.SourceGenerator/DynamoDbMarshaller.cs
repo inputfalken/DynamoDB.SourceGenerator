@@ -296,23 +296,21 @@ public static class DynamoDbMarshaller
 //                ? $"new AttributeValue {{ M = {GetSerializationMethodName(typeSymbol)}({parameterReference}, {dataMember}) }}"
 //                : $"{GetSerializationMethodName(typeSymbol)}({parameterReference}, {dataMember})";
 
-        var isNullable = typeSymbol.IsNullable();
-        //  We're dealing with a value type that can not be null.
-        if (isNullable is false && typeSymbol.IsValueType)
-        {
-            return $"{MarshallerClass}.{GetSerializationMethodName(typeSymbol)}({parameterReference}, {dataMember})";
-        }
+        var invocation = $"{MarshallerClass}.{GetSerializationMethodName(typeSymbol)}({parameterReference}, {dataMember})";
+        
         if (GetTypeIdentifier(typeSymbol) is UnknownType)
         {
-            if (isNullable)
-                return $"({parameterReference} is not null ? new AttributeValue {{ M = {MarshallerClass}.{GetSerializationMethodName(typeSymbol)}({parameterReference}, {dataMember}) }} : null)";
+            if (typeSymbol.IsNullable())
+                return $"({parameterReference} is not null ? new AttributeValue {{ M = {invocation} }} : null)";
 
-            return $"({parameterReference} is not null ? new AttributeValue {{ M = {MarshallerClass}.{GetSerializationMethodName(typeSymbol)}({parameterReference}, {dataMember}) }} : throw {NullExceptionMethod}({dataMember}))";
+            if (typeSymbol.IsReferenceType)
+                return
+                    $"({parameterReference} is not null ? new AttributeValue {{ M = {invocation} }} : throw {NullExceptionMethod}({dataMember}))";
 
         }
 
         return $"{MarshallerClass}.{GetSerializationMethodName(typeSymbol)}({parameterReference}, {dataMember})";
-        
+
     }
     private static string InvokeUnmarshallMethod(ITypeSymbol typeSymbol, string paramReference, string dataMember)
     {
