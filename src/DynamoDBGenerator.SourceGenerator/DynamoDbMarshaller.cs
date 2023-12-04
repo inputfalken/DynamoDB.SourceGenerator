@@ -8,7 +8,7 @@ using static DynamoDBGenerator.SourceGenerator.Constants.DynamoDBGenerator.Marsh
 using KeyValueGeneric = DynamoDBGenerator.SourceGenerator.Types.KeyValueGeneric;
 namespace DynamoDBGenerator.SourceGenerator;
 
-public class DynamoDbMarshaller
+public static class DynamoDbMarshaller
 {
     private static readonly Func<ITypeSymbol, string> GetAttributeExpressionNameTypeName;
     private static readonly Func<ITypeSymbol, string> GetAttributeExpressionValueTypeName;
@@ -21,9 +21,6 @@ public class DynamoDbMarshaller
     private static readonly Func<ITypeSymbol, TypeIdentifier> GetTypeIdentifier;
     private const string MarshallerClass = "_Marshaller_";
     private const string UnMarshallerClass = "_Unmarshaller_";
-
-    private readonly IReadOnlyList<DynamoDBMarshallerArguments> _arguments;
-    private readonly Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> _cachedDataMembers;
 
     static DynamoDbMarshaller()
     {
@@ -45,32 +42,27 @@ public class DynamoDbMarshaller
         GetAttributeExpressionValueTypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Values", SymbolEqualityComparer.Default);
         GetAttributeValueInterfaceName = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, x => $"{AttributeExpressionValueTrackerInterface}<{GetTypeName(x)}>");
     }
-    public DynamoDbMarshaller(in IEnumerable<DynamoDBMarshallerArguments> arguments)
-    {
-        _cachedDataMembers = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, static x => x.GetDynamoDbProperties());
-        _arguments = arguments.ToArray();
-    }
 
-    private IEnumerable<string> CreateExpressionAttributeName()
+    private static IEnumerable<string> CreateExpressionAttributeName(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties)
     {
         // Using _comparer can double classes when there's a None nullable property mixed with a nullable property
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
 
-        return _arguments
-            .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, ExpressionAttributeName, hashSet)).SelectMany(x => x.Code);
+        return arguments
+            .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, y => ExpressionAttributeName(y, getDynamoDbProperties), hashSet)).SelectMany(x => x.Code);
 
     }
-    private IEnumerable<string> CreateExpressionAttributeValue()
+    private static IEnumerable<string> CreateExpressionAttributeValue(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties)
     {
         // Using _comparer can double classes when there's a None nullable property mixed with a nullable property
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
 
-        return _arguments
-            .SelectMany(x => Conversion.ConversionMethods(x.ArgumentType, ExpressionAttributeValue, hashSet)).SelectMany(x => x.Code);
+        return arguments
+            .SelectMany(x => Conversion.ConversionMethods(x.ArgumentType, y => ExpressionAttributeValue(y, getDynamoDbProperties), hashSet)).SelectMany(x => x.Code);
     }
-    private IEnumerable<string> CreateImplementations()
+    private static IEnumerable<string> CreateImplementations(IEnumerable<DynamoDBMarshallerArguments> arguments)
     {
-        foreach (var argument in _arguments)
+        foreach (var argument in arguments)
         {
             var rootTypeName = GetTypeName(argument.EntityTypeSymbol);
             var valueTrackerTypeName = GetAttributeExpressionValueTypeName(argument.ArgumentType);
@@ -109,58 +101,60 @@ public class DynamoDbMarshaller
 
         }
     }
-    private IEnumerable<string> CreateKeys()
+    private static IEnumerable<string> CreateKeys(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties)
     {
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability);
 
-        return _arguments
-            .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, StaticAttributeValueDictionaryKeys, hashSet)).SelectMany(x => x.Code);
+        return arguments
+            .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, y => StaticAttributeValueDictionaryKeys(y, getDynamoDbProperties), hashSet)).SelectMany(x => x.Code);
     }
 
-    private IEnumerable<string> CreateMarshaller()
+    private static IEnumerable<string> CreateMarshaller(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties)
     {
         var hashset = new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability);
 
-        return _arguments.SelectMany(x => Conversion
+        return arguments.SelectMany(x => Conversion
                 .ConversionMethods(
                     x.EntityTypeSymbol,
-                    StaticAttributeValueDictionaryFactory,
+                    y => StaticAttributeValueDictionaryFactory(y, getDynamoDbProperties),
                     hashset
                 )
-                .Concat(Conversion.ConversionMethods(x.ArgumentType, StaticAttributeValueDictionaryFactory, hashset))
+                .Concat(Conversion.ConversionMethods(x.ArgumentType, y => StaticAttributeValueDictionaryFactory(y, getDynamoDbProperties), hashset))
             )
             .SelectMany(x => x.Code);
     }
 
 
-    public IEnumerable<string> CreateRepository()
+    public static IEnumerable<string> CreateRepository(IEnumerable<DynamoDBMarshallerArguments> arguments)
     {
-        var code = CreateImplementations()
-            .Concat($"private static class {MarshallerClass}".CreateBlock(CreateMarshaller()))
-            .Concat($"private static class {UnMarshallerClass}".CreateBlock(CreateUnMarshaller()))
-            .Concat(CreateExpressionAttributeName())
-            .Concat(CreateExpressionAttributeValue())
-            .Concat(CreateKeys());
+        var loadedArguments = arguments.ToArray();
+        var getDynamoDbProperties = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, static x => x.GetDynamoDbProperties());
+        var code = CreateImplementations(loadedArguments)
+            .Concat($"private static class {MarshallerClass}".CreateBlock(CreateMarshaller(loadedArguments, getDynamoDbProperties)))
+            .Concat($"private static class {UnMarshallerClass}".CreateBlock(CreateUnMarshaller(loadedArguments, getDynamoDbProperties)))
+            .Concat(CreateExpressionAttributeName(loadedArguments, getDynamoDbProperties))
+            .Concat(CreateExpressionAttributeValue(loadedArguments, getDynamoDbProperties))
+            .Concat(CreateKeys(loadedArguments, getDynamoDbProperties));
 
         return code;
     }
 
-    private IEnumerable<string> CreateUnMarshaller()
+    private static IEnumerable<string> CreateUnMarshaller(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties)
     {
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability);
-        return _arguments.SelectMany(x =>
+        return arguments.SelectMany(x =>
                 Conversion.ConversionMethods(
                     x.EntityTypeSymbol,
-                    StaticPocoFactory,
+                    y => StaticPocoFactory(y, getDynamoDbProperties),
                     hashSet
                 )
             )
             .SelectMany(x => x.Code);
     }
-    private Conversion ExpressionAttributeName(ITypeSymbol typeSymbol)
+    private static Conversion ExpressionAttributeName(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
     {
         const string constructorAttributeName = "nameRef";
-        var dataMembers = _cachedDataMembers(typeSymbol)
+        var dataMembers = fn(typeSymbol)
             .Select(x =>
             {
                 var typeIdentifier = GetTypeIdentifier(x.DataMember.Type);
@@ -232,10 +226,10 @@ public class DynamoDbMarshaller
 
     }
 
-    private Conversion ExpressionAttributeValue(ITypeSymbol typeSymbol)
+    private static Conversion ExpressionAttributeValue(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
     {
         const string valueProvider = "valueIdProvider";
-        var dataMembers = _cachedDataMembers(typeSymbol)
+        var dataMembers = fn(typeSymbol)
             .Select(x =>
             {
                 var typeIdentifier = GetTypeIdentifier(x.DataMember.Type);
@@ -325,7 +319,7 @@ public class DynamoDbMarshaller
 
         return $"{GetDeserializationMethodName(typeSymbol)}({paramReference}, {dataMember})";
     }
-    private Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type)
+    private static Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
     {
         const string param = "x";
 
@@ -402,7 +396,7 @@ public class DynamoDbMarshaller
             const string paramReference = "entity";
             const string dictionaryReference = "attributeValues";
 
-            var properties = _cachedDataMembers(typeSymbol)
+            var properties = fn(typeSymbol)
                 .Select(x =>
                 {
                     var accessPattern = $"{paramReference}.{x.DataMember.Name}";
@@ -441,7 +435,7 @@ public class DynamoDbMarshaller
         }
     }
 
-    private Conversion StaticAttributeValueDictionaryKeys(ITypeSymbol typeSymbol)
+    private static Conversion StaticAttributeValueDictionaryKeys(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
     {
         const string pkReference = "partitionKey";
         const string rkReference = "rangeKey";
@@ -457,7 +451,7 @@ public class DynamoDbMarshaller
 
         IEnumerable<string> CreateBody()
         {
-            var keyStructure = DynamoDbDataMember.GetKeyStructure(_cachedDataMembers(typeSymbol));
+            var keyStructure = DynamoDbDataMember.GetKeyStructure(fn(typeSymbol));
             if (keyStructure is null)
             {
                 yield return @$"throw {NoDynamoDBKeyAttributesExceptionMethod}(""{typeSymbol}"");";
@@ -537,7 +531,7 @@ public class DynamoDbMarshaller
 
     }
 
-    private Conversion StaticPocoFactory(ITypeSymbol type)
+    private static Conversion StaticPocoFactory(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
     {
 
         const string value = "attributeValue";
@@ -625,7 +619,7 @@ public class DynamoDbMarshaller
 
         Conversion CreateCode()
         {
-            var assignments = _cachedDataMembers(type)
+            var assignments = fn(type)
                 .Select(x => (DDB: x, MethodCall: InvokeUnmarshallMethod(x.DataMember.Type, $"{dict}.GetValueOrDefault(\"{x.AttributeName}\")", $"\"{x.DataMember.Name}\""), x.DataMember.Name))
                 .ToArray();
 

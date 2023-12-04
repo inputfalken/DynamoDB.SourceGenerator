@@ -57,8 +57,7 @@ using {Constants.DynamoDBGenerator.Namespace.AttributesFullName};
 using {Constants.DynamoDBGenerator.Namespace.ExceptionsFullName};
 using {Constants.DynamoDBGenerator.Namespace.InternalFullName};";
 
-        var marshaller = new DynamoDbMarshaller(CreateArguments(type));
-        var classContent = $"public sealed partial class {type.Name}".CreateBlock(marshaller.CreateRepository());
+        var classContent = $"public sealed partial class {type.Name}".CreateBlock(DynamoDbMarshaller.CreateRepository(CreateArguments(type)));
         var content = type.ContainingNamespace.IsGlobalNamespace
             ? classContent
             : $"namespace {type.ContainingNamespace.ToDisplayString()}".CreateBlock(classContent);
