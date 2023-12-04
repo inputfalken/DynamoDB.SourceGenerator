@@ -283,4 +283,7 @@ public class CollectionClass
     public IReadOnlyList<KeyValuePair<string, int>>? KeyValuePairs { get; set; }
     
     public string[]? Array { get; set; }
+    public string?[]? Array1 { get; set; }
+
+    public string[][] Type { get; set; }
 }

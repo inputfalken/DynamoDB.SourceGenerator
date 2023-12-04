@@ -13,17 +13,16 @@ public static class TypeExtensions
         return x => cache.TryGetValue(x, out var value) ? value : cache[x] = selector(x);
     }
 
-    public static Func<ITypeSymbol, string> GetTypeIdentifier(IEqualityComparer<ISymbol?> comparer)
+    public static Func<ITypeSymbol, (string annotated, string original)> GetTypeIdentifier(IEqualityComparer<ISymbol?> comparer)
     {
-        var dict = new Dictionary<ITypeSymbol, string>(comparer);
+        var dict = new Dictionary<ITypeSymbol, (string, string)>(comparer);
 
-        string TypeIdentifier(ITypeSymbol x)
+        string TypeIdentifier(ITypeSymbol x, string displayString)
         {
 
-            var displayString = x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
             if (x is IArrayTypeSymbol arrayTypeSymbol)
             {
-                return $"{TypeIdentifier(arrayTypeSymbol.ElementType)}[]";
+                return $"{TypeIdentifier(arrayTypeSymbol.ElementType, arrayTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))}[]";
             }
 
             if (x is not INamedTypeSymbol namedTypeSymbol || namedTypeSymbol.TypeArguments.Length is 0)
@@ -42,10 +41,18 @@ public static class TypeExtensions
 
             var typeWithoutGenerics = displayString.Substring(0, index);
 
-            return $"{typeWithoutGenerics}<{string.Join(", ", namedTypeSymbol.TypeArguments.Select(TypeIdentifier))}>";
+            return $"{typeWithoutGenerics}<{string.Join(", ", namedTypeSymbol.TypeArguments.Select(x => TypeIdentifier(x, x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))}>";
         }
 
-        return x => dict.TryGetValue(x, out var res) ? res : dict[x] = TypeIdentifier(x);
+        return x =>
+        {
+            if (dict.TryGetValue(x, out var res))
+                return res;
+
+            var displayString = x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+
+            return dict[x] = (TypeIdentifier(x, displayString), displayString);
+        };
 
     }
     public static Func<ITypeSymbol, string> SuffixedTypeSymbolNameFactory(string? suffix, IEqualityComparer<ISymbol?> comparer)
