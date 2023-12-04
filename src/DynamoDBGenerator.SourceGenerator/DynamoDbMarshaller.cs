@@ -281,7 +281,7 @@ public static class DynamoDbMarshaller
                             : $"if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}", $"\"{x.DDB.DataMember.Name}\"")} ?? new AttributeValue {{ NULL = true }});")}";
                     }
                 )
-                .Append($"if ({self}.IsValueCreated) yield return new ({self}.Value, {InvokeMarshallerMethod(typeSymbol, "entity", $"\"{className}\"")});");
+                .Append($"if ({self}.IsValueCreated) yield return new ({self}.Value, {InvokeMarshallerMethod(typeSymbol, "entity", $"\"{className}\"")} ?? new AttributeValue {{ NULL = true }});");
 
             foreach (var yield in $"IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{AttributeExpressionValueTrackerAccessedValues}({GetTypeName(typeSymbol).original} entity)".CreateBlock(yields))
                 yield return yield;
@@ -420,7 +420,7 @@ public static class DynamoDbMarshaller
                 .Concat(properties.SelectMany(x => x.dictionaryAssignment))
                 .Append($"return {dictionaryReference};");
 
-            var code = $"public static Dictionary<string, AttributeValue> {GetSerializationMethodName(type)}({GetTypeName(type).annotated} {paramReference}, string? {dataMember} = null)".CreateBlock(body);
+            var code = $"public static Dictionary<string, AttributeValue> {GetSerializationMethodName(type)}({GetTypeName(type).original} {paramReference}, string? {dataMember} = null)".CreateBlock(body);
 
             return new Conversion(code, properties.Select(y => y.Type));
 
