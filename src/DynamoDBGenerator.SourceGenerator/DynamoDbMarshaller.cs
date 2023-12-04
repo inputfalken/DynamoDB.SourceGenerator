@@ -291,20 +291,17 @@ public static class DynamoDbMarshaller
     }
     private static string InvokeMarshallerMethod(ITypeSymbol typeSymbol, string parameterReference, string dataMember, [CallerMemberName] string caller = "")
     {
-//        if (caller is nameof(StaticAttributeValueDictionaryFactory))
-//            return GetTypeIdentifier(typeSymbol) is UnknownType
-//                ? $"new AttributeValue {{ M = {GetSerializationMethodName(typeSymbol)}({parameterReference}, {dataMember}) }}"
-//                : $"{GetSerializationMethodName(typeSymbol)}({parameterReference}, {dataMember})";
-
         var invocation = $"{MarshallerClass}.{GetSerializationMethodName(typeSymbol)}({parameterReference}, {dataMember})";
-        
         if (GetTypeIdentifier(typeSymbol) is UnknownType)
         {
             if (typeSymbol.IsNullable())
                 return $"({parameterReference} is not null ? new AttributeValue {{ M = {invocation} }} : null)";
 
-            return
-                $"({parameterReference} is not null ? new AttributeValue {{ M = {invocation} }} : throw {NullExceptionMethod}({dataMember}))";
+            // ValueTypes can not have an else after being created.
+            if (typeSymbol.IsValueType)
+                return $"new AttributeValue {{ M = {invocation} }}";
+
+            return $"({parameterReference} is not null ? new AttributeValue {{ M = {invocation} }} : throw {NullExceptionMethod}({dataMember}))";
 
         }
 
