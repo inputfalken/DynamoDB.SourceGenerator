@@ -289,29 +289,18 @@ public static class DynamoDbMarshaller
             yield return $"public override string ToString() => {self}.Value;";
         }
     }
-    private static string InvokeMarshallerMethod(ITypeSymbol typeSymbol, string parameterReference, string dataMember, [CallerMemberName] string caller = "")
+    private static string InvokeMarshallerMethod(ITypeSymbol typeSymbol, string parameterReference, string dataMember)
     {
         var invocation = $"{MarshallerClass}.{GetSerializationMethodName(typeSymbol)}({parameterReference}, {dataMember})";
-        if (GetTypeIdentifier(typeSymbol) is UnknownType)
-        {
-            if (typeSymbol.IsNullable())
-                return $"({parameterReference} is not null ? new AttributeValue {{ M = {invocation} }} : null)";
-
-            // ValueTypes can not have an else after being created.
-            if (typeSymbol.IsValueType)
-                return $"new AttributeValue {{ M = {invocation} }}";
-
-            return $"({parameterReference} is not null ? new AttributeValue {{ M = {invocation} }} : throw {NullExceptionMethod}({dataMember}))";
-
-        }
-
-        return invocation;
+        return GetTypeIdentifier(typeSymbol) is UnknownType
+            ? $"{invocation} switch {{ null => null, var x => new AttributeValue {{ M = x }} }}"
+            : invocation;
 
     }
     private static string InvokeUnmarshallMethod(ITypeSymbol typeSymbol, string paramReference, string dataMember)
     {
-        return GetTypeIdentifier(typeSymbol) is UnknownType 
-            ? $"{GetDeserializationMethodName(typeSymbol)}({paramReference}?.M, {dataMember})" 
+        return GetTypeIdentifier(typeSymbol) is UnknownType
+            ? $"{GetDeserializationMethodName(typeSymbol)}({paramReference}?.M, {dataMember})"
             : $"{GetDeserializationMethodName(typeSymbol)}({paramReference}, {dataMember})";
 
     }
@@ -406,7 +395,7 @@ public static class DynamoDbMarshaller
                 {
                     var accessPattern = $"{paramReference}.{x.DataMember.Name}";
                     return (
-                        dictionaryAssignment: $"if ({InvokeMarshallerMethod(x.DataMember.Type, accessPattern, $"nameof({accessPattern})")} is {{ }} {x.DataMember.Name})".CreateBlock(
+                        dictionaryAssignment: $"if ({InvokeMarshallerMethod(x.DataMember.Type, accessPattern, $"\"{x.DataMember.Name}\"")} is {{ }} {x.DataMember.Name})".CreateBlock(
                             $"{dictionaryReference}.Add(\"{x.AttributeName}\", {x.DataMember.Name});"),
                         capacityTernary: x.DataMember.Type.IsNullable() ? x.DataMember.Type.NotNullTernaryExpression(in accessPattern, "1", "0") : "1",
                         x.DataMember.Type
@@ -414,11 +403,18 @@ public static class DynamoDbMarshaller
                 })
                 .ToArray();
 
-            var body = InitializeDictionary(properties.Select(x => x.capacityTernary))
-                .Concat(properties.SelectMany(x => x.dictionaryAssignment))
-                .Append($"return {dictionaryReference};");
+            var isNullable = typeSymbol.IsNullable();
+            var enumerable = Enumerable.Empty<string>();
+            if (isNullable && typeSymbol.IsReferenceType)
+                enumerable = $"if ({paramReference} is null)".CreateBlock("return null;");
 
-            var code = $"public static Dictionary<string, AttributeValue> {GetSerializationMethodName(type)}({GetTypeName(type).annotated} {paramReference}, string? {dataMember} = null)".CreateBlock(body);
+            var body =
+                enumerable.Concat(InitializeDictionary(properties.Select(x => x.capacityTernary))
+                    .Concat(properties.SelectMany(x => x.dictionaryAssignment))
+                    .Append($"return {dictionaryReference};"));
+
+            var code =
+                $"public static Dictionary<string, AttributeValue>{(isNullable ? '?' : null)} {GetSerializationMethodName(type)}({GetTypeName(type).annotated} {paramReference}, string? {dataMember} = null)".CreateBlock(body);
 
             return new Conversion(code, properties.Select(y => y.Type));
 
