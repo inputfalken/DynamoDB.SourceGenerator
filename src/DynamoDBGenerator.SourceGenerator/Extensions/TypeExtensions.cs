@@ -29,11 +29,14 @@ public static class TypeExtensions
                     return res;
 
                 var displayString = x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-                return dict[x] = (x.NullableAnnotation, typeDisplay: displayString) switch
+                return dict[x] = x switch
                 {
-                    (NullableAnnotation.NotAnnotated, _) => $"NN_{displayString.ToAlphaNumericMethodName()}{suffix}",
-                    (NullableAnnotation.None, _) => $"{displayString.ToAlphaNumericMethodName()}{suffix}",
-                    (NullableAnnotation.Annotated, _) => $"N_{displayString.ToAlphaNumericMethodName()}{suffix}",
+                    IArrayTypeSymbol {NullableAnnotation: NullableAnnotation.NotAnnotated} => $"NN_{displayString.ToAlphaNumericMethodName()}_Array{suffix}",
+                    IArrayTypeSymbol {NullableAnnotation: NullableAnnotation.None} => $"{displayString.ToAlphaNumericMethodName()}_Array{suffix}",
+                    IArrayTypeSymbol {NullableAnnotation: NullableAnnotation.Annotated} => $"N_{displayString.ToAlphaNumericMethodName()}_Array{suffix}",
+                    {NullableAnnotation: NullableAnnotation.NotAnnotated} => $"NN_{displayString.ToAlphaNumericMethodName()}{suffix}",
+                    {NullableAnnotation: NullableAnnotation.None} => $"{displayString.ToAlphaNumericMethodName()}{suffix}",
+                    {NullableAnnotation: NullableAnnotation.Annotated} => $"N_{displayString.ToAlphaNumericMethodName()}{suffix}",
                     _ => throw new NotImplementedException(x.ToDisplayString())
                 };
 
@@ -46,7 +49,10 @@ public static class TypeExtensions
                 if (dict.TryGetValue(x, out var res))
                     return res;
 
-                return dict[x] = $"{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}{suffix}";
+                var displayString = x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+                return dict[x] = x is IArrayTypeSymbol
+                    ? $"{displayString}_Array{suffix}"
+                    : $"{displayString.ToAlphaNumericMethodName()}{suffix}";
             };
         }
 
