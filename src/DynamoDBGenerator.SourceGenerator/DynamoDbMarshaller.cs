@@ -410,7 +410,7 @@ public static class DynamoDbMarshaller
                     return (
                         dictionaryAssignment: $"if ({InvokeMarshallerMethod(x.DataMember.Type, accessPattern, $"nameof({accessPattern})")} is {{ }} {x.DataMember.Name})".CreateBlock(
                             $"{dictionaryReference}.Add(\"{x.AttributeName}\", {x.DataMember.Name});"),
-                        capacityTernary: x.DataMember.Type.NotNullTernaryExpression(in accessPattern, "1", "0"),
+                        capacityTernary: x.DataMember.Type.IsNullable() ?  x.DataMember.Type.NotNullTernaryExpression(in accessPattern, "1", "0") : "1",
                         x.DataMember.Type
                     );
                 })
