@@ -11,9 +11,9 @@ namespace DynamoDBGenerator.Internal;
 public static class ExceptionHelper
 {
 #pragma warning disable CS1591
-    public static DynamoDBMarshallingException NotNull(string memberName)
+    public static DynamoDBMarshallingException NotNull(string? memberName)
     {
-        return new DynamoDBMarshallingException(memberName, "The data member is not supposed to be null, to allow this; make the data member nullable.");
+        return new DynamoDBMarshallingException(memberName ?? "<UNKNOWN>", "The data member is not supposed to be null, to allow this; make the data member nullable.");
     }
 
     public static DynamoDBMarshallingException KeysArgumentNotNull(string memberName, string argumentName)
