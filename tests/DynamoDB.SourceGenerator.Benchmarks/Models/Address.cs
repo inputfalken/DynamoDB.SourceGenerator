@@ -8,5 +8,5 @@ public class Address
 
     public PostalCode PostalCode { get; set; } = null!;
 
-    public List<PersonEntity> Neighbours { get; set; }
+    public List<PersonEntity> Neighbours { get; set; } = null!;
 }

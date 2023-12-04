@@ -99,13 +99,13 @@ public class GsiHashAndRangeKey
     public const string IndexName = "EmailGSI";
 
     [DynamoDBHashKey]
-    public string PrimaryPartitionKey { get; set; }
+    public string PrimaryPartitionKey { get; set; } = null!;
 
     [DynamoDBRangeKey]
-    public string PrimaryRangeKey { get; set; }
+    public string PrimaryRangeKey { get; set; } = null!;
 
     [DynamoDBGlobalSecondaryIndexHashKey(IndexName)]
-    public string Email { get; set; }
+    public string Email { get; set; } = null!;
 
     [DynamoDBGlobalSecondaryIndexRangeKey(IndexName)]
     public int EmailRanking { get; set; }
