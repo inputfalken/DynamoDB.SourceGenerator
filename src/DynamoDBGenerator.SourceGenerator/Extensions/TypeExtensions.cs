@@ -20,8 +20,6 @@ public static class TypeExtensions
     {
         var dict = new Dictionary<ITypeSymbol, string>(comparer);
 
-        static string ExcepionMessage(ITypeSymbol typeSymbol) => $"Could not apply naming suffix on type: {typeSymbol.ToDisplayString()}";
-
         Func<ITypeSymbol, string> implementation;
         if (Equals(comparer, SymbolEqualityComparer.IncludeNullability))
         {
@@ -33,18 +31,19 @@ public static class TypeExtensions
                     IArrayTypeSymbol {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated} array => $"NN_{array.BaseType!.Name}_{NullableAnnotation(array.ElementType)}",
                     IArrayTypeSymbol {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None} array => $"{array.BaseType!.Name}_{NullableAnnotation(array.ElementType)}",
                     IArrayTypeSymbol {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated} array => $"N_{array.BaseType!.Name}_{NullableAnnotation(array.ElementType)}",
-                    INamedTypeSymbol {OriginalDefinition.SpecialType: not SpecialType.System_Nullable_T, TypeArguments.Length : > 0} namedTypeSymbol when
-                        string.Join("_", namedTypeSymbol.TypeArguments.Select(NullableAnnotation)) is var a => namedTypeSymbol switch
+                    INamedTypeSymbol {OriginalDefinition.SpecialType: not SpecialType.System_Nullable_T, TypeArguments.Length : > 0, IsTupleType: false} namedTypeSymbol 
+                        when string.Join("_", namedTypeSymbol.TypeArguments.Select(NullableAnnotation)) is var a
+                        => namedTypeSymbol switch
                         {
                             {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated} => $"NN_{namedTypeSymbol.Name}_{a}",
                             {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None} => $"{namedTypeSymbol.Name}_{a}",
                             {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated} => $"N_{namedTypeSymbol.Name}_{a}",
-                            _ => throw new NotImplementedException(ExcepionMessage(namedTypeSymbol))
+                            _ => throw new NotImplementedException(ExceptionMessage(namedTypeSymbol))
                         },
                     {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated} => $"NN_{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
                     {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None} => $"{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
                     {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated} => $"N_{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
-                    _ => throw new NotImplementedException(ExcepionMessage(x))
+                    _ => throw new NotImplementedException(ExceptionMessage(x))
                 };
             }
 
@@ -73,6 +72,7 @@ public static class TypeExtensions
 
         return implementation;
 
+        static string ExceptionMessage(ITypeSymbol typeSymbol) => $"Could not apply naming suffix on type: {typeSymbol.ToDisplayString()}";
     }
 
     public static Conversion ToConversion(this IEnumerable<string> enumerable)
