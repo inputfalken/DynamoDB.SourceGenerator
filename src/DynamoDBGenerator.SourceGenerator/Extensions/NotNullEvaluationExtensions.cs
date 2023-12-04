@@ -25,12 +25,6 @@ public static class NotNullEvaluationExtensions
             _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
         };
     }
-    public static string? NotNullLambdaExpression(this ITypeSymbol typeSymbol)
-    {
-        return Expression(in typeSymbol, "x") is { } expression
-            ? $"x => {expression}"
-            : null;
-    }
 
     private static string CreateException(in string accessPattern)
     {

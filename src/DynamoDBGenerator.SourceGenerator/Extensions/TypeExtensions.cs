@@ -1,6 +1,7 @@
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
@@ -20,7 +21,7 @@ public static class TypeExtensions
         string TypeIdentifier(ITypeSymbol x, string displayString)
         {
 
-            if (x is not INamedTypeSymbol namedTypeSymbol ||  namedTypeSymbol.TypeArguments.Length is 0 || namedTypeSymbol.BaseType?.SpecialType is SpecialType.System_Nullable_T )
+            if (x is not INamedTypeSymbol namedTypeSymbol || namedTypeSymbol.TypeArguments.Length is 0 || namedTypeSymbol.BaseType?.SpecialType is SpecialType.System_Nullable_T)
             {
                 return x.NullableAnnotation switch
                 {
@@ -29,6 +30,12 @@ public static class TypeExtensions
                     _ => throw new ArgumentException(ExceptionMessage(x))
                 };
             }
+            if (namedTypeSymbol.IsTupleType)
+            {
+                var result = namedTypeSymbol.TupleElements
+                    .Select(y => $"{TypeIdentifier(y.Type, $"{y.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}")} {y.Name}");
+                return $"({string.Join(", ", result)})";
+            }
 
             var index = displayString.IndexOf("<", StringComparison.Ordinal);
             if (index == -1)
@@ -36,7 +43,6 @@ public static class TypeExtensions
 
             var typeWithoutGenerics = displayString.Substring(0, index);
 
-            
             return namedTypeSymbol.NullableAnnotation switch
             {
                 NullableAnnotation.Annotated => $"{typeWithoutGenerics}<{string.Join(", ", namedTypeSymbol.TypeArguments.Select(y => TypeIdentifier(y, y.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))}>?",
@@ -82,6 +88,13 @@ public static class TypeExtensions
                             {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated} => $"N_{namedTypeSymbol.Name}_{a}",
                             _ => throw new NotImplementedException(ExceptionMessage(namedTypeSymbol))
                         },
+                    INamedTypeSymbol {IsTupleType: true} single when string.Join("_", single.TupleElements.Select(y => $"{y.Name}_{NullableAnnotation(y.Type)}")) is var tuple => single switch
+                    {
+                        {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None} => tuple,
+                        {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated} => $"N_{tuple}",
+                        {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated} => $"NN_{tuple}",
+                        _ => throw new NotImplementedException(ExceptionMessage(single))
+                    },
                     {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated} => $"NN_{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
                     {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None} => $"{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
                     {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated} => $"N_{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
