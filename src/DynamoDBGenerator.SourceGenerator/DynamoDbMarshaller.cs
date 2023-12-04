@@ -310,12 +310,10 @@ public static class DynamoDbMarshaller
     }
     private static string InvokeUnmarshallMethod(ITypeSymbol typeSymbol, string paramReference, string dataMember)
     {
-        if (GetTypeIdentifier(typeSymbol) is UnknownType)
-            return typeSymbol.IsNullable()
-                ? $"{paramReference} switch {{ {{ M: {{ }} x }} => {GetDeserializationMethodName(typeSymbol)}(x, {dataMember}), _ =>  null}}"
-                : $"{paramReference} switch {{ {{ M: {{ }} x }} => {GetDeserializationMethodName(typeSymbol)}(x, {dataMember}), _ =>  throw {NullExceptionMethod}({dataMember})}}";
+        return GetTypeIdentifier(typeSymbol) is UnknownType 
+            ? $"{GetDeserializationMethodName(typeSymbol)}({paramReference}?.M, {dataMember})" 
+            : $"{GetDeserializationMethodName(typeSymbol)}({paramReference}, {dataMember})";
 
-        return $"{GetDeserializationMethodName(typeSymbol)}({paramReference}, {dataMember})";
     }
     private static Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
     {
@@ -324,8 +322,8 @@ public static class DynamoDbMarshaller
 
         static string CreateAttributeValueMethodSignature(TypeIdentifier typeIdentifier)
         {
-            return typeIdentifier.TypeSymbol.IsNullable() 
-                ? $"public static AttributeValue? {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({GetTypeName(typeIdentifier.TypeSymbol).annotated} {param}, string? {dataMember} = null)" 
+            return typeIdentifier.TypeSymbol.IsNullable()
+                ? $"public static AttributeValue? {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({GetTypeName(typeIdentifier.TypeSymbol).annotated} {param}, string? {dataMember} = null)"
                 : $"public static AttributeValue {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({GetTypeName(typeIdentifier.TypeSymbol).annotated} {param}, string? {dataMember} = null)";
         }
 
@@ -410,7 +408,7 @@ public static class DynamoDbMarshaller
                     return (
                         dictionaryAssignment: $"if ({InvokeMarshallerMethod(x.DataMember.Type, accessPattern, $"nameof({accessPattern})")} is {{ }} {x.DataMember.Name})".CreateBlock(
                             $"{dictionaryReference}.Add(\"{x.AttributeName}\", {x.DataMember.Name});"),
-                        capacityTernary: x.DataMember.Type.IsNullable() ?  x.DataMember.Type.NotNullTernaryExpression(in accessPattern, "1", "0") : "1",
+                        capacityTernary: x.DataMember.Type.IsNullable() ? x.DataMember.Type.NotNullTernaryExpression(in accessPattern, "1", "0") : "1",
                         x.DataMember.Type
                     );
                 })
@@ -627,13 +625,17 @@ public static class DynamoDbMarshaller
                 .Select(x => (DDB: x, MethodCall: InvokeUnmarshallMethod(x.DataMember.Type, $"{dict}.GetValueOrDefault(\"{x.AttributeName}\")", $"\"{x.DataMember.Name}\""), x.DataMember.Name))
                 .ToArray();
 
-            var blockBody = GetAssignments()
-                .DefaultAndLast(x => ObjectAssignmentBlock(x.useParentheses, x.assignments, false), x => ObjectAssignmentBlock(x.useParentheses, x.assignments, true))
-                .SelectMany(x => x)
-                .DefaultIfEmpty("();")
-                .Prepend(type.IsTupleType ? "return" : $"return new {GetTypeName(type).annotated}");
+            var blockBody =
+                $"if ({dict} is null)"
+                    .CreateBlock(type.IsNullable() ? "return null;" : $"throw {NullExceptionMethod}({dataMember});").Concat(
+                        GetAssignments()
+                            .DefaultAndLast(x => ObjectAssignmentBlock(x.useParentheses, x.assignments, false), x => ObjectAssignmentBlock(x.useParentheses, x.assignments, true))
+                            .SelectMany(x => x)
+                            .DefaultIfEmpty("();")
+                            .Prepend(type.IsTupleType ? "return" : $"return new {GetTypeName(type).original}")
+                    );
 
-            var method = $"public static {GetTypeName(type).annotated} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue> {dict}, string? {dataMember} = null)".CreateBlock(blockBody);
+            var method = $"public static {GetTypeName(type).annotated} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue>? {dict}, string? {dataMember} = null)".CreateBlock(blockBody);
 
             return new Conversion(method, assignments.Select(x => x.DDB.DataMember.Type));
 
