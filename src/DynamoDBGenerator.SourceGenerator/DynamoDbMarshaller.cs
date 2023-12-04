@@ -303,9 +303,8 @@ public static class DynamoDbMarshaller
             if (typeSymbol.IsNullable())
                 return $"({parameterReference} is not null ? new AttributeValue {{ M = {invocation} }} : null)";
 
-            if (typeSymbol.IsReferenceType)
-                return
-                    $"({parameterReference} is not null ? new AttributeValue {{ M = {invocation} }} : throw {NullExceptionMethod}({dataMember}))";
+            return
+                $"({parameterReference} is not null ? new AttributeValue {{ M = {invocation} }} : throw {NullExceptionMethod}({dataMember}))";
 
         }
 
@@ -314,10 +313,11 @@ public static class DynamoDbMarshaller
     }
     private static string InvokeUnmarshallMethod(ITypeSymbol typeSymbol, string paramReference, string dataMember)
     {
+        var invocation = $"{GetDeserializationMethodName(typeSymbol)}(x, {dataMember})";
         if (GetTypeIdentifier(typeSymbol) is UnknownType)
             return typeSymbol.IsNullable()
-                ? $"{paramReference} switch {{ {{ M: {{ }} x }} => {GetDeserializationMethodName(typeSymbol)}(x, {dataMember}), _ =>  null}}"
-                : $"{paramReference} switch {{ {{ M: {{ }} x }} => {GetDeserializationMethodName(typeSymbol)}(x, {dataMember}), _ =>  throw {NullExceptionMethod}({dataMember})}}";
+                ? $"{paramReference} switch {{ {{ M: {{ }} x }} => {invocation}, _ =>  null}}"
+                : $"{paramReference} switch {{ {{ M: {{ }} x }} => {invocation}, _ =>  throw {NullExceptionMethod}({dataMember})}}";
 
         return $"{GetDeserializationMethodName(typeSymbol)}({paramReference}, {dataMember})";
     }
