@@ -20,26 +20,40 @@ public static class TypeExtensions
     {
         var dict = new Dictionary<ITypeSymbol, string>(comparer);
 
+        static string ExcepionMessage(ITypeSymbol typeSymbol) => $"Could not apply naming suffix on type: {typeSymbol.ToDisplayString()}";
+
         Func<ITypeSymbol, string> implementation;
         if (Equals(comparer, SymbolEqualityComparer.IncludeNullability))
         {
+            string NullableAnnotation(ITypeSymbol x)
+            {
+                return x switch
+                {
+                    // Could cause a NullReference exception but very unlikely since all IArrayTypeSymbol should inherit from Array.
+                    IArrayTypeSymbol {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated} array => $"NN_{array.BaseType!.Name}_{NullableAnnotation(array.ElementType)}",
+                    IArrayTypeSymbol {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None} array => $"{array.BaseType!.Name}_{NullableAnnotation(array.ElementType)}",
+                    IArrayTypeSymbol {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated} array => $"N_{array.BaseType!.Name}_{NullableAnnotation(array.ElementType)}",
+                    INamedTypeSymbol {OriginalDefinition.SpecialType: not SpecialType.System_Nullable_T, TypeArguments.Length : > 0} namedTypeSymbol when
+                        string.Join("_", namedTypeSymbol.TypeArguments.Select(NullableAnnotation)) is var a => namedTypeSymbol switch
+                        {
+                            {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated} => $"NN_{namedTypeSymbol.Name}_{a}",
+                            {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None} => $"{namedTypeSymbol.Name}_{a}",
+                            {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated} => $"N_{namedTypeSymbol.Name}_{a}",
+                            _ => throw new NotImplementedException(ExcepionMessage(namedTypeSymbol))
+                        },
+                    {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated} => $"NN_{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
+                    {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None} => $"{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
+                    {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated} => $"N_{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
+                    _ => throw new NotImplementedException(ExcepionMessage(x))
+                };
+            }
+
             implementation = x =>
             {
                 if (dict.TryGetValue(x, out var res))
                     return res;
 
-                var displayString = x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-                return dict[x] = x switch
-                {
-                    IArrayTypeSymbol {NullableAnnotation: NullableAnnotation.NotAnnotated} => $"NN_{displayString.ToAlphaNumericMethodName()}_Array{suffix}",
-                    IArrayTypeSymbol {NullableAnnotation: NullableAnnotation.None} => $"{displayString.ToAlphaNumericMethodName()}_Array{suffix}",
-                    IArrayTypeSymbol {NullableAnnotation: NullableAnnotation.Annotated} => $"N_{displayString.ToAlphaNumericMethodName()}_Array{suffix}",
-                    {NullableAnnotation: NullableAnnotation.NotAnnotated} => $"NN_{displayString.ToAlphaNumericMethodName()}{suffix}",
-                    {NullableAnnotation: NullableAnnotation.None} => $"{displayString.ToAlphaNumericMethodName()}{suffix}",
-                    {NullableAnnotation: NullableAnnotation.Annotated} => $"N_{displayString.ToAlphaNumericMethodName()}{suffix}",
-                    _ => throw new NotImplementedException(x.ToDisplayString())
-                };
-
+                return dict[x] = $"{NullableAnnotation(x)}{suffix}";
             };
         }
         else
@@ -50,8 +64,9 @@ public static class TypeExtensions
                     return res;
 
                 var displayString = x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+                // Could cause a NullReference exception but very unlikely since all IArrayTypeSymbol should inherit from Array.
                 return dict[x] = x is IArrayTypeSymbol
-                    ? $"{displayString}_Array{suffix}"
+                    ? $"{displayString}_{x.BaseType!.ToDisplayString()}{suffix}"
                     : $"{displayString.ToAlphaNumericMethodName()}{suffix}";
             };
         }
