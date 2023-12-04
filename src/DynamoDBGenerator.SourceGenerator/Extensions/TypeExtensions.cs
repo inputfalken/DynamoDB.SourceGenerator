@@ -20,18 +20,13 @@ public static class TypeExtensions
         string TypeIdentifier(ITypeSymbol x, string displayString)
         {
 
-            if (x is IArrayTypeSymbol arrayTypeSymbol)
-            {
-                return $"{TypeIdentifier(arrayTypeSymbol.ElementType, arrayTypeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))}[]";
-            }
-
             if (x is not INamedTypeSymbol namedTypeSymbol || namedTypeSymbol.TypeArguments.Length is 0)
             {
                 return x.NullableAnnotation switch
                 {
                     NullableAnnotation.Annotated => $"{displayString}?",
                     NullableAnnotation.None or NullableAnnotation.NotAnnotated => displayString,
-                    _ => throw new Exception()
+                    _ => throw new ArgumentException(ExceptionMessage(x))
                 };
             }
 
@@ -41,7 +36,13 @@ public static class TypeExtensions
 
             var typeWithoutGenerics = displayString.Substring(0, index);
 
-            return $"{typeWithoutGenerics}<{string.Join(", ", namedTypeSymbol.TypeArguments.Select(x => TypeIdentifier(x, x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))}>";
+            return namedTypeSymbol.NullableAnnotation switch
+            {
+                NullableAnnotation.Annotated => $"{typeWithoutGenerics}<{string.Join(", ", namedTypeSymbol.TypeArguments.Select(y => TypeIdentifier(y, y.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))}>?",
+                NullableAnnotation.None or NullableAnnotation.NotAnnotated =>
+                    $"{typeWithoutGenerics}<{string.Join(", ", namedTypeSymbol.TypeArguments.Select(y => TypeIdentifier(y, y.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))}>?",
+                _ => throw new ArgumentException(ExceptionMessage(namedTypeSymbol))
+            };
         }
 
         return x =>
@@ -54,6 +55,7 @@ public static class TypeExtensions
             return dict[x] = (TypeIdentifier(x, displayString), displayString);
         };
 
+        static string ExceptionMessage(ITypeSymbol typeSymbol) => $"Could nullable annotation on type: {typeSymbol.ToDisplayString()}";
     }
     public static Func<ITypeSymbol, string> SuffixedTypeSymbolNameFactory(string? suffix, IEqualityComparer<ISymbol?> comparer)
     {
