@@ -23,7 +23,7 @@ public static class DynamoDbMarshaller
 
     static DynamoDbMarshaller()
     {
-        GetTypeName = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, x => x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+        GetTypeName = TypeExtensions.GetTypeIdentifier(SymbolEqualityComparer.IncludeNullability);
         GetTypeIdentifier = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, x => x.GetKnownType());
         GetDeserializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_U", SymbolEqualityComparer.IncludeNullability);
         GetKeysMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("Keys", SymbolEqualityComparer.IncludeNullability);

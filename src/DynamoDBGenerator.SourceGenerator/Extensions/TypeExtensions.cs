@@ -1,5 +1,6 @@
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
@@ -12,6 +13,41 @@ public static class TypeExtensions
         return x => cache.TryGetValue(x, out var value) ? value : cache[x] = selector(x);
     }
 
+    public static Func<ITypeSymbol, string> GetTypeIdentifier(IEqualityComparer<ISymbol?> comparer)
+    {
+        var dict = new Dictionary<ITypeSymbol, string>(comparer);
+
+        string TypeIdentifier(ITypeSymbol x)
+        {
+
+            var displayString = x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            if (x is IArrayTypeSymbol arrayTypeSymbol)
+            {
+                return $"{TypeIdentifier(arrayTypeSymbol.ElementType)}[]";
+            }
+
+            if (x is not INamedTypeSymbol namedTypeSymbol || namedTypeSymbol.TypeArguments.Length is 0)
+            {
+                return x.NullableAnnotation switch
+                {
+                    NullableAnnotation.Annotated => $"{displayString}?",
+                    NullableAnnotation.None or NullableAnnotation.NotAnnotated => displayString,
+                    _ => throw new Exception()
+                };
+            }
+
+            var index = displayString.IndexOf("<", StringComparison.Ordinal);
+            if (index == -1)
+                return displayString;
+
+            var typeWithoutGenerics = displayString.Substring(0, index);
+
+            return $"{typeWithoutGenerics}<{string.Join(", ", namedTypeSymbol.TypeArguments.Select(TypeIdentifier))}>";
+        }
+
+        return x => dict.TryGetValue(x, out var res) ? res : dict[x] = TypeIdentifier(x);
+
+    }
     public static Func<ITypeSymbol, string> SuffixedTypeSymbolNameFactory(string? suffix, IEqualityComparer<ISymbol?> comparer)
     {
         var dict = new Dictionary<ITypeSymbol, string>(comparer);
@@ -27,7 +63,7 @@ public static class TypeExtensions
                     IArrayTypeSymbol {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated} array => $"NN_{array.BaseType!.Name}_{NullableAnnotation(array.ElementType)}",
                     IArrayTypeSymbol {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None} array => $"{array.BaseType!.Name}_{NullableAnnotation(array.ElementType)}",
                     IArrayTypeSymbol {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated} array => $"N_{array.BaseType!.Name}_{NullableAnnotation(array.ElementType)}",
-                    INamedTypeSymbol {OriginalDefinition.SpecialType: not SpecialType.System_Nullable_T, TypeArguments.Length : > 0, IsTupleType: false} namedTypeSymbol 
+                    INamedTypeSymbol {OriginalDefinition.SpecialType: not SpecialType.System_Nullable_T, TypeArguments.Length : > 0, IsTupleType: false} namedTypeSymbol
                         when string.Join("_", namedTypeSymbol.TypeArguments.Select(NullableAnnotation)) is var a
                         => namedTypeSymbol switch
                         {
