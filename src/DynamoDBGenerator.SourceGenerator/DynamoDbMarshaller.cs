@@ -626,7 +626,7 @@ public class DynamoDbMarshaller
         Conversion CreateCode()
         {
             var assignments = _cachedDataMembers(type)
-                .Select(x => (DDB: x, MethodCall: InvokeUnmarshallMethod(x.DataMember.Type, $"{dict}.GetValueOrDefault(\"{x.AttributeName}\")", $"\"{x.AttributeName}\""), x.DataMember.Name))
+                .Select(x => (DDB: x, MethodCall: InvokeUnmarshallMethod(x.DataMember.Type, $"{dict}.GetValueOrDefault(\"{x.AttributeName}\")", $"\"{x.DataMember.Name}\""), x.DataMember.Name))
                 .ToArray();
 
             var blockBody = GetAssignments()
