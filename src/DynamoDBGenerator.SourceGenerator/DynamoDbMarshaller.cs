@@ -643,7 +643,8 @@ public static class DynamoDbMarshaller
                             .DefaultAndLast(x => ObjectAssignmentBlock(x.useParentheses, x.assignments, false), x => ObjectAssignmentBlock(x.useParentheses, x.assignments, true))
                             .SelectMany(x => x)
                             .DefaultIfEmpty("();")
-                            .Prepend(type.IsTupleType ? "return" : $"return new {typeName.original}")
+                            // Is needed in order to not perform new entity? where '?' is not allowed in the end of the string.
+                            .Prepend(type.IsTupleType ? "return" : $"return new {(typeName.annotated.EndsWith("?") ? typeName.annotated.Substring(0, typeName.annotated.Length -1) : typeName.annotated)}")
                     );
 
             var method = $"public static {typeName.annotated} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue>? {dict}, string? {dataMember} = null)".CreateBlock(blockBody);
