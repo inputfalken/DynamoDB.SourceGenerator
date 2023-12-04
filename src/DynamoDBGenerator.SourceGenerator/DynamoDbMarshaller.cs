@@ -635,6 +635,7 @@ public static class DynamoDbMarshaller
                 .Select(x => (DDB: x, MethodCall: InvokeUnmarshallMethod(x.DataMember.Type, $"{dict}.GetValueOrDefault(\"{x.AttributeName}\")", $"\"{x.DataMember.Name}\""), x.DataMember.Name))
                 .ToArray();
 
+            var typeName = GetTypeName(type);
             var blockBody =
                 $"if ({dict} is null)"
                     .CreateBlock(type.IsNullable() ? "return null;" : $"throw {NullExceptionMethod}({dataMember});").Concat(
@@ -642,10 +643,10 @@ public static class DynamoDbMarshaller
                             .DefaultAndLast(x => ObjectAssignmentBlock(x.useParentheses, x.assignments, false), x => ObjectAssignmentBlock(x.useParentheses, x.assignments, true))
                             .SelectMany(x => x)
                             .DefaultIfEmpty("();")
-                            .Prepend(type.IsTupleType ? "return" : $"return new {GetTypeName(type).original}")
+                            .Prepend(type.IsTupleType ? "return" : $"return new {typeName.original}")
                     );
 
-            var method = $"public static {GetTypeName(type).annotated} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue>? {dict}, string? {dataMember} = null)".CreateBlock(blockBody);
+            var method = $"public static {typeName.annotated} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue>? {dict}, string? {dataMember} = null)".CreateBlock(blockBody);
 
             return new Conversion(method, assignments.Select(x => x.DDB.DataMember.Type));
 
