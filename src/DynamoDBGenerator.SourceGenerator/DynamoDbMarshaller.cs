@@ -10,7 +10,6 @@ namespace DynamoDBGenerator.SourceGenerator;
 
 public class DynamoDbMarshaller
 {
-    private static readonly IEqualityComparer<ISymbol?> Comparer;
     private static readonly Func<ITypeSymbol, string> GetAttributeExpressionNameTypeName;
     private static readonly Func<ITypeSymbol, string> GetAttributeExpressionValueTypeName;
     private static readonly Func<ITypeSymbol, string> GetAttributeValueInterfaceName;
@@ -28,10 +27,9 @@ public class DynamoDbMarshaller
 
     static DynamoDbMarshaller()
     {
-        Comparer = SymbolEqualityComparer.IncludeNullability;
-        GetTypeName = TypeExtensions.CacheFactory(Comparer, x => x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+        GetTypeName = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, x => x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
         GetNullableTypeName = TypeExtensions.CacheFactory(
-            Comparer,
+            SymbolEqualityComparer.IncludeNullability,
             x => x switch
             {
                 {NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated, IsReferenceType: true} => $"{GetTypeName(x)}?",
@@ -39,17 +37,17 @@ public class DynamoDbMarshaller
                 _ => throw new ArgumentException($"Could not determine nullability for '{nameof(GetNullableTypeName)}'.")
             }
         );
-        GetTypeIdentifier = TypeExtensions.CacheFactory(Comparer, x => x.GetKnownType());
-        GetDeserializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_U", Comparer);
-        GetKeysMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("Keys", Comparer);
-        GetSerializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_M", Comparer);
+        GetTypeIdentifier = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, x => x.GetKnownType());
+        GetDeserializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_U", SymbolEqualityComparer.IncludeNullability);
+        GetKeysMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("Keys", SymbolEqualityComparer.IncludeNullability);
+        GetSerializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_M", SymbolEqualityComparer.IncludeNullability);
         GetAttributeExpressionNameTypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", SymbolEqualityComparer.Default);
         GetAttributeExpressionValueTypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Values", SymbolEqualityComparer.Default);
-        GetAttributeValueInterfaceName = TypeExtensions.CacheFactory(Comparer, x => $"{AttributeExpressionValueTrackerInterface}<{GetTypeName(x)}>");
+        GetAttributeValueInterfaceName = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, x => $"{AttributeExpressionValueTrackerInterface}<{GetTypeName(x)}>");
     }
     public DynamoDbMarshaller(in IEnumerable<DynamoDBMarshallerArguments> arguments)
     {
-        _cachedDataMembers = TypeExtensions.CacheFactory(Comparer, static x => x.GetDynamoDbProperties());
+        _cachedDataMembers = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, static x => x.GetDynamoDbProperties());
         _arguments = arguments.ToArray();
     }
 
@@ -113,7 +111,7 @@ public class DynamoDbMarshaller
     }
     private IEnumerable<string> CreateKeys()
     {
-        var hashSet = new HashSet<ITypeSymbol>(Comparer);
+        var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability);
 
         return _arguments
             .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, StaticAttributeValueDictionaryKeys, hashSet)).SelectMany(x => x.Code);
@@ -121,7 +119,7 @@ public class DynamoDbMarshaller
 
     private IEnumerable<string> CreateMarshaller()
     {
-        var hashset = new HashSet<ITypeSymbol>(Comparer);
+        var hashset = new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability);
 
         return _arguments.SelectMany(x => Conversion
                 .ConversionMethods(
@@ -149,7 +147,7 @@ public class DynamoDbMarshaller
 
     private IEnumerable<string> CreateUnMarshaller()
     {
-        var hashSet = new HashSet<ITypeSymbol>(Comparer);
+        var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability);
         return _arguments.SelectMany(x =>
                 Conversion.ConversionMethods(
                     x.EntityTypeSymbol,
