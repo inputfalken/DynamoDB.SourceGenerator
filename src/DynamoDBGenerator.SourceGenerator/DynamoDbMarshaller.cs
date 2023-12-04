@@ -310,13 +310,12 @@ public static class DynamoDbMarshaller
     }
     private static string InvokeUnmarshallMethod(ITypeSymbol typeSymbol, string paramReference, string dataMember)
     {
-        var invocation = $"{GetDeserializationMethodName(typeSymbol)}(x, {dataMember})";
         if (GetTypeIdentifier(typeSymbol) is UnknownType)
             return typeSymbol.IsNullable()
-                ? $"{paramReference} switch {{ {{ M: {{ }} x }} => {invocation}, _ =>  null}}"
-                : $"{paramReference} switch {{ {{ M: {{ }} x }} => {invocation}, _ =>  throw {NullExceptionMethod}({dataMember})}}";
+                ? $"{paramReference} switch {{ {{ M: {{ }} x }} => {GetDeserializationMethodName(typeSymbol)}(x, {dataMember}), _ =>  null}}"
+                : $"{paramReference} switch {{ {{ M: {{ }} x }} => {GetDeserializationMethodName(typeSymbol)}(x, {dataMember}), _ =>  throw {NullExceptionMethod}({dataMember})}}";
 
-        return invocation;
+        return $"{GetDeserializationMethodName(typeSymbol)}({paramReference}, {dataMember})";
     }
     private static Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
     {
@@ -363,7 +362,7 @@ public static class DynamoDbMarshaller
                     or SingleGeneric.SupportedType.IEnumerable
                     or SingleGeneric.SupportedType.ICollection => CreateAttributeValueMethodSignature(singleGeneric)
                         .CreateBlock(
-                            $"return {param} is not null ? new AttributeValue {{ L = new List<AttributeValue>({param}.Select(y => {InvokeMarshallerMethod(singleGeneric.T, "y", dataMember)})) }} : {Else(singleGeneric)};")
+                            $"return {param} is not null ? new AttributeValue {{ L = new List<AttributeValue>({param}.Select((y, i) => {InvokeMarshallerMethod(singleGeneric.T, "y", $"$\"{{{dataMember}}}[{{i.ToString()}}]\"")})) }} : {Else(singleGeneric)};")
                         .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.SpecialType is SpecialType.System_String
                     => CreateAttributeValueMethodSignature(singleGeneric)
