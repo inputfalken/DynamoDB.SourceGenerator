@@ -305,7 +305,7 @@ public static class DynamoDbMarshaller
 
         }
 
-        return $"{MarshallerClass}.{GetSerializationMethodName(typeSymbol)}({parameterReference}, {dataMember})";
+        return invocation;
 
     }
     private static string InvokeUnmarshallMethod(ITypeSymbol typeSymbol, string paramReference, string dataMember)
@@ -316,7 +316,7 @@ public static class DynamoDbMarshaller
                 ? $"{paramReference} switch {{ {{ M: {{ }} x }} => {invocation}, _ =>  null}}"
                 : $"{paramReference} switch {{ {{ M: {{ }} x }} => {invocation}, _ =>  throw {NullExceptionMethod}({dataMember})}}";
 
-        return $"{GetDeserializationMethodName(typeSymbol)}({paramReference}, {dataMember})";
+        return invocation;
     }
     private static Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
     {
