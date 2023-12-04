@@ -585,13 +585,13 @@ public class DynamoDbMarshaller
                     .CreateBlock($"return {value} is null or {{ NULL: true }} ? {Else(singleGeneric)} : {InvokeUnmarshallMethod(singleGeneric.T, value, key)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.ICollection => CreateMethodSignature(singleGeneric)
-                    .CreateBlock($"return {value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", "i.ToString()")}).ToList() : {Else(singleGeneric)};")
+                    .CreateBlock($"return {value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{key}}}[{{i.ToString()}}]\"")}).ToList() : {Else(singleGeneric)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Array or SingleGeneric.SupportedType.IReadOnlyCollection => CreateMethodSignature(singleGeneric)
-                    .CreateBlock($"return {value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", "i.ToString()")}).ToArray() : {Else(singleGeneric)};")
+                    .CreateBlock($"return {value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{key}}}[{{i.ToString()}}]\"")}).ToArray() : {Else(singleGeneric)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.IEnumerable => CreateMethodSignature(singleGeneric)
-                    .CreateBlock($"return {value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", "i.ToString()")}) : {Else(singleGeneric)};")
+                    .CreateBlock($"return {value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{key}}}[{{i.ToString()}}]\"")}) : {Else(singleGeneric)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.SpecialType is SpecialType.System_String => CreateMethodSignature(singleGeneric)
                     .CreateBlock($"return {value} is {{ SS : {{ }} x }} ? new HashSet<string>(x) : {Else(singleGeneric)};").ToConversion(),
