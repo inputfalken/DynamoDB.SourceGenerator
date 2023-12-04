@@ -322,8 +322,12 @@ public static class DynamoDbMarshaller
         const string param = "x";
         const string dataMember = "dataMember";
 
-        static string CreateAttributeValueMethodSignature(TypeIdentifier typeIdentifier) =>
-            $"public static AttributeValue? {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({GetTypeName(typeIdentifier.TypeSymbol).annotated} {param}, string? {dataMember} = null)";
+        static string CreateAttributeValueMethodSignature(TypeIdentifier typeIdentifier)
+        {
+            return typeIdentifier.TypeSymbol.IsNullable() 
+                ? $"public static AttributeValue? {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({GetTypeName(typeIdentifier.TypeSymbol).annotated} {param}, string? {dataMember} = null)" 
+                : $"public static AttributeValue {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({GetTypeName(typeIdentifier.TypeSymbol).annotated} {param}, string? {dataMember} = null)";
+        }
 
         static string Else(TypeIdentifier typeIdentifier) => typeIdentifier.TypeSymbol.IsNullable() ? "null" : $"throw {NullExceptionMethod}({dataMember})";
 
