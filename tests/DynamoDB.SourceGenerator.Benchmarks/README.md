@@ -1,11 +1,11 @@
-
+```
 BenchmarkDotNet v0.13.6, Windows 10 (10.0.19045.3693/22H2/2022Update)
 Intel Core i7-7700K CPU 4.20GHz (Kaby Lake), 1 CPU, 8 logical and 4 physical cores
 .NET SDK 8.0.100
   [Host]   : .NET 6.0.25 (6.0.2523.51912), X64 RyuJIT AVX2
   .NET 6.0 : .NET 6.0.25 (6.0.2523.51912), X64 RyuJIT AVX2
   .NET 8.0 : .NET 8.0.0 (8.0.23.53103), X64 RyuJIT AVX2
-
+```
 
 |         Method |      Job |  Runtime |       Mean |    Error |   StdDev |   Gen0 | Allocated |
 --------------- |--------- |--------- |------------|----------|----------|--------|-----------|
