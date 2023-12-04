@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
@@ -18,7 +15,8 @@ public class DynamoDbMarshaller
     private static readonly Func<ITypeSymbol, string> GetAttributeExpressionValueTypeName;
     private static readonly Func<ITypeSymbol, string> GetAttributeValueInterfaceName;
     private static readonly Func<ITypeSymbol, string> GetDeserializationMethodName;
-    private static readonly Func<ITypeSymbol, string> GetFullTypeName;
+    private static readonly Func<ITypeSymbol, string> GetTypeName;
+    private static readonly Func<ITypeSymbol, string> GetNullableTypeName;
     private static readonly Func<ITypeSymbol, string> GetKeysMethodName;
     private static readonly Func<ITypeSymbol, string> GetSerializationMethodName;
     private static readonly Func<ITypeSymbol, TypeIdentifier> GetTypeIdentifier;
@@ -31,14 +29,23 @@ public class DynamoDbMarshaller
     static DynamoDbMarshaller()
     {
         Comparer = SymbolEqualityComparer.IncludeNullability;
-        GetFullTypeName = TypeExtensions.CacheFactory(Comparer, x => x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+        GetTypeName = TypeExtensions.CacheFactory(Comparer, x => x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+        GetNullableTypeName = TypeExtensions.CacheFactory(
+            Comparer,
+            x => x switch
+            {
+                {NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated, IsReferenceType: true} => $"{GetTypeName(x)}?",
+                {NullableAnnotation: NullableAnnotation.NotAnnotated} or {IsValueType: true} => GetTypeName(x),
+                _ => throw new ArgumentException($"Could not determine nullability for '{nameof(GetNullableTypeName)}'.")
+            }
+        );
         GetTypeIdentifier = TypeExtensions.CacheFactory(Comparer, x => x.GetKnownType());
         GetDeserializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_U", Comparer);
         GetKeysMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("Keys", Comparer);
         GetSerializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_M", Comparer);
         GetAttributeExpressionNameTypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", SymbolEqualityComparer.Default);
         GetAttributeExpressionValueTypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Values", SymbolEqualityComparer.Default);
-        GetAttributeValueInterfaceName = TypeExtensions.CacheFactory(Comparer, x => $"{AttributeExpressionValueTrackerInterface}<{GetFullTypeName(x)}>");
+        GetAttributeValueInterfaceName = TypeExtensions.CacheFactory(Comparer, x => $"{AttributeExpressionValueTrackerInterface}<{GetTypeName(x)}>");
     }
     public DynamoDbMarshaller(in IEnumerable<DynamoDBMarshallerArguments> arguments)
     {
@@ -67,7 +74,7 @@ public class DynamoDbMarshaller
     {
         foreach (var argument in _arguments)
         {
-            var rootTypeName = GetFullTypeName(argument.EntityTypeSymbol);
+            var rootTypeName = GetTypeName(argument.EntityTypeSymbol);
             var valueTrackerTypeName = GetAttributeExpressionValueTypeName(argument.ArgumentType);
             var nameTrackerTypeName = GetAttributeExpressionNameTypeName(argument.EntityTypeSymbol);
 
@@ -93,11 +100,11 @@ public class DynamoDbMarshaller
                 .Append($"public {nameTrackerTypeName} {AttributeExpressionNameTrackerMethodName}() => new {nameTrackerTypeName}(null);")
                 .Append($"public {KeyMarshallerInterface} PrimaryKeyMarshaller {{ get; }} = new {Constants.DynamoDBGenerator.KeyMarshallerImplementationTypeName}({GetKeysMethodName(argument.EntityTypeSymbol)});");
 
-            var classImplementation = $"private sealed class {argument.ImplementationName}: {Interface}<{rootTypeName}, {GetFullTypeName(argument.ArgumentType)}, {nameTrackerTypeName}, {valueTrackerTypeName}>"
+            var classImplementation = $"private sealed class {argument.ImplementationName}: {Interface}<{rootTypeName}, {GetTypeName(argument.ArgumentType)}, {nameTrackerTypeName}, {valueTrackerTypeName}>"
                 .CreateBlock(interfaceImplementation);
 
             yield return
-                $"public {Interface}<{rootTypeName}, {GetFullTypeName(argument.ArgumentType)}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.PropertyName} {{ get; }} = new {argument.ImplementationName}();";
+                $"public {Interface}<{rootTypeName}, {GetTypeName(argument.ArgumentType)}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.PropertyName} {{ get; }} = new {argument.ImplementationName}();";
 
             foreach (var s in classImplementation)
                 yield return s;
@@ -294,7 +301,7 @@ public class DynamoDbMarshaller
                 )
                 .Append($"if ({self}.IsValueCreated) yield return new ({self}.Value, {InvokeMarshallerMethod(typeSymbol, "entity")});");
 
-            foreach (var yield in $"IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{AttributeExpressionValueTrackerAccessedValues}({GetFullTypeName(typeSymbol)} entity)".CreateBlock(yields))
+            foreach (var yield in $"IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{AttributeExpressionValueTrackerAccessedValues}({GetTypeName(typeSymbol)} entity)".CreateBlock(yields))
                 yield return yield;
 
             yield return $"public override string ToString() => {self}.Value;";
@@ -318,7 +325,6 @@ public class DynamoDbMarshaller
                 ? $"{paramReference} switch {{ {{ M: {{ }} x }} => {GetDeserializationMethodName(typeSymbol)}(x, {dataMember}), _ =>  null}}"
                 : $"{paramReference} switch {{ {{ M: {{ }} x }} => {GetDeserializationMethodName(typeSymbol)}(x, {dataMember}), _ =>  throw {NullExceptionMethod}({dataMember})}}";
 
-
         return $"{GetDeserializationMethodName(typeSymbol)}({paramReference}, {dataMember})";
     }
     private Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type)
@@ -326,7 +332,7 @@ public class DynamoDbMarshaller
         const string param = "x";
 
         static string CreateAttributeValueMethodSignature(TypeIdentifier typeIdentifier) =>
-            $"public static AttributeValue {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({GetFullTypeName(typeIdentifier.TypeSymbol)} {param})";
+            $"public static AttributeValue {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({GetTypeName(typeIdentifier.TypeSymbol)} {param})";
 
         return GetTypeIdentifier(type) switch
         {
@@ -417,7 +423,7 @@ public class DynamoDbMarshaller
                 .Concat(properties.Select(x => x.dictionaryAssignment))
                 .Append($"return {dictionaryReference};");
 
-            var code = $"public static Dictionary<string, AttributeValue> {GetSerializationMethodName(type)}({GetFullTypeName(type)} {paramReference})".CreateBlock(body);
+            var code = $"public static Dictionary<string, AttributeValue> {GetSerializationMethodName(type)}({GetTypeName(type)} {paramReference})".CreateBlock(body);
 
             return new Conversion(code, properties.Select(y => y.Type));
 
@@ -517,7 +523,7 @@ public class DynamoDbMarshaller
             IEnumerable<string> CreateAssignment(string validateReference, string keyReference, DynamoDbDataMember dataMember)
             {
                 const string reference = "value";
-                var expectedType = GetFullTypeName(dataMember.DataMember.Type);
+                var expectedType = GetTypeName(dataMember.DataMember.Type);
                 var expression = $"{keyReference} is {expectedType} {{ }} {reference}";
 
                 var innerContent = $"if ({expression}) "
@@ -541,7 +547,8 @@ public class DynamoDbMarshaller
         const string dict = "dict";
         const string key = "key";
 
-        static string CreateMethodSignature(TypeIdentifier typeIdentifier) => $"public static {GetFullTypeName(typeIdentifier.TypeSymbol)} {GetDeserializationMethodName(typeIdentifier.TypeSymbol)}(AttributeValue? {value}, string? {key} = null)";
+        static string CreateMethodSignature(TypeIdentifier typeIdentifier) =>
+            $"public static {GetNullableTypeName(typeIdentifier.TypeSymbol)} {GetDeserializationMethodName(typeIdentifier.TypeSymbol)}(AttributeValue? {value}, string? {key} = null)";
 
         static string Else(TypeIdentifier typeIdentifier) => typeIdentifier.TypeSymbol.IsNullable() ? "null" : $"throw {NullExceptionMethod}({key})";
 
@@ -556,7 +563,7 @@ public class DynamoDbMarshaller
                 BaseType.SupportedType.Char => CreateMethodSignature(baseType)
                     .CreateBlock($"return {value} is {{ S: {{ }} x }} ? x[0] : {Else(baseType)};").ToConversion(),
                 BaseType.SupportedType.Enum => CreateMethodSignature(baseType)
-                    .CreateBlock($"return {value} is {{ N: {{ }} x }} ? ({GetFullTypeName(baseType.TypeSymbol)})Int32.Parse(x) : {Else(baseType)};").ToConversion(),
+                    .CreateBlock($"return {value} is {{ N: {{ }} x }} ? ({GetTypeName(baseType.TypeSymbol)})Int32.Parse(x) : {Else(baseType)};").ToConversion(),
                 BaseType.SupportedType.Int16
                     or BaseType.SupportedType.Byte
                     or BaseType.SupportedType.Int32
@@ -569,12 +576,12 @@ public class DynamoDbMarshaller
                     or BaseType.SupportedType.Double
                     or BaseType.SupportedType.Single
                     => CreateMethodSignature(baseType)
-                        .CreateBlock($"return {value} is {{ N: {{ }} x }} ? {GetFullTypeName(baseType.TypeSymbol)}.Parse(x) : {Else(baseType)};").ToConversion(),
+                        .CreateBlock($"return {value} is {{ N: {{ }} x }} ? {GetTypeName(baseType.TypeSymbol)}.Parse(x) : {Else(baseType)};").ToConversion(),
                 BaseType.SupportedType.DateTime
                     or BaseType.SupportedType.DateTimeOffset
                     or BaseType.SupportedType.DateOnly
                     => CreateMethodSignature(baseType)
-                        .CreateBlock($"return {value} is {{ S: {{ }} x }} ? {GetFullTypeName(baseType.TypeSymbol)}.Parse(x) : {Else(baseType)};").ToConversion(),
+                        .CreateBlock($"return {value} is {{ S: {{ }} x }} ? {GetTypeName(baseType.TypeSymbol)}.Parse(x) : {Else(baseType)};").ToConversion(),
                 BaseType.SupportedType.MemoryStream => CreateMethodSignature(baseType)
                     .CreateBlock($"return {value} is {{ B: {{ }} x }} ? x : {Else(baseType)};").ToConversion(),
                 _ => throw UncoveredConversionException(baseType, nameof(StaticPocoFactory))
@@ -596,7 +603,7 @@ public class DynamoDbMarshaller
                 SingleGeneric.SupportedType.Set when singleGeneric.T.SpecialType is SpecialType.System_String => CreateMethodSignature(singleGeneric)
                     .CreateBlock($"return {value} is {{ SS : {{ }} x }} ? new HashSet<string>(x) : {Else(singleGeneric)};").ToConversion(),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.IsNumeric() => CreateMethodSignature(singleGeneric)
-                    .CreateBlock($"return {value} is {{ NS : {{ }} x }} ? x.Select(y => {GetFullTypeName(singleGeneric.T)}.Parse(y)).ToHashSet() : {Else(singleGeneric)};").ToConversion(singleGeneric.TypeSymbol),
+                    .CreateBlock($"return {value} is {{ NS : {{ }} x }} ? x.Select(y => {GetTypeName(singleGeneric.T)}.Parse(y)).ToHashSet() : {Else(singleGeneric)};").ToConversion(singleGeneric.TypeSymbol),
                 SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(StaticPocoFactory))),
                 _ => throw UncoveredConversionException(singleGeneric, nameof(StaticPocoFactory))
             },
@@ -608,7 +615,8 @@ public class DynamoDbMarshaller
                     .CreateBlock($"return {value} is {{ M: {{ }} x }} ? x.ToDictionary(y => y.Key, y => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "y.Value", "y.Key")}) : {Else(keyValueGeneric)};")
                     .ToConversion(keyValueGeneric.TValue),
                 KeyValueGeneric.SupportedType.LookUp => CreateMethodSignature(keyValueGeneric)
-                    .CreateBlock($"return {value} is {{ M: {{ }} x }} ? x.SelectMany(y => y.Value.L, (y, z) => (y.Key, z)).ToLookup(y => y.Key, y => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "y.z", "y.Key")}) : {Else(keyValueGeneric)};")
+                    .CreateBlock(
+                        $"return {value} is {{ M: {{ }} x }} ? x.SelectMany(y => y.Value.L, (y, z) => (y.Key, z)).ToLookup(y => y.Key, y => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "y.z", "y.Key")}) : {Else(keyValueGeneric)};")
                     .ToConversion(keyValueGeneric.TValue),
                 _ => throw UncoveredConversionException(keyValueGeneric, nameof(StaticPocoFactory))
 
@@ -627,9 +635,9 @@ public class DynamoDbMarshaller
                 .DefaultAndLast(x => ObjectAssignmentBlock(x.useParentheses, x.assignments, false), x => ObjectAssignmentBlock(x.useParentheses, x.assignments, true))
                 .SelectMany(x => x)
                 .DefaultIfEmpty("();")
-                .Prepend(type.IsTupleType ? "return" : $"return new {GetFullTypeName(type)}");
+                .Prepend(type.IsTupleType ? "return" : $"return new {GetTypeName(type)}");
 
-            var method = $"public static {GetFullTypeName(type)} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue> {dict}, string? {key} = null)".CreateBlock(blockBody);
+            var method = $"public static {GetTypeName(type)} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue> {dict}, string? {key} = null)".CreateBlock(blockBody);
 
             return new Conversion(method, assignments.Select(x => x.DDB.DataMember.Type));
 
