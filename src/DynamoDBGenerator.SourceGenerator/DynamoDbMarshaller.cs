@@ -306,7 +306,7 @@ public static class DynamoDbMarshaller
     }
     private static Conversion StaticAttributeValueDictionaryFactory(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
     {
-        const string param = "x";
+        const string param = "entity";
         const string dataMember = "dataMember";
 
         static string CreateAttributeValueMethodSignature(TypeIdentifier typeIdentifier)
