@@ -308,8 +308,8 @@ public static class DynamoDbMarshaller
         var invocation = $"{MarshallerClass}.{GetSerializationMethodName(typeSymbol)}({parameterReference}, {dataMember})";
 
         if (GetTypeIdentifier(typeSymbol) is UnknownType)
-            return typeSymbol.IsNullable() is false
-                ? $"{Constants.DynamoDBGenerator.AttributeValueUtilityFactory.ToAttributeValue}({invocation}) ?? throw {NullExceptionMethod}({dataMember})"
+            return typeSymbol.IsNullable() is false // Can get rid of this if the signature accepts nullable
+                ? $"new AttributeValue {{ M = {invocation} ?? throw {NullExceptionMethod}({dataMember}) }}"
                 : $"{Constants.DynamoDBGenerator.AttributeValueUtilityFactory.ToAttributeValue}({invocation})";
 
         return invocation;
