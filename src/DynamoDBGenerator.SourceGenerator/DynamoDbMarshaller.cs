@@ -307,7 +307,7 @@ public static class DynamoDbMarshaller
     {
         var invocation = $"{MarshallerClass}.{GetSerializationMethodName(typeSymbol)}({parameterReference}, {dataMember})";
         return GetTypeIdentifier(typeSymbol) is UnknownType 
-            ? $"new AttributeValue {{ M = {invocation} }}" 
+            ? $"{Constants.DynamoDBGenerator.AttributeValueUtilityFactory.ToAttributeValue}({invocation})" 
             : invocation;
     }
     private static string InvokeUnmarshallMethod(ITypeSymbol typeSymbol, string paramReference, string dataMember)
