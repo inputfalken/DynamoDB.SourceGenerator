@@ -306,9 +306,13 @@ public static class DynamoDbMarshaller
     private static string InvokeMarshallerMethod(ITypeSymbol typeSymbol, string parameterReference, string dataMember)
     {
         var invocation = $"{MarshallerClass}.{GetSerializationMethodName(typeSymbol)}({parameterReference}, {dataMember})";
-        return GetTypeIdentifier(typeSymbol) is UnknownType 
-            ? $"{Constants.DynamoDBGenerator.AttributeValueUtilityFactory.ToAttributeValue}({invocation})" 
-            : invocation;
+
+        if (GetTypeIdentifier(typeSymbol) is UnknownType)
+            return typeSymbol.IsNullable() is false
+                ? $"{Constants.DynamoDBGenerator.AttributeValueUtilityFactory.ToAttributeValue}({invocation}) ?? throw {NullExceptionMethod}({dataMember})"
+                : $"{Constants.DynamoDBGenerator.AttributeValueUtilityFactory.ToAttributeValue}({invocation})";
+
+        return invocation;
     }
     private static string InvokeUnmarshallMethod(ITypeSymbol typeSymbol, string paramReference, string dataMember)
     {
@@ -429,7 +433,7 @@ public static class DynamoDbMarshaller
                     .Append($"return {dictionaryReference};"));
 
             var code =
-                $"public static Dictionary<string, AttributeValue>{(isNullable ? '?' : null)} {GetSerializationMethodName(type)}({GetTypeName(type).annotated} {paramReference}, string? {dataMember} = null)".CreateBlock(body);
+                $"public static Dictionary<string, AttributeValue>? {GetSerializationMethodName(type)}({GetTypeName(type).annotated} {paramReference}, string? {dataMember} = null)".CreateBlock(body);
 
             return new Conversion(code, properties.Select(y => y.Type));
 
