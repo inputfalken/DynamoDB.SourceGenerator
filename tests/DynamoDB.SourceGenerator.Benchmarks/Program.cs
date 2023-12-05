@@ -66,17 +66,17 @@ public class Marshalling
     {
         return _repository.PersonEntityMarshaller.Marshall(_singleElement);
     }
-
-    [Benchmark]
-    public PersonEntity Unmarshall_SG()
-    {
-        return _repository.PersonEntityMarshaller.Unmarshall(_attributeValues);
-    }
     
     [Benchmark]
     public PersonEntity Unmarshall_AWS()
     {
         return _context.FromDocument<PersonEntity>(Document.FromAttributeMap(_attributeValues));
+    }
+
+    [Benchmark]
+    public PersonEntity Unmarshall_SG()
+    {
+        return _repository.PersonEntityMarshaller.Unmarshall(_attributeValues);
     }
 
 }
