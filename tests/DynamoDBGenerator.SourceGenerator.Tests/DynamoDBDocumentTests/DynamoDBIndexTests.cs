@@ -193,17 +193,17 @@ public class ReverseAccessIndexSetup
     [DynamoDBGlobalSecondaryIndexRangeKey(ReversedAccessPatternGsi)]
     [DynamoDBLocalSecondaryIndexRangeKey(PrivateLsi)]
 
-    public string? PrimaryHashAndGsiRange { get; set; }
+    public string PrimaryHashAndGsiRange { get; set; } = null!;
 
     [DynamoDBRangeKey]
     [DynamoDBGlobalSecondaryIndexHashKey(ReversedAccessPatternGsi)]
     [DynamoDBLocalSecondaryIndexRangeKey(PrivateLsi2)]
-    public string? PrimaryRangeKeyAndGsiHash { get; set; }
+    public string PrimaryRangeKeyAndGsiHash { get; set; } = null!;
 
 
     [DynamoDBLocalSecondaryIndexRangeKey(Lsi)]
     [DynamoDBGlobalSecondaryIndexHashKey(PartitionGsiOnly)]
-    public string? LsiRangeKeyAndGSiHash { get; set; }
+    public string LsiRangeKeyAndGSiHash { get; set; } = null!;
 
 
 }

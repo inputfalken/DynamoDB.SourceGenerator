@@ -33,5 +33,5 @@ public partial class StreamTests
 
 public class WithStream
 {
-    public MemoryStream MyMemoryStream { get; set; }
+    public MemoryStream MyMemoryStream { get; set; } = null!;
 }

@@ -1,9 +1,7 @@
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
@@ -16,68 +14,131 @@ public static class TypeExtensions
         return x => cache.TryGetValue(x, out var value) ? value : cache[x] = selector(x);
     }
 
-    public static Func<ITypeSymbol, string> SuffixedTypeSymbolNameFactory(string? suffix, IEqualityComparer<ISymbol?> comparer, bool useNullableAnnotationNaming)
+    public static Func<ITypeSymbol, (string annotated, string original)> GetTypeIdentifier(IEqualityComparer<ISymbol?> comparer)
     {
-        return x => Execution(
-            new Dictionary<ITypeSymbol, string>(comparer),
-            x,
-            false,
-            suffix,
-            useNullableAnnotationNaming
-        );
+        var dict = new Dictionary<ITypeSymbol, (string, string)>(comparer);
 
-        static string Execution(
-            IDictionary<ITypeSymbol, string> cache,
-            ITypeSymbol typeSymbol,
-            bool isRecursive,
-            string? suffix,
-            bool useNullableAnnotationNaming
-        )
+        string TypeIdentifier(ITypeSymbol x, string displayString)
         {
-            if (cache.TryGetValue(typeSymbol, out var methodName))
-                return methodName;
 
-            var displayString = typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-
-            var str = useNullableAnnotationNaming
-                ? (typeSymbol.NullableAnnotation, typeDisplay: displayString) switch
-                {
-                    (NullableAnnotation.NotAnnotated, _) => $"NN_{displayString.ToAlphaNumericMethodName()}{suffix}",
-                    (NullableAnnotation.None, _) => $"{displayString.ToAlphaNumericMethodName()}{suffix}",
-                    (NullableAnnotation.Annotated, _) => $"N_{displayString.ToAlphaNumericMethodName()}{suffix}",
-                    _ => throw new NotImplementedException(typeSymbol.ToDisplayString())
-                }
-                : $"{displayString.ToAlphaNumericMethodName()}{suffix}";
-
-            if (typeSymbol is not INamedTypeSymbol namedTypeSymbol)
+            if (x is not INamedTypeSymbol namedTypeSymbol || namedTypeSymbol.TypeArguments.Length is 0 || namedTypeSymbol.BaseType?.SpecialType is SpecialType.System_Nullable_T)
             {
-                // We do not need to populate the dictionary if the execution originates from recursion.
-                if (isRecursive is false)
-                    cache[typeSymbol] = str;
-
-                return str;
+                return x.NullableAnnotation switch
+                {
+                    // Having `Annotated` and `None` produce append '?' is fine as long as `SuffixedTypeSymbolNameFactory` is giving them different names. Otherwise we could create broken signatures due to duplication.
+                    NullableAnnotation.Annotated or NullableAnnotation.None => $"{displayString}?",
+                    NullableAnnotation.NotAnnotated => displayString,
+                    _ => throw new ArgumentException(ExceptionMessage(x))
+                };
+            }
+            if (namedTypeSymbol.IsTupleType)
+            {
+                var result = namedTypeSymbol.TupleElements
+                    .Select(y => $"{TypeIdentifier(y.Type, $"{y.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}")} {y.Name}");
+                return $"({string.Join(", ", result)})";
             }
 
-            var result = string.Join(
-                "_",
-                namedTypeSymbol.TypeArguments.Select(x => Execution(cache, x, true, suffix, useNullableAnnotationNaming)).Prepend(str)
-            );
+            var index = displayString.IndexOf("<", StringComparison.Ordinal);
+            if (index == -1)
+                return displayString;
 
-            // We do not need to populate the dictionary if the execution originates from recursion.
-            if (isRecursive is false)
-                cache[typeSymbol] = result;
+            var typeWithoutGenerics = displayString.Substring(0, index);
 
-            return result;
+            return namedTypeSymbol.NullableAnnotation switch
+            {
+                // Having `Annotated` and `None` produce append '?' is fine as long as `SuffixedTypeSymbolNameFactory` is giving them different names. Otherwise we could create broken signatures due to duplication.
+                NullableAnnotation.Annotated or NullableAnnotation.None =>
+                    $"{typeWithoutGenerics}<{string.Join(", ", namedTypeSymbol.TypeArguments.Select(y => TypeIdentifier(y, y.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))}>?",
+                NullableAnnotation.NotAnnotated => $"{typeWithoutGenerics}<{string.Join(", ", namedTypeSymbol.TypeArguments.Select(y => TypeIdentifier(y, y.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))}>",
+                _ => throw new ArgumentException(ExceptionMessage(namedTypeSymbol))
+            };
         }
+
+        return x =>
+        {
+            if (dict.TryGetValue(x, out var res))
+                return res;
+
+            var displayString = x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+
+            return dict[x] = (TypeIdentifier(x, displayString), displayString);
+        };
+
+        static string ExceptionMessage(ITypeSymbol typeSymbol) => $"Could nullable annotation on type: {typeSymbol.ToDisplayString()}";
     }
-    public static Assignment ToInlineAssignment(this TypeIdentifier typeSymbol, string value)
+    public static Func<ITypeSymbol, string> SuffixedTypeSymbolNameFactory(string? suffix, IEqualityComparer<ISymbol?> comparer)
     {
-        return new Assignment(value, typeSymbol);
+        var dict = new Dictionary<ITypeSymbol, string>(comparer);
+
+        Func<ITypeSymbol, string> implementation;
+        if (Equals(comparer, SymbolEqualityComparer.IncludeNullability))
+        {
+            string NullableAnnotation(ITypeSymbol x)
+            {
+                return x switch
+                {
+                    // Could cause a NullReference exception but very unlikely since all IArrayTypeSymbol should inherit from Array.
+                    IArrayTypeSymbol {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated} array => $"NN_{array.BaseType!.Name}_{NullableAnnotation(array.ElementType)}",
+                    IArrayTypeSymbol {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None} array => $"{array.BaseType!.Name}_{NullableAnnotation(array.ElementType)}",
+                    IArrayTypeSymbol {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated} array => $"N_{array.BaseType!.Name}_{NullableAnnotation(array.ElementType)}",
+                    INamedTypeSymbol {OriginalDefinition.SpecialType: not SpecialType.System_Nullable_T, TypeArguments.Length : > 0, IsTupleType: false} namedTypeSymbol
+                        when string.Join("_", namedTypeSymbol.TypeArguments.Select(NullableAnnotation)) is var a
+                        => namedTypeSymbol switch
+                        {
+                            {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated} => $"NN_{namedTypeSymbol.Name}_{a}",
+                            {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None} => $"{namedTypeSymbol.Name}_{a}",
+                            {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated} => $"N_{namedTypeSymbol.Name}_{a}",
+                            _ => throw new NotImplementedException(ExceptionMessage(namedTypeSymbol))
+                        },
+                    INamedTypeSymbol {IsTupleType: true} single when string.Join("_", single.TupleElements.Select(y => $"{y.Name}_{NullableAnnotation(y.Type)}")) is var tuple => single switch
+                    {
+                        {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None} => tuple,
+                        {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated} => $"N_{tuple}",
+                        {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated} => $"NN_{tuple}",
+                        _ => throw new NotImplementedException(ExceptionMessage(single))
+                    },
+                    {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated} => $"NN_{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
+                    {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None} => $"{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
+                    {NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated} => $"N_{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
+                    _ => throw new NotImplementedException(ExceptionMessage(x))
+                };
+            }
+
+            implementation = x =>
+            {
+                if (dict.TryGetValue(x, out var res))
+                    return res;
+
+                return dict[x] = $"{NullableAnnotation(x)}{suffix}";
+            };
+        }
+        else
+        {
+            implementation = x =>
+            {
+                if (dict.TryGetValue(x, out var res))
+                    return res;
+
+                var displayString = x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+                // Could cause a NullReference exception but very unlikely since all IArrayTypeSymbol should inherit from Array.
+                return dict[x] = x is IArrayTypeSymbol
+                    ? $"{displayString}_{x.BaseType!.ToDisplayString()}{suffix}"
+                    : $"{displayString.ToAlphaNumericMethodName()}{suffix}";
+            };
+        }
+
+        return implementation;
+
+        static string ExceptionMessage(ITypeSymbol typeSymbol) => $"Could not apply naming suffix on type: {typeSymbol.ToDisplayString()}";
     }
 
-    public static Assignment ToExternalDependencyAssignment(this TypeIdentifier typeIdentifier,  string value)
+    public static Conversion ToConversion(this IEnumerable<string> enumerable)
     {
-        return new Assignment(value, typeIdentifier);
+        return new Conversion(enumerable);
+    }
+    public static Conversion ToConversion(this IEnumerable<string> enumerable, ITypeSymbol typeSymbol)
+    {
+        return new Conversion(enumerable, new[] {typeSymbol});
     }
 
     public static INamedTypeSymbol? TryGetNullableValueType(this ITypeSymbol type)

@@ -155,18 +155,18 @@ public partial class ToAttributeExpressionTests
 
 public class OrderAttributeExpressionTests
 {
-    public string Id { get; set; }
+    public string Id { get; set; } = null!;
 
     public decimal TotalPrice { get; set; }
-    public string ClientId { get; set; }
+    public string ClientId { get; set; } = null!;
 
     [DynamoDBProperty("User")]
-    public User UserEntity { get; set; }
+    public User UserEntity { get; set; } = null!;
 
     public class User
     {
-        public string Id { get; set; }
-        public string DisplayName { get; set; }
+        public string Id { get; set; } = null!;
+        public string DisplayName { get; set; } = null!;
     }
 
 }

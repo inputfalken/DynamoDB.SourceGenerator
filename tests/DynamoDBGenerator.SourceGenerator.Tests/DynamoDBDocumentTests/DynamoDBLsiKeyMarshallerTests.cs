@@ -100,10 +100,10 @@ public class LsiHashAndRangeKey
 
 
     [DynamoDBHashKey]
-    public string Email { get; set; }
+    public string Email { get; set; } = null!;
 
     [DynamoDBRangeKey]
-    public string PrimaryRangeKey { get; set; }
+    public string PrimaryRangeKey { get; set; } = null!;
 
 
     [DynamoDBLocalSecondaryIndexRangeKey(IndexName)]

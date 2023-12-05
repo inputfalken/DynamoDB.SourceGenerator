@@ -52,6 +52,13 @@ public static class Constants
         public const string KeyMarshallerImplementationTypeName = "DynamoDBKeyMarshallerDelegator";
         public const string IndexKeyMarshallerImplementationTypeName = "IndexDynamoDBMarshallerDelegator";
 
+        
+        public static class AttributeValueUtilityFactory
+        {
+            private const string ClassName = "AttributeValueUtilityFactory";
+
+            public const string ToAttributeValue = $"{ClassName}.ToAttributeValue";
+        }
         public static class ExceptionHelper
         {
             private const string ExceptionHelperClass = "ExceptionHelper";

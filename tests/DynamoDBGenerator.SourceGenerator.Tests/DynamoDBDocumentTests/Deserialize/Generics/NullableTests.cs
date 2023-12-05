@@ -1,19 +1,21 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
+using DynamoDBGenerator.Exceptions;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Generics;
 
 [DynamoDBMarshaller(typeof(OptionalIntegerClass))]
 public partial class NullableTests
 {
     [Fact]
-    public void Deserialize_NoValueProvided_ShouldNotThrow()
+    public void Deserialize_NoValueMapped_ShouldThrow()
     {
+        // If we have an AttributeValue that can not be be mapped when we have the key, then we should throw.
         var act = () => OptionalIntegerClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue> {{"OptionalProperty", new AttributeValue {N = null}}});
-        act.Should().NotThrow();
+        act.Should().Throw<DynamoDBMarshallingException>();
     }
 
     [Fact]
-    public void Deserialize_NoKeyValueProvided_ShouldNotThrow()
+    public void Deserialize_NoValueProvided_ShouldNotThrow()
     {
         var act = () => OptionalIntegerClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>());
         act.Should().NotThrow();

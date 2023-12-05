@@ -207,25 +207,25 @@ public partial class DynamoDBPrimaryKeyMarshallerTests
 public class TypeWithPartitionKeyOnly
 {
     [DynamoDBHashKey]
-    public string Id { get; set; }
+    public string Id { get; set; } = null!;
 }
 
 public class TypeWithRangeKeyOnly
 {
     [DynamoDBRangeKey]
-    public string Id { get; set; }
+    public string Id { get; set; } = null!;
 }
 
 public class TypeWithKeys
 {
     [DynamoDBHashKey]
-    public string Id { get; set; }
+    public string Id { get; set; } = null!;
 
     [DynamoDBRangeKey]
-    public string RangeKey { get; set; }
+    public string RangeKey { get; set; } = null!;
 }
 
 public class TypeWithoutKeys
 {
-    public string Id { get; set; }
+    public string Id { get; set; } = null!;
 }
