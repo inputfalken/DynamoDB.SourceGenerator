@@ -433,7 +433,7 @@ public static class DynamoDbMarshaller
                     .Append($"return {dictionaryReference};"));
 
             var code =
-                $"public static Dictionary<string, AttributeValue>? {GetSerializationMethodName(type)}({GetTypeName(type).annotated} {paramReference}, string? {dataMember} = null)".CreateBlock(body);
+                $"public static Dictionary<string, AttributeValue>{(isNullable ? '?' : null)} {GetSerializationMethodName(type)}({GetTypeName(type).annotated} {paramReference}, string? {dataMember} = null)".CreateBlock(body);
 
             return new Conversion(code, properties.Select(y => y.Type));
 
