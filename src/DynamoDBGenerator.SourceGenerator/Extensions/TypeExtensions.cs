@@ -25,8 +25,9 @@ public static class TypeExtensions
             {
                 return x.NullableAnnotation switch
                 {
-                    NullableAnnotation.Annotated => $"{displayString}?",
-                    NullableAnnotation.None or NullableAnnotation.NotAnnotated => displayString,
+                    // Having `Annotated` and `None` produce append '?' is fine as long as `SuffixedTypeSymbolNameFactory` is giving them different names. Otherwise we could create broken signatures due to duplication.
+                    NullableAnnotation.Annotated or NullableAnnotation.None => $"{displayString}?",
+                    NullableAnnotation.NotAnnotated => displayString,
                     _ => throw new ArgumentException(ExceptionMessage(x))
                 };
             }
@@ -45,9 +46,10 @@ public static class TypeExtensions
 
             return namedTypeSymbol.NullableAnnotation switch
             {
-                NullableAnnotation.Annotated => $"{typeWithoutGenerics}<{string.Join(", ", namedTypeSymbol.TypeArguments.Select(y => TypeIdentifier(y, y.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))}>?",
-                NullableAnnotation.None or NullableAnnotation.NotAnnotated =>
-                    $"{typeWithoutGenerics}<{string.Join(", ", namedTypeSymbol.TypeArguments.Select(y => TypeIdentifier(y, y.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))}>",
+                // Having `Annotated` and `None` produce append '?' is fine as long as `SuffixedTypeSymbolNameFactory` is giving them different names. Otherwise we could create broken signatures due to duplication.
+                NullableAnnotation.Annotated or NullableAnnotation.None =>
+                    $"{typeWithoutGenerics}<{string.Join(", ", namedTypeSymbol.TypeArguments.Select(y => TypeIdentifier(y, y.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))}>?",
+                NullableAnnotation.NotAnnotated => $"{typeWithoutGenerics}<{string.Join(", ", namedTypeSymbol.TypeArguments.Select(y => TypeIdentifier(y, y.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))}>",
                 _ => throw new ArgumentException(ExceptionMessage(namedTypeSymbol))
             };
         }
