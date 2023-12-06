@@ -5,25 +5,22 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshall
 [DynamoDBMarshaller(typeof(Switch))]
 public partial class BoolTests
 {
-    private static readonly Switch Poco = new() {On = true};
+    private static readonly Switch Dto = new(true);
     private static readonly Dictionary<string, AttributeValue> AttributeValues = new() {{nameof(Switch.On), new AttributeValue {BOOL = true}}};
 
 
     [Fact]
     public void Marshall()
     {
-        SwitchMarshaller.Marshall(Poco).Should().BeEquivalentTo(AttributeValues);
+        SwitchMarshaller.Marshall(Dto).Should().BeEquivalentTo(AttributeValues);
     }
 
     [Fact]
     public void Unmarshall()
     {
-        SwitchMarshaller.Unmarshall(AttributeValues).Should().BeEquivalentTo(Poco);
+        SwitchMarshaller.Unmarshall(AttributeValues).Should().BeEquivalentTo(Dto);
     }
 
 
-    public record Switch
-    {
-        public bool On { get; set; }
-    }
+    public record Switch(bool On);
 }
