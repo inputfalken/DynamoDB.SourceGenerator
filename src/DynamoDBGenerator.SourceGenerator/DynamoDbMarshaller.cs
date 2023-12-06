@@ -572,7 +572,7 @@ public static class DynamoDbMarshaller
                     .CreateBlock($"return {value} is {{ S: {{ }} x }} ? x : {Else(baseType)};")
                     .ToConversion(),
                 BaseType.SupportedType.Bool => signature
-                    .CreateBlock($"return {value} is {{ BOOl: var x }} ? x : {Else(baseType)};")
+                    .CreateBlock($"return {value} is {{ BOOL: var x }} ? x : {Else(baseType)};")
                     .ToConversion(),
                 BaseType.SupportedType.Char => signature
                     .CreateBlock($"return {value} is {{ S: {{ }} x }} ? x[0] : {Else(baseType)};")
