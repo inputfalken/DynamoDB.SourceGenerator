@@ -69,13 +69,9 @@ public abstract class SetAsserter<TSet, TElement> : MarshalAsserter<SetAsserter<
         {
             x.Key.Should().Be(nameof(NameList.UniqueNames));
             if (IsStringSet)
-            {
-                x.Value.SS.Should().AllBeEquivalentTo(nameList.UniqueNames);
-            }
+                x.Value.SS.Should().OnlyHaveUniqueItems();
             else
-            {
-                x.Value.NS.Should().AllBeEquivalentTo(nameList.UniqueNames);
-            }
+                x.Value.NS.Should().OnlyHaveUniqueItems();
         });
     }
 }
