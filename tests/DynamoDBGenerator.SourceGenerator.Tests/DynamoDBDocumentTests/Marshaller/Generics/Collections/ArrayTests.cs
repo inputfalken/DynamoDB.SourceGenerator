@@ -1,11 +1,10 @@
-using System.Net.Mime;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections;
 
 [DynamoDBMarshaller(typeof(Text))]
 // ReSharper disable once UnusedType.Global
-public partial class ArrayTests : BaseAsserter<string[]>
+public partial class ArrayTests : NoneNullableCollectionElementAsserter<string[]>
 {
 
     public ArrayTests() : base(x => x.ToArray())

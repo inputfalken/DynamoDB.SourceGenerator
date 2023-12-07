@@ -620,10 +620,10 @@ public static class DynamoDbMarshaller
                     .CreateBlock($"return {value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{dataMember}}}[{{i.ToString()}}]\"")}) : {Else(singleGeneric)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.SpecialType is SpecialType.System_String => signature
-                    .CreateBlock($"return {value} is {{ SS : {{ }} x }} ? new HashSet<string>(x) : {Else(singleGeneric)};")
+                    .CreateBlock($"return {value} is {{ SS : {{ }} x }} ? new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? "HashSet<string>" : null )}(x) : {Else(singleGeneric)};")
                     .ToConversion(),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.IsNumeric() => signature
-                    .CreateBlock($"return {value} is {{ NS : {{ }} x }} ? x.Select(y => {GetTypeName(singleGeneric.T).original}.Parse(y)).ToHashSet() : {Else(singleGeneric)};")
+                    .CreateBlock($"return {value} is {{ NS : {{ }} x }} ? new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{GetTypeName(singleGeneric.T).original}>" : null)}(x.Select(y => {GetTypeName(singleGeneric.T).original}.Parse(y))) : {Else(singleGeneric)};")
                     .ToConversion(singleGeneric.TypeSymbol),
                 SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(StaticPocoFactory))),
                 _ => throw UncoveredConversionException(singleGeneric, nameof(StaticPocoFactory))

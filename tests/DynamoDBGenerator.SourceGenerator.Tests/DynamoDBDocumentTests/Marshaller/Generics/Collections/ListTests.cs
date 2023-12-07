@@ -4,7 +4,7 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshall
 
 [DynamoDBMarshaller(typeof(Text))]
 // ReSharper disable once UnusedType.Global
-public partial class ListTests : BaseAsserter<List<string>>
+public partial class ListTests : NoneNullableCollectionElementAsserter<List<string>>
 {
     public ListTests() : base(x => x.ToList())
     {

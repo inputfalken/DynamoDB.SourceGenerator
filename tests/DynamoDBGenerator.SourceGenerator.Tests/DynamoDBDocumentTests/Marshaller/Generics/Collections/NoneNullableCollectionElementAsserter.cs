@@ -2,7 +2,7 @@ using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Exceptions;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections;
 
-public abstract class BaseAsserter<TCollection> where TCollection : IEnumerable<string>
+public abstract class NoneNullableCollectionElementAsserter<TCollection> : MarshalAsserter<NoneNullableCollectionElementAsserter<TCollection>.Text, IEnumerable<string>> where TCollection : IEnumerable<string>
 {
     private readonly Func<IEnumerable<string>, TCollection> _func;
 
@@ -17,9 +17,9 @@ public abstract class BaseAsserter<TCollection> where TCollection : IEnumerable<
 
     public record Text(TCollection Rows);
 
-    protected (Text Text, Dictionary<string, AttributeValue>) ConstructArguments(IEnumerable<string> elements)
+    protected override (Text element, Dictionary<string, AttributeValue> attributeValues) CreateArguments(IEnumerable<string> arg)
     {
-        var text = _func(elements);
+        var text = _func(arg);
         return (
             new Text(text),
             new()
@@ -29,35 +29,19 @@ public abstract class BaseAsserter<TCollection> where TCollection : IEnumerable<
                 }
             }
         );
-
     }
 
-    protected BaseAsserter(Func<IEnumerable<string>, TCollection> func)
+
+    protected NoneNullableCollectionElementAsserter(Func<IEnumerable<string>, TCollection> func) : base(func(EnumerableImplementation()))
     {
         _func = func;
     }
 
-    protected abstract Dictionary<string, AttributeValue> MarshallImplementation(Text text);
-    protected abstract Text UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues);
-
-    [Fact]
-    public void Marshall()
-    {
-        var (text, attributeValues) = ConstructArguments(EnumerableImplementation());
-        MarshallImplementation(text).Should().BeEquivalentTo(attributeValues);
-    }
-
-    [Fact]
-    public void Unmarshall()
-    {
-        var (text, attributeValues) = ConstructArguments(EnumerableImplementation());
-        UnmarshallImplementation(attributeValues).Should().BeEquivalentTo(text);
-    }
 
     [Fact]
     public void Marshall_NullElement_ShouldThrow()
     {
-        var (text, _) = ConstructArguments(new[] {"A", "B", null!});
+        var (text, _) = CreateArguments(new[] {"A", "B", null!});
         var act = () => MarshallImplementation(text);
         act.Should().Throw<DynamoDBMarshallingException>().Which.MemberName.Should().Be($"{nameof(Text.Rows)}[2]");
     }
@@ -65,14 +49,14 @@ public abstract class BaseAsserter<TCollection> where TCollection : IEnumerable<
     [Fact]
     public void Marshall_Empty()
     {
-        var (text, attributeValues) = ConstructArguments(Enumerable.Empty<string>());
+        var (text, attributeValues) = CreateArguments(Enumerable.Empty<string>());
         MarshallImplementation(text).Should().BeEquivalentTo(attributeValues);
     }
 
     [Fact]
     public void Unmarshall_Empty()
     {
-        var (text, attributeValues) = ConstructArguments(Enumerable.Empty<string>());
+        var (text, attributeValues) = CreateArguments(Enumerable.Empty<string>());
         UnmarshallImplementation(attributeValues).Should().BeEquivalentTo(text);
     }
 
