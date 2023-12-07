@@ -22,7 +22,7 @@ public partial class ISetTests : NotNulStringSetAsserter<ISet<string>>
     [Fact]
     public void Unmarshall_Implementation_ShouldBeHashset()
     {
-        var (_, attributeValues) = DefaultArguments;
+        var (_, attributeValues) = Arguments();
 
         SetDtoMarshaller.Unmarshall(attributeValues).Set.Should().BeOfType<HashSet<string>>();
     }

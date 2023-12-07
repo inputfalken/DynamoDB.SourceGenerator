@@ -28,6 +28,7 @@
       <ProjectReference Include="..\..\src\DynamoDBGenerator\DynamoDBGenerator.csproj" />
 
 
+
     </ItemGroup>
 
 

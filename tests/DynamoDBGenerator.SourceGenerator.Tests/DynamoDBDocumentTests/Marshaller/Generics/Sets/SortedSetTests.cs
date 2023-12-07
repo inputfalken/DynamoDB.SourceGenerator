@@ -23,7 +23,7 @@ public partial class SortedSetTests : NotNulStringSetAsserter<SortedSet<string>>
     [Fact]
     public void Unmarshall_Implementation_ShouldBeHashset()
     {
-        var (_, attributeValues) = DefaultArguments;
+        var (_, attributeValues) = Arguments();
 
         SetDtoMarshaller.Unmarshall(attributeValues).Set.Should().BeOfType<SortedSet<string>>();
     }

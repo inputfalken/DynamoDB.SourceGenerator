@@ -1,5 +1,6 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Exceptions;
+using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections.Asserters;
 
 public abstract class CollectionAsserter<TCollection, TElement> : MarshalAsserter<CollectionAsserter<TCollection, TElement>.Text, IEnumerable<TElement>> where TCollection : IEnumerable<TElement>?

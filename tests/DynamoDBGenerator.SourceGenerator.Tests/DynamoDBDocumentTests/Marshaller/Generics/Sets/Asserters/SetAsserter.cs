@@ -1,5 +1,6 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Exceptions;
+using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets.Asserters;
 
 public abstract class SetAsserter<TSet, TElement> : MarshalAsserter<SetAsserter<TSet, TElement>.SetDto, IEnumerable<TElement>> where TSet : IEnumerable<TElement>
@@ -60,7 +61,7 @@ public abstract class SetAsserter<TSet, TElement> : MarshalAsserter<SetAsserter<
     [Fact]
     public void Marshall_NoDuplicated_Elements()
     {
-        var (nameList, _) = DefaultArguments;
+        var (nameList, _) = Arguments();
         var items = nameList.Set.Concat(nameList.Set).ToList();
 
         items.Should().HaveCountGreaterThan(0);

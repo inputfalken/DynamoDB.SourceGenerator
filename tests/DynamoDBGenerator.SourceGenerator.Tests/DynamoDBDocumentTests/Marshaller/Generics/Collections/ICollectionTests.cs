@@ -22,7 +22,7 @@ public partial class ICollectionTests : NoneNullableCollectionElementAsserter<IC
     [Fact]
     public void Unmarshall_Implementation_ShouldBeList()
     {
-        var (_, attributeValues) = DefaultArguments;
+        var (_, attributeValues) = Arguments();
         
         TextMarshaller.Unmarshall(attributeValues).Rows.Should().BeOfType<List<string>>();
     }
