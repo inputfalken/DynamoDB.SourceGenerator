@@ -24,6 +24,6 @@ public partial class SortedSetTests : StringSetAsserter<SortedSet<string>>
     {
         var (_, attributeValues) = DefaultArguments;
 
-        NameListMarshaller.Unmarshall(attributeValues).UniqueNames.Should().BeOfType<HashSet<string>>();
+        NameListMarshaller.Unmarshall(attributeValues).UniqueNames.Should().BeOfType<SortedSet<string>>();
     }
 }
