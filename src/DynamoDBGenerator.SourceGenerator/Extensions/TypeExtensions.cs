@@ -21,7 +21,7 @@ public static class TypeExtensions
         string TypeIdentifier(ITypeSymbol x, string displayString)
         {
 
-            if (x is not INamedTypeSymbol namedTypeSymbol || namedTypeSymbol.TypeArguments.Length is 0 || namedTypeSymbol.BaseType?.SpecialType is SpecialType.System_Nullable_T)
+            if (x is not INamedTypeSymbol namedTypeSymbol || namedTypeSymbol.TypeArguments.Length is 0)
             {
                 return x.NullableAnnotation switch
                 {
@@ -31,25 +31,27 @@ public static class TypeExtensions
                     _ => throw new ArgumentException(ExceptionMessage(x))
                 };
             }
+            if (namedTypeSymbol.OriginalDefinition.SpecialType is SpecialType.System_Nullable_T)
+                return displayString;
+
             if (namedTypeSymbol.IsTupleType)
             {
-                var result = namedTypeSymbol.TupleElements
+                var tupleElements = namedTypeSymbol.TupleElements
                     .Select(y => $"{TypeIdentifier(y.Type, $"{y.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}")} {y.Name}");
-                return $"({string.Join(", ", result)})";
+                return $"({string.Join(", ", tupleElements)})";
             }
 
             var index = displayString.IndexOf("<", StringComparison.Ordinal);
             if (index == -1)
                 return displayString;
 
-            var typeWithoutGenerics = displayString.Substring(0, index);
-
+            var typeWithoutGenericParameters = displayString.Substring(0, index);
+            var typeParameters = string.Join(", ", namedTypeSymbol.TypeArguments.Select(y => TypeIdentifier(y, y.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))));
             return namedTypeSymbol.NullableAnnotation switch
             {
                 // Having `Annotated` and `None` produce append '?' is fine as long as `SuffixedTypeSymbolNameFactory` is giving them different names. Otherwise we could create broken signatures due to duplication.
-                NullableAnnotation.Annotated or NullableAnnotation.None =>
-                    $"{typeWithoutGenerics}<{string.Join(", ", namedTypeSymbol.TypeArguments.Select(y => TypeIdentifier(y, y.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))}>?",
-                NullableAnnotation.NotAnnotated => $"{typeWithoutGenerics}<{string.Join(", ", namedTypeSymbol.TypeArguments.Select(y => TypeIdentifier(y, y.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))))}>",
+                NullableAnnotation.Annotated or NullableAnnotation.None => $"{typeWithoutGenericParameters}<{typeParameters}>?",
+                NullableAnnotation.NotAnnotated => $"{typeWithoutGenericParameters}<{typeParameters}>",
                 _ => throw new ArgumentException(ExceptionMessage(namedTypeSymbol))
             };
         }
