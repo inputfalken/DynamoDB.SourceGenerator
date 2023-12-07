@@ -5,9 +5,9 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshall
 
 [DynamoDBMarshaller(typeof(Text))]
 // ReSharper disable once UnusedType.Global
-public partial class IReadOnlyListTests : NoneNullableCollectionElementAsserter<IReadOnlyList<string>>
+public partial class IReadOnlyListTests : NoneNullableElementAsserter<IReadOnlyList<string>, string>
 {
-    public IReadOnlyListTests() : base(x => x.ToList())
+    public IReadOnlyListTests() : base(Strings(), x => x.ToList())
     {
     }
     protected override Dictionary<string, AttributeValue> MarshallImplementation(Text text)

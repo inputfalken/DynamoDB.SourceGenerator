@@ -5,10 +5,10 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshall
 
 [DynamoDBMarshaller(typeof(Text))]
 // ReSharper disable once UnusedType.Global
-public partial class ArrayTests : NoneNullableCollectionElementAsserter<string[]>
+public partial class ArrayTests : NoneNullableElementAsserter<string[], string>
 {
 
-    public ArrayTests() : base(x => x.ToArray())
+    public ArrayTests() : base(Strings(), x => x.ToArray())
     {
     }
     protected override Dictionary<string, AttributeValue> MarshallImplementation(Text text)
