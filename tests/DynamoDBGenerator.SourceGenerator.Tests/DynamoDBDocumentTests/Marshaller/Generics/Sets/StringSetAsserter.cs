@@ -32,7 +32,7 @@ public abstract class StringSetAsserter<TSet> : MarshalAsserter<StringSetAsserte
     {
         var (text, _) = CreateArguments(new[] {"A", "B", null!});
         var act = () => MarshallImplementation(text);
-        act.Should().Throw<DynamoDBMarshallingException>().Which.MemberName.Should().Be($"{nameof(NameList.UniqueNames)}[2]");
+        act.Should().Throw<DynamoDBMarshallingException>().Which.MemberName.Should().Be($"{nameof(NameList.UniqueNames)}[UNKNOWN]");
     }
 
     [Fact]
