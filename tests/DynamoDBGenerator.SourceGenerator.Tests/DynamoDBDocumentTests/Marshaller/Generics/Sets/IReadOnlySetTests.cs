@@ -3,21 +3,21 @@ using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets;
 
-[DynamoDBMarshaller(typeof(NameList))]
+[DynamoDBMarshaller(typeof(SetDto))]
 public partial class IReadOnlySetTests : NotNulStringSetAsserter<IReadOnlySet<string>>
 {
     public IReadOnlySetTests() : base(x => new SortedSet<string>(x))
     {
 
     }
-    protected override Dictionary<string, AttributeValue> MarshallImplementation(NameList element)
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(SetDto element)
     {
-        return NameListMarshaller.Marshall(element);
+        return SetDtoMarshaller.Marshall(element);
     }
 
-    protected override NameList UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+    protected override SetDto UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
-        return NameListMarshaller.Unmarshall(attributeValues);
+        return SetDtoMarshaller.Unmarshall(attributeValues);
     }
 
     [Fact]
@@ -25,6 +25,6 @@ public partial class IReadOnlySetTests : NotNulStringSetAsserter<IReadOnlySet<st
     {
         var (_, attributeValues) = DefaultArguments;
 
-        NameListMarshaller.Unmarshall(attributeValues).UniqueNames.Should().BeOfType<HashSet<string>>();
+        SetDtoMarshaller.Unmarshall(attributeValues).Set.Should().BeOfType<HashSet<string>>();
     }
 }

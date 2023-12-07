@@ -3,21 +3,21 @@ using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets;
 
-[DynamoDBMarshaller(typeof(NameList))]
+[DynamoDBMarshaller(typeof(SetDto))]
 public partial class SortedSetTests : NotNulStringSetAsserter<SortedSet<string>>
 {
     public SortedSetTests() : base(x => new SortedSet<string>(x))
     {
 
     }
-    protected override Dictionary<string, AttributeValue> MarshallImplementation(NameList element)
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(SetDto element)
     {
-        return NameListMarshaller.Marshall(element);
+        return SetDtoMarshaller.Marshall(element);
     }
 
-    protected override NameList UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+    protected override SetDto UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
-        return NameListMarshaller.Unmarshall(attributeValues);
+        return SetDtoMarshaller.Unmarshall(attributeValues);
     }
 
     [Fact]
@@ -25,6 +25,6 @@ public partial class SortedSetTests : NotNulStringSetAsserter<SortedSet<string>>
     {
         var (_, attributeValues) = DefaultArguments;
 
-        NameListMarshaller.Unmarshall(attributeValues).UniqueNames.Should().BeOfType<SortedSet<string>>();
+        SetDtoMarshaller.Unmarshall(attributeValues).Set.Should().BeOfType<SortedSet<string>>();
     }
 }

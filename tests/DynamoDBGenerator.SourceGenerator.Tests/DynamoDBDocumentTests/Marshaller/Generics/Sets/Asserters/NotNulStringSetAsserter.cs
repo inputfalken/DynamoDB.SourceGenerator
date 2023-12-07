@@ -17,7 +17,7 @@ public abstract class NotNulStringSetAsserter<TSet> : SetAsserter<TSet, string> 
     {
         var (text, _) = CreateArguments(new[] {"A", "B", null!});
         var act = () => MarshallImplementation(text);
-        act.Should().Throw<DynamoDBMarshallingException>().Which.MemberName.Should().Be($"{nameof(NameList.UniqueNames)}[UNKNOWN]");
+        act.Should().Throw<DynamoDBMarshallingException>().Which.MemberName.Should().Be($"{nameof(SetDto.Set)}[UNKNOWN]");
     }
 
     protected NotNulStringSetAsserter(Func<IEnumerable<string>, TSet> fn) : base(EnumerableImplementation(), fn)
