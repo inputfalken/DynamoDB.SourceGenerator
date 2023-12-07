@@ -2,7 +2,7 @@ using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Exceptions;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets;
 
-public abstract class StringSetAsserter<TSet> : MarshalAsserter<StringSetAsserter<TSet>.NameList, IEnumerable<string>> where TSet : IEnumerable<string>
+public abstract class NotNulStringSetAsserter<TSet> : MarshalAsserter<NotNulStringSetAsserter<TSet>.NameList, IEnumerable<string>> where TSet : IEnumerable<string>
 {
     private readonly Func<IEnumerable<string>, TSet> _func;
 
@@ -22,7 +22,7 @@ public abstract class StringSetAsserter<TSet> : MarshalAsserter<StringSetAsserte
     }
 
 
-    protected StringSetAsserter(Func<IEnumerable<string>, TSet> func) : base(func(EnumerableImplementation()))
+    protected NotNulStringSetAsserter(Func<IEnumerable<string>, TSet> func) : base(func(EnumerableImplementation()))
     {
         _func = func;
     }

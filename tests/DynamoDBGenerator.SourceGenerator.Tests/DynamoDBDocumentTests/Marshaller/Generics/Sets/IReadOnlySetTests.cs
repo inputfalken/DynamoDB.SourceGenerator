@@ -3,7 +3,7 @@ using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets;
 
 [DynamoDBMarshaller(typeof(NameList))]
-public partial class IReadOnlySetTests : StringSetAsserter<IReadOnlySet<string>>
+public partial class IReadOnlySetTests : NotNulStringSetAsserter<IReadOnlySet<string>>
 {
     public IReadOnlySetTests() : base(x => new SortedSet<string>(x))
     {

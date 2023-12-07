@@ -3,7 +3,7 @@ using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets;
 
 [DynamoDBMarshaller(typeof(NameList))]
-public partial class ISetTests : StringSetAsserter<ISet<string>>
+public partial class ISetTests : NotNulStringSetAsserter<ISet<string>>
 {
     public ISetTests() : base(x => new HashSet<string>(x))
     {
