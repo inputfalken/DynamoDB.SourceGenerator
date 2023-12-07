@@ -30,4 +30,12 @@ public abstract class MarshalAsserter<T, TSeed>
         UnmarshallImplementation(dict).Should().BeEquivalentTo(element);
     }
 
+    [Fact]
+    public void Unmarshall_NullAttributeValues_ShouldThrow()
+    {
+        var act = () => UnmarshallImplementation(null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
+
 }
