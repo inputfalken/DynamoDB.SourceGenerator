@@ -4,11 +4,11 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.G
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets;
 
 [DynamoDBMarshaller(typeof(NameList))]
-public partial class ISetTests : NotNulStringSetAsserter<ISet<string>>
+public partial class IntHashSetTests : SetAsserter<HashSet<int>, int>
 {
-    public ISetTests() : base(x => new HashSet<string>(x))
-    {
 
+    public IntHashSetTests() : base(new[] {2, 3, 4, 5}, x => new HashSet<int>(x))
+    {
     }
     protected override Dictionary<string, AttributeValue> MarshallImplementation(NameList element)
     {
@@ -18,14 +18,4 @@ public partial class ISetTests : NotNulStringSetAsserter<ISet<string>>
     {
         return NameListMarshaller.Unmarshall(attributeValues);
     }
-
-    [Fact]
-    public void Unmarshall_Implementation_ShouldBeHashset()
-    {
-        var (_, attributeValues) = DefaultArguments;
-
-        NameListMarshaller.Unmarshall(attributeValues).UniqueNames.Should().BeOfType<HashSet<string>>();
-    }
-
-
 }
