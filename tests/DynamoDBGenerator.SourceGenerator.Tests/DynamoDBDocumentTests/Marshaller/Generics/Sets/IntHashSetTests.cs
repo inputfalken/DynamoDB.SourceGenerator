@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets.Asserters;
@@ -20,7 +21,6 @@ public partial class IntHashSetTests : SetAsserter<HashSet<int>, int>
     }
 }
 
-
 [DynamoDBMarshaller(typeof(SetDto))]
 public partial class DecimalHashSetTests : SetAsserter<HashSet<decimal>, decimal>
 {
@@ -37,4 +37,3 @@ public partial class DecimalHashSetTests : SetAsserter<HashSet<decimal>, decimal
         return SetDtoMarshaller.Unmarshall(attributeValues);
     }
 }
-
