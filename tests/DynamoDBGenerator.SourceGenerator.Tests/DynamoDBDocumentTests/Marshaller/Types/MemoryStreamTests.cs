@@ -1,31 +1,23 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
+using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(File))]
-public partial class MemoryStreamTests
+[DynamoDBMarshaller(typeof(Container))]
+public partial class MemoryStreamTests : RecordMarshalAsserter<MemoryStream, MemoryStream>
 {
-    private static readonly File Dto = new(new MemoryStream());
-    private static readonly Dictionary<string, AttributeValue> AttributeValues = new()
+
+
+    protected override Container UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
-        {nameof(File.Stream), new AttributeValue{B = Dto.Stream}}
-    };
-
-
-    [Fact]
-    public void Marshall()
-    {
-        FileMarshaller.Marshall(Dto).Should().BeEquivalentTo(AttributeValues);
-
+        return ContainerMarshaller.Unmarshall(attributeValues);
     }
-    
-    [Fact]
-    public void UnMarshall()
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container element)
     {
-        FileMarshaller.Unmarshall(AttributeValues).Should().BeEquivalentTo(Dto);
-
+        return ContainerMarshaller.Marshall(element);
     }
-    
 
-    public record File(MemoryStream Stream);
+    public MemoryStreamTests() : base(new MemoryStream(new byte[] {12}), x => new AttributeValue {B = x}, x => x)
+    {
+    }
 }

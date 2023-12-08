@@ -1,26 +1,37 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
+using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Switch))]
-public partial class BoolTests
+[DynamoDBMarshaller(typeof(Container))]
+public partial class BoolTests : RecordMarshalAsserter<bool, bool>
 {
-    private static readonly Switch Dto = new(true);
-    private static readonly Dictionary<string, AttributeValue> AttributeValues = new() {{nameof(Switch.On), new AttributeValue {BOOL = true}}};
-
-
-    [Fact]
-    public void Marshall()
+    public BoolTests() : base(true, x => new AttributeValue {BOOL = x}, x => x)
     {
-        SwitchMarshaller.Marshall(Dto).Should().BeEquivalentTo(AttributeValues);
+    }
+    protected override Container UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+    {
+        return ContainerMarshaller.Unmarshall(attributeValues);
+    }
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container element)
+    {
+        return ContainerMarshaller.Marshall(element);
     }
 
     [Fact]
-    public void Unmarshall()
+    public void Unmarshall_False()
     {
-        SwitchMarshaller.Unmarshall(AttributeValues).Should().BeEquivalentTo(Dto);
+        var (element, attributeValues) = CreateArguments(false);
+
+        ContainerMarshaller.Unmarshall(attributeValues).Should().BeEquivalentTo(element);
+
     }
 
+    [Fact]
+    public void Marshall_False()
+    {
+        var (element, attributeValues) = CreateArguments(false);
 
-    public record Switch(bool On);
+        ContainerMarshaller.Marshall(element).Should().BeEquivalentTo(attributeValues);
+    }
 }

@@ -1,36 +1,32 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.Exceptions;
+using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Character))]
-public partial class CharTests
+[DynamoDBMarshaller(typeof(Container))]
+public partial class CharTests : RecordMarshalAsserter<char, char>
 {
-    private static readonly Character Dto = new('A');
 
-    private static readonly Dictionary<string, AttributeValue> AttributeValues = new()
-    {
-        {nameof(Character.Letter), new AttributeValue {S = "A"}}
-    };
 
     [Fact(Skip = "TODO")]
     public void Unmarshall_EmptyString_ShouldThrow()
     {
-        var act = () => CharacterMarshaller.Unmarshall(new Dictionary<string, AttributeValue> {{nameof(Character.Letter), new AttributeValue {S = ""}}});
+        var act = () => ContainerMarshaller.Unmarshall(new Dictionary<string, AttributeValue> {{nameof(Container.Element), new AttributeValue {S = ""}}});
         act.Should().Throw<DynamoDBMarshallingException>();
     }
 
-    [Fact]
-    public void Marshall()
+    protected override Container UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
-        CharacterMarshaller.Marshall(Dto).Should().BeEquivalentTo(AttributeValues);
+        return ContainerMarshaller.Unmarshall(attributeValues);
+    }
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container element)
+    {
+        return ContainerMarshaller.Marshall(element);
     }
 
-    [Fact]
-    public void Unmarshall()
-    {
-        CharacterMarshaller.Unmarshall(AttributeValues).Should().BeEquivalentTo(Dto);
-    }
 
-    public record Character(char Letter);
+    public CharTests() : base('A', x => new AttributeValue {S = x.ToString()}, c => c)
+    {
+    }
 }

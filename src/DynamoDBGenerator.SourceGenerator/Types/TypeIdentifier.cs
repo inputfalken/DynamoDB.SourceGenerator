@@ -89,8 +89,10 @@ public record SingleGeneric : TypeIdentifier
         SupportedType? supported = type switch
         {
             _ when type.TryGetNullableValueType() is not null => SupportedType.Nullable,
-            {Name: "ISet"} => SupportedType.Set,
+            {Name: "ISet" } => SupportedType.Set,
             _ when type.AllInterfaces.Any(x => x is {Name: "ISet"}) => SupportedType.Set,
+            {Name: "IReadOnlySet" } => SupportedType.Set,
+            _ when type.AllInterfaces.Any(x => x is {Name: "IReadOnlySet"}) => SupportedType.Set,
             {OriginalDefinition.SpecialType: SpecialType.System_Collections_Generic_ICollection_T} => SupportedType.ICollection,
             _ when type.AllInterfaces.Any(x => x is {OriginalDefinition.SpecialType: SpecialType.System_Collections_Generic_ICollection_T}) => SupportedType.ICollection,
             {OriginalDefinition.SpecialType: SpecialType.System_Collections_Generic_IReadOnlyCollection_T} => SupportedType.IReadOnlyCollection,

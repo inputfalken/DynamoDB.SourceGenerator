@@ -1,33 +1,23 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
+using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Metadata))]
-public partial class DateTimeOffsetTests
+[DynamoDBMarshaller(typeof(Container))]
+public partial class DateTimeOffsetTests : RecordMarshalAsserter<DateTimeOffset, DateTimeOffset>
 {
-    private static readonly Metadata Dto = new(DateTimeOffset.UtcNow);
 
-    private static readonly Dictionary<string, AttributeValue> AttributeValues = new()
+    protected override Container UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
-        {nameof(Metadata.TimeStamp), new AttributeValue {S = DateTimeOffset.UtcNow.ToString(Dto.TimeStamp.ToString("O"))}}
-    };
-
-
-    [Fact]
-    public void Marshall()
+        return ContainerMarshaller.Unmarshall(attributeValues);
+    }
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container element)
     {
-        MetadataMarshaller.Marshall(Dto).Should().BeEquivalentTo(AttributeValues);
-
+        return ContainerMarshaller.Marshall(element);
     }
 
-    [Fact]
-    public void Unmarshall()
+    public DateTimeOffsetTests() : base(DateTimeOffset.Now, x => new AttributeValue {S = x.ToString("O")}, x => x)
     {
-        MetadataMarshaller.Unmarshall(AttributeValues).Should().BeEquivalentTo(Dto);
-
     }
-
-
-    public record Metadata(DateTimeOffset TimeStamp);
 
 }

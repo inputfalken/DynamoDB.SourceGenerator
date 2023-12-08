@@ -1,28 +1,23 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
+using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Delivery))]
-public partial class DateOnlyTests
+[DynamoDBMarshaller(typeof(Container))]
+public partial class DateOnlyTests : RecordMarshalAsserter<DateOnly, DateOnly>
 {
-    private static readonly Delivery Dto = new(new DateOnly(2023, 12, 06));
 
-    private static readonly Dictionary<string, AttributeValue> AttributeValues = new()
+    protected override Container UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
-        {nameof(Delivery.Date), new AttributeValue {S = Dto.Date.ToString("O")}}
-    };
-
-    [Fact]
-    public void Marshall()
+        return ContainerMarshaller.Unmarshall(attributeValues);
+    }
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container element)
     {
-        DeliveryMarshaller.Marshall(Dto).Should().BeEquivalentTo(AttributeValues);
+        return ContainerMarshaller.Marshall(element);
     }
 
-    [Fact]
-    public void Unmarshall()
+    public DateOnlyTests() : base(new DateOnly(2023, 12, 08), x => new AttributeValue {S = x.ToString("O")}, x => x)
     {
-        DeliveryMarshaller.Unmarshall(AttributeValues).Should().BeEquivalentTo(Dto);
     }
 
-    public record Delivery(DateOnly Date);
 }

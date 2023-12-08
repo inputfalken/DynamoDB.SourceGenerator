@@ -1,13 +1,11 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
+using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Week))]
-public partial class EnumTests
+[DynamoDBMarshaller(typeof(Container))]
+public partial class EnumTests : RecordMarshalAsserter<DayOfWeek, DayOfWeek>
 {
-    private static Week CreateDto(DayOfWeek dayOfWeek) => new(dayOfWeek);
-    private static Dictionary<string, AttributeValue> CreateAttributeValues(DayOfWeek dayOfWeek) => new()
-        {{nameof(Week.Day), new AttributeValue {N = ((int)dayOfWeek).ToString()}}};
 
     [Theory]
     [InlineData(DayOfWeek.Monday)]
@@ -17,9 +15,10 @@ public partial class EnumTests
     [InlineData(DayOfWeek.Friday)]
     [InlineData(DayOfWeek.Saturday)]
     [InlineData(DayOfWeek.Sunday)]
-    public void Marshall(DayOfWeek dayOfWeek)
+    public void Marshall_All_Days(DayOfWeek dayOfWeek)
     {
-        WeekMarshaller.Marshall(CreateDto(dayOfWeek)).Should().BeEquivalentTo(CreateAttributeValues(dayOfWeek));
+        var (element, attributeValues) = CreateArguments(dayOfWeek);
+        ContainerMarshaller.Marshall(element).Should().BeEquivalentTo(attributeValues);
     }
 
     [Theory]
@@ -30,10 +29,23 @@ public partial class EnumTests
     [InlineData(DayOfWeek.Friday)]
     [InlineData(DayOfWeek.Saturday)]
     [InlineData(DayOfWeek.Sunday)]
-    public void Unmarshall(DayOfWeek dayOfWeek)
+    public void Unmarshall_All_Days(DayOfWeek dayOfWeek)
     {
-        WeekMarshaller.Unmarshall(CreateAttributeValues(dayOfWeek)).Should().BeEquivalentTo(CreateDto(dayOfWeek));
+        var (element, attributeValues) = CreateArguments(dayOfWeek);
+        ContainerMarshaller.Unmarshall(attributeValues).Should().BeEquivalentTo(element);
     }
 
     public record Week(DayOfWeek Day);
+
+    public EnumTests() : base(DayOfWeek.Sunday, x => new AttributeValue(){N = ((int)x).ToString()}, x => x)
+    {
+    }
+    protected override Container UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+    {
+        return ContainerMarshaller.Unmarshall(attributeValues);
+    }
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container element)
+    {
+        return ContainerMarshaller.Marshall(element);
+    }
 }
