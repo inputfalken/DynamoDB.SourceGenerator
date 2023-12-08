@@ -4,9 +4,9 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.G
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets;
 
 [DynamoDBMarshaller(typeof(SetDto))]
-public partial class HashSetTests : NotNulStringSetAsserter<HashSet<string>>
+public partial class HashSetTests : NoneNullableElementAsserter<HashSet<string>, string>
 {
-    public HashSetTests() : base(x => new HashSet<string>(x))
+    public HashSetTests() : base(Strings(), x => new HashSet<string>(x))
     {
 
     }

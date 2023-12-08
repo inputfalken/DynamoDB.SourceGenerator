@@ -4,9 +4,9 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.G
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets;
 
 [DynamoDBMarshaller(typeof(SetDto))]
-public partial class SortedSetTests : NotNulStringSetAsserter<SortedSet<string>>
+public partial class SortedSetTests : NoneNullableElementAsserter<SortedSet<string>, string>
 {
-    public SortedSetTests() : base(x => new SortedSet<string>(x))
+    public SortedSetTests() : base(Strings(), x => new SortedSet<string>(x))
     {
 
     }
