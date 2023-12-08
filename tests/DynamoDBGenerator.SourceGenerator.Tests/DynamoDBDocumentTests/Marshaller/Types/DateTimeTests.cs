@@ -1,28 +1,22 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
+using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Metadata))]
-public partial class DateTimeTests
+[DynamoDBMarshaller(typeof(Container))]
+public partial class DateTimeTests : RecordMarshalAsserter<DateTime, DateTime>
 {
-    private static readonly Metadata Dto = new(DateTime.Now);
 
-    private static readonly Dictionary<string, AttributeValue> AttributeValues = new()
+    protected override Container UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
-        {nameof(Metadata.TimeStamp), new AttributeValue {S = Dto.TimeStamp.ToString("O")}}
-    };
-
-    [Fact]
-    public void Marshall()
-    {
-        MetadataMarshaller.Marshall(Dto).Should().BeEquivalentTo(AttributeValues);
+        return ContainerMarshaller.Unmarshall(attributeValues);
     }
-    
-    [Fact]
-    public void Unmarshall()
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container element)
     {
-        MetadataMarshaller.Unmarshall(AttributeValues).Should().BeEquivalentTo(Dto);
+        return ContainerMarshaller.Marshall(element);
     }
 
-    public record Metadata(DateTime TimeStamp);
+    public DateTimeTests() : base(DateTime.Now, x => new AttributeValue {S = x.ToString("O")}, x => x)
+    {
+    }
 }

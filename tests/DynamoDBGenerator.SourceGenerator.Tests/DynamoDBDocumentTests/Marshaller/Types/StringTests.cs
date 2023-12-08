@@ -1,30 +1,50 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
+using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Person))]
-public partial class StringTests
+[DynamoDBMarshaller(typeof(Container))]
+public partial class StringTests : RecordMarshalAsserter<string, string>
 {
-    private static readonly Person Dto = new("John");
 
-    private static readonly Dictionary<string, AttributeValue> AttributeValues = new()
+
+    protected override Container UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
-        {nameof(Person.Name), new AttributeValue {S = Dto.Name}}
-    };
-
-
-    [Fact]
-    public void Marshall()
+        return ContainerMarshaller.Unmarshall(attributeValues);
+    }
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container element)
     {
-        PersonMarshaller.Marshall(Dto).Should().BeEquivalentTo(AttributeValues);
+        return ContainerMarshaller.Marshall(element);
+    }
+
+    [Theory]
+    [InlineData("A")]
+    [InlineData("B")]
+    [InlineData("Hey")]
+    [InlineData("Foo")]
+    [InlineData("Bar")]
+    public void Unmarshall_Various_Strings(string text)
+    {
+        var (element, attributeValues) = CreateArguments(text);
+
+        UnmarshallImplementation(attributeValues).Should().BeEquivalentTo(element);
     }
     
-    [Fact]
-    public void Unmarshall()
+    [Theory]
+    [InlineData("A")]
+    [InlineData("B")]
+    [InlineData("Hey")]
+    [InlineData("Foo")]
+    [InlineData("Bar")]
+    public void Marshall_Various_Strings(string text)
     {
-        PersonMarshaller.Unmarshall(AttributeValues).Should().BeEquivalentTo(Dto);
+        var (element, attributeValues) = CreateArguments(text);
+
+        MarshallImplementation(element).Should().BeEquivalentTo(attributeValues);
     }
 
 
-    public record Person(string Name);
+    public StringTests() : base("Hello World", s => new AttributeValue() {S = s}, s => s)
+    {
+    }
 }
