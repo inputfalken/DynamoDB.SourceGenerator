@@ -1,28 +1,21 @@
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 
-public abstract class MarshalAsserter<T, TSeed> : MarshalAsserter<T>
+public abstract class MarshalAsserter<T, TSeed> 
 {
     private readonly TSeed _seed;
 
     protected abstract (T element, Dictionary<string, AttributeValue> attributeValues) CreateArguments(TSeed arg);
 
-    protected override (T element, Dictionary<string, AttributeValue> attributeValues) Arguments() => CreateArguments(_seed);
+    protected (T element, Dictionary<string, AttributeValue> attributeValues) Arguments() => CreateArguments(_seed);
+    protected abstract T UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues);
+    protected abstract Dictionary<string, AttributeValue> MarshallImplementation(T element);
+
 
     protected MarshalAsserter(TSeed seed)
     {
         _seed = seed;
     }
-
-
-}
-public abstract class MarshalAsserter<T>
-{
-    protected abstract T UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues);
-    protected abstract Dictionary<string, AttributeValue> MarshallImplementation(T element);
-
-    protected abstract (T element, Dictionary<string, AttributeValue> attributeValues) Arguments();
-
 
     [Fact]
     public void Marshall()
