@@ -3,7 +3,7 @@ using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Container))]
+[DynamoDBMarshaller(typeof(Container<DayOfWeek>))]
 public partial class EnumTests : RecordMarshalAsserter<DayOfWeek, DayOfWeek>
 {
 
@@ -37,14 +37,14 @@ public partial class EnumTests : RecordMarshalAsserter<DayOfWeek, DayOfWeek>
 
     public record Week(DayOfWeek Day);
 
-    public EnumTests() : base(DayOfWeek.Sunday, x => new AttributeValue(){N = ((int)x).ToString()}, x => x)
+    public EnumTests() : base(DayOfWeek.Sunday, x => new AttributeValue {N = ((int)x).ToString()}, x => x)
     {
     }
-    protected override Container UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+    protected override Container<DayOfWeek> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
         return ContainerMarshaller.Unmarshall(attributeValues);
     }
-    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container element)
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<DayOfWeek> element)
     {
         return ContainerMarshaller.Marshall(element);
     }

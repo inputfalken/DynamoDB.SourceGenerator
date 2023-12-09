@@ -3,16 +3,16 @@ using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Container))]
+[DynamoDBMarshaller(typeof(Container<MemoryStream>))]
 public partial class MemoryStreamTests : RecordMarshalAsserter<MemoryStream, MemoryStream>
 {
 
 
-    protected override Container UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+    protected override Container<MemoryStream> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
         return ContainerMarshaller.Unmarshall(attributeValues);
     }
-    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container element)
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<MemoryStream> element)
     {
         return ContainerMarshaller.Marshall(element);
     }

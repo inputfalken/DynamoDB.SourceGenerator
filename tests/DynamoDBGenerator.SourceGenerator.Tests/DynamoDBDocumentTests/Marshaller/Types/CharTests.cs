@@ -4,23 +4,22 @@ using DynamoDBGenerator.Exceptions;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Container))]
+[DynamoDBMarshaller(typeof(Container<char>))]
 public partial class CharTests : RecordMarshalAsserter<char, char>
 {
-
 
     [Fact(Skip = "TODO")]
     public void Unmarshall_EmptyString_ShouldThrow()
     {
-        var act = () => ContainerMarshaller.Unmarshall(new Dictionary<string, AttributeValue> {{nameof(Container.Element), new AttributeValue {S = ""}}});
+        var act = () => ContainerMarshaller.Unmarshall(new Dictionary<string, AttributeValue> {{nameof(Container<bool>.Element), new AttributeValue {S = ""}}});
         act.Should().Throw<DynamoDBMarshallingException>();
     }
 
-    protected override Container UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+    protected override Container<char> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
         return ContainerMarshaller.Unmarshall(attributeValues);
     }
-    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container element)
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<char> element)
     {
         return ContainerMarshaller.Marshall(element);
     }

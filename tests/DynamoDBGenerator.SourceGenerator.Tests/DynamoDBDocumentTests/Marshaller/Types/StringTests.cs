@@ -3,16 +3,14 @@ using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Container))]
+[DynamoDBMarshaller(typeof(Container<string>))]
 public partial class StringTests : RecordMarshalAsserter<string, string>
 {
-
-
-    protected override Container UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+    protected override Container<string> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
         return ContainerMarshaller.Unmarshall(attributeValues);
     }
-    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container element)
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<string> element)
     {
         return ContainerMarshaller.Marshall(element);
     }
