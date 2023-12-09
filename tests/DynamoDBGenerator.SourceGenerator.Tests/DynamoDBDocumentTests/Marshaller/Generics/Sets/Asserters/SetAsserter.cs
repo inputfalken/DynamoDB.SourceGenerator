@@ -1,28 +1,27 @@
+using System.ComponentModel;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Exceptions;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets.Asserters;
 
-public abstract class SetAsserter<TSet, TElement> : MarshalAsserter<SetAsserter<TSet, TElement>.SetDto, IEnumerable<TElement>> where TSet : IEnumerable<TElement>
+public abstract class SetAsserter<TSet, TElement> : MarshalAsserter<Container<TSet>, IEnumerable<TElement>> where TSet : IEnumerable<TElement>
 {
     private readonly Func<IEnumerable<TElement>, TSet> _fn;
     private static readonly bool IsStringSet = typeof(TElement) == typeof(string);
 
-    public record SetDto(TSet Set);
 
-
-    protected override (SetDto element, Dictionary<string, AttributeValue> attributeValues) CreateArguments(IEnumerable<TElement> arg)
+    protected override (Container<TSet> element, Dictionary<string, AttributeValue> attributeValues) CreateArguments(IEnumerable<TElement> arg)
     {
         var res = _fn(arg);
         if (res is not IReadOnlySet<TElement> or not ISet<TElement>)
             throw new InvalidOperationException($"The type '{nameof(TSet)}' must either one of  'ISet<{nameof(TElement)}>, 'IReadonlySet<{nameof(TElement)}>'.");
 
         return (
-            new SetDto(res),
+            new Container<TSet>(res),
             new Dictionary<string, AttributeValue>
             {
                 {
-                    nameof(SetDto.Set),
+                    nameof(Container<TSet>.Element),
                     IsStringSet
                         ? new AttributeValue {SS = res.Select(x => x?.ToString()).ToList()}
                         : new AttributeValue {NS = res.Select(x => x?.ToString()).ToList()}
@@ -55,21 +54,21 @@ public abstract class SetAsserter<TSet, TElement> : MarshalAsserter<SetAsserter<
     {
         var act = () => UnmarshallImplementation(new Dictionary<string, AttributeValue>());
 
-        act.Should().Throw<DynamoDBMarshallingException>().Which.MemberName.Should().Be(nameof(SetDto.Set));
+        act.Should().Throw<DynamoDBMarshallingException>().Which.MemberName.Should().Be(nameof(Container<TSet>.Element));
     }
 
     [Fact]
     public void Marshall_NoDuplicated_Elements()
     {
         var (nameList, _) = Arguments();
-        var items = nameList.Set.Concat(nameList.Set).ToList();
+        var items = nameList.Element.Concat(nameList.Element).ToList();
 
         items.Should().HaveCountGreaterThan(0);
         var arguments = CreateArguments(items);
 
         MarshallImplementation(arguments.element).Should().SatisfyRespectively(x =>
         {
-            x.Key.Should().Be(nameof(SetDto.Set));
+            x.Key.Should().Be(nameof(Container<TSet>.Element));
             if (IsStringSet)
                 x.Value.SS.Should().OnlyHaveUniqueItems();
             else

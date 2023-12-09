@@ -1,4 +1,5 @@
 using Amazon.DynamoDBv2.Model;
+using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections.Asserters;
 
 public abstract class NullableElementAsserter<TCollection, TElement> : CollectionAsserter<TCollection, TElement> where TCollection : IEnumerable<TElement> where TElement : class?
@@ -21,12 +22,12 @@ public abstract class NullableElementAsserter<TCollection, TElement> : Collectio
     {
         var defaultArgs = Arguments();
 
-        var items = defaultArgs.element.Rows.Append(null).ToList();
+        var items = defaultArgs.element.Element.Append(null).ToList();
         var args = CreateArguments(items!);
 
         MarshallImplementation(args.element).Should().SatisfyRespectively(x =>
         {
-            x.Key.Should().Be(nameof(Text<TCollection>.Rows));
+            x.Key.Should().Be(nameof(Container<TCollection>.Element));
             x.Value.L.Should().NotBeNullOrEmpty();
             x.Value.L.Should().HaveSameCount(items);
             x.Value.L[items.Count - 1].Should().BeEquivalentTo(new AttributeValue {NULL = true});
@@ -38,14 +39,14 @@ public abstract class NullableElementAsserter<TCollection, TElement> : Collectio
     {
         var defaultArgs = Arguments();
 
-        var items = defaultArgs.element.Rows.Append(null).ToList();
+        var items = defaultArgs.element.Element.Append(null).ToList();
         var args = CreateArguments(items!);
 
-        var collection = UnmarshallImplementation(args.attributeValues).Rows.ToList();
+        var collection = UnmarshallImplementation(args.attributeValues).Element.ToList();
 
         args.attributeValues.Should().SatisfyRespectively(x =>
         {
-            x.Key.Should().Be(nameof(Text<TCollection>.Rows));
+            x.Key.Should().Be(nameof(Container<TCollection>.Element));
             x.Value.L.Should().NotBeNullOrEmpty();
             x.Value.L.Should().HaveSameCount(collection);
 

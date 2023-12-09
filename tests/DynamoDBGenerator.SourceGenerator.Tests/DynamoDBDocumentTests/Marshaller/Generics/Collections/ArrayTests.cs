@@ -1,9 +1,10 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
+using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections;
 
-[DynamoDBMarshaller(typeof(Text<string[]>))]
+[DynamoDBMarshaller(typeof(Container<string[]>))]
 // ReSharper disable once UnusedType.Global
 public partial class NoneNullableArrayElementTests : NoneNullableElementAsserter<string[], string>
 {
@@ -11,29 +12,29 @@ public partial class NoneNullableArrayElementTests : NoneNullableElementAsserter
     public NoneNullableArrayElementTests() : base(Strings(), x => x.ToArray())
     {
     }
-    protected override Dictionary<string, AttributeValue> MarshallImplementation(Text<string[]> text)
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<string[]> text)
     {
-        return TextMarshaller.Marshall(text);
+        return ContainerMarshaller.Marshall(text);
     }
-    protected override Text<string[]> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+    protected override Container<string[]> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
-        return TextMarshaller.Unmarshall(attributeValues);
+        return ContainerMarshaller.Unmarshall(attributeValues);
     }
 }
 
-[DynamoDBMarshaller(typeof(Text<string?[]>))]
+[DynamoDBMarshaller(typeof(Container<string?[]>))]
 // ReSharper disable once UnusedType.Global
 public partial class NullableArrayElementTests : NullableElementAsserter<string?[], string?>
 {
     public NullableArrayElementTests() : base(Strings(), x => x.ToArray())
     {
     }
-    protected override Dictionary<string, AttributeValue> MarshallImplementation(Text<string?[]> text)
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<string?[]> text)
     {
-        return TextMarshaller.Marshall(text);
+        return ContainerMarshaller.Marshall(text);
     }
-    protected override Text<string?[]> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+    protected override Container<string?[]> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
-        return TextMarshaller.Unmarshall(attributeValues);
+        return ContainerMarshaller.Unmarshall(attributeValues);
     }
 }

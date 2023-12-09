@@ -3,23 +3,22 @@ using DynamoDBGenerator.Exceptions;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections.Asserters;
 
-public abstract class CollectionAsserter<TCollection, TElement> : MarshalAsserter<Text<TCollection>, IEnumerable<TElement>> where TCollection : IEnumerable<TElement>
+public abstract class CollectionAsserter<TCollection, TElement> : MarshalAsserter<Container<TCollection>, IEnumerable<TElement>> where TCollection : IEnumerable<TElement>
 {
     private readonly Func<TElement, AttributeValue> _av;
 
     private readonly Func<IEnumerable<TElement>, TCollection> _fn;
 
-
-    protected override sealed (Text<TCollection> element, Dictionary<string, AttributeValue> attributeValues) CreateArguments(IEnumerable<TElement> arg)
+    protected override sealed (Container<TCollection> element, Dictionary<string, AttributeValue> attributeValues) CreateArguments(IEnumerable<TElement> arg)
     {
         var items = arg.ToList();
-        var element = new Text<TCollection>(_fn(items));
+        var element = new Container<TCollection>(_fn(items));
         return (
             element,
             new()
             {
                 {
-                    nameof(Text<TCollection>.Rows), new AttributeValue {L = items.Select(_av).ToList()}
+                    nameof(Container<TCollection>.Element), new AttributeValue {L = items.Select(_av).ToList()}
                 }
             }
         );
@@ -52,9 +51,7 @@ public abstract class CollectionAsserter<TCollection, TElement> : MarshalAsserte
     {
         var act = () => UnmarshallImplementation(new Dictionary<string, AttributeValue>());
 
-        act.Should().Throw<DynamoDBMarshallingException>().Which.MemberName.Should().Be(nameof(Text<TCollection>.Rows));
+        act.Should().Throw<DynamoDBMarshallingException>().Which.MemberName.Should().Be(nameof(Container<TCollection>.Element));
     }
 
 }
-
-public record Text<TCollection>(TCollection Rows);

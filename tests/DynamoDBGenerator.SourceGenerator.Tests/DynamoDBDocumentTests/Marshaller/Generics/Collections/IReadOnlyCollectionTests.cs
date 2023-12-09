@@ -1,22 +1,23 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
+using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections;
 
-[DynamoDBMarshaller(typeof(Text<IReadOnlyCollection<string>>))]
+[DynamoDBMarshaller(typeof(Container<IReadOnlyCollection<string>>))]
 // ReSharper disable once UnusedType.Global
 public partial class NoneNullableIReadOnlyCollectionElementTests : NoneNullableElementAsserter<IReadOnlyCollection<string>, string>
 {
     public NoneNullableIReadOnlyCollectionElementTests() : base(Strings(), x => x.ToList())
     {
     }
-    protected override Dictionary<string, AttributeValue> MarshallImplementation(Text<IReadOnlyCollection<string>> text)
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<IReadOnlyCollection<string>> text)
     {
-        return TextMarshaller.Marshall(text);
+        return ContainerMarshaller.Marshall(text);
     }
-    protected override Text<IReadOnlyCollection<string>> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+    protected override Container<IReadOnlyCollection<string>> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
-        return TextMarshaller.Unmarshall(attributeValues);
+        return ContainerMarshaller.Unmarshall(attributeValues);
     }
 
     [Fact]
@@ -24,24 +25,24 @@ public partial class NoneNullableIReadOnlyCollectionElementTests : NoneNullableE
     {
         var (_, attributeValues) = Arguments();
 
-        TextMarshaller.Unmarshall(attributeValues).Rows.Should().BeOfType<string[]>();
+        ContainerMarshaller.Unmarshall(attributeValues).Element.Should().BeOfType<string[]>();
     }
 }
 
-[DynamoDBMarshaller(typeof(Text<IReadOnlyCollection<string?>>))]
+[DynamoDBMarshaller(typeof(Container<IReadOnlyCollection<string?>>))]
 // ReSharper disable once UnusedType.Global
 public partial class NullableIReadOnlyCollectionElementTests : NullableElementAsserter<IReadOnlyCollection<string?>, string?>
 {
     public NullableIReadOnlyCollectionElementTests() : base(Strings(), x => x.ToList())
     {
     }
-    protected override Dictionary<string, AttributeValue> MarshallImplementation(Text<IReadOnlyCollection<string?>> text)
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<IReadOnlyCollection<string?>> text)
     {
-        return TextMarshaller.Marshall(text);
+        return ContainerMarshaller.Marshall(text);
     }
-    protected override Text<IReadOnlyCollection<string?>> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+    protected override Container<IReadOnlyCollection<string?>> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
-        return TextMarshaller.Unmarshall(attributeValues);
+        return ContainerMarshaller.Unmarshall(attributeValues);
     }
 
     [Fact]
@@ -49,6 +50,6 @@ public partial class NullableIReadOnlyCollectionElementTests : NullableElementAs
     {
         var (_, attributeValues) = Arguments();
 
-        TextMarshaller.Unmarshall(attributeValues).Rows.Should().BeOfType<string?[]>();
+        ContainerMarshaller.Unmarshall(attributeValues).Element.Should().BeOfType<string?[]>();
     }
 }
