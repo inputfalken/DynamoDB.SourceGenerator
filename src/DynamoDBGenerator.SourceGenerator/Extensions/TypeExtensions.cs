@@ -21,6 +21,18 @@ public static class TypeExtensions
         string TypeIdentifier(ITypeSymbol x, string displayString)
         {
 
+            if (x is IArrayTypeSymbol arrayTypeSymbol)
+            {
+                var result = TypeIdentifier(arrayTypeSymbol.ElementType, arrayTypeSymbol.ElementType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+
+                return x.NullableAnnotation switch
+                {
+                    NullableAnnotation.Annotated or NullableAnnotation.None => $"{result}[]?",
+                    NullableAnnotation.NotAnnotated => $"{result}[]",
+                    _ => throw new ArgumentException(ExceptionMessage(x))
+                };
+            }
+            
             if (x is not INamedTypeSymbol namedTypeSymbol || namedTypeSymbol.TypeArguments.Length is 0)
             {
                 return x.NullableAnnotation switch
@@ -33,6 +45,7 @@ public static class TypeExtensions
             }
             if (namedTypeSymbol.OriginalDefinition.SpecialType is SpecialType.System_Nullable_T)
                 return displayString;
+
 
             if (namedTypeSymbol.IsTupleType)
             {

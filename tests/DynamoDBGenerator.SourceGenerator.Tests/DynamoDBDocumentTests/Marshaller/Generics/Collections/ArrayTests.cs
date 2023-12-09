@@ -21,4 +21,19 @@ public partial class NoneNullableArrayElementTests : NoneNullableElementAsserter
     }
 }
 
-// TODO support nullable Array elements
+[DynamoDBMarshaller(typeof(Text<string?[]>))]
+// ReSharper disable once UnusedType.Global
+public partial class NullableArrayElementTests : NullableElementAsserter<string?[], string?>
+{
+    public NullableArrayElementTests() : base(Strings(), x => x.ToArray())
+    {
+    }
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Text<string?[]> text)
+    {
+        return TextMarshaller.Marshall(text);
+    }
+    protected override Text<string?[]> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+    {
+        return TextMarshaller.Unmarshall(attributeValues);
+    }
+}
