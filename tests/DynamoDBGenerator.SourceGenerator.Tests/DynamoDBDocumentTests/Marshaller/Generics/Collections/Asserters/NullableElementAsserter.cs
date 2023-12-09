@@ -29,7 +29,7 @@ public abstract class NullableElementAsserter<TCollection, TElement> : Collectio
             x.Key.Should().Be(nameof(Text<TCollection>.Rows));
             x.Value.L.Should().NotBeNullOrEmpty();
             x.Value.L.Should().HaveSameCount(items);
-            x.Value.L[items.Count - 1].Should().Be(new AttributeValue {NULL = true});
+            x.Value.L[items.Count - 1].Should().BeEquivalentTo(new AttributeValue {NULL = true});
         });
     }
     
