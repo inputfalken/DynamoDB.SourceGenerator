@@ -1,22 +1,23 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
+using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections;
 
-[DynamoDBMarshaller(typeof(Text))]
+[DynamoDBMarshaller(typeof(Container<IList<string>>))]
 // ReSharper disable once UnusedType.Global
-public partial class IListTests : NoneNullableElementAsserter<IList<string>, string>
+public partial class NoneNullableIListElementTests : NoneNullableElementAsserter<IList<string>, string>
 {
-    public IListTests() : base(Strings(),x => x.ToList())
+    public NoneNullableIListElementTests() : base(Strings(),x => x.ToList())
     {
     }
-    protected override Dictionary<string, AttributeValue> MarshallImplementation(Text text)
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<IList<string>> text)
     {
-        return TextMarshaller.Marshall(text);
+        return ContainerMarshaller.Marshall(text);
     }
-    protected override Text UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+    protected override Container<IList<string>> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
-        return TextMarshaller.Unmarshall(attributeValues);
+        return ContainerMarshaller.Unmarshall(attributeValues);
     }
 
     [Fact]
@@ -24,6 +25,30 @@ public partial class IListTests : NoneNullableElementAsserter<IList<string>, str
     {
         var (_, attributeValues) = Arguments();
 
-        TextMarshaller.Unmarshall(attributeValues).Rows.Should().BeOfType<List<string>>();
+        ContainerMarshaller.Unmarshall(attributeValues).Element.Should().BeOfType<List<string>>();
+    }
+}
+
+[DynamoDBMarshaller(typeof(Container<IList<string?>>))]
+public partial class NullableIListElementTests : NullableElementAsserter<IList<string?>, string?>
+{
+    public NullableIListElementTests() : base(Strings(),x => x.ToList())
+    {
+    }
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<IList<string?>> text)
+    {
+        return ContainerMarshaller.Marshall(text);
+    }
+    protected override Container<IList<string?>> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+    {
+        return ContainerMarshaller.Unmarshall(attributeValues);
+    }
+
+    [Fact]
+    public void Unmarshall_Implementation_ShouldBeList()
+    {
+        var (_, attributeValues) = Arguments();
+
+        ContainerMarshaller.Unmarshall(attributeValues).Element.Should().BeOfType<List<string?>>();
     }
 }

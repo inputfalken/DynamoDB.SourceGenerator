@@ -1,4 +1,6 @@
+using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Exceptions;
+using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections.Asserters;
 
 public abstract class NoneNullableElementAsserter<TCollection, TElement> : CollectionAsserter<TCollection, TElement> where TCollection : IEnumerable<TElement> where TElement : class
@@ -14,7 +16,7 @@ public abstract class NoneNullableElementAsserter<TCollection, TElement> : Colle
     }
 
 
-    protected NoneNullableElementAsserter(IEnumerable<TElement> seed, Func<IEnumerable<TElement>, TCollection> func) : base(seed, func)
+    protected NoneNullableElementAsserter(IEnumerable<TElement> seed, Func<IEnumerable<TElement>, TCollection> func) : base(seed, x => new AttributeValue() {S = x?.ToString()}, func)
     {
     }
 
@@ -24,10 +26,10 @@ public abstract class NoneNullableElementAsserter<TCollection, TElement> : Colle
     {
         var defaultArgs = Arguments();
 
-        var items = defaultArgs.element.Rows.Append(null).ToList();
+        var items = defaultArgs.element.Element.Append(null).ToList();
         var args = CreateArguments(items!);
         var act = () => MarshallImplementation(args.element);
-        act.Should().Throw<DynamoDBMarshallingException>().Which.MemberName.Should().Be($"{nameof(Text.Rows)}[{items.IndexOf(null)}]");
+        act.Should().Throw<DynamoDBMarshallingException>().Which.MemberName.Should().Be($"{nameof(Container<TCollection>.Element)}[{items.IndexOf(null)}]");
     }
 
 }

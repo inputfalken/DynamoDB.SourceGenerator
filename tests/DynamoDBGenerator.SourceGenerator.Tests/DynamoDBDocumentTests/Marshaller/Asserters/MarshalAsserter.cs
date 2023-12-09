@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 
@@ -41,19 +42,19 @@ public abstract class MarshalAsserter<T, TSeed>
 
 }
 
-public abstract class RecordMarshalAsserter<T, TSeed> : MarshalAsserter<RecordMarshalAsserter<T, TSeed>.Container, TSeed>
+public abstract class RecordMarshalAsserter<T, TSeed> : MarshalAsserter<Container<T>, TSeed>
 {
     private readonly Func<TSeed, AttributeValue> _fn;
     private readonly Func<TSeed, T> _fn2;
 
-    protected override (Container element, Dictionary<string, AttributeValue> attributeValues) CreateArguments(TSeed arg)
+    protected override (Container<T> element, Dictionary<string, AttributeValue> attributeValues) CreateArguments(TSeed arg)
     {
         var value = _fn2(arg);
-        var container = new Container(value);
+        var container = new Container<T>(value);
 
         return (container, new Dictionary<string, AttributeValue>
         {
-            {nameof(Container.Element), _fn(arg)}
+            {nameof(Container<T>.Element), _fn(arg)}
         });
 
     }
@@ -64,7 +65,6 @@ public abstract class RecordMarshalAsserter<T, TSeed> : MarshalAsserter<RecordMa
     }
 
 
-    public record Container(T Element);
 
     [Fact]
     public void Marshall_Null_ShouldThrow()
@@ -74,3 +74,4 @@ public abstract class RecordMarshalAsserter<T, TSeed> : MarshalAsserter<RecordMa
         act.Should().Throw<ArgumentNullException>();
     }
 }
+    public record Container<T>(T Element);
