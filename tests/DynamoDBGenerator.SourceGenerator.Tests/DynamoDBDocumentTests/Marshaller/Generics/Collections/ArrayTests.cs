@@ -3,20 +3,22 @@ using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections;
 
-[DynamoDBMarshaller(typeof(Text))]
+[DynamoDBMarshaller(typeof(Text<string[]>))]
 // ReSharper disable once UnusedType.Global
-public partial class ArrayTests : NoneNullableElementAsserter<string[], string>
+public partial class NoneNullableArrayElementTests : NoneNullableElementAsserter<string[], string>
 {
 
-    public ArrayTests() : base(Strings(), x => x.ToArray())
+    public NoneNullableArrayElementTests() : base(Strings(), x => x.ToArray())
     {
     }
-    protected override Dictionary<string, AttributeValue> MarshallImplementation(Text text)
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Text<string[]> text)
     {
         return TextMarshaller.Marshall(text);
     }
-    protected override Text UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+    protected override Text<string[]> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
         return TextMarshaller.Unmarshall(attributeValues);
     }
 }
+
+// TODO support nullable Array elements

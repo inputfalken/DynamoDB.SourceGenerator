@@ -3,18 +3,18 @@ using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections;
 
-[DynamoDBMarshaller(typeof(Text))]
+[DynamoDBMarshaller(typeof(Text<IList<string>>))]
 // ReSharper disable once UnusedType.Global
-public partial class IListTests : NoneNullableElementAsserter<IList<string>, string>
+public partial class NoneNullableIListElementTests : NoneNullableElementAsserter<IList<string>, string>
 {
-    public IListTests() : base(Strings(),x => x.ToList())
+    public NoneNullableIListElementTests() : base(Strings(),x => x.ToList())
     {
     }
-    protected override Dictionary<string, AttributeValue> MarshallImplementation(Text text)
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Text<IList<string>> text)
     {
         return TextMarshaller.Marshall(text);
     }
-    protected override Text UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+    protected override Text<IList<string>> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
         return TextMarshaller.Unmarshall(attributeValues);
     }
@@ -25,5 +25,29 @@ public partial class IListTests : NoneNullableElementAsserter<IList<string>, str
         var (_, attributeValues) = Arguments();
 
         TextMarshaller.Unmarshall(attributeValues).Rows.Should().BeOfType<List<string>>();
+    }
+}
+
+[DynamoDBMarshaller(typeof(Text<IList<string?>>))]
+public partial class NullableIListElementTests : NullableElementAsserter<IList<string?>, string?>
+{
+    public NullableIListElementTests() : base(Strings(),x => x.ToList())
+    {
+    }
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Text<IList<string?>> text)
+    {
+        return TextMarshaller.Marshall(text);
+    }
+    protected override Text<IList<string?>> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+    {
+        return TextMarshaller.Unmarshall(attributeValues);
+    }
+
+    [Fact]
+    public void Unmarshall_Implementation_ShouldBeList()
+    {
+        var (_, attributeValues) = Arguments();
+
+        TextMarshaller.Unmarshall(attributeValues).Rows.Should().BeOfType<List<string?>>();
     }
 }

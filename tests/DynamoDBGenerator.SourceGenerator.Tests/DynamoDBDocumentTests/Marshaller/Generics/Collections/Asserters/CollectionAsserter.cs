@@ -3,31 +3,32 @@ using DynamoDBGenerator.Exceptions;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections.Asserters;
 
-public abstract class CollectionAsserter<TCollection, TElement> : MarshalAsserter<CollectionAsserter<TCollection, TElement>.Text, IEnumerable<TElement>> where TCollection : IEnumerable<TElement>?
+public abstract class CollectionAsserter<TCollection, TElement> : MarshalAsserter<Text<TCollection>, IEnumerable<TElement>> where TCollection : IEnumerable<TElement>
 {
+    private readonly Func<TElement, AttributeValue> _av;
 
     private readonly Func<IEnumerable<TElement>, TCollection> _fn;
 
-    public record Text(TCollection Rows);
 
-    protected override sealed (Text element, Dictionary<string, AttributeValue> attributeValues) CreateArguments(IEnumerable<TElement> arg)
+    protected override sealed (Text<TCollection> element, Dictionary<string, AttributeValue> attributeValues) CreateArguments(IEnumerable<TElement> arg)
     {
         var items = arg.ToList();
-        var element = new Text(_fn(items));
+        var element = new Text<TCollection>(_fn(items));
         return (
             element,
             new()
             {
                 {
-                    nameof(Text.Rows), new AttributeValue {L = items.Select(x => new AttributeValue {S = x?.ToString()}).ToList()}
+                    nameof(Text<TCollection>.Rows), new AttributeValue {L = items.Select(_av).ToList()}
                 }
             }
         );
     }
 
 
-    protected CollectionAsserter(IEnumerable<TElement> seed, Func<IEnumerable<TElement>, TCollection> fn) : base(seed)
+    protected CollectionAsserter(IEnumerable<TElement> seed, Func<TElement, AttributeValue> av, Func<IEnumerable<TElement>, TCollection> fn) : base(seed)
     {
+        _av = av;
         _fn = fn;
     }
 
@@ -51,7 +52,9 @@ public abstract class CollectionAsserter<TCollection, TElement> : MarshalAsserte
     {
         var act = () => UnmarshallImplementation(new Dictionary<string, AttributeValue>());
 
-        act.Should().Throw<DynamoDBMarshallingException>().Which.MemberName.Should().Be(nameof(Text.Rows));
+        act.Should().Throw<DynamoDBMarshallingException>().Which.MemberName.Should().Be(nameof(Text<TCollection>.Rows));
     }
-    
+
 }
+
+public record Text<TCollection>(TCollection Rows);
