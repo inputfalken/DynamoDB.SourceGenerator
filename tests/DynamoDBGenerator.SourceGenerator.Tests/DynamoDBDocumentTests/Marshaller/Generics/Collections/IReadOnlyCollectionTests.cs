@@ -23,9 +23,7 @@ public partial class NoneNullableIReadOnlyCollectionElementTests : NoneNullableE
     [Fact]
     public void Unmarshall_Implementation_ShouldBeList()
     {
-        var (_, attributeValues) = Arguments();
-
-        ContainerMarshaller.Unmarshall(attributeValues).Element.Should().BeOfType<string[]>();
+        Arguments().Should().AllSatisfy(x => ContainerMarshaller.Unmarshall(x.attributeValues).Element.Should().BeOfType<string[]>());
     }
 }
 
@@ -48,8 +46,6 @@ public partial class NullableIReadOnlyCollectionElementTests : NullableElementAs
     [Fact]
     public void Unmarshall_Implementation_ShouldBeList()
     {
-        var (_, attributeValues) = Arguments();
-
-        ContainerMarshaller.Unmarshall(attributeValues).Element.Should().BeOfType<string?[]>();
+        Arguments().Should().AllSatisfy(x => ContainerMarshaller.Unmarshall(x.attributeValues).Element.Should().BeOfType<string?[]>());
     }
 }

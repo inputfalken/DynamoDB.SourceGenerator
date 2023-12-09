@@ -8,7 +8,7 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshall
 // ReSharper disable once UnusedType.Global
 public partial class NoneNullableIListElementTests : NoneNullableElementAsserter<IList<string>, string>
 {
-    public NoneNullableIListElementTests() : base(Strings(),x => x.ToList())
+    public NoneNullableIListElementTests() : base(Strings(), x => x.ToList())
     {
     }
     protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<IList<string>> text)
@@ -23,16 +23,14 @@ public partial class NoneNullableIListElementTests : NoneNullableElementAsserter
     [Fact]
     public void Unmarshall_Implementation_ShouldBeList()
     {
-        var (_, attributeValues) = Arguments();
-
-        ContainerMarshaller.Unmarshall(attributeValues).Element.Should().BeOfType<List<string>>();
+        Arguments().Should().AllSatisfy(x => ContainerMarshaller.Unmarshall(x.attributeValues).Element.Should().BeOfType<List<string>>());
     }
 }
 
 [DynamoDBMarshaller(typeof(Container<IList<string?>>))]
 public partial class NullableIListElementTests : NullableElementAsserter<IList<string?>, string?>
 {
-    public NullableIListElementTests() : base(Strings(),x => x.ToList())
+    public NullableIListElementTests() : base(Strings(), x => x.ToList())
     {
     }
     protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<IList<string?>> text)
@@ -47,8 +45,6 @@ public partial class NullableIListElementTests : NullableElementAsserter<IList<s
     [Fact]
     public void Unmarshall_Implementation_ShouldBeList()
     {
-        var (_, attributeValues) = Arguments();
-
-        ContainerMarshaller.Unmarshall(attributeValues).Element.Should().BeOfType<List<string?>>();
+        Arguments().Should().AllSatisfy(x => ContainerMarshaller.Unmarshall(x.attributeValues).Element.Should().BeOfType<List<string?>>());
     }
 }

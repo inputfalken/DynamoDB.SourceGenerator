@@ -23,9 +23,8 @@ public partial class NoneNullableICollectionElementTests : NoneNullableElementAs
     [Fact]
     public void Unmarshall_Implementation_ShouldBeList()
     {
-        var (_, attributeValues) = Arguments();
+        Arguments().Should().AllSatisfy(x => ContainerMarshaller.Unmarshall(x.attributeValues).Element.Should().BeOfType<List<string>>());
 
-        ContainerMarshaller.Unmarshall(attributeValues).Element.Should().BeOfType<List<string>>();
     }
 }
 
@@ -48,8 +47,6 @@ public partial class NullableICollectionElementTests : NullableElementAsserter<I
     [Fact]
     public void Unmarshall_Implementation_ShouldBeList()
     {
-        var (_, attributeValues) = Arguments();
-
-        ContainerMarshaller.Unmarshall(attributeValues).Element.Should().BeOfType<List<string?>>();
+        Arguments().Should().AllSatisfy(x => ContainerMarshaller.Unmarshall(x.attributeValues).Element.Should().BeOfType<List<string?>>());
     }
 }

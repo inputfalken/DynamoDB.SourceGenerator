@@ -4,13 +4,19 @@ using DynamoDBGenerator.Exceptions;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets.Asserters;
 
-public abstract class SetAsserter<TSet, TElement> : MarshalAsserter<Container<TSet>, IEnumerable<TElement>> where TSet : IEnumerable<TElement>
+public abstract class SetAsserter<TSet, TElement> : MarshalAsserter<Container<TSet>> where TSet : IEnumerable<TElement>
 {
+    private readonly IEnumerable<TElement> _seed;
     private readonly Func<IEnumerable<TElement>, TSet> _fn;
     private static readonly bool IsStringSet = typeof(TElement) == typeof(string);
 
 
-    protected override (Container<TSet> element, Dictionary<string, AttributeValue> attributeValues) CreateArguments(IEnumerable<TElement> arg)
+    protected override IEnumerable<(Container<TSet> element, Dictionary<string, AttributeValue> attributeValues)> Arguments()
+    {
+        yield return CreateArguments(_seed);
+    }
+
+    protected (Container<TSet> element, Dictionary<string, AttributeValue> attributeValues) CreateArguments(IEnumerable<TElement> arg)
     {
         var res = _fn(arg);
         if (res is not IReadOnlySet<TElement> or not ISet<TElement>)
@@ -30,8 +36,9 @@ public abstract class SetAsserter<TSet, TElement> : MarshalAsserter<Container<TS
         );
     }
 
-    protected SetAsserter(IEnumerable<TElement> seed, Func<IEnumerable<TElement>, TSet> fn) : base(seed)
+    protected SetAsserter(IEnumerable<TElement> seed, Func<IEnumerable<TElement>, TSet> fn)
     {
+        _seed = seed;
         _fn = fn;
     }
 
@@ -60,19 +67,21 @@ public abstract class SetAsserter<TSet, TElement> : MarshalAsserter<Container<TS
     [Fact]
     public void Marshall_NoDuplicated_Elements()
     {
-        var (nameList, _) = Arguments();
-        var items = nameList.Element.Concat(nameList.Element).ToList();
-
-        items.Should().HaveCountGreaterThan(0);
-        var arguments = CreateArguments(items);
-
-        MarshallImplementation(arguments.element).Should().SatisfyRespectively(x =>
+        Arguments().Should().AllSatisfy(x =>
         {
-            x.Key.Should().Be(nameof(Container<TSet>.Element));
-            if (IsStringSet)
-                x.Value.SS.Should().OnlyHaveUniqueItems();
-            else
-                x.Value.NS.Should().OnlyHaveUniqueItems();
+            var items = x.element.Element.Concat(x.element.Element).ToList();
+            items.Should().HaveCountGreaterThan(0);
+            var arguments = CreateArguments(items);
+
+            MarshallImplementation(arguments.element).Should().SatisfyRespectively(x =>
+            {
+                x.Key.Should().Be(nameof(Container<TSet>.Element));
+                if (IsStringSet)
+                    x.Value.SS.Should().OnlyHaveUniqueItems();
+                else
+                    x.Value.NS.Should().OnlyHaveUniqueItems();
+            });
+
         });
     }
 

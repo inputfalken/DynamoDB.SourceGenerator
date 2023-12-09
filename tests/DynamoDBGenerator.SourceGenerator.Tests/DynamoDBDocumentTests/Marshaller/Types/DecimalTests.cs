@@ -1,73 +1,42 @@
+using System.Globalization;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
+using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Decimal))]
-[DynamoDBMarshaller(typeof(Double))]
-[DynamoDBMarshaller(typeof(Float))]
-public partial class DecimalTests
+
+
+[DynamoDBMarshaller(typeof(Container<decimal>))]
+public partial class DecimalTests : RecordMarshalAsserter<decimal>
 {
-    private static readonly Decimal DecimalDto = new(30.32093290329m);
-
-    private static readonly Dictionary<string, AttributeValue> DecimalAttributeValues = new()
+    public DecimalTests() : base(new[] {30.32093290329m}, x => new() {N = x.ToString(CultureInfo.InvariantCulture)})
     {
-        {nameof(Decimal.DecimalValue), new AttributeValue {N = DecimalDto.DecimalValue.ToString()}}
-    };
-
-    [Fact]
-    public void Marshal_Decimal()
-    {
-        DecimalMarshaller.Marshall(DecimalDto).Should().BeEquivalentTo(DecimalAttributeValues);
     }
 
-    [Fact]
-    public void Unmarshal_Decimal()
+    protected override Container<decimal> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
-        DecimalMarshaller.Unmarshall(DecimalAttributeValues).Should().BeEquivalentTo(DecimalDto);
+        return ContainerMarshaller.Unmarshall(attributeValues);
+    }
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<decimal> element)
+    {
+        return ContainerMarshaller.Marshall(element);
     }
 
-    public record Decimal(decimal DecimalValue);
-    
-    private static readonly Double DoubleDto = new(30.9328932);
+}
 
-    private static readonly Dictionary<string, AttributeValue> DoubleAttributeValues = new()
+[DynamoDBMarshaller(typeof(Container<decimal?>))]
+public partial class NullableDecimalTests : RecordMarshalAsserter<decimal?>
+{
+    public NullableDecimalTests() : base(new decimal?[] {null, 30.32093290329m}, x => x is null ? null : new AttributeValue {N = x.Value.ToString(CultureInfo.InvariantCulture)})
     {
-        {nameof(Double.DoubleValue), new AttributeValue {N = DoubleDto.DoubleValue.ToString()}}
-    };
-
-    [Fact]
-    public void Marshal_Double()
-    {
-        DoubleMarshaller.Marshall(DoubleDto).Should().BeEquivalentTo(DoubleAttributeValues);
     }
 
-    [Fact]
-    public void Unmarshal_Double()
+    protected override Container<decimal?> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
-        DoubleMarshaller.Unmarshall(DoubleAttributeValues).Should().BeEquivalentTo(DoubleDto);
+        return ContainerMarshaller.Unmarshall(attributeValues);
     }
-
-    public record Double(double DoubleValue);
-    
-    private static readonly Float FloatDto = new(3_000.5F);
-
-    private static readonly Dictionary<string, AttributeValue> FloatAttributeValues = new()
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<decimal?> element)
     {
-        {nameof(Float.FloatValue), new AttributeValue {N = FloatDto.FloatValue.ToString()}}
-    };
-
-    [Fact]
-    public void Marshal_Float()
-    {
-        FloatMarshaller.Marshall(FloatDto).Should().BeEquivalentTo(FloatAttributeValues);
+        return ContainerMarshaller.Marshall(element);
     }
-
-    [Fact]
-    public void Unmarshal_Float()
-    {
-        FloatMarshaller.Unmarshall(FloatAttributeValues).Should().BeEquivalentTo(FloatDto);
-    }
-
-    public record Float(float FloatValue);
-
 }

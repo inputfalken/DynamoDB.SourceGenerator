@@ -4,9 +4,9 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.A
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
 [DynamoDBMarshaller(typeof(Container<bool>))]
-public partial class BoolTests : RecordMarshalAsserter<bool, bool>
+public partial class BoolTests : RecordMarshalAsserter<bool>
 {
-    public BoolTests() : base(true, x => new AttributeValue {BOOL = x}, x => x)
+    public BoolTests() : base(new[] {true, false}, x => new AttributeValue {BOOL = x})
     {
     }
     protected override Container<bool> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
@@ -17,21 +17,20 @@ public partial class BoolTests : RecordMarshalAsserter<bool, bool>
     {
         return ContainerMarshaller.Marshall(element);
     }
+}
 
-    [Fact]
-    public void Unmarshall_False()
+[DynamoDBMarshaller(typeof(Container<bool?>))]
+public partial class NullableBoolTests : RecordMarshalAsserter<bool?>
+{
+    public NullableBoolTests() : base(new[] {true, false}.Cast<bool?>().Append(null), x => x is null ? null : new AttributeValue {BOOL = x.Value})
     {
-        var (element, attributeValues) = CreateArguments(false);
-
-        ContainerMarshaller.Unmarshall(attributeValues).Should().BeEquivalentTo(element);
-
     }
-
-    [Fact]
-    public void Marshall_False()
+    protected override Container<bool?> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
-        var (element, attributeValues) = CreateArguments(false);
-
-        ContainerMarshaller.Marshall(element).Should().BeEquivalentTo(attributeValues);
+        return ContainerMarshaller.Unmarshall(attributeValues);
+    }
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<bool?> element)
+    {
+        return ContainerMarshaller.Marshall(element);
     }
 }

@@ -20,37 +20,41 @@ public abstract class NullableElementAsserter<TCollection, TElement> : Collectio
     [Fact]
     public void Marshall_NullElement_ShouldAddNullAttributeValue()
     {
-        var defaultArgs = Arguments();
-
-        var items = defaultArgs.element.Element.Append(null).ToList();
-        var args = CreateArguments(items!);
-
-        MarshallImplementation(args.element).Should().SatisfyRespectively(x =>
+        Arguments().Should().AllSatisfy(x =>
         {
-            x.Key.Should().Be(nameof(Container<TCollection>.Element));
-            x.Value.L.Should().NotBeNullOrEmpty();
-            x.Value.L.Should().HaveSameCount(items);
-            x.Value.L[items.Count - 1].Should().BeEquivalentTo(new AttributeValue {NULL = true});
+            var items = x.element.Element.Append(null).ToList();
+            var args = CreateArguments(items!);
+
+            MarshallImplementation(args.element).Should().SatisfyRespectively(x =>
+            {
+                x.Key.Should().Be(nameof(Container<TCollection>.Element));
+                x.Value.L.Should().NotBeNullOrEmpty();
+                x.Value.L.Should().HaveSameCount(items);
+                x.Value.L[items.Count - 1].Should().BeEquivalentTo(new AttributeValue {NULL = true});
+            });
         });
+
     }
-    
+
     [Fact]
     public void Unmarshall_NullElement_ShouldAddNullAttributeValue()
     {
-        var defaultArgs = Arguments();
-
-        var items = defaultArgs.element.Element.Append(null).ToList();
-        var args = CreateArguments(items!);
-
-        var collection = UnmarshallImplementation(args.attributeValues).Element.ToList();
-
-        args.attributeValues.Should().SatisfyRespectively(x =>
+        Arguments().Should().AllSatisfy(x =>
         {
-            x.Key.Should().Be(nameof(Container<TCollection>.Element));
-            x.Value.L.Should().NotBeNullOrEmpty();
-            x.Value.L.Should().HaveSameCount(collection);
 
-            collection[x.Value.L.Count - 1].Should().BeNull();
+            var items = x.element.Element.Append(null).ToList();
+            var args = CreateArguments(items!);
+
+            var collection = UnmarshallImplementation(args.attributeValues).Element.ToList();
+
+            args.attributeValues.Should().SatisfyRespectively(x =>
+            {
+                x.Key.Should().Be(nameof(Container<TCollection>.Element));
+                x.Value.L.Should().NotBeNullOrEmpty();
+                x.Value.L.Should().HaveSameCount(collection);
+
+                collection[x.Value.L.Count - 1].Should().BeNull();
+            });
         });
 
     }

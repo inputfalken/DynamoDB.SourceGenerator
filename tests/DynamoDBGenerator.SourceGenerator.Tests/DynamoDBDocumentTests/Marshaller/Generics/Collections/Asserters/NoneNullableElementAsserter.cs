@@ -24,12 +24,15 @@ public abstract class NoneNullableElementAsserter<TCollection, TElement> : Colle
     [Fact]
     public void Marshall_NullElement_ShouldThrow()
     {
-        var defaultArgs = Arguments();
+        Arguments().Should().AllSatisfy(x =>
+        {
 
-        var items = defaultArgs.element.Element.Append(null).ToList();
-        var args = CreateArguments(items!);
-        var act = () => MarshallImplementation(args.element);
-        act.Should().Throw<DynamoDBMarshallingException>().Which.MemberName.Should().Be($"{nameof(Container<TCollection>.Element)}[{items.IndexOf(null)}]");
+            var items = x.element.Element.Append(null).ToList();
+            var args = CreateArguments(items!);
+            var act = () => MarshallImplementation(args.element);
+            act.Should().Throw<DynamoDBMarshallingException>().Which.MemberName.Should().Be($"{nameof(Container<TCollection>.Element)}[{items.IndexOf(null)}]");
+        });
+
     }
 
 }

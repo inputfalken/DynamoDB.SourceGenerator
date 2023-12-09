@@ -3,13 +3,14 @@ using DynamoDBGenerator.Exceptions;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections.Asserters;
 
-public abstract class CollectionAsserter<TCollection, TElement> : MarshalAsserter<Container<TCollection>, IEnumerable<TElement>> where TCollection : IEnumerable<TElement>
+public abstract class CollectionAsserter<TCollection, TElement> : MarshalAsserter<Container<TCollection>> where TCollection : IEnumerable<TElement>
 {
+    private readonly IEnumerable<TElement> _seed;
     private readonly Func<TElement, AttributeValue> _av;
 
     private readonly Func<IEnumerable<TElement>, TCollection> _fn;
 
-    protected override sealed (Container<TCollection> element, Dictionary<string, AttributeValue> attributeValues) CreateArguments(IEnumerable<TElement> arg)
+    protected (Container<TCollection> element, Dictionary<string, AttributeValue> attributeValues) CreateArguments(IEnumerable<TElement> arg)
     {
         var items = arg.ToList();
         var element = new Container<TCollection>(_fn(items));
@@ -25,8 +26,15 @@ public abstract class CollectionAsserter<TCollection, TElement> : MarshalAsserte
     }
 
 
-    protected CollectionAsserter(IEnumerable<TElement> seed, Func<TElement, AttributeValue> av, Func<IEnumerable<TElement>, TCollection> fn) : base(seed)
+    protected override IEnumerable<(Container<TCollection> element, Dictionary<string, AttributeValue> attributeValues)> Arguments()
     {
+        yield return CreateArguments(_seed);
+    }
+
+
+    protected CollectionAsserter(IEnumerable<TElement> seed, Func<TElement, AttributeValue> av, Func<IEnumerable<TElement>, TCollection> fn) 
+    {
+        _seed = seed;
         _av = av;
         _fn = fn;
     }

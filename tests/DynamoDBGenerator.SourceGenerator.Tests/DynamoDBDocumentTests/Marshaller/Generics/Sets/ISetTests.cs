@@ -23,9 +23,7 @@ public partial class ISetTests : NoneNullableElementAsserter<ISet<string>, strin
     [Fact]
     public void Unmarshall_Implementation_ShouldBeHashset()
     {
-        var (_, attributeValues) = Arguments();
-
-        ContainerMarshaller.Unmarshall(attributeValues).Element.Should().BeOfType<HashSet<string>>();
+        Arguments().Should().AllSatisfy(x => ContainerMarshaller.Unmarshall(x.attributeValues).Element.Should().BeOfType<HashSet<string>>());
     }
 
 

@@ -24,8 +24,7 @@ public partial class SortedSetTests : NoneNullableElementAsserter<SortedSet<stri
     [Fact]
     public void Unmarshall_Implementation_ShouldBeHashset()
     {
-        var (_, attributeValues) = Arguments();
+        Arguments().Should().AllSatisfy(x => ContainerMarshaller.Unmarshall(x.attributeValues).Element.Should().BeOfType<SortedSet<string>>());
 
-        ContainerMarshaller.Unmarshall(attributeValues).Element.Should().BeOfType<SortedSet<string>>();
     }
 }
