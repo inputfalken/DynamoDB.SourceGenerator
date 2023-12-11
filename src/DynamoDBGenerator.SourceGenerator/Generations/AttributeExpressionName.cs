@@ -18,6 +18,10 @@ public static class AttributeExpressionName
 
     }
 
+    internal static string RootSignature(string typeName)
+    {
+        return $"public {typeName} {AttributeExpressionNameTrackerMethodName}() => new {typeName}(null);";
+    }
 
     private static Conversion CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
     {

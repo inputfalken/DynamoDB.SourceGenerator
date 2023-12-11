@@ -10,6 +10,13 @@ public static class AttributeExpressionValue
     private static readonly Func<ITypeSymbol, string> GetAttributeValueInterfaceName = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability,
         x => $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{DynamoDbMarshaller.TypeName(x).annotated}>");
 
+    internal static IEnumerable<string> RootSignature(ITypeSymbol typeSymbol, string typeName)
+    {
+        return $"public {typeName} {Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerMethodName}()".CreateBlock(
+            "var incrementer = new DynamoExpressionValueIncrementer();",
+            $"return new {typeName}(incrementer.GetNext);"
+        );
+    }
     internal static IEnumerable<string> CreateExpressionAttributeValue(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties)
     {
         // Using _comparer can double classes when there's a None nullable property mixed with a nullable property
@@ -18,7 +25,7 @@ public static class AttributeExpressionValue
         return arguments
             .SelectMany(x => Conversion.ConversionMethods(x.ArgumentType, y => CreateStruct(y, getDynamoDbProperties), hashSet)).SelectMany(x => x.Code);
     }
-    
+
     private static Conversion CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
     {
         const string valueProvider = "valueIdProvider";

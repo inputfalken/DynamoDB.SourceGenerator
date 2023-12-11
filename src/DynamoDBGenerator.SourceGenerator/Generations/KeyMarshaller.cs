@@ -6,13 +6,24 @@ namespace DynamoDBGenerator.SourceGenerator.Generations;
 
 public static class KeyMarshaller
 {
-    internal static readonly Func<ITypeSymbol, string> MethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("Keys", SymbolEqualityComparer.IncludeNullability);
+    private static readonly Func<ITypeSymbol, string> MethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("Keys", SymbolEqualityComparer.IncludeNullability);
     internal static IEnumerable<string> CreateKeys(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties)
     {
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability);
 
         return arguments
             .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, y => StaticAttributeValueDictionaryKeys(y, getDynamoDbProperties), hashSet)).SelectMany(x => x.Code);
+    }
+    internal static IEnumerable<string> IndexKeyMarshaller(ITypeSymbol typeSymbol)
+    {
+        return $"public {Constants.DynamoDBGenerator.Marshaller.IndexKeyMarshallerInterface} IndexKeyMarshaller(string index)".CreateBlock(
+            "ArgumentNullException.ThrowIfNull(index);",
+            $"return new {Constants.DynamoDBGenerator.IndexKeyMarshallerImplementationTypeName}({MethodName(typeSymbol)}, index);"
+        );
+    }
+    internal static string PrimaryKeyMarshaller(ITypeSymbol typeSymbol)
+    {
+        return $"public {Constants.DynamoDBGenerator.Marshaller.KeyMarshallerInterface} PrimaryKeyMarshaller {{ get; }} = new {Constants.DynamoDBGenerator.KeyMarshallerImplementationTypeName}({MethodName(typeSymbol)});";
     }
     private static Conversion StaticAttributeValueDictionaryKeys(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
     {

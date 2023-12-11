@@ -26,18 +26,10 @@ public static class DynamoDbMarshaller
 
             var interfaceImplementation = Marshaller.RootSignature(argument.EntityTypeSymbol, rootTypeName)
                 .Concat(Unmarshaller.RootSignature(argument.EntityTypeSymbol, rootTypeName))
-                .Concat($"public {IndexKeyMarshallerInterface} IndexKeyMarshaller(string index)".CreateBlock(
-                        "ArgumentNullException.ThrowIfNull(index);",
-                        $"return new {Constants.DynamoDBGenerator.IndexKeyMarshallerImplementationTypeName}({KeyMarshaller.MethodName(argument.EntityTypeSymbol)}, index);"
-                    )
-                )
-                .Concat($"public {valueTrackerTypeName} {AttributeExpressionValueTrackerMethodName}()".CreateBlock(
-                        "var incrementer = new DynamoExpressionValueIncrementer();",
-                        $"return new {valueTrackerTypeName}(incrementer.GetNext);"
-                    )
-                )
-                .Append($"public {nameTrackerTypeName} {AttributeExpressionNameTrackerMethodName}() => new {nameTrackerTypeName}(null);")
-                .Append($"public {KeyMarshallerInterface} PrimaryKeyMarshaller {{ get; }} = new {Constants.DynamoDBGenerator.KeyMarshallerImplementationTypeName}({KeyMarshaller.MethodName(argument.EntityTypeSymbol)});");
+                .Concat(KeyMarshaller.IndexKeyMarshaller(argument.EntityTypeSymbol))
+                .Concat(AttributeExpressionValue.RootSignature(argument.EntityTypeSymbol, valueTrackerTypeName))
+                .Append(AttributeExpressionName.RootSignature(nameTrackerTypeName))
+                .Append(KeyMarshaller.PrimaryKeyMarshaller(argument.EntityTypeSymbol));
 
             var classImplementation = $"private sealed class {argument.ImplementationName}: {Interface}<{rootTypeName}, {TypeName(argument.ArgumentType).annotated}, {nameTrackerTypeName}, {valueTrackerTypeName}>"
                 .CreateBlock(interfaceImplementation);
