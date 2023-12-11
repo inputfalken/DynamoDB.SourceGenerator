@@ -42,15 +42,15 @@ public static class Marshaller
         return arguments.SelectMany(x => Conversion
                 .ConversionMethods(
                     x.EntityTypeSymbol,
-                    y => MethodBuilder(y, getDynamoDbProperties),
+                    y => CreateMethod(y, getDynamoDbProperties),
                     hashset
                 )
-                .Concat(Conversion.ConversionMethods(x.ArgumentType, y => MethodBuilder(y, getDynamoDbProperties), hashset))
+                .Concat(Conversion.ConversionMethods(x.ArgumentType, y => CreateMethod(y, getDynamoDbProperties), hashset))
             )
             .SelectMany(x => x.Code);
     }
 
-    private static Conversion MethodBuilder(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
+    private static Conversion CreateMethod(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
     {
         const string param = "entity";
         const string dataMember = "dataMember";
@@ -84,7 +84,7 @@ public static class Marshaller
                     => signature.CreateBlock($"return new AttributeValue {{ S = {param}.ToString(\"O\") }};").ToConversion(),
                 BaseType.SupportedType.Enum => signature.CreateBlock($"return new AttributeValue {{ N = ((int){param}).ToString() }};").ToConversion(),
                 BaseType.SupportedType.MemoryStream => signature.CreateBlock($"return {param} is not null ? new AttributeValue {{ B = {param} }} : {Else(baseType)};").ToConversion(),
-                _ => throw UncoveredConversionException(baseType, nameof(MethodBuilder))
+                _ => throw UncoveredConversionException(baseType, nameof(CreateMethod))
             },
             SingleGeneric singleGeneric when CreateSignature(singleGeneric) is var signature => singleGeneric.Type switch
             {
@@ -107,11 +107,11 @@ public static class Marshaller
                     => signature
                         .CreateBlock($"return {param} is not null ? new AttributeValue {{ NS = new List<string>({param}.Select(y => y.ToString())) }} : {Else(singleGeneric)};")
                         .ToConversion(singleGeneric.T),
-                SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(MethodBuilder))),
-                _ => throw UncoveredConversionException(singleGeneric, nameof(MethodBuilder))
+                SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(CreateMethod))),
+                _ => throw UncoveredConversionException(singleGeneric, nameof(CreateMethod))
             },
             KeyValueGeneric {TKey.SpecialType: not SpecialType.System_String} keyValueGeneric => throw new ArgumentException("Only strings are supported for for TKey",
-                UncoveredConversionException(keyValueGeneric, nameof(MethodBuilder))),
+                UncoveredConversionException(keyValueGeneric, nameof(CreateMethod))),
             KeyValueGeneric keyValueGeneric when CreateSignature(keyValueGeneric) is var signature => keyValueGeneric.Type switch
             {
                 KeyValueGeneric.SupportedType.Dictionary => signature
@@ -122,10 +122,10 @@ public static class Marshaller
                     .CreateBlock(
                         $"return {param} is not null ? new AttributeValue {{ M = {param}.ToDictionary(y => y.Key, y => new AttributeValue {{ L = new List<AttributeValue>(y.Select(z => {InvokeMarshallerMethod(keyValueGeneric.TValue, "z", dataMember)})) }}) }} : {Else(keyValueGeneric)};")
                     .ToConversion(keyValueGeneric.TValue),
-                _ => throw UncoveredConversionException(keyValueGeneric, nameof(MethodBuilder))
+                _ => throw UncoveredConversionException(keyValueGeneric, nameof(CreateMethod))
             },
             UnknownType unknownType => CreateDictionaryMethod(unknownType.TypeSymbol),
-            var typeIdentifier => throw UncoveredConversionException(typeIdentifier, nameof(MethodBuilder))
+            var typeIdentifier => throw UncoveredConversionException(typeIdentifier, nameof(CreateMethod))
 
         };
 

@@ -32,14 +32,14 @@ public static class Unmarshaller
         return arguments.SelectMany(x =>
                 Conversion.ConversionMethods(
                     x.EntityTypeSymbol,
-                    y => StaticPocoFactory(y, getDynamoDbProperties),
+                    y => CreateMethod(y, getDynamoDbProperties),
                     hashSet
                 )
             )
             .SelectMany(x => x.Code);
     }
 
-    private static Conversion StaticPocoFactory(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
+    private static Conversion CreateMethod(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
     {
 
         const string value = "attributeValue";
@@ -93,7 +93,7 @@ public static class Unmarshaller
                 BaseType.SupportedType.MemoryStream => signature
                     .CreateBlock($"return {value} is {{ B: {{ }} x }} ? x : {Else(baseType)};")
                     .ToConversion(),
-                _ => throw UncoveredConversionException(baseType, nameof(StaticPocoFactory))
+                _ => throw UncoveredConversionException(baseType, nameof(CreateMethod))
             },
             SingleGeneric singleGeneric when CreateSignature(singleGeneric) is var signature => singleGeneric.Type switch
             {
@@ -117,11 +117,11 @@ public static class Unmarshaller
                     .CreateBlock(
                         $"return {value} is {{ NS : {{ }} x }} ? new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{DynamoDbMarshaller.GetTypeName(singleGeneric.T).original}>" : null)}(x.Select(y => {DynamoDbMarshaller.GetTypeName(singleGeneric.T).original}.Parse(y))) : {Else(singleGeneric)};")
                     .ToConversion(singleGeneric.TypeSymbol),
-                SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(StaticPocoFactory))),
-                _ => throw UncoveredConversionException(singleGeneric, nameof(StaticPocoFactory))
+                SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(CreateMethod))),
+                _ => throw UncoveredConversionException(singleGeneric, nameof(CreateMethod))
             },
             KeyValueGeneric {TKey.SpecialType: not SpecialType.System_String} keyValueGeneric => throw new ArgumentException("Only strings are supported for for TKey",
-                UncoveredConversionException(keyValueGeneric, nameof(StaticPocoFactory))),
+                UncoveredConversionException(keyValueGeneric, nameof(CreateMethod))),
             KeyValueGeneric keyValueGeneric when CreateSignature(keyValueGeneric) is var signature => keyValueGeneric.Type switch
             {
                 KeyValueGeneric.SupportedType.Dictionary => signature
@@ -131,11 +131,11 @@ public static class Unmarshaller
                     .CreateBlock(
                         $"return {value} is {{ M: {{ }} x }} ? x.SelectMany(y => y.Value.L, (y, z) => (y.Key, z)).ToLookup(y => y.Key, y => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "y.z", "y.Key")}) : {Else(keyValueGeneric)};")
                     .ToConversion(keyValueGeneric.TValue),
-                _ => throw UncoveredConversionException(keyValueGeneric, nameof(StaticPocoFactory))
+                _ => throw UncoveredConversionException(keyValueGeneric, nameof(CreateMethod))
 
             },
             UnknownType => CreateCode(),
-            var typeIdentifier => throw UncoveredConversionException(typeIdentifier, nameof(StaticPocoFactory))
+            var typeIdentifier => throw UncoveredConversionException(typeIdentifier, nameof(CreateMethod))
         };
 
         Conversion CreateCode()

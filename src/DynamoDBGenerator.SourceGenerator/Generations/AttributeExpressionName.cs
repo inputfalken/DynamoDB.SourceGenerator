@@ -14,13 +14,13 @@ public static class AttributeExpressionName
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
 
         return arguments
-            .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, y => CreateClass(y, getDynamoDbProperties), hashSet)).SelectMany(x => x.Code);
+            .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, y => CreateStruct(y, getDynamoDbProperties), hashSet)).SelectMany(x => x.Code);
 
     }
 
     internal static string CreateTypeName(ITypeSymbol typeSymbol) => GetAttributeExpressionNameTypeName(typeSymbol);
 
-    private static Conversion CreateClass(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
+    private static Conversion CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
     {
         const string constructorAttributeName = "nameRef";
         var dataMembers = fn(typeSymbol)
