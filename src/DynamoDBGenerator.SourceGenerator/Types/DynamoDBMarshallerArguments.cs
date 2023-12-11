@@ -17,4 +17,5 @@ public readonly record struct DynamoDBMarshallerArguments
     public INamedTypeSymbol ArgumentType { get; }
     public string PropertyName { get; }
 
+
 }

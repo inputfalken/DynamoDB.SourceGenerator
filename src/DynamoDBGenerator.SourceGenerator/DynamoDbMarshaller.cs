@@ -21,21 +21,21 @@ public static class DynamoDbMarshaller
         foreach (var argument in arguments)
         {
             var rootTypeName = TypeName(argument.EntityTypeSymbol).annotated;
-            var valueTrackerTypeName = AttributeExpressionValue.TypeName(argument.ArgumentType);
-            var nameTrackerTypeName = AttributeExpressionName.TypeName(argument.EntityTypeSymbol);
+            var argumentTypeName = TypeName(argument.ArgumentType).annotated;
+            var (expressionValueMethod, valueTrackerTypeName) = AttributeExpressionValue.RootSignature(argument.ArgumentType);
+            var (expressionMethodName, nameTrackerTypeName) = AttributeExpressionName.RootSignature(argument.EntityTypeSymbol);
 
             var interfaceImplementation = Marshaller.RootSignature(argument.EntityTypeSymbol, rootTypeName)
                 .Concat(Unmarshaller.RootSignature(argument.EntityTypeSymbol, rootTypeName))
                 .Concat(KeyMarshaller.IndexKeyMarshaller(argument.EntityTypeSymbol))
-                .Concat(AttributeExpressionValue.RootSignature(argument.EntityTypeSymbol, valueTrackerTypeName))
-                .Append(AttributeExpressionName.RootSignature(nameTrackerTypeName))
+                .Concat(expressionValueMethod)
+                .Append(expressionMethodName)
                 .Append(KeyMarshaller.PrimaryKeyMarshaller(argument.EntityTypeSymbol));
 
             var classImplementation = $"private sealed class {argument.ImplementationName}: {Interface}<{rootTypeName}, {TypeName(argument.ArgumentType).annotated}, {nameTrackerTypeName}, {valueTrackerTypeName}>"
                 .CreateBlock(interfaceImplementation);
 
-            yield return
-                $"public {Interface}<{rootTypeName}, {TypeName(argument.ArgumentType).annotated}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.PropertyName} {{ get; }} = new {argument.ImplementationName}();";
+            yield return $"public {Interface}<{rootTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.PropertyName} {{ get; }} = new {argument.ImplementationName}();";
 
             foreach (var s in classImplementation)
                 yield return s;

@@ -16,6 +16,7 @@ public static class Marshaller
 
     internal static IEnumerable<string> RootSignature(ITypeSymbol typeSymbol, string rootTypeName)
     {
+        
         return $"public Dictionary<{nameof(String)}, {Constants.AWSSDK_DynamoDBv2.AttributeValue}> {Constants.DynamoDBGenerator.Marshaller.MarshallMethodName}({rootTypeName} entity)"
             .CreateBlock(
                 "ArgumentNullException.ThrowIfNull(entity);",

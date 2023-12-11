@@ -10,12 +10,13 @@ public static class AttributeExpressionValue
     private static readonly Func<ITypeSymbol, string> GetAttributeValueInterfaceName = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability,
         x => $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{DynamoDbMarshaller.TypeName(x).annotated}>");
 
-    internal static IEnumerable<string> RootSignature(ITypeSymbol typeSymbol, string typeName)
+    internal static (IEnumerable<string> method, string typeName) RootSignature(ITypeSymbol typeSymbol)
     {
-        return $"public {typeName} {Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerMethodName}()".CreateBlock(
+        var typeName = TypeName(typeSymbol);
+        return ($"public {typeName} {Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerMethodName}()".CreateBlock(
             "var incrementer = new DynamoExpressionValueIncrementer();",
             $"return new {typeName}(incrementer.GetNext);"
-        );
+        ), typeName);
     }
     internal static IEnumerable<string> CreateExpressionAttributeValue(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties)
     {
