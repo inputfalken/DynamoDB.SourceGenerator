@@ -13,6 +13,7 @@ public static class Unmarshaller
     private const string Value = "attributeValue";
     private static IEnumerable<(bool useParentheses, IEnumerable<string> assignments)> Assignments(ITypeSymbol type, (DynamoDbDataMember DDB, string MethodCall, string Name)[] assignments)
     {
+        const string indent = "    ";
         if (type.IsTupleType)
             yield return (true, assignments.Select(x => $"{x.DDB.DataMember.Name}: {x.MethodCall}"));
         else
@@ -29,8 +30,8 @@ public static class Unmarshaller
                 .Select(x =>
                 {
                     return x.Key
-                        ? (x.Key, x.Select(z => $"{z.Constructor!.Value.ParameterName} : {z.MethodCall}"))
-                        : (x.Key, x.Where(z => z.DDB.DataMember.IsAssignable).Select(z => $"{z.DDB.DataMember.Name} = {z.MethodCall}"));
+                        ? (x.Key, x.Select(z => $"{indent}{z.Constructor!.Value.ParameterName} : {z.MethodCall}"))
+                        : (x.Key, x.Where(z => z.DDB.DataMember.IsAssignable).Select(z => $"{indent}{z.DDB.DataMember.Name} = {z.MethodCall}"));
                 });
 
             foreach (var valueTuple in resolve)
@@ -53,7 +54,7 @@ public static class Unmarshaller
             $"if ({Dict} is null)"
                 .CreateBlock(type.IsNullable() ? "return null;" : $"throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}({DataMember});").Concat(
                     Assignments(type, assignments)
-                        .DefaultAndLast(x => ObjectAssignmentBlock(x.useParentheses, x.assignments, false), x => ObjectAssignmentBlock(x.useParentheses, x.assignments, true))
+                        .AllAndLast(x => ObjectAssignmentBlock(x.useParentheses, x.assignments, false), x => ObjectAssignmentBlock(x.useParentheses, x.assignments, true))
                         .SelectMany(x => x)
                         .DefaultIfEmpty("();")
                         // Is needed in order to not perform new entity? where '?' is not allowed in the end of the string.
@@ -184,12 +185,11 @@ public static class Unmarshaller
     }
     private static IEnumerable<string> ObjectAssignmentBlock(bool useParentheses, IEnumerable<string> assignments, bool applySemiColon)
     {
-
         if (useParentheses)
         {
             yield return "(";
 
-            foreach (var assignment in assignments.DefaultAndLast(s => $"{s},", s => s))
+            foreach (var assignment in assignments.AllButLast(s => $"{s},"))
                 yield return assignment;
 
             if (applySemiColon)
@@ -201,7 +201,7 @@ public static class Unmarshaller
         {
             yield return "{";
 
-            foreach (var assignment in assignments.DefaultAndLast(s => $"{s},", s => s))
+            foreach (var assignment in assignments.AllButLast(s => $"{s},"))
                 yield return assignment;
 
             if (applySemiColon)
