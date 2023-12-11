@@ -7,14 +7,8 @@ namespace DynamoDBGenerator.SourceGenerator;
 
 public static class DynamoDbMarshaller
 {
-    internal static readonly Func<ITypeSymbol, (string annotated, string original)> TypeName;
-    internal static readonly Func<ITypeSymbol, TypeIdentifier> TypeIdentifier;
-
-    static DynamoDbMarshaller()
-    {
-        TypeName = TypeExtensions.GetTypeIdentifier(SymbolEqualityComparer.IncludeNullability);
-        TypeIdentifier = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, x => x.GetKnownType());
-    }
+    internal static readonly Func<ITypeSymbol, (string annotated, string original)> TypeName = TypeExtensions.GetTypeIdentifier(SymbolEqualityComparer.IncludeNullability);
+    internal static readonly Func<ITypeSymbol, TypeIdentifier> TypeIdentifier = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, x => x.GetKnownType());
 
     private static IEnumerable<string> CreateImplementations(IEnumerable<DynamoDBMarshallerArguments> arguments)
     {
