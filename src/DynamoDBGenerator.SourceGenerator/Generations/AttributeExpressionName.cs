@@ -7,7 +7,7 @@ namespace DynamoDBGenerator.SourceGenerator.Generations;
 public static class AttributeExpressionName
 {
 
-    private static readonly Func<ITypeSymbol, string> GetAttributeExpressionNameTypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", SymbolEqualityComparer.Default);
+    internal static readonly Func<ITypeSymbol, string> TypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", SymbolEqualityComparer.Default);
     internal static IEnumerable<string> CreateClasses(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties)
     {
         // Using _comparer can double classes when there's a None nullable property mixed with a nullable property
@@ -18,7 +18,6 @@ public static class AttributeExpressionName
 
     }
 
-    internal static string CreateTypeName(ITypeSymbol typeSymbol) => GetAttributeExpressionNameTypeName(typeSymbol);
 
     private static Conversion CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
     {
@@ -26,9 +25,9 @@ public static class AttributeExpressionName
         var dataMembers = fn(typeSymbol)
             .Select(x =>
             {
-                var typeIdentifier = DynamoDbMarshaller.GetTypeIdentifier(x.DataMember.Type);
+                var typeIdentifier = DynamoDbMarshaller.TypeIdentifier(x.DataMember.Type);
                 var nameRef = $"_{x.DataMember.Name}NameRef";
-                var attributeReference = GetAttributeExpressionNameTypeName(x.DataMember.Type);
+                var attributeReference = TypeName(x.DataMember.Type);
                 var isUnknown = typeIdentifier is UnknownType;
 
                 return (
@@ -42,7 +41,7 @@ public static class AttributeExpressionName
             })
             .ToArray();
 
-        var structName = GetAttributeExpressionNameTypeName(typeSymbol);
+        var structName = TypeName(typeSymbol);
 
         var @class = $"public readonly struct {structName} : {AttributeExpressionNameTrackerInterface}"
             .CreateBlock(CreateCode());

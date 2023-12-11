@@ -5,12 +5,11 @@ namespace DynamoDBGenerator.SourceGenerator.Generations;
 
 public static class AttributeExpressionValue
 {
-    private static readonly Func<ITypeSymbol, string> GetTypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Values", SymbolEqualityComparer.Default);
+    internal static readonly Func<ITypeSymbol, string> TypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Values", SymbolEqualityComparer.Default);
 
     private static readonly Func<ITypeSymbol, string> GetAttributeValueInterfaceName = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability,
-        x => $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{DynamoDbMarshaller.GetTypeName(x).annotated}>");
+        x => $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{DynamoDbMarshaller.TypeName(x).annotated}>");
 
-    internal static string CreateTypeName(ITypeSymbol typeSymbol) => GetTypeName(typeSymbol);
     internal static IEnumerable<string> CreateExpressionAttributeValue(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties)
     {
         // Using _comparer can double classes when there's a None nullable property mixed with a nullable property
@@ -26,9 +25,9 @@ public static class AttributeExpressionValue
         var dataMembers = fn(typeSymbol)
             .Select(x =>
             {
-                var typeIdentifier = DynamoDbMarshaller.GetTypeIdentifier(x.DataMember.Type);
+                var typeIdentifier = DynamoDbMarshaller.TypeIdentifier(x.DataMember.Type);
                 var valueRef = $"_{x.DataMember.Name}ValueRef";
-                var attributeReference = GetTypeName(x.DataMember.Type);
+                var attributeReference = TypeName(x.DataMember.Type);
                 var isUnknown = typeIdentifier is UnknownType;
 
                 return (
@@ -42,7 +41,7 @@ public static class AttributeExpressionValue
             })
             .ToArray();
 
-        var className = GetTypeName(typeSymbol);
+        var className = TypeName(typeSymbol);
 
         var interfaceName = GetAttributeValueInterfaceName(typeSymbol);
 
@@ -102,7 +101,7 @@ public static class AttributeExpressionValue
             );
 
             foreach (var yield in
-                     $"IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({DynamoDbMarshaller.GetTypeName(typeSymbol).annotated} entity)"
+                     $"IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({DynamoDbMarshaller.TypeName(typeSymbol).annotated} entity)"
                          .CreateBlock(yields))
                 yield return yield;
 

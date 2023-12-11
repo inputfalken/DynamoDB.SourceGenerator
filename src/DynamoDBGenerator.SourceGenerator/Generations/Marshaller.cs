@@ -27,7 +27,7 @@ public static class Marshaller
     {
         var invocation = $"{ClassName}.{GetSerializationMethodName(typeSymbol)}({parameterReference}, {dataMember})";
 
-        if (DynamoDbMarshaller.GetTypeIdentifier(typeSymbol) is UnknownType)
+        if (DynamoDbMarshaller.TypeIdentifier(typeSymbol) is UnknownType)
             return typeSymbol.IsNullable() is false // Can get rid of this if the signature accepts nullable
                 ? $"new AttributeValue {{ M = {invocation} ?? throw {NullExceptionMethod}({dataMember}) }}"
                 : $"{Constants.DynamoDBGenerator.AttributeValueUtilityFactory.ToAttributeValue}({invocation})";
@@ -56,12 +56,12 @@ public static class Marshaller
         const string dataMember = "dataMember";
 
         static string CreateSignature(TypeIdentifier typeIdentifier) => typeIdentifier.TypeSymbol.IsNullable()
-            ? $"public static AttributeValue? {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({DynamoDbMarshaller.GetTypeName(typeIdentifier.TypeSymbol).annotated} {param}, string? {dataMember} = null)"
-            : $"public static AttributeValue {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({DynamoDbMarshaller.GetTypeName(typeIdentifier.TypeSymbol).annotated} {param}, string? {dataMember} = null)";
+            ? $"public static AttributeValue? {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({DynamoDbMarshaller.TypeName(typeIdentifier.TypeSymbol).annotated} {param}, string? {dataMember} = null)"
+            : $"public static AttributeValue {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({DynamoDbMarshaller.TypeName(typeIdentifier.TypeSymbol).annotated} {param}, string? {dataMember} = null)";
 
         static string Else(TypeIdentifier typeIdentifier) => typeIdentifier.TypeSymbol.IsNullable() ? "null" : $"throw {NullExceptionMethod}({dataMember})";
 
-        return DynamoDbMarshaller.GetTypeIdentifier(type) switch
+        return DynamoDbMarshaller.TypeIdentifier(type) switch
         {
             BaseType baseType when CreateSignature(baseType) is var signature => baseType.Type switch
             {
@@ -160,7 +160,7 @@ public static class Marshaller
                     .Append($"return {dictionaryReference};"));
 
             var code =
-                $"public static Dictionary<string, AttributeValue>{(isNullable ? '?' : null)} {GetSerializationMethodName(type)}({DynamoDbMarshaller.GetTypeName(type).annotated} {paramReference}, string? {dataMember} = null)"
+                $"public static Dictionary<string, AttributeValue>{(isNullable ? '?' : null)} {GetSerializationMethodName(type)}({DynamoDbMarshaller.TypeName(type).annotated} {paramReference}, string? {dataMember} = null)"
                     .CreateBlock(body);
 
             return new Conversion(code, properties.Select(y => y.Type));
