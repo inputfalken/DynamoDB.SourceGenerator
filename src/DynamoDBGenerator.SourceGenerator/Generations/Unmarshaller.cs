@@ -13,12 +13,13 @@ public static class Unmarshaller
         return $"private static class {UnMarshallerClass}".CreateBlock(CreateUnMarshaller(arguments, getDynamoDbProperties));
     }
 
-    public static IEnumerable<string> RootSignature(ITypeSymbol typeSymbol, string rootTypeName)
+    internal static IEnumerable<string> RootSignature(ITypeSymbol typeSymbol, string rootTypeName)
     {
         return $"public {rootTypeName} {Constants.DynamoDBGenerator.Marshaller.UnmarshalMethodName}(Dictionary<{nameof(String)}, {Constants.AWSSDK_DynamoDBv2.AttributeValue}> entity)".CreateBlock(
             "ArgumentNullException.ThrowIfNull(entity);",
             $"return {UnMarshallerClass}.{GetDeserializationMethodName(typeSymbol)}(entity);");
     }
+    
     private static string InvokeUnmarshallMethod(ITypeSymbol typeSymbol, string paramReference, string dataMember)
     {
         return DynamoDbMarshaller.TypeIdentifier(typeSymbol) is UnknownType
