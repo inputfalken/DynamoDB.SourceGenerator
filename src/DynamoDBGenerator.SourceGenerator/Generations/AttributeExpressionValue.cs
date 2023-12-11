@@ -1,6 +1,7 @@
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
+using static DynamoDBGenerator.SourceGenerator.Constants.DynamoDBGenerator;
 namespace DynamoDBGenerator.SourceGenerator.Generations;
 
 public static class AttributeExpressionValue
@@ -48,11 +49,11 @@ public static class AttributeExpressionValue
         var enumerable = Enumerable.Empty<string>();
         if (typeSymbol.IsNullable())
         {
-            enumerable = $"if ({param} is null)".CreateBlock($"yield return new ({self}.Value, new AttributeValue {{ NULL = true }});", "yield break;");
+            enumerable = $"if ({param} is null)".CreateBlock($"yield return new ({self}.Value, {AttributeValueUtilityFactory.Null});", "yield break;");
         }
         else if (typeSymbol.IsReferenceType)
         {
-            enumerable = $"if ({param} is null)".CreateBlock($"throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}(\"{structName}\");");
+            enumerable = $"if ({param} is null)".CreateBlock($"throw {ExceptionHelper.NullExceptionMethod}(\"{structName}\");");
         }
 
         var yields = enumerable.Concat(
@@ -62,10 +63,10 @@ public static class AttributeExpressionValue
                         var accessPattern = $"entity.{x.DDB.DataMember.Name}";
                         return x.IsUnknown
                             ? $"if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({accessPattern})) {{ yield return x; }}")}"
-                            : $"if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {Marshaller.InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}", $"\"{x.DDB.DataMember.Name}\"")} ?? new AttributeValue {{ NULL = true }});")}";
+                            : $"if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {Marshaller.InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}", $"\"{x.DDB.DataMember.Name}\"")} ?? {AttributeValueUtilityFactory.Null});")}";
                     }
                 )
-                .Append($"if ({self}.IsValueCreated) yield return new ({self}.Value, {Marshaller.InvokeMarshallerMethod(typeSymbol, "entity", $"\"{structName}\"")} ?? new AttributeValue {{ NULL = true }});")
+                .Append($"if ({self}.IsValueCreated) yield return new ({self}.Value, {Marshaller.InvokeMarshallerMethod(typeSymbol, "entity", $"\"{structName}\"")} ?? {AttributeValueUtilityFactory.Null});")
         );
 
         foreach (var yield in

@@ -1,12 +1,12 @@
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
-using static DynamoDBGenerator.SourceGenerator.Constants.DynamoDBGenerator.ExceptionHelper;
+using static DynamoDBGenerator.SourceGenerator.Constants.DynamoDBGenerator;
 namespace DynamoDBGenerator.SourceGenerator.Generations;
 
 public static class Marshaller
 {
-    private const string ClassName = $"_{nameof(Marshaller)}_";
+    private const string ClassName = $"_{Constants.DynamoDBGenerator.Marshaller.MarshallMethodName}_";
     private const string DataMember = "dataMember";
     private const string DictionaryReference = "attributeValues";
     private static readonly Func<ITypeSymbol, string> GetSerializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_M", SymbolEqualityComparer.IncludeNullability);
@@ -38,7 +38,7 @@ public static class Marshaller
         if (isNullable)
             enumerable = $"if ({ParamReference} is null)".CreateBlock("return null;");
         else if (typeSymbol.IsReferenceType)
-            enumerable = $"if ({ParamReference} is null)".CreateBlock($"throw {NullExceptionMethod}({DataMember});");
+            enumerable = $"if ({ParamReference} is null)".CreateBlock($"throw {ExceptionHelper.NullExceptionMethod}({DataMember});");
 
         var body =
             enumerable.Concat(InitializeDictionary(properties.Select(x => x.capacityTernary))
@@ -105,12 +105,12 @@ public static class Marshaller
                     or SingleGeneric.SupportedType.IEnumerable
                     or SingleGeneric.SupportedType.ICollection => signature
                         .CreateBlock(
-                            $"return {Param} is not null ? new AttributeValue {{ L = new List<AttributeValue>({Param}.Select((y, i) => {InvokeMarshallerMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"")} {(singleGeneric.T.IsNullable() ? " ?? new AttributeValue { NULL = true }" : null)})) }} : {Else(singleGeneric)};")
+                            $"return {Param} is not null ? new AttributeValue {{ L = new List<AttributeValue>({Param}.Select((y, i) => {InvokeMarshallerMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"")} {(singleGeneric.T.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)})) }} : {Else(singleGeneric)};")
                         .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.SpecialType is SpecialType.System_String
                     => signature
                         .CreateBlock(
-                            $"return {Param} is not null ? new AttributeValue {{ SS = new List<{(singleGeneric.T.IsNullable() ? "string?" : "string")}>({(singleGeneric.T.IsNullable() ? Param : $"{Param}.Select((y,i) => y ?? throw {NullExceptionMethod}($\"{{{DataMember}}}[UNKNOWN]\"))")})}} : {Else(singleGeneric)};")
+                            $"return {Param} is not null ? new AttributeValue {{ SS = new List<{(singleGeneric.T.IsNullable() ? "string?" : "string")}>({(singleGeneric.T.IsNullable() ? Param : $"{Param}.Select((y,i) => y ?? throw {ExceptionHelper.NullExceptionMethod}($\"{{{DataMember}}}[UNKNOWN]\"))")})}} : {Else(singleGeneric)};")
                         .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.IsNumeric()
                     => signature
@@ -148,7 +148,7 @@ public static class Marshaller
 
     private static string Else(TypeIdentifier typeIdentifier)
     {
-        return typeIdentifier.TypeSymbol.IsNullable() ? "null" : $"throw {NullExceptionMethod}({DataMember})";
+        return typeIdentifier.TypeSymbol.IsNullable() ? "null" : $"throw {ExceptionHelper.NullExceptionMethod}({DataMember})";
     }
     private static IEnumerable<string> InitializeDictionary(IEnumerable<string> capacityCalculations)
     {
@@ -170,8 +170,8 @@ public static class Marshaller
 
         if (DynamoDbMarshaller.TypeIdentifier(typeSymbol) is UnknownType)
             return typeSymbol.IsNullable() is false // Can get rid of this if the signature accepts nullable
-                ? $"new AttributeValue {{ M = {invocation} ?? throw {NullExceptionMethod}({dataMember}) }}"
-                : $"{Constants.DynamoDBGenerator.AttributeValueUtilityFactory.ToAttributeValue}({invocation})";
+                ? $"new AttributeValue {{ M = {invocation} ?? throw {ExceptionHelper.NullExceptionMethod}({dataMember}) }}"
+                : $"{AttributeValueUtilityFactory.ToAttributeMap}({invocation})";
 
         return invocation;
     }

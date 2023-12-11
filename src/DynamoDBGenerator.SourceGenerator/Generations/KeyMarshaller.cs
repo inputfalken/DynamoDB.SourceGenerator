@@ -1,7 +1,7 @@
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
-using static DynamoDBGenerator.SourceGenerator.Constants.DynamoDBGenerator.ExceptionHelper;
+using static DynamoDBGenerator.SourceGenerator.Constants.DynamoDBGenerator;
 namespace DynamoDBGenerator.SourceGenerator.Generations;
 
 public static class KeyMarshaller
@@ -20,8 +20,8 @@ public static class KeyMarshaller
 
         var innerContent = $"if ({expression}) "
             .CreateBlock($@"{DictionaryName}.Add(""{dataMember.AttributeName}"", {Marshaller.InvokeMarshallerMethod(dataMember.DataMember.Type, reference, $"nameof({keyReference})")});")
-            .Concat($"else if ({keyReference} is null) ".CreateBlock($@"throw {KeysArgumentNullExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"");"))
-            .Concat("else".CreateBlock($@"throw {KeysInvalidConversionExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"", {keyReference}, ""{expectedType}"");"));
+            .Concat($"else if ({keyReference} is null) ".CreateBlock($@"throw {ExceptionHelper.KeysArgumentNullExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"");"))
+            .Concat("else".CreateBlock($@"throw {ExceptionHelper.KeysInvalidConversionExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"", {keyReference}, ""{expectedType}"");"));
 
         return $"if({validateReference})".CreateBlock(innerContent);
 
@@ -31,7 +31,7 @@ public static class KeyMarshaller
         var keyStructure = DynamoDbDataMember.GetKeyStructure(fn(typeSymbol));
         if (keyStructure is null)
         {
-            yield return @$"throw {NoDynamoDBKeyAttributesExceptionMethod}(""{typeSymbol}"");";
+            yield return @$"throw {ExceptionHelper.NoDynamoDBKeyAttributesExceptionMethod}(""{typeSymbol}"");";
 
             yield break;
         }
@@ -40,7 +40,7 @@ public static class KeyMarshaller
 
         var switchBody = GetAssignments(keyStructure.Value)
             .SelectMany(x => $"case {(x.IndexName is null ? "null" : @$"""{x.IndexName}""")}:".CreateBlock(x.assignments).Append("break;"))
-            .Append($"default: throw {MissMatchedIndexNameExceptionMethod}(nameof(index), index);");
+            .Append($"default: throw {ExceptionHelper.MissMatchedIndexNameExceptionMethod}(nameof(index), index);");
 
         foreach (var s in "switch (index)".CreateBlock(switchBody))
             yield return s;
@@ -49,8 +49,8 @@ public static class KeyMarshaller
             .CreateBlock($"return {DictionaryName};")
             .Concat($"if ({EnforcePkReference} && {EnforceRkReference} is false && {DictionaryName}.Count == 1)".CreateBlock($"return {DictionaryName};"))
             .Concat($"if ({EnforcePkReference} is false && {EnforceRkReference} && {DictionaryName}.Count == 1)".CreateBlock($"return {DictionaryName};"))
-            .Concat($"if ({EnforcePkReference} && {EnforceRkReference} && {DictionaryName}.Count == 1)".CreateBlock($"throw {KeysMissingDynamoDBAttributeExceptionMethod}({PkReference}, {RkReference});"))
-            .Append($"throw {ShouldNeverHappenExceptionMethod}();");
+            .Concat($"if ({EnforcePkReference} && {EnforceRkReference} && {DictionaryName}.Count == 1)".CreateBlock($"throw {ExceptionHelper.KeysMissingDynamoDBAttributeExceptionMethod}({PkReference}, {RkReference});"))
+            .Append($"throw {ExceptionHelper.ShouldNeverHappenExceptionMethod}();");
 
         foreach (var s in validateSwitch)
             yield return s;
@@ -68,7 +68,7 @@ public static class KeyMarshaller
         yield return keyStructure switch
         {
             {PartitionKey: var pk, SortKey: { } sortKey} => (null, CreateAssignment(EnforcePkReference, PkReference, pk).Concat(CreateAssignment(EnforceRkReference, RkReference, sortKey))),
-            {PartitionKey: var pk, SortKey: null} => (null, CreateAssignment(EnforcePkReference, PkReference, pk).Append(MissingAssigment(EnforceRkReference, RkReference)))
+            {PartitionKey: var pk, SortKey: null} => (null, CreateAssignment(EnforcePkReference, PkReference, pk).Concat(MissingAssigment(EnforceRkReference, RkReference)))
         };
 
         foreach (var gsi in keyStructure.GlobalSecondaryIndices)
@@ -76,7 +76,7 @@ public static class KeyMarshaller
             yield return gsi switch
             {
                 {PartitionKey: var pk, SortKey: { } sortKey} => (gsi.Name, CreateAssignment(EnforcePkReference, PkReference, pk).Concat(CreateAssignment(EnforceRkReference, RkReference, sortKey))),
-                {PartitionKey: var pk, SortKey: null} => (gsi.Name, CreateAssignment(EnforcePkReference, PkReference, pk).Append(MissingAssigment(EnforceRkReference, RkReference)))
+                {PartitionKey: var pk, SortKey: null} => (gsi.Name, CreateAssignment(EnforcePkReference, PkReference, pk).Concat(MissingAssigment(EnforceRkReference, RkReference)))
             };
         }
 
@@ -88,19 +88,18 @@ public static class KeyMarshaller
             };
         }
 
-        string MissingAssigment(string validateReference, string keyReference)
-        {
-            var expression = $"{validateReference} && {keyReference} is not null";
-            return $@"if({expression}) 
-                            throw {KeysValueWithNoCorrespondenceMethod}(""{keyReference}"", {keyReference});";
-        }
+    }
+    private static IEnumerable<string> MissingAssigment(string validateReference, string keyReference)
+    {
 
+        var expression = $"{validateReference} && {keyReference} is not null";
+        return $"if ({expression})".CreateBlock($"throw {ExceptionHelper.KeysValueWithNoCorrespondenceMethod}(\"{keyReference}\", {keyReference});");
     }
     internal static IEnumerable<string> IndexKeyMarshaller(ITypeSymbol typeSymbol)
     {
         return $"public {Constants.DynamoDBGenerator.Marshaller.IndexKeyMarshallerInterface} IndexKeyMarshaller(string index)".CreateBlock(
             "ArgumentNullException.ThrowIfNull(index);",
-            $"return new {Constants.DynamoDBGenerator.IndexKeyMarshallerImplementationTypeName}({MethodName(typeSymbol)}, index);"
+            $"return new {IndexKeyMarshallerImplementationTypeName}({MethodName(typeSymbol)}, index);"
         );
     }
     internal static string PrimaryKeyMarshaller(ITypeSymbol typeSymbol)
