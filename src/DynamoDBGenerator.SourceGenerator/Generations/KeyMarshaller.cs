@@ -15,7 +15,7 @@ public static class KeyMarshaller
     private static IEnumerable<string> CreateAssignment(string validateReference, string keyReference, DynamoDbDataMember dataMember)
     {
         const string reference = "value";
-        var expectedType = DynamoDbMarshaller.TypeName(dataMember.DataMember.Type).original;
+        var expectedType = dataMember.DataMember.Type.Representation().original;
         var expression = $"{keyReference} is {expectedType} {{ }} {reference}";
 
         var innerContent = $"if ({expression}) "

@@ -7,15 +7,12 @@ namespace DynamoDBGenerator.SourceGenerator;
 
 public static class DynamoDbMarshaller
 {
-    internal static readonly Func<ITypeSymbol, (string annotated, string original)> TypeName = TypeExtensions.GetTypeIdentifier(SymbolEqualityComparer.IncludeNullability);
-    internal static readonly Func<ITypeSymbol, TypeIdentifier> TypeIdentifier = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, x => x.GetKnownType());
-
     private static IEnumerable<string> CreateImplementations(IEnumerable<DynamoDBMarshallerArguments> arguments)
     {
         foreach (var argument in arguments)
         {
-            var rootTypeName = TypeName(argument.EntityTypeSymbol).annotated;
-            var argumentTypeName = TypeName(argument.ArgumentType).annotated;
+            var rootTypeName = argument.EntityTypeSymbol.Representation().annotated;
+            var argumentTypeName = argument.ArgumentType.Representation().annotated;
             var (expressionValueMethod, valueTrackerTypeName) = AttributeExpressionValue.RootSignature(argument.ArgumentType);
             var (expressionMethodName, nameTrackerTypeName) = AttributeExpressionName.RootSignature(argument.EntityTypeSymbol);
 
@@ -26,7 +23,7 @@ public static class DynamoDbMarshaller
                 .Append(expressionMethodName)
                 .Append(KeyMarshaller.PrimaryKeyMarshaller(argument.EntityTypeSymbol));
 
-            var classImplementation = $"private sealed class {argument.ImplementationName}: {Interface}<{rootTypeName}, {TypeName(argument.ArgumentType).annotated}, {nameTrackerTypeName}, {valueTrackerTypeName}>"
+            var classImplementation = $"private sealed class {argument.ImplementationName}: {Interface}<{rootTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}>"
                 .CreateBlock(interfaceImplementation);
 
             yield return $"public {Interface}<{rootTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.PropertyName} {{ get; }} = new {argument.ImplementationName}();";
@@ -41,7 +38,7 @@ public static class DynamoDbMarshaller
     public static IEnumerable<string> CreateRepository(IEnumerable<DynamoDBMarshallerArguments> arguments)
     {
         var loadedArguments = arguments.ToArray();
-        var getDynamoDbProperties = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, static x => x.GetDynamoDbProperties());
+        var getDynamoDbProperties = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, x => x.GetDynamoDbProperties());
         var code = CreateImplementations(loadedArguments)
             .Concat(Marshaller.CreateClass(loadedArguments, getDynamoDbProperties))
             .Concat(Unmarshaller.CreateClass(loadedArguments, getDynamoDbProperties))

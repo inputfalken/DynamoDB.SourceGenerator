@@ -16,8 +16,8 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
         var updateClassDeclarations = context.SyntaxProvider
             .ForAttributeWithMetadataName(
                 Constants.DynamoDBGenerator.DynamoDbDocumentPropertyFullname,
-                static (node, _) => node is ClassDeclarationSyntax,
-                static (context, _) => (ClassDeclarationSyntax)context.TargetNode
+                (n, _) => n is ClassDeclarationSyntax,
+                (c, _) => (ClassDeclarationSyntax)c.TargetNode
             );
 
         var compilationAndClasses = context.CompilationProvider.Combine(updateClassDeclarations.Collect());
