@@ -8,7 +8,7 @@ public readonly record struct Conversion
         Code = code;
         TypeIdentifiers = typeIdentifiers;
     }
-    
+
     public Conversion(IEnumerable<string> code)
     {
         Code = code;
@@ -39,7 +39,8 @@ public readonly record struct Conversion
 
         yield return rootConversion;
 
-        foreach (var assignment in rootConversion.TypeIdentifiers .SelectMany(x => ConversionMethods(x, conversionSelector, typeSymbols)))
+        foreach (var x in rootConversion.TypeIdentifiers)
+        foreach (var assignment in ConversionMethods(x, conversionSelector, typeSymbols))
             yield return assignment;
     }
 }
