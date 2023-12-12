@@ -71,7 +71,7 @@ public static class AttributeExpressionName
         var dataMembers = fn(typeSymbol)
             .Select(x =>
             {
-                var typeIdentifier = DynamoDbMarshaller.TypeIdentifier(x.DataMember.Type);
+                var typeIdentifier = x.DataMember.Type.TypeIdentifier();
                 var nameRef = $"_{x.DataMember.Name}NameRef";
                 var attributeReference = TypeName(x.DataMember.Type);
                 var isUnknown = typeIdentifier is UnknownType;

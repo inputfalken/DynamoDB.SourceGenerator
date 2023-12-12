@@ -8,7 +8,7 @@ public static class AttributeExpressionValue
 {
 
     private static readonly Func<ITypeSymbol, string> GetAttributeValueInterfaceName = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability,
-        x => $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{DynamoDbMarshaller.TypeName(x).annotated}>");
+        x => $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{x.Representation().annotated}>");
 
     private static readonly Func<ITypeSymbol, string> TypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Values", SymbolEqualityComparer.Default);
 
@@ -70,7 +70,7 @@ public static class AttributeExpressionValue
         );
 
         foreach (var yield in
-                 $"IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({DynamoDbMarshaller.TypeName(typeSymbol).annotated} entity)"
+                 $"IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({typeSymbol.Representation().annotated} entity)"
                      .CreateBlock(yields))
             yield return yield;
 
@@ -89,7 +89,7 @@ public static class AttributeExpressionValue
         var dataMembers = fn(typeSymbol)
             .Select(x =>
             {
-                var typeIdentifier = DynamoDbMarshaller.TypeIdentifier(x.DataMember.Type);
+                var typeIdentifier = x.DataMember.Type.TypeIdentifier();
                 var valueRef = $"_{x.DataMember.Name}ValueRef";
                 var attributeReference = TypeName(x.DataMember.Type);
                 var isUnknown = typeIdentifier is UnknownType;

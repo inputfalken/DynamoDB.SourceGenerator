@@ -1,7 +1,5 @@
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Operations;
 
 namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
@@ -14,16 +12,50 @@ public static class TypeExtensions
         return x => cache.TryGetValue(x, out var value) ? value : cache[x] = selector(x);
     }
 
-    public static Func<ITypeSymbol, (string annotated, string original)> GetTypeIdentifier(IEqualityComparer<ISymbol?> comparer)
-    {
-        var dict = new Dictionary<ITypeSymbol, (string, string)>(comparer);
 
-        string TypeIdentifier(ITypeSymbol x, string displayString)
+    private static readonly Dictionary<ITypeSymbol, TypeIdentifier> TypeIdentifierDictionary = new(SymbolEqualityComparer.IncludeNullability);
+
+    public static TypeIdentifier TypeIdentifier(this ITypeSymbol type)
+    {
+
+        if (TypeIdentifierDictionary.TryGetValue(type, out var typeIdentifier))
+            return typeIdentifier;
+
+        return TypeIdentifierDictionary[type] = Create(type);
+
+        static TypeIdentifier Create(ITypeSymbol typeSymbol)
+        {
+
+            if (BaseType.CreateInstance(typeSymbol) is { } baseType)
+                return baseType;
+
+            if (SingleGeneric.CreateInstance(typeSymbol) is { } singleGeneric)
+                return singleGeneric;
+
+            if (KeyValueGeneric.CreateInstance(typeSymbol) is { } keyValueGeneric)
+                return keyValueGeneric;
+
+            return new UnknownType(typeSymbol);
+        }
+    }
+
+    private static readonly Dictionary<ITypeSymbol, (string, string)> RepresentationDictionary = new(SymbolEqualityComparer.IncludeNullability);
+
+    public static (string annotated, string original) Representation(this ITypeSymbol typeSymbol)
+    {
+        if (RepresentationDictionary.TryGetValue(typeSymbol, out var res))
+            return res;
+
+        var displayString = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+
+        return RepresentationDictionary[typeSymbol] = (ToString(typeSymbol, displayString), displayString);
+
+        static string ToString(ITypeSymbol x, string displayString)
         {
 
             if (x is IArrayTypeSymbol arrayTypeSymbol)
             {
-                var result = TypeIdentifier(arrayTypeSymbol.ElementType, arrayTypeSymbol.ElementType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+                var result = ToString(arrayTypeSymbol.ElementType, arrayTypeSymbol.ElementType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
 
                 return x.NullableAnnotation switch
                 {
@@ -32,7 +64,7 @@ public static class TypeExtensions
                     _ => throw new ArgumentException(ExceptionMessage(x))
                 };
             }
-            
+
             if (x is not INamedTypeSymbol namedTypeSymbol || namedTypeSymbol.TypeArguments.Length is 0)
             {
                 return x.NullableAnnotation switch
@@ -46,11 +78,10 @@ public static class TypeExtensions
             if (namedTypeSymbol.OriginalDefinition.SpecialType is SpecialType.System_Nullable_T)
                 return displayString;
 
-
             if (namedTypeSymbol.IsTupleType)
             {
                 var tupleElements = namedTypeSymbol.TupleElements
-                    .Select(y => $"{TypeIdentifier(y.Type, $"{y.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}")} {y.Name}");
+                    .Select(y => $"{ToString(y.Type, $"{y.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}")} {y.Name}");
                 return $"({string.Join(", ", tupleElements)})";
             }
 
@@ -59,7 +90,7 @@ public static class TypeExtensions
                 return displayString;
 
             var typeWithoutGenericParameters = displayString.Substring(0, index);
-            var typeParameters = string.Join(", ", namedTypeSymbol.TypeArguments.Select(y => TypeIdentifier(y, y.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))));
+            var typeParameters = string.Join(", ", namedTypeSymbol.TypeArguments.Select(y => ToString(y, y.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))));
             return namedTypeSymbol.NullableAnnotation switch
             {
                 // Having `Annotated` and `None` produce append '?' is fine as long as `SuffixedTypeSymbolNameFactory` is giving them different names. Otherwise we could create broken signatures due to duplication.
@@ -67,19 +98,9 @@ public static class TypeExtensions
                 NullableAnnotation.NotAnnotated => $"{typeWithoutGenericParameters}<{typeParameters}>",
                 _ => throw new ArgumentException(ExceptionMessage(namedTypeSymbol))
             };
+
+            static string ExceptionMessage(ISymbol typeSymbol) => $"Could nullable annotation on type: {typeSymbol.ToDisplayString()}";
         }
-
-        return x =>
-        {
-            if (dict.TryGetValue(x, out var res))
-                return res;
-
-            var displayString = x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-
-            return dict[x] = (TypeIdentifier(x, displayString), displayString);
-        };
-
-        static string ExceptionMessage(ITypeSymbol typeSymbol) => $"Could nullable annotation on type: {typeSymbol.ToDisplayString()}";
     }
     public static Func<ITypeSymbol, string> SuffixedTypeSymbolNameFactory(string? suffix, IEqualityComparer<ISymbol?> comparer)
     {
@@ -161,19 +182,6 @@ public static class TypeExtensions
         return type.IsValueType && type is INamedTypeSymbol {OriginalDefinition.SpecialType: SpecialType.System_Nullable_T} symbol ? symbol : null;
     }
 
-    public static TypeIdentifier GetKnownType(this ITypeSymbol type)
-    {
-        if (BaseType.CreateInstance(type) is { } baseType)
-            return baseType;
-
-        if (SingleGeneric.CreateInstance(type) is { } singleGeneric)
-            return singleGeneric;
-
-        if (KeyValueGeneric.CreateInstance(type) is { } keyValueGeneric)
-            return keyValueGeneric;
-
-        return new UnknownType(type);
-    }
     public static bool IsNumeric(this ITypeSymbol typeSymbol)
     {
         return typeSymbol.SpecialType

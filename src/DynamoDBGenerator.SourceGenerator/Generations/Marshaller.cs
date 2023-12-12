@@ -46,7 +46,7 @@ public static class Marshaller
                 .Append($"return {DictionaryReference};"));
 
         var code =
-            $"public static Dictionary<string, AttributeValue>{(isNullable ? '?' : null)} {GetSerializationMethodName(typeSymbol)}({DynamoDbMarshaller.TypeName(typeSymbol).annotated} {ParamReference}, string? {DataMember} = null)"
+            $"public static Dictionary<string, AttributeValue>{(isNullable ? '?' : null)} {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, string? {DataMember} = null)"
                 .CreateBlock(body);
 
         return new Conversion(code, properties.Select(y => y.Type));
@@ -70,7 +70,7 @@ public static class Marshaller
     private static Conversion CreateMethod(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
     {
 
-        return DynamoDbMarshaller.TypeIdentifier(type) switch
+        return type.TypeIdentifier() switch
         {
             BaseType baseType when CreateSignature(baseType) is var signature => baseType.Type switch
             {
@@ -142,8 +142,8 @@ public static class Marshaller
     private static string CreateSignature(TypeIdentifier typeIdentifier)
     {
         return typeIdentifier.TypeSymbol.IsNullable()
-            ? $"public static AttributeValue? {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({DynamoDbMarshaller.TypeName(typeIdentifier.TypeSymbol).annotated} {Param}, string? {DataMember} = null)"
-            : $"public static AttributeValue {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({DynamoDbMarshaller.TypeName(typeIdentifier.TypeSymbol).annotated} {Param}, string? {DataMember} = null)";
+            ? $"public static AttributeValue? {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({typeIdentifier.TypeSymbol.Representation().annotated} {Param}, string? {DataMember} = null)"
+            : $"public static AttributeValue {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({typeIdentifier.TypeSymbol.Representation().annotated} {Param}, string? {DataMember} = null)";
     }
 
     private static string Else(TypeIdentifier typeIdentifier)
@@ -168,7 +168,7 @@ public static class Marshaller
     {
         var invocation = $"{ClassName}.{GetSerializationMethodName(typeSymbol)}({parameterReference}, {dataMember})";
 
-        if (DynamoDbMarshaller.TypeIdentifier(typeSymbol) is UnknownType)
+        if (typeSymbol.TypeIdentifier() is UnknownType)
             return typeSymbol.IsNullable() is false // Can get rid of this if the signature accepts nullable
                 ? $"new AttributeValue {{ M = {invocation} ?? throw {ExceptionHelper.NullExceptionMethod}({dataMember}) }}"
                 : $"{AttributeValueUtilityFactory.ToAttributeMap}({invocation})";
