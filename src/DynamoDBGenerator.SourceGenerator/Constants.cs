@@ -59,6 +59,8 @@ public static class Constants
 
             public const string ToAttributeMap = $"{ClassName}.ToAttributeMap";
             public const string Null = $"{ClassName}.Null";
+            public const string True = $"{ClassName}.True";
+            public const string False = $"{ClassName}.False";
         }
         public static class ExceptionHelper
         {

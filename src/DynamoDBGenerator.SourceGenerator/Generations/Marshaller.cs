@@ -75,7 +75,7 @@ public static class Marshaller
             BaseType baseType when CreateSignature(baseType) is var signature => baseType.Type switch
             {
                 BaseType.SupportedType.String => signature.CreateBlock($"return {Param} is not null ? new AttributeValue {{ S = {Param} }} : {Else(baseType)};").ToConversion(),
-                BaseType.SupportedType.Bool => signature.CreateBlock($"return new AttributeValue {{ BOOL = {Param} }};").ToConversion(),
+                BaseType.SupportedType.Bool => signature.CreateBlock($"return {Param} ? {AttributeValueUtilityFactory.True} : {AttributeValueUtilityFactory.False};").ToConversion(),
                 BaseType.SupportedType.Int16
                     or BaseType.SupportedType.Int32
                     or BaseType.SupportedType.Int64
