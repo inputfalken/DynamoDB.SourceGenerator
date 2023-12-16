@@ -21,6 +21,19 @@ public abstract class MarshalAsserter<T>
     }
 
     [Fact]
+    public void Marshall_IsEquivalentTo_UnmarshallResult()
+    {
+        Arguments().Should().AllSatisfy(x => UnmarshallImplementation(MarshallImplementation(x.element)).Should().BeEquivalentTo(x.element));
+
+    }
+    
+    [Fact]
+    public void UnMarshall_IsEquivalentTo_MarshallResult()
+    {
+        Arguments().Should().AllSatisfy(x => MarshallImplementation(UnmarshallImplementation(x.attributeValues)).Should().BeEquivalentTo(x.attributeValues));
+    }
+
+    [Fact]
     public void Unmarshall_NullAttributeValues_ShouldThrow()
     {
         var act = () => UnmarshallImplementation(null!);
