@@ -10,7 +10,6 @@ public static class Marshaller
     private const string DataMember = "dataMember";
     private const string DictionaryReference = "attributeValues";
     private static readonly Func<ITypeSymbol, string> GetSerializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_M", SymbolEqualityComparer.IncludeNullability);
-    private const string Param = "entity";
     private const string ParamReference = "entity";
 
     internal static IEnumerable<string> CreateClass(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties)
@@ -74,8 +73,8 @@ public static class Marshaller
         {
             BaseType baseType when CreateSignature(baseType) is var signature => baseType.Type switch
             {
-                BaseType.SupportedType.String => signature.CreateBlock($"return {Param} is not null ? new AttributeValue {{ S = {Param} }} : {Else(baseType)};").ToConversion(),
-                BaseType.SupportedType.Bool => signature.CreateBlock($"return {Param} ? {AttributeValueUtilityFactory.True} : {AttributeValueUtilityFactory.False};").ToConversion(),
+                BaseType.SupportedType.String => signature.CreateBlock($"return {ParamReference} is not null ? new AttributeValue {{ S = {ParamReference} }} : {Else(baseType)};").ToConversion(),
+                BaseType.SupportedType.Bool => signature.CreateBlock($"return {ParamReference} ? {AttributeValueUtilityFactory.True} : {AttributeValueUtilityFactory.False};").ToConversion(),
                 BaseType.SupportedType.Int16
                     or BaseType.SupportedType.Int32
                     or BaseType.SupportedType.Int64
@@ -87,34 +86,34 @@ public static class Marshaller
                     or BaseType.SupportedType.Single
                     or BaseType.SupportedType.SByte
                     or BaseType.SupportedType.Byte
-                    => signature.CreateBlock($"return new AttributeValue {{ N = {Param}.ToString() }};").ToConversion(),
-                BaseType.SupportedType.Char => signature.CreateBlock($"return new AttributeValue {{ S = {Param}.ToString() }};").ToConversion(),
+                    => signature.CreateBlock($"return new AttributeValue {{ N = {ParamReference}.ToString() }};").ToConversion(),
+                BaseType.SupportedType.Char => signature.CreateBlock($"return new AttributeValue {{ S = {ParamReference}.ToString() }};").ToConversion(),
                 BaseType.SupportedType.DateOnly or BaseType.SupportedType.DateTimeOffset or BaseType.SupportedType.DateTime
-                    => signature.CreateBlock($"return new AttributeValue {{ S = {Param}.ToString(\"O\") }};").ToConversion(),
-                BaseType.SupportedType.Enum => signature.CreateBlock($"return new AttributeValue {{ N = ((int){Param}).ToString() }};").ToConversion(),
-                BaseType.SupportedType.MemoryStream => signature.CreateBlock($"return {Param} is not null ? new AttributeValue {{ B = {Param} }} : {Else(baseType)};").ToConversion(),
+                    => signature.CreateBlock($"return new AttributeValue {{ S = {ParamReference}.ToString(\"O\") }};").ToConversion(),
+                BaseType.SupportedType.Enum => signature.CreateBlock($"return new AttributeValue {{ N = ((int){ParamReference}).ToString() }};").ToConversion(),
+                BaseType.SupportedType.MemoryStream => signature.CreateBlock($"return {ParamReference} is not null ? new AttributeValue {{ B = {ParamReference} }} : {Else(baseType)};").ToConversion(),
                 _ => throw UncoveredConversionException(baseType, nameof(CreateMethod))
             },
             SingleGeneric singleGeneric when CreateSignature(singleGeneric) is var signature => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => signature
-                    .CreateBlock($"return {Param} is not null ? {InvokeMarshallerMethod(singleGeneric.T, $"{Param}.Value", DataMember)} : {Else(singleGeneric)};")
+                    .CreateBlock($"return {ParamReference} is not null ? {InvokeMarshallerMethod(singleGeneric.T, $"{ParamReference}.Value", DataMember)} : {Else(singleGeneric)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.IReadOnlyCollection
                     or SingleGeneric.SupportedType.Array
                     or SingleGeneric.SupportedType.IEnumerable
                     or SingleGeneric.SupportedType.ICollection => signature
                         .CreateBlock(
-                            $"return {Param} is not null ? new AttributeValue {{ L = new List<AttributeValue>({Param}.Select((y, i) => {InvokeMarshallerMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"")} {(singleGeneric.T.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)})) }} : {Else(singleGeneric)};")
+                            $"return {ParamReference} is not null ? new AttributeValue {{ L = new List<AttributeValue>({ParamReference}.Select((y, i) => {InvokeMarshallerMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"")} {(singleGeneric.T.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)})) }} : {Else(singleGeneric)};")
                         .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.SpecialType is SpecialType.System_String
                     => signature
                         .CreateBlock(
-                            $"return {Param} is not null ? new AttributeValue {{ SS = new List<{(singleGeneric.T.IsNullable() ? "string?" : "string")}>({(singleGeneric.T.IsNullable() ? Param : $"{Param}.Select((y,i) => y ?? throw {ExceptionHelper.NullExceptionMethod}($\"{{{DataMember}}}[UNKNOWN]\"))")})}} : {Else(singleGeneric)};")
+                            $"return {ParamReference} is not null ? new AttributeValue {{ SS = new List<{(singleGeneric.T.IsNullable() ? "string?" : "string")}>({(singleGeneric.T.IsNullable() ? ParamReference : $"{ParamReference}.Select((y,i) => y ?? throw {ExceptionHelper.NullExceptionMethod}($\"{{{DataMember}}}[UNKNOWN]\"))")})}} : {Else(singleGeneric)};")
                         .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.IsNumeric()
                     => signature
-                        .CreateBlock($"return {Param} is not null ? new AttributeValue {{ NS = new List<string>({Param}.Select(y => y.ToString())) }} : {Else(singleGeneric)};")
+                        .CreateBlock($"return {ParamReference} is not null ? new AttributeValue {{ NS = new List<string>({ParamReference}.Select(y => y.ToString())) }} : {Else(singleGeneric)};")
                         .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(CreateMethod))),
                 _ => throw UncoveredConversionException(singleGeneric, nameof(CreateMethod))
@@ -125,11 +124,11 @@ public static class Marshaller
             {
                 KeyValueGeneric.SupportedType.Dictionary => signature
                     .CreateBlock(
-                        $"return {Param} is not null ? new AttributeValue {{ M = {Param}.ToDictionary(y => y.Key, y => {InvokeMarshallerMethod(keyValueGeneric.TValue, "y.Value", DataMember)}) }} : {Else(keyValueGeneric)};")
+                        $"return {ParamReference} is not null ? new AttributeValue {{ M = {ParamReference}.ToDictionary(y => y.Key, y => {InvokeMarshallerMethod(keyValueGeneric.TValue, "y.Value", DataMember)}) }} : {Else(keyValueGeneric)};")
                     .ToConversion(keyValueGeneric.TValue),
                 KeyValueGeneric.SupportedType.LookUp => signature
                     .CreateBlock(
-                        $"return {Param} is not null ? new AttributeValue {{ M = {Param}.ToDictionary(y => y.Key, y => new AttributeValue {{ L = new List<AttributeValue>(y.Select(z => {InvokeMarshallerMethod(keyValueGeneric.TValue, "z", DataMember)})) }}) }} : {Else(keyValueGeneric)};")
+                        $"return {ParamReference} is not null ? new AttributeValue {{ M = {ParamReference}.ToDictionary(y => y.Key, y => new AttributeValue {{ L = new List<AttributeValue>(y.Select(z => {InvokeMarshallerMethod(keyValueGeneric.TValue, "z", DataMember)})) }}) }} : {Else(keyValueGeneric)};")
                     .ToConversion(keyValueGeneric.TValue),
                 _ => throw UncoveredConversionException(keyValueGeneric, nameof(CreateMethod))
             },
@@ -142,8 +141,8 @@ public static class Marshaller
     private static string CreateSignature(TypeIdentifier typeIdentifier)
     {
         return typeIdentifier.TypeSymbol.IsNullable()
-            ? $"public static AttributeValue? {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({typeIdentifier.TypeSymbol.Representation().annotated} {Param}, string? {DataMember} = null)"
-            : $"public static AttributeValue {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({typeIdentifier.TypeSymbol.Representation().annotated} {Param}, string? {DataMember} = null)";
+            ? $"public static AttributeValue? {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({typeIdentifier.TypeSymbol.Representation().annotated} {ParamReference}, string? {DataMember} = null)"
+            : $"public static AttributeValue {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({typeIdentifier.TypeSymbol.Representation().annotated} {ParamReference}, string? {DataMember} = null)";
     }
 
     private static string Else(TypeIdentifier typeIdentifier)
@@ -179,10 +178,10 @@ public static class Marshaller
     internal static IEnumerable<string> RootSignature(ITypeSymbol typeSymbol, string rootTypeName)
     {
 
-        return $"public Dictionary<{nameof(String)}, {Constants.AWSSDK_DynamoDBv2.AttributeValue}> {Constants.DynamoDBGenerator.Marshaller.MarshallMethodName}({rootTypeName} entity)"
+        return $"public Dictionary<{nameof(String)}, {Constants.AWSSDK_DynamoDBv2.AttributeValue}> {Constants.DynamoDBGenerator.Marshaller.MarshallMethodName}({rootTypeName} {ParamReference})"
             .CreateBlock(
-                "ArgumentNullException.ThrowIfNull(entity);",
-                $"return {ClassName}.{GetSerializationMethodName(typeSymbol)}(entity);"
+                $"ArgumentNullException.ThrowIfNull({ParamReference});",
+                $"return {ClassName}.{GetSerializationMethodName(typeSymbol)}({ParamReference});"
             );
     }
 
