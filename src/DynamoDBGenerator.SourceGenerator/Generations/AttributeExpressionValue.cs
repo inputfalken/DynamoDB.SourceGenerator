@@ -6,10 +6,6 @@ namespace DynamoDBGenerator.SourceGenerator.Generations;
 
 public static class AttributeExpressionValue
 {
-
-    private static readonly Func<ITypeSymbol, string> GetAttributeValueInterfaceName = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability,
-        x => $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{x.Representation().annotated}>");
-
     private static readonly Func<ITypeSymbol, string> TypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Values", SymbolEqualityComparer.Default);
 
     private const string ValueProvider = "valueIdProvider";
@@ -99,14 +95,14 @@ public static class AttributeExpressionValue
                     DDB: x,
                     ValueRef: valueRef,
                     AttributeReference: attributeReference,
-                    AttributeInterfaceName: GetAttributeValueInterfaceName(x.DataMember.Type),
+                    AttributeInterfaceName: $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{x.DataMember.Type.Representation().annotated}>",
                     typeIdentifier
                 );
             })
             .ToArray();
 
         var structName = TypeName(typeSymbol);
-        var interfaceName = GetAttributeValueInterfaceName(typeSymbol);
+        var interfaceName = $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{typeSymbol.Representation().annotated}>";
 
         var @struct = $"public readonly struct {structName} : {interfaceName}".CreateBlock(CreateCode(typeSymbol, dataMembers, structName, interfaceName));
 
