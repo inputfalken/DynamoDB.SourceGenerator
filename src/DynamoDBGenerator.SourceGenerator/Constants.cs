@@ -8,6 +8,7 @@ public static class Constants
         {
             public const string DynamoDBMarshallerConstructor = "DynamoDBMarshallerConstructorAttribute";
             public const string DynamoDBMarshaller = "DynamoDBMarshallerAttribute";
+            public const string DynamoDbMarshallerOptions = "DynamoDbMarshallerOptionsAttribute";
 
             public static class DynamoDBMarshallerArgument
             {
@@ -15,10 +16,16 @@ public static class Constants
                 public const string PropertyName = "PropertyName";
                 public const string ArgumentType = "ArgumentType";
             }
+            public static class DynamoDbMarshallerOptionsArgument
+            {
+                public const string Converters = "Converters";
+            }
         }
 
         public const string AssemblyName = "DynamoDBGenerator";
         public const string DynamoDbDocumentPropertyFullname = $"{Namespace.AttributesFullName}.{Attribute.DynamoDBMarshaller}";
+
+        public const string DynamoDBConverterFullName = $"{AssemblyName}.{Namespace.Converters}.{Converter.AttributeValueConverters}";
 
         public static class Namespace
         {
@@ -27,6 +34,11 @@ public static class Constants
             public const string AttributesFullName = $"{AssemblyName}.{Attributes}";
             public const string InternalFullName = $"{AssemblyName}.Internal";
             public const string ExceptionsFullName = $"{AssemblyName}.Exceptions";
+            public const string Converters = "Converters";
+        }
+        public static class Converter
+        {
+            public const string AttributeValueConverters = "AttributeValueConverters";
         }
 
         public static class Marshaller
