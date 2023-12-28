@@ -11,7 +11,7 @@ public static class AttributeExpressionValue
     private const string ValueProvider = "valueIdProvider";
     private static IEnumerable<string> CreateCode(
         ITypeSymbol typeSymbol,
-        (bool IsUnknown, DynamoDbDataMember DDB, string ValueRef, string AttributeReference, string AttributeInterfaceName, TypeIdentifier typeIdentifier)[] dataMembers,
+        (bool IsUnknown, DynamoDbDataMember DDB, string ValueRef, string AttributeReference, string AttributeInterfaceName)[] dataMembers,
         string structName,
         string interfaceName,
         MarshallerOptions options
@@ -88,18 +88,12 @@ public static class AttributeExpressionValue
         var dataMembers = fn(typeSymbol)
             .Select(x =>
             {
-                var typeIdentifier = x.DataMember.Type.TypeIdentifier();
-                var valueRef = $"_{x.DataMember.Name}ValueRef";
-                var attributeReference = TypeName(x.DataMember.Type);
-                var isUnknown = typeIdentifier is UnknownType;
-
                 return (
-                    IsUnknown: isUnknown,
+                    IsUnknown: !options.IsConvertable(x.DataMember.Type) && x.DataMember.Type.TypeIdentifier() is UnknownType,
                     DDB: x,
-                    ValueRef: valueRef,
-                    AttributeReference: attributeReference,
-                    AttributeInterfaceName: $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{x.DataMember.Type.Representation().annotated}>",
-                    typeIdentifier
+                    ValueRef: $"_{x.DataMember.Name}ValueRef",
+                    AttributeReference: TypeName(x.DataMember.Type),
+                    AttributeInterfaceName: $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{x.DataMember.Type.Representation().annotated}>"
                 );
             })
             .ToArray();
@@ -109,7 +103,7 @@ public static class AttributeExpressionValue
 
         var @struct = $"public readonly struct {structName} : {interfaceName}".CreateBlock(CreateCode(typeSymbol, dataMembers, structName, interfaceName, options));
 
-        return new Conversion(@struct, dataMembers.Select(x => x.typeIdentifier).OfType<UnknownType>().Select(x => x.TypeSymbol));
+        return new Conversion(@struct, dataMembers.Where(x => x.IsUnknown).Select(x => x.DDB.DataMember.Type));
 
     }
 

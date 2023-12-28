@@ -10,18 +10,18 @@ public static class AttributeExpressionName
     private const string ConstructorAttributeName = "nameRef";
 
     private static readonly Func<ITypeSymbol, string> TypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", SymbolEqualityComparer.Default);
-    internal static IEnumerable<string> CreateClasses(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties)
+    internal static IEnumerable<string> CreateClasses(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
     {
         // Using _comparer can double classes when there's a None nullable property mixed with a nullable property
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
 
         return arguments
-            .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, y => CreateStruct(y, getDynamoDbProperties), hashSet)).SelectMany(x => x.Code);
+            .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, y => CreateStruct(y, getDynamoDbProperties, options), hashSet)).SelectMany(x => x.Code);
 
     }
     private static IEnumerable<string> CreateCode(
         ITypeSymbol typeSymbol,
-        (bool IsUnknown, TypeIdentifier typeIdentifier, DynamoDbDataMember DDB, string NameRef, string AttributeReference, string AttributeInterfaceName)[] dataMembers,
+        (bool IsUnknown, DynamoDbDataMember DDB, string NameRef, string AttributeReference, string AttributeInterfaceName)[] dataMembers,
         string structName)
     {
         const string self = "_self";
@@ -66,31 +66,22 @@ public static class AttributeExpressionName
 
         yield return $"public override string ToString() => {self}.Value;";
     }
-    private static Conversion CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
+    private static Conversion CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
         var dataMembers = fn(typeSymbol)
-            .Select(x =>
-            {
-                var typeIdentifier = x.DataMember.Type.TypeIdentifier();
-                var nameRef = $"_{x.DataMember.Name}NameRef";
-                var attributeReference = TypeName(x.DataMember.Type);
-                var isUnknown = typeIdentifier is UnknownType;
-
-                return (
-                    IsUnknown: isUnknown,
-                    typeIdentifier,
-                    DDB: x,
-                    NameRef: nameRef,
-                    AttributeReference: attributeReference,
-                    AttributeInterfaceName: AttributeExpressionNameTrackerInterface
-                );
-            })
+            .Select(x => (
+                IsUnknown: !options.IsConvertable(x.DataMember.Type) && x.DataMember.Type.TypeIdentifier() is UnknownType,
+                DDB: x,
+                NameRef: $"_{x.DataMember.Name}NameRef",
+                AttributeReference: TypeName(x.DataMember.Type),
+                AttributeInterfaceName: AttributeExpressionNameTrackerInterface
+            ))
             .ToArray();
 
         var structName = TypeName(typeSymbol);
 
         var @class = $"public readonly struct {structName} : {AttributeExpressionNameTrackerInterface}".CreateBlock(CreateCode(typeSymbol, dataMembers, structName));
-        return new Conversion(@class, dataMembers.Select(x => x.typeIdentifier).OfType<UnknownType>().Select(x => x.TypeSymbol));
+        return new Conversion(@class, dataMembers.Where(x => x.IsUnknown).Select(x => x.DDB.DataMember.Type));
 
     }
 

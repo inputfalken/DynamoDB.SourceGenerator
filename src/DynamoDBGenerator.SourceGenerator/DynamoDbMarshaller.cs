@@ -55,7 +55,7 @@ public static class DynamoDbMarshaller
         var code = CreateImplementations(loadedArguments, options)
             .Concat(Marshaller.CreateClass(loadedArguments, getDynamoDbProperties, options))
             .Concat(Unmarshaller.CreateClass(loadedArguments, getDynamoDbProperties, options))
-            .Concat(AttributeExpressionName.CreateClasses(loadedArguments, getDynamoDbProperties))
+            .Concat(AttributeExpressionName.CreateClasses(loadedArguments, getDynamoDbProperties, options))
             .Concat(AttributeExpressionValue.CreateExpressionAttributeValue(loadedArguments, getDynamoDbProperties, options))
             .Concat(KeyMarshaller.CreateKeys(loadedArguments, getDynamoDbProperties, options));
 
