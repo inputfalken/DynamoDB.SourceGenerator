@@ -1,5 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+using Amazon;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
@@ -28,7 +29,7 @@ public class Marshalling
     public Marshalling()
     {
         _repository = new();
-        _context = new(new AmazonDynamoDBClient());
+        _context = new(new AmazonDynamoDBClient(RegionEndpoint.EUWest1));
         _dynamoDbOperationConfig = new()
         {
             Conversion = DynamoDBEntryConversion.V2
