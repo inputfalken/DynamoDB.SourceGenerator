@@ -64,9 +64,10 @@ public readonly struct MarshallerOptions
     {
         get
         {
-            var body = $"public {Name} ({_convertersType.Name} converters)"
+            var fullPath = _convertersType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            var body = $"public {Name} ({fullPath} converters)"
                 .CreateBlock($"{ConvertersProperty} = converters;")
-                .Append($"public {_convertersType.Name} {ConvertersProperty} {{ get; }}");
+                .Append($"public {fullPath} {ConvertersProperty} {{ get; }}");
 
             return $"public sealed class {Name}".CreateBlock(body);
         }
@@ -74,9 +75,8 @@ public readonly struct MarshallerOptions
 
     public static MarshallerOptions Create(INamedTypeSymbol typeSymbol)
     {
-        var namedTypeSymbols = typeSymbol.GetMembers();
-
-        var keyValuePairs = namedTypeSymbols
+        var keyValuePairs = typeSymbol
+            .TraverseToObject()
             .Select(ConverterDataMemberOrNull)
             .Where(x => x.HasValue)
             .Select(x => x!.Value);

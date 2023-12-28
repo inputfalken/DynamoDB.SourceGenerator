@@ -244,18 +244,17 @@ public static class TypeExtensions
 
     }
 
-    public static ITypeSymbol? FindInheritedType(this INamedTypeSymbol typeSymbol, Func<INamedTypeSymbol, bool> predicate) 
+    public static IEnumerable<ISymbol> TraverseToObject(this ITypeSymbol typeSymbol) 
     {
         var namedTypeSymbol = typeSymbol;
-        while (namedTypeSymbol.BaseType is { SpecialType: not SpecialType.System_Object })
+        while (namedTypeSymbol is { SpecialType: not SpecialType.System_Object })
         {
-            namedTypeSymbol = namedTypeSymbol.BaseType;
+            foreach (var member in namedTypeSymbol.GetMembers())
+                yield return member;
 
-            if (predicate(namedTypeSymbol))
-                return namedTypeSymbol;
+            namedTypeSymbol = namedTypeSymbol.BaseType;
         }
 
-        return null;
     }
         
 }
