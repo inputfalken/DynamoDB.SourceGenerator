@@ -44,10 +44,10 @@ public static class Unmarshaller
     {
         return $"private static class {UnMarshallerClass}".CreateBlock(CreateUnMarshaller(arguments, getDynamoDbProperties, options));
     }
-    private static Conversion CreateCode(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
+    private static Conversion CreateCode(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
         var assignments = fn(type)
-            .Select(x => (DDB: x, MethodCall: InvokeUnmarshallMethod(x.DataMember.Type, $"{Dict}.GetValueOrDefault(\"{x.AttributeName}\")", $"\"{x.DataMember.Name}\""), x.DataMember.Name))
+            .Select(x => (DDB: x, MethodCall: InvokeUnmarshallMethod(x.DataMember.Type, $"{Dict}.GetValueOrDefault(\"{x.AttributeName}\")", $"\"{x.DataMember.Name}\"", options), x.DataMember.Name))
             .ToArray();
 
         var typeName = type.Representation();
@@ -113,16 +113,16 @@ public static class Unmarshaller
             SingleGeneric singleGeneric when CreateSignature(singleGeneric.TypeSymbol) is var signature => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => signature
-                    .CreateBlock($"return {Value} is null or {{ NULL: true }} ? {Else(singleGeneric.TypeSymbol)} : {InvokeUnmarshallMethod(singleGeneric.T, Value, DataMember)};")
+                    .CreateBlock($"return {Value} is null or {{ NULL: true }} ? {Else(singleGeneric.TypeSymbol)} : {InvokeUnmarshallMethod(singleGeneric.T, Value, DataMember, options)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.ICollection => signature
-                    .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"")}).ToList() : {Else(singleGeneric.TypeSymbol)};")
+                    .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"", options)}).ToList() : {Else(singleGeneric.TypeSymbol)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Array or SingleGeneric.SupportedType.IReadOnlyCollection => signature
-                    .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"")}).ToArray() : {Else(singleGeneric.TypeSymbol)};")
+                    .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"", options)}).ToArray() : {Else(singleGeneric.TypeSymbol)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.IEnumerable => signature
-                    .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"")}) : {Else(singleGeneric.TypeSymbol)};")
+                    .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"", options)}) : {Else(singleGeneric.TypeSymbol)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.SpecialType is SpecialType.System_String => signature
                     .CreateBlock(
@@ -140,16 +140,16 @@ public static class Unmarshaller
             KeyValueGeneric keyValueGeneric when CreateSignature(keyValueGeneric.TypeSymbol) is var signature => keyValueGeneric.Type switch
             {
                 KeyValueGeneric.SupportedType.Dictionary => signature
-                    .CreateBlock($"return {Value} is {{ M: {{ }} x }} ? x.ToDictionary(y => y.Key, y => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "y.Value", "y.Key")}) : {Else(keyValueGeneric.TypeSymbol)};")
+                    .CreateBlock($"return {Value} is {{ M: {{ }} x }} ? x.ToDictionary(y => y.Key, y => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "y.Value", "y.Key", options)}) : {Else(keyValueGeneric.TypeSymbol)};")
                     .ToConversion(keyValueGeneric.TValue),
                 KeyValueGeneric.SupportedType.LookUp => signature
                     .CreateBlock(
-                        $"return {Value} is {{ M: {{ }} x }} ? x.SelectMany(y => y.Value.L, (y, z) => (y.Key, z)).ToLookup(y => y.Key, y => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "y.z", "y.Key")}) : {Else(keyValueGeneric.TypeSymbol)};")
+                        $"return {Value} is {{ M: {{ }} x }} ? x.SelectMany(y => y.Value.L, (y, z) => (y.Key, z)).ToLookup(y => y.Key, y => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "y.z", "y.Key", options)}) : {Else(keyValueGeneric.TypeSymbol)};")
                     .ToConversion(keyValueGeneric.TValue),
                 _ => throw UncoveredConversionException(keyValueGeneric, nameof(CreateMethod))
 
             },
-            UnknownType => CreateCode(type, fn),
+            UnknownType => CreateCode(type, fn, options),
             var typeIdentifier => throw UncoveredConversionException(typeIdentifier, nameof(CreateMethod))
         };
 
@@ -177,8 +177,11 @@ public static class Unmarshaller
         return typeSymbol.IsNullable() ? "null" : $"throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}({DataMember})";
     }
 
-    private static string InvokeUnmarshallMethod(ITypeSymbol typeSymbol, string paramReference, string dataMember)
+    private static string InvokeUnmarshallMethod(ITypeSymbol typeSymbol, string paramReference, string dataMember, MarshallerOptions options)
     {
+        if (options.IsConvertable(typeSymbol))
+            return $"{GetDeserializationMethodName(typeSymbol)}({paramReference}, {MarshallerOptions.PropertyName}, {dataMember})";
+        
         return typeSymbol.TypeIdentifier() is UnknownType
             ? $"{GetDeserializationMethodName(typeSymbol)}({paramReference}?.M, {MarshallerOptions.PropertyName}, {dataMember})"
             : $"{GetDeserializationMethodName(typeSymbol)}({paramReference}, {MarshallerOptions.PropertyName}, {dataMember})";
