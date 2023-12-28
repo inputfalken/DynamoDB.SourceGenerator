@@ -10,12 +10,14 @@ public readonly struct MarshallerOptions
     public const string PropertyName = "Options";
     private const string ConvertersProperty = "Converters";
     public const string PropertyDeclaration = $"public {Name} {PropertyName} {{ get; }}";
+    private readonly string _converterFullPath;
 
     private MarshallerOptions(INamedTypeSymbol convertersType,
         IEnumerable<KeyValuePair<string, Converter>> converters)
     {
         Converters = converters.ToArray();
         _convertersType = convertersType;
+        _converterFullPath = _convertersType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
     }
 
     public string? TryInstantiate()
@@ -23,7 +25,7 @@ public readonly struct MarshallerOptions
         if (_convertersType.InstanceConstructors.Length is 0 ||
             _convertersType.InstanceConstructors.All(x => x.Parameters.Length is 0))
         {
-            return $"new {Name}(new {_convertersType.Name}())";
+            return $"new {Name}(new {_converterFullPath}())";
         }
 
         return null;
@@ -64,10 +66,9 @@ public readonly struct MarshallerOptions
     {
         get
         {
-            var fullPath = _convertersType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            var body = $"public {Name} ({fullPath} converters)"
+            var body = $"public {Name} ({_converterFullPath} converters)"
                 .CreateBlock($"{ConvertersProperty} = converters;")
-                .Append($"public {fullPath} {ConvertersProperty} {{ get; }}");
+                .Append($"public {_converterFullPath} {ConvertersProperty} {{ get; }}");
 
             return $"public sealed class {Name}".CreateBlock(body);
         }
