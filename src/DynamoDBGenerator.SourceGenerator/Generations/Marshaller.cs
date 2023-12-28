@@ -92,7 +92,6 @@ public static class Marshaller
         {
             BaseType baseType when CreateSignature(baseType.TypeSymbol) is var signature => baseType.Type switch
             {
-                BaseType.SupportedType.Bool => signature.CreateBlock($"return {ParamReference} ? {AttributeValueUtilityFactory.True} : {AttributeValueUtilityFactory.False};").ToConversion(),
                 BaseType.SupportedType.Int16
                     or BaseType.SupportedType.Int32
                     or BaseType.SupportedType.Int64
@@ -106,8 +105,7 @@ public static class Marshaller
                     or BaseType.SupportedType.Byte
                     => signature.CreateBlock($"return new AttributeValue {{ N = {ParamReference}.ToString() }};").ToConversion(),
                 BaseType.SupportedType.Char => signature.CreateBlock($"return new AttributeValue {{ S = {ParamReference}.ToString() }};").ToConversion(),
-                BaseType.SupportedType.DateOnly or BaseType.SupportedType.DateTimeOffset or BaseType.SupportedType.DateTime
-                    => signature.CreateBlock($"return new AttributeValue {{ S = {ParamReference}.ToString(\"O\") }};").ToConversion(),
+                BaseType.SupportedType.DateOnly => signature.CreateBlock($"return new AttributeValue {{ S = {ParamReference}.ToString(\"O\") }};").ToConversion(),
                 BaseType.SupportedType.Enum => signature.CreateBlock($"return new AttributeValue {{ N = ((int){ParamReference}).ToString() }};").ToConversion(),
                 BaseType.SupportedType.MemoryStream => signature.CreateBlock($"return {ParamReference} is not null ? new AttributeValue {{ B = {ParamReference} }} : {Else(baseType)};").ToConversion(),
                 _ => throw UncoveredConversionException(baseType, nameof(CreateMethod))

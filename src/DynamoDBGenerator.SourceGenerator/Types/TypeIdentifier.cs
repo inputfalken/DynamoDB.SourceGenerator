@@ -110,7 +110,6 @@ public record BaseType : TypeIdentifier
 
     public enum SupportedType
     {
-        Bool = 2,
         Char = 3,
         Enum = 4,
         Int16 = 5,
@@ -124,8 +123,6 @@ public record BaseType : TypeIdentifier
         Decimal = 13,
         Double = 14,
         Single = 15,
-        DateTime = 16,
-        DateTimeOffset = 17,
         DateOnly = 18,
         MemoryStream = 19
     }
@@ -140,7 +137,6 @@ public record BaseType : TypeIdentifier
     {
         SupportedType? primitiveTypeAssignment = type switch
         {
-            {SpecialType: SpecialType.System_Boolean} => SupportedType.Bool,
             {SpecialType: SpecialType.System_Char} => SupportedType.Char,
             {SpecialType: SpecialType.System_Int16} => SupportedType.Int16,
             {SpecialType: SpecialType.System_Int32} => SupportedType.Int32,
@@ -155,8 +151,6 @@ public record BaseType : TypeIdentifier
             {SpecialType: SpecialType.System_SByte} => SupportedType.SByte,
             {Name: nameof(MemoryStream)} => SupportedType.MemoryStream,
             {TypeKind: TypeKind.Enum} => SupportedType.Enum,
-            {SpecialType: SpecialType.System_DateTime} => SupportedType.DateTime,
-            {Name: nameof(DateTimeOffset)} => SupportedType.DateTimeOffset,
             {Name: "DateOnly"} => SupportedType.DateOnly,
             _ => null
         };

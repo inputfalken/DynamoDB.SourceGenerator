@@ -81,9 +81,6 @@ public static class Unmarshaller
         {
             BaseType baseType when CreateSignature(baseType.TypeSymbol) is var signature => baseType.Type switch
             {
-                BaseType.SupportedType.Bool => signature
-                    .CreateBlock($"return {Value} is {{ BOOL: var x }} ? x : {Else(baseType.TypeSymbol)};")
-                    .ToConversion(),
                 BaseType.SupportedType.Char => signature
                     .CreateBlock($"return {Value} is {{ S: {{ }} x }} ? x[0] : {Else(baseType.TypeSymbol)};")
                     .ToConversion(),
@@ -104,9 +101,7 @@ public static class Unmarshaller
                     => signature
                         .CreateBlock($"return {Value} is {{ N: {{ }} x }} ? {baseType.TypeSymbol.Representation().original}.Parse(x) : {Else(baseType.TypeSymbol)};")
                         .ToConversion(),
-                BaseType.SupportedType.DateTime
-                    or BaseType.SupportedType.DateTimeOffset
-                    or BaseType.SupportedType.DateOnly
+                BaseType.SupportedType.DateOnly
                     => signature
                         .CreateBlock($"return {Value} is {{ S: {{ }} x }} ? {baseType.TypeSymbol.Representation().original}.Parse(x) : {Else(baseType.TypeSymbol)};")
                         .ToConversion(),
