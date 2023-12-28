@@ -19,12 +19,14 @@ public static class AttributeExpressionValue
         const string self = "_self";
         var constructorFieldAssignments = dataMembers
             .Select(x => x.IsUnknown
-                ? $"_{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({ValueProvider}));"
+                ? $"_{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({ValueProvider}, options));"
                 : $"{x.ValueRef} = new ({ValueProvider});")
-            .Append($"{self} = new({ValueProvider});");
-        foreach (var fieldAssignment in $"public {structName}(Func<string> {ValueProvider})".CreateBlock(constructorFieldAssignments))
+            .Append($"{self} = new({ValueProvider});")
+            .Append($"{MarshallerOptions.PropertyName} = options;");
+        foreach (var fieldAssignment in $"public {structName}(Func<string> {ValueProvider}, {MarshallerOptions.Name} options)".CreateBlock(constructorFieldAssignments))
             yield return fieldAssignment;
 
+        yield return $"private readonly {MarshallerOptions.Name} options;";
         foreach (var fieldDeclaration in dataMembers)
         {
             if (fieldDeclaration.IsUnknown)
@@ -115,7 +117,7 @@ public static class AttributeExpressionValue
         var typeName = TypeName(typeSymbol);
         return ($"public {typeName} {Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerMethodName}()".CreateBlock(
             "var incrementer = new DynamoExpressionValueIncrementer();",
-            $"return new {typeName}(incrementer.GetNext);"
+            $"return new {typeName}(incrementer.GetNext, {MarshallerOptions.PropertyName});"
         ), typeName);
     }
 }

@@ -12,9 +12,9 @@ public static class Marshaller
     private static readonly Func<ITypeSymbol, string> GetSerializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_M", SymbolEqualityComparer.IncludeNullability);
     private const string ParamReference = "entity";
 
-    internal static IEnumerable<string> CreateClass(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties)
+    internal static IEnumerable<string> CreateClass(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
     {
-        return $"private static class {ClassName}".CreateBlock(CreateMarshaller(arguments, getDynamoDbProperties));
+        return $"private static class {ClassName}".CreateBlock(CreateMarshaller(arguments, getDynamoDbProperties, options));
     }
     private static Conversion CreateDictionaryMethod(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
     {
@@ -45,33 +45,51 @@ public static class Marshaller
                 .Append($"return {DictionaryReference};"));
 
         var code =
-            $"public static Dictionary<string, AttributeValue>{(isNullable ? '?' : null)} {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, string? {DataMember} = null)"
+            $"public static Dictionary<string, AttributeValue>{(isNullable ? '?' : null)} {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, {MarshallerOptions.Name} {MarshallerOptions.PropertyName}, string? {DataMember} = null)"
                 .CreateBlock(body);
 
         return new Conversion(code, properties.Select(y => y.Type));
 
     }
 
-    private static IEnumerable<string> CreateMarshaller(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties)
+    private static IEnumerable<string> CreateMarshaller(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
     {
         var hashset = new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability);
 
         return arguments.SelectMany(x => Conversion
                 .ConversionMethods(
                     x.EntityTypeSymbol,
-                    y => CreateMethod(y, getDynamoDbProperties),
+                    y => CreateMethod(y, getDynamoDbProperties, options),
                     hashset
                 )
-                .Concat(Conversion.ConversionMethods(x.ArgumentType, y => CreateMethod(y, getDynamoDbProperties), hashset))
+                .Concat(Conversion.ConversionMethods(x.ArgumentType, y => CreateMethod(y, getDynamoDbProperties, options), hashset))
             )
             .SelectMany(x => x.Code);
     }
-    private static Conversion CreateMethod(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
+    private static Conversion CreateMethod(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
+        if (options.AccessConverterWrite(type, ParamReference) is {} a)
+        {
+            if (type is {IsReferenceType:true} or {OriginalDefinition.SpecialType: SpecialType.System_Nullable_T })
+            {
+                if (type.IsNullable())
+                    return CreateSignature(type)
+                        .CreateBlock($"return {ParamReference} is not null ? {a} : null;")
+                        .ToConversion();
+                
+                return CreateSignature(type)
+                    .CreateBlock($"return {ParamReference} is not null ? {a} : throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
+                    .ToConversion();
+            }
+
+            return CreateSignature(type)
+                .CreateBlock($"return {a};")
+                .ToConversion();
+        }
 
         return type.TypeIdentifier() switch
         {
-            BaseType baseType when CreateSignature(baseType) is var signature => baseType.Type switch
+            BaseType baseType when CreateSignature(baseType.TypeSymbol) is var signature => baseType.Type switch
             {
                 BaseType.SupportedType.String => signature.CreateBlock($"return {ParamReference} is not null ? new AttributeValue {{ S = {ParamReference} }} : {Else(baseType)};").ToConversion(),
                 BaseType.SupportedType.Bool => signature.CreateBlock($"return {ParamReference} ? {AttributeValueUtilityFactory.True} : {AttributeValueUtilityFactory.False};").ToConversion(),
@@ -94,7 +112,7 @@ public static class Marshaller
                 BaseType.SupportedType.MemoryStream => signature.CreateBlock($"return {ParamReference} is not null ? new AttributeValue {{ B = {ParamReference} }} : {Else(baseType)};").ToConversion(),
                 _ => throw UncoveredConversionException(baseType, nameof(CreateMethod))
             },
-            SingleGeneric singleGeneric when CreateSignature(singleGeneric) is var signature => singleGeneric.Type switch
+            SingleGeneric singleGeneric when CreateSignature(singleGeneric.TypeSymbol) is var signature => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => signature
                     .CreateBlock($"return {ParamReference} is not null ? {InvokeMarshallerMethod(singleGeneric.T, $"{ParamReference}.Value", DataMember)} : {Else(singleGeneric)};")
@@ -120,7 +138,7 @@ public static class Marshaller
             },
             KeyValueGeneric {TKey.SpecialType: not SpecialType.System_String} keyValueGeneric => throw new ArgumentException("Only strings are supported for for TKey",
                 UncoveredConversionException(keyValueGeneric, nameof(CreateMethod))),
-            KeyValueGeneric keyValueGeneric when CreateSignature(keyValueGeneric) is var signature => keyValueGeneric.Type switch
+            KeyValueGeneric keyValueGeneric when CreateSignature(keyValueGeneric.TypeSymbol) is var signature => keyValueGeneric.Type switch
             {
                 KeyValueGeneric.SupportedType.Dictionary => signature
                     .CreateBlock(
@@ -138,11 +156,11 @@ public static class Marshaller
         };
 
     }
-    private static string CreateSignature(TypeIdentifier typeIdentifier)
+    private static string CreateSignature(ITypeSymbol typeSymbol)
     {
-        return typeIdentifier.TypeSymbol.IsNullable()
-            ? $"public static AttributeValue? {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({typeIdentifier.TypeSymbol.Representation().annotated} {ParamReference}, string? {DataMember} = null)"
-            : $"public static AttributeValue {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({typeIdentifier.TypeSymbol.Representation().annotated} {ParamReference}, string? {DataMember} = null)";
+        return typeSymbol.IsNullable()
+            ? $"public static AttributeValue? {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, {MarshallerOptions.Name} {MarshallerOptions.PropertyName}, string? {DataMember} = null)"
+            : $"public static AttributeValue {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, string? {DataMember} = null)";
     }
 
     private static string Else(TypeIdentifier typeIdentifier)
@@ -165,7 +183,7 @@ public static class Marshaller
 
     internal static string InvokeMarshallerMethod(ITypeSymbol typeSymbol, string parameterReference, string dataMember)
     {
-        var invocation = $"{ClassName}.{GetSerializationMethodName(typeSymbol)}({parameterReference}, {dataMember})";
+        var invocation = $"{ClassName}.{GetSerializationMethodName(typeSymbol)}({parameterReference}, {MarshallerOptions.PropertyName}, {dataMember})";
 
         if (typeSymbol.TypeIdentifier() is UnknownType)
             return typeSymbol.IsNullable() is false // Can get rid of this if the signature accepts nullable
@@ -181,7 +199,7 @@ public static class Marshaller
         return $"public Dictionary<{nameof(String)}, {Constants.AWSSDK_DynamoDBv2.AttributeValue}> {Constants.DynamoDBGenerator.Marshaller.MarshallMethodName}({rootTypeName} {ParamReference})"
             .CreateBlock(
                 $"ArgumentNullException.ThrowIfNull({ParamReference});",
-                $"return {ClassName}.{GetSerializationMethodName(typeSymbol)}({ParamReference});"
+                $"return {ClassName}.{GetSerializationMethodName(typeSymbol)}({ParamReference}, {MarshallerOptions.PropertyName});"
             );
     }
 

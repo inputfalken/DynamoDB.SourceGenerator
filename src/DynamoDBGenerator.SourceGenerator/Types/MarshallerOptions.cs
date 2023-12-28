@@ -18,7 +18,6 @@ public readonly struct MarshallerOptions
         _convertersType = convertersType;
     }
 
-
     public string? TryInstantiate()
     {
         if (_convertersType.InstanceConstructors.Length is 0 ||
@@ -30,6 +29,17 @@ public readonly struct MarshallerOptions
         return null;
     }
 
+    public string? AccessConverterWrite(ITypeSymbol typeSymbol, string elementParam)
+    {
+        var match = Converters
+            .Cast<KeyValuePair<string, Converter>?>()
+            .FirstOrDefault(x => SymbolEqualityComparer.IncludeNullability.Equals(x.Value.Value.T, typeSymbol));
+
+        if (match is null)
+            return null;
+
+        return $"{PropertyName}.{ConvertersProperty}.{match.Value.Key}.Write({elementParam})";
+    }
     public string? AccessConverterRead(ITypeSymbol typeSymbol, string attributeValueParam)
     {
         var match = Converters
