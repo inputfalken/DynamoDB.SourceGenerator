@@ -99,17 +99,17 @@ public static class KeyMarshaller
     {
         return $"public {Constants.DynamoDBGenerator.Marshaller.IndexKeyMarshallerInterface} IndexKeyMarshaller(string index)".CreateBlock(
             "ArgumentNullException.ThrowIfNull(index);",
-            $"return new {IndexKeyMarshallerImplementationTypeName}({MethodName(typeSymbol)}, index);"
+            $"return new {IndexKeyMarshallerImplementationTypeName}((pk, rk, ipk, irk) => {MethodName(typeSymbol)}({MarshallerOptions.PropertyName}, pk, rk, ipk, irk), index);"
         );
     }
     internal static string PrimaryKeyMarshaller(ITypeSymbol typeSymbol)
     {
-        return $"public {Constants.DynamoDBGenerator.Marshaller.KeyMarshallerInterface} PrimaryKeyMarshaller {{ get; }} = new {Constants.DynamoDBGenerator.KeyMarshallerImplementationTypeName}({MethodName(typeSymbol)});";
+        return $"public {Constants.DynamoDBGenerator.Marshaller.KeyMarshallerInterface} PrimaryKeyMarshaller {{ get; }} = new {KeyMarshallerImplementationTypeName}((pk, rk, ipk, irk) => {MethodName(typeSymbol)}({MarshallerOptions.PropertyName}, pk, rk, ipk, irk));";
     }
     private static Conversion StaticAttributeValueDictionaryKeys(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
     {
 
-        var code = $"private static Dictionary<string, AttributeValue> {MethodName(typeSymbol)}(object? {PkReference}, object? {RkReference}, bool {EnforcePkReference}, bool {EnforceRkReference}, string? index = null)"
+        var code = $"private static Dictionary<string, AttributeValue> {MethodName(typeSymbol)}({MarshallerOptions.Name} {MarshallerOptions.PropertyName}, object? {PkReference}, object? {RkReference}, bool {EnforcePkReference}, bool {EnforceRkReference}, string? index = null)"
             .CreateBlock(CreateBody(typeSymbol, fn));
 
         return new Conversion(code);
