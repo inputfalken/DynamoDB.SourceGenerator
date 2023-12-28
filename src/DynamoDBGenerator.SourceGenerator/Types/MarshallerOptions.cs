@@ -30,16 +30,16 @@ public readonly struct MarshallerOptions
         return null;
     }
 
-    public string AccessConverterRead(ITypeSymbol typeSymbol, Func<ITypeSymbol, string> fallback)
+    public string? AccessConverterRead(ITypeSymbol typeSymbol, string attributeValueParam)
     {
         var match = Converters
             .Cast<KeyValuePair<string, Converter>?>()
             .FirstOrDefault(x => SymbolEqualityComparer.IncludeNullability.Equals(x.Value.Value.T, typeSymbol));
 
         if (match is null)
-            return fallback(typeSymbol);
+            return null;
 
-        return $"{PropertyName}.{ConvertersProperty}.{match.Value.Key}.Read()";
+        return $"{PropertyName}.{ConvertersProperty}.{match.Value.Key}.Read({attributeValueParam})";
     }
 
     public IReadOnlyList<KeyValuePair<string, Converter>> Converters { get; }
@@ -94,7 +94,7 @@ public readonly struct MarshallerOptions
             return namedTypeSymbol is
             {
                 ContainingNamespace.Name: Constants.DynamoDBGenerator.Namespace.Converters,
-                TypeKind: TypeKind.Interface, Name: "IAttributeValueConverter",
+                TypeKind: TypeKind.Interface, Name: (Constants.DynamoDBGenerator.Converter.ReferenceType or Constants.DynamoDBGenerator.Converter.ValueType),
                 TypeParameters.Length: 1,
                 ContainingAssembly.Name : Constants.DynamoDBGenerator.AssemblyName
             };

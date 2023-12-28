@@ -3,14 +3,14 @@ using DynamoDBGenerator.Converters;
 
 namespace DynamoDBGenerator.Internal.Converters;
 
-internal sealed class BoolConverter : IAttributeValueConverter<bool>
+internal sealed class BoolConverter : IValueTypeConverter<bool>
 {
     private static AttributeValue True { get; } = new() { BOOL = true };
     private static AttributeValue False { get; } = new() { BOOL = false };
 
-    public bool Read(AttributeValue attributeValue)
+    public bool? Read(AttributeValue attributeValue)
     {
-        return attributeValue.BOOL;
+        return attributeValue.IsBOOLSet ? attributeValue.BOOL : null;
     }
 
     public AttributeValue Write(bool element)

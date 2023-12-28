@@ -48,7 +48,7 @@ public static class DynamoDbMarshaller
         var getDynamoDbProperties = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, TypeExtensions.GetDynamoDbProperties);
         var code = CreateImplementations(loadedArguments, options)
             .Concat(Marshaller.CreateClass(loadedArguments, getDynamoDbProperties))
-            .Concat(Unmarshaller.CreateClass(loadedArguments, getDynamoDbProperties))
+            .Concat(Unmarshaller.CreateClass(loadedArguments, getDynamoDbProperties, options))
             .Concat(AttributeExpressionName.CreateClasses(loadedArguments, getDynamoDbProperties))
             .Concat(AttributeExpressionValue.CreateExpressionAttributeValue(loadedArguments, getDynamoDbProperties))
             .Concat(KeyMarshaller.CreateKeys(loadedArguments, getDynamoDbProperties));

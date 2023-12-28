@@ -4,11 +4,11 @@ using DynamoDBGenerator.Converters;
 
 namespace DynamoDBGenerator.Internal.Converters;
 
-internal sealed class ISO8601DateTimeConverter : IAttributeValueConverter<DateTime>
+internal sealed class ISO8601DateTimeConverter : IValueTypeConverter<DateTime>
 {
-    public DateTime Read(AttributeValue attributeValue)
+    public DateTime? Read(AttributeValue attributeValue)
     {
-        return DateTime.Parse(attributeValue.S);
+        return DateTime.TryParse(attributeValue.S, out var dateTime) ? dateTime : null;
     }
 
     public AttributeValue Write(DateTime element)

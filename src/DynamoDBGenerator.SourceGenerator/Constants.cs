@@ -40,6 +40,8 @@ public static class Constants
         public static class Converter
         {
             public const string AttributeValueConverters = "AttributeValueConverters";
+            public const string ReferenceType = "IReferenceTypeConverter";
+            public const string ValueType = "IValueTypeConverter";
         }
 
         public static class Marshaller

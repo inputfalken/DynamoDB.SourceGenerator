@@ -3,9 +3,9 @@ using DynamoDBGenerator.Converters;
 
 namespace DynamoDBGenerator.Internal.Converters;
 
-internal sealed class StringConverter : IAttributeValueConverter<string>
+internal sealed class StringConverter : IReferenceTypeConverter<string>
 {
-    public string Read(AttributeValue attributeValue)
+    public string? Read(AttributeValue attributeValue)
     {
         return attributeValue.S;
     }

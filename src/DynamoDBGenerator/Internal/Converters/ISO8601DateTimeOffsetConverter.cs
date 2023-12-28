@@ -4,11 +4,13 @@ using DynamoDBGenerator.Converters;
 
 namespace DynamoDBGenerator.Internal.Converters;
 
-internal sealed class ISO8601DateTimeOffsetConverter : IAttributeValueConverter<DateTimeOffset>
+internal sealed class ISO8601DateTimeOffsetConverter : IValueTypeConverter<DateTimeOffset>
 {
-    public DateTimeOffset Read(AttributeValue attributeValue)
+    public DateTimeOffset? Read(AttributeValue attributeValue)
     {
-        return DateTimeOffset.Parse(attributeValue.S);
+        return DateTimeOffset.TryParse(attributeValue.S, out var dateTimeOffset) 
+            ? dateTimeOffset 
+            : null;
     }
 
     public AttributeValue Write(DateTimeOffset element)

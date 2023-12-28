@@ -39,9 +39,10 @@ public static class Unmarshaller
         }
 
     }
-    internal static IEnumerable<string> CreateClass(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties)
+    internal static IEnumerable<string> CreateClass(IEnumerable<DynamoDBMarshallerArguments> arguments,
+        Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
     {
-        return $"private static class {UnMarshallerClass}".CreateBlock(CreateUnMarshaller(arguments, getDynamoDbProperties));
+        return $"private static class {UnMarshallerClass}".CreateBlock(CreateUnMarshaller(arguments, getDynamoDbProperties, options));
     }
     private static Conversion CreateCode(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
     {
@@ -61,29 +62,36 @@ public static class Unmarshaller
                         .Prepend(type.IsTupleType ? "return" : $"return new {(typeName.annotated.EndsWith("?") ? typeName.annotated.Substring(0, typeName.annotated.Length - 1) : typeName.annotated)}")
                 );
 
-        var method = $"public static {typeName.annotated} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue>? {Dict}, string? {DataMember} = null)".CreateBlock(blockBody);
+        var method = $"public static {typeName.annotated} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue>? {Dict}, {MarshallerOptions.Name} {MarshallerOptions.PropertyName}, string? {DataMember} = null)".CreateBlock(blockBody);
 
         return new Conversion(method, assignments.Select(x => x.DDB.DataMember.Type));
 
     }
-    private static Conversion CreateMethod(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
+    private static Conversion CreateMethod(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn,
+        MarshallerOptions options)
     {
 
+        if (options.AccessConverterRead(type, Value) is {} a)
+        {
+            return CreateSignature(type)
+                .CreateBlock($"return {Value} is not null ? ({a} ?? {Else(type)}) : {Else(type)};")
+                .ToConversion();
+        }
         return type.TypeIdentifier() switch
         {
-            BaseType baseType when CreateSignature(baseType) is var signature => baseType.Type switch
+            BaseType baseType when CreateSignature(baseType.TypeSymbol) is var signature => baseType.Type switch
             {
                 BaseType.SupportedType.String => signature
-                    .CreateBlock($"return {Value} is {{ S: {{ }} x }} ? x : {Else(baseType)};")
+                    .CreateBlock($"return {Value} is {{ S: {{ }} x }} ? x : {Else(baseType.TypeSymbol)};")
                     .ToConversion(),
                 BaseType.SupportedType.Bool => signature
-                    .CreateBlock($"return {Value} is {{ BOOL: var x }} ? x : {Else(baseType)};")
+                    .CreateBlock($"return {Value} is {{ BOOL: var x }} ? x : {Else(baseType.TypeSymbol)};")
                     .ToConversion(),
                 BaseType.SupportedType.Char => signature
-                    .CreateBlock($"return {Value} is {{ S: {{ }} x }} ? x[0] : {Else(baseType)};")
+                    .CreateBlock($"return {Value} is {{ S: {{ }} x }} ? x[0] : {Else(baseType.TypeSymbol)};")
                     .ToConversion(),
                 BaseType.SupportedType.Enum => signature
-                    .CreateBlock($"return {Value} is {{ N: {{ }} x }} ? ({baseType.TypeSymbol.Representation().annotated})Int32.Parse(x) : {Else(baseType)};")
+                    .CreateBlock($"return {Value} is {{ N: {{ }} x }} ? ({baseType.TypeSymbol.Representation().annotated})Int32.Parse(x) : {Else(baseType.TypeSymbol)};")
                     .ToConversion(),
                 BaseType.SupportedType.Int16
                     or BaseType.SupportedType.Byte
@@ -97,54 +105,54 @@ public static class Unmarshaller
                     or BaseType.SupportedType.Double
                     or BaseType.SupportedType.Single
                     => signature
-                        .CreateBlock($"return {Value} is {{ N: {{ }} x }} ? {baseType.TypeSymbol.Representation().original}.Parse(x) : {Else(baseType)};")
+                        .CreateBlock($"return {Value} is {{ N: {{ }} x }} ? {baseType.TypeSymbol.Representation().original}.Parse(x) : {Else(baseType.TypeSymbol)};")
                         .ToConversion(),
                 BaseType.SupportedType.DateTime
                     or BaseType.SupportedType.DateTimeOffset
                     or BaseType.SupportedType.DateOnly
                     => signature
-                        .CreateBlock($"return {Value} is {{ S: {{ }} x }} ? {baseType.TypeSymbol.Representation().original}.Parse(x) : {Else(baseType)};")
+                        .CreateBlock($"return {Value} is {{ S: {{ }} x }} ? {baseType.TypeSymbol.Representation().original}.Parse(x) : {Else(baseType.TypeSymbol)};")
                         .ToConversion(),
                 BaseType.SupportedType.MemoryStream => signature
-                    .CreateBlock($"return {Value} is {{ B: {{ }} x }} ? x : {Else(baseType)};")
+                    .CreateBlock($"return {Value} is {{ B: {{ }} x }} ? x : {Else(baseType.TypeSymbol)};")
                     .ToConversion(),
                 _ => throw UncoveredConversionException(baseType, nameof(CreateMethod))
             },
-            SingleGeneric singleGeneric when CreateSignature(singleGeneric) is var signature => singleGeneric.Type switch
+            SingleGeneric singleGeneric when CreateSignature(singleGeneric.TypeSymbol) is var signature => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => signature
-                    .CreateBlock($"return {Value} is null or {{ NULL: true }} ? {Else(singleGeneric)} : {InvokeUnmarshallMethod(singleGeneric.T, Value, DataMember)};")
+                    .CreateBlock($"return {Value} is null or {{ NULL: true }} ? {Else(singleGeneric.TypeSymbol)} : {InvokeUnmarshallMethod(singleGeneric.T, Value, DataMember)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.ICollection => signature
-                    .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"")}).ToList() : {Else(singleGeneric)};")
+                    .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"")}).ToList() : {Else(singleGeneric.TypeSymbol)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Array or SingleGeneric.SupportedType.IReadOnlyCollection => signature
-                    .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"")}).ToArray() : {Else(singleGeneric)};")
+                    .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"")}).ToArray() : {Else(singleGeneric.TypeSymbol)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.IEnumerable => signature
-                    .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"")}) : {Else(singleGeneric)};")
+                    .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"")}) : {Else(singleGeneric.TypeSymbol)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.SpecialType is SpecialType.System_String => signature
                     .CreateBlock(
-                        $"return {Value} is {{ SS : {{ }} x }} ? new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{(singleGeneric.T.IsNullable() ? "string?" : "string")}>" : null)}({(singleGeneric.T.IsNullable() ? "x" : $"x.Select((y,i) => y ?? throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}($\"{{{DataMember}}}[UNKNOWN]\")")})) : {Else(singleGeneric)};")
+                        $"return {Value} is {{ SS : {{ }} x }} ? new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{(singleGeneric.T.IsNullable() ? "string?" : "string")}>" : null)}({(singleGeneric.T.IsNullable() ? "x" : $"x.Select((y,i) => y ?? throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}($\"{{{DataMember}}}[UNKNOWN]\")")})) : {Else(singleGeneric.TypeSymbol)};")
                     .ToConversion(),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.IsNumeric() => signature
                     .CreateBlock(
-                        $"return {Value} is {{ NS : {{ }} x }} ? new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{singleGeneric.T.Representation().original}>" : null)}(x.Select(y => {singleGeneric.T.Representation().original}.Parse(y))) : {Else(singleGeneric)};")
+                        $"return {Value} is {{ NS : {{ }} x }} ? new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{singleGeneric.T.Representation().original}>" : null)}(x.Select(y => {singleGeneric.T.Representation().original}.Parse(y))) : {Else(singleGeneric.TypeSymbol)};")
                     .ToConversion(singleGeneric.TypeSymbol),
                 SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(CreateMethod))),
                 _ => throw UncoveredConversionException(singleGeneric, nameof(CreateMethod))
             },
             KeyValueGeneric {TKey.SpecialType: not SpecialType.System_String} keyValueGeneric => throw new ArgumentException("Only strings are supported for for TKey",
                 UncoveredConversionException(keyValueGeneric, nameof(CreateMethod))),
-            KeyValueGeneric keyValueGeneric when CreateSignature(keyValueGeneric) is var signature => keyValueGeneric.Type switch
+            KeyValueGeneric keyValueGeneric when CreateSignature(keyValueGeneric.TypeSymbol) is var signature => keyValueGeneric.Type switch
             {
                 KeyValueGeneric.SupportedType.Dictionary => signature
-                    .CreateBlock($"return {Value} is {{ M: {{ }} x }} ? x.ToDictionary(y => y.Key, y => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "y.Value", "y.Key")}) : {Else(keyValueGeneric)};")
+                    .CreateBlock($"return {Value} is {{ M: {{ }} x }} ? x.ToDictionary(y => y.Key, y => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "y.Value", "y.Key")}) : {Else(keyValueGeneric.TypeSymbol)};")
                     .ToConversion(keyValueGeneric.TValue),
                 KeyValueGeneric.SupportedType.LookUp => signature
                     .CreateBlock(
-                        $"return {Value} is {{ M: {{ }} x }} ? x.SelectMany(y => y.Value.L, (y, z) => (y.Key, z)).ToLookup(y => y.Key, y => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "y.z", "y.Key")}) : {Else(keyValueGeneric)};")
+                        $"return {Value} is {{ M: {{ }} x }} ? x.SelectMany(y => y.Value.L, (y, z) => (y.Key, z)).ToLookup(y => y.Key, y => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "y.z", "y.Key")}) : {Else(keyValueGeneric.TypeSymbol)};")
                     .ToConversion(keyValueGeneric.TValue),
                 _ => throw UncoveredConversionException(keyValueGeneric, nameof(CreateMethod))
 
@@ -155,32 +163,33 @@ public static class Unmarshaller
 
     }
 
-    private static string CreateSignature(TypeIdentifier typeIdentifier)
+    private static string CreateSignature(ITypeSymbol typeSymbol)
     {
-        return $"public static {typeIdentifier.TypeSymbol.Representation().annotated} {GetDeserializationMethodName(typeIdentifier.TypeSymbol)}(AttributeValue? {Value}, string? {DataMember} = null)";
+        return $"public static {typeSymbol.Representation().annotated} {GetDeserializationMethodName(typeSymbol)}(AttributeValue? {Value}, {MarshallerOptions.Name} {MarshallerOptions.PropertyName}, string? {DataMember} = null)";
     }
-    private static IEnumerable<string> CreateUnMarshaller(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties)
+    private static IEnumerable<string> CreateUnMarshaller(IEnumerable<DynamoDBMarshallerArguments> arguments,
+        Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
     {
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability);
         return arguments.SelectMany(x =>
                 Conversion.ConversionMethods(
                     x.EntityTypeSymbol,
-                    y => CreateMethod(y, getDynamoDbProperties),
+                    y => CreateMethod(y, getDynamoDbProperties, options),
                     hashSet
                 )
             )
             .SelectMany(x => x.Code);
     }
-    private static string Else(TypeIdentifier typeIdentifier)
+    private static string Else(ITypeSymbol typeSymbol)
     {
-        return typeIdentifier.TypeSymbol.IsNullable() ? "null" : $"throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}({DataMember})";
+        return typeSymbol.IsNullable() ? "null" : $"throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}({DataMember})";
     }
 
     private static string InvokeUnmarshallMethod(ITypeSymbol typeSymbol, string paramReference, string dataMember)
     {
         return typeSymbol.TypeIdentifier() is UnknownType
-            ? $"{GetDeserializationMethodName(typeSymbol)}({paramReference}?.M, {dataMember})"
-            : $"{GetDeserializationMethodName(typeSymbol)}({paramReference}, {dataMember})";
+            ? $"{GetDeserializationMethodName(typeSymbol)}({paramReference}?.M, {MarshallerOptions.PropertyName}, {dataMember})"
+            : $"{GetDeserializationMethodName(typeSymbol)}({paramReference}, {MarshallerOptions.PropertyName}, {dataMember})";
 
     }
     private static IEnumerable<string> ObjectAssignmentBlock(bool useParentheses, IEnumerable<string> assignments, bool applySemiColon)
@@ -217,7 +226,7 @@ public static class Unmarshaller
     {
         return $"public {rootTypeName} {Constants.DynamoDBGenerator.Marshaller.UnmarshalMethodName}(Dictionary<{nameof(String)}, {Constants.AWSSDK_DynamoDBv2.AttributeValue}> entity)".CreateBlock(
             "ArgumentNullException.ThrowIfNull(entity);",
-            $"return {UnMarshallerClass}.{GetDeserializationMethodName(typeSymbol)}(entity);");
+            $"return {UnMarshallerClass}.{GetDeserializationMethodName(typeSymbol)}(entity, {MarshallerOptions.PropertyName});");
     }
     private static IEnumerable<(string DataMember, string ParameterName)> TryGetMatchedConstructorArguments(ITypeSymbol typeSymbol)
     {

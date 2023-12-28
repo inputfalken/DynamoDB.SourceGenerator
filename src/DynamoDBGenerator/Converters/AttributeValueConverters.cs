@@ -5,11 +5,11 @@ namespace DynamoDBGenerator.Converters;
 
 public class AttributeValueConverters
 {
-    public IAttributeValueConverter<string> StringConverter { get; set; } = new StringConverter();
-    public IAttributeValueConverter<DateTime> DateTimeConverter { get; set; } = new ISO8601DateTimeConverter();
+    public IReferenceTypeConverter<string> StringConverter { get; set; } = new StringConverter();
+    public IValueTypeConverter<DateTime> DateTimeConverter { get; set; } = new ISO8601DateTimeConverter();
 
-    public IAttributeValueConverter<DateTimeOffset> DateTimeOffsetConverter { get; set; } =
+    public IValueTypeConverter<DateTimeOffset> DateTimeOffsetConverter { get; set; } =
         new ISO8601DateTimeOffsetConverter();
 
-    public IAttributeValueConverter<bool> BoolConverter { get; set; } = new BoolConverter();
+    public IValueTypeConverter<bool> BoolConverter { get; set; } = new BoolConverter();
 }
