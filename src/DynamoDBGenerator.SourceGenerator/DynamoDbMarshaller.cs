@@ -34,7 +34,12 @@ public static class DynamoDbMarshaller
             var classImplementation = $"private sealed class {argument.ImplementationName}: {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}>"
                 .CreateBlock(interfaceImplementation);
 
-            yield return $"public {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.PropertyName} {{ get; }} = new {argument.ImplementationName}({options.TryInstantiate()});";
+            yield return options.TryInstantiate() switch
+            {
+                {} arg =>
+                    $"public {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.PropertyName} {{ get; }} = new {argument.ImplementationName}({arg});",
+                null => $"public {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.PropertyName}({MarshallerOptions.Name} options) => new {argument.ImplementationName}(options);"
+            };
 
             foreach (var s in classImplementation)
                 yield return s;
