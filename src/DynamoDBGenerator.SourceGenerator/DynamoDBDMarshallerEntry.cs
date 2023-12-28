@@ -57,6 +57,7 @@ using {Constants.AWSSDK_DynamoDBv2.Namespace.ModelFullName};
 using {Constants.DynamoDBGenerator.Namespace.Root};
 using {Constants.DynamoDBGenerator.Namespace.AttributesFullName};
 using {Constants.DynamoDBGenerator.Namespace.ExceptionsFullName};
+using {Constants.DynamoDBGenerator.Namespace.ConvertersFullName};
 using {Constants.DynamoDBGenerator.Namespace.InternalFullName};";
 
         var (options, args) = CreateArguments(type, compilation);

@@ -7,8 +7,12 @@ namespace DynamoDBGenerator.SourceGenerator;
 
 public static class DynamoDbMarshaller
 {
-    private static IEnumerable<string> CreateImplementations(IEnumerable<DynamoDBMarshallerArguments> arguments)
+    private static IEnumerable<string> CreateImplementations(IEnumerable<DynamoDBMarshallerArguments> arguments,
+        MarshallerOptions options)
     {
+        foreach (var s in options.ClassDeclaration)
+            yield return s;
+
         foreach (var argument in arguments)
         {
             var (expressionValueMethod, valueTrackerTypeName) = AttributeExpressionValue.RootSignature(argument.ArgumentType);
@@ -17,17 +21,20 @@ public static class DynamoDbMarshaller
             var entityTypeName = argument.AnnotatedEntityType;
             var argumentTypeName = argument.AnnotatedArgumentType;
 
-            var interfaceImplementation = Marshaller.RootSignature(argument.EntityTypeSymbol, entityTypeName)
+            var constructor = $"public {argument.ImplementationName}({MarshallerOptions.Name} options)".CreateBlock("Options = options;");
+            var interfaceImplementation = constructor
+                .Concat(Marshaller.RootSignature(argument.EntityTypeSymbol, entityTypeName))
                 .Concat(Unmarshaller.RootSignature(argument.EntityTypeSymbol, entityTypeName))
                 .Concat(KeyMarshaller.IndexKeyMarshaller(argument.EntityTypeSymbol))
                 .Concat(expressionValueMethod)
                 .Append(expressionMethodName)
-                .Append(KeyMarshaller.PrimaryKeyMarshaller(argument.EntityTypeSymbol));
+                .Append(KeyMarshaller.PrimaryKeyMarshaller(argument.EntityTypeSymbol))
+                .Prepend(MarshallerOptions.PropertyDeclaration);
 
             var classImplementation = $"private sealed class {argument.ImplementationName}: {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}>"
                 .CreateBlock(interfaceImplementation);
 
-            yield return $"public {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.PropertyName} {{ get; }} = new {argument.ImplementationName}();";
+            yield return $"public {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.PropertyName} {{ get; }} = new {argument.ImplementationName}({options.TryInstantiate()});";
 
             foreach (var s in classImplementation)
                 yield return s;
@@ -39,7 +46,7 @@ public static class DynamoDbMarshaller
     {
         var loadedArguments = arguments.ToArray();
         var getDynamoDbProperties = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, TypeExtensions.GetDynamoDbProperties);
-        var code = CreateImplementations(loadedArguments)
+        var code = CreateImplementations(loadedArguments, options)
             .Concat(Marshaller.CreateClass(loadedArguments, getDynamoDbProperties))
             .Concat(Unmarshaller.CreateClass(loadedArguments, getDynamoDbProperties))
             .Concat(AttributeExpressionName.CreateClasses(loadedArguments, getDynamoDbProperties))

@@ -35,6 +35,7 @@ public static class Constants
             public const string InternalFullName = $"{AssemblyName}.Internal";
             public const string ExceptionsFullName = $"{AssemblyName}.Exceptions";
             public const string Converters = "Converters";
+            public const string ConvertersFullName = $"{AssemblyName}.Converters";
         }
         public static class Converter
         {
