@@ -13,7 +13,8 @@ public static class AttributeExpressionValue
         ITypeSymbol typeSymbol,
         (bool IsUnknown, DynamoDbDataMember DDB, string ValueRef, string AttributeReference, string AttributeInterfaceName, TypeIdentifier typeIdentifier)[] dataMembers,
         string structName,
-        string interfaceName
+        string interfaceName,
+        MarshallerOptions options
     )
     {
         const string self = "_self";
@@ -61,10 +62,10 @@ public static class AttributeExpressionValue
                         var accessPattern = $"entity.{x.DDB.DataMember.Name}";
                         return x.IsUnknown
                             ? $"if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({accessPattern})) {{ yield return x; }}")}"
-                            : $"if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {Marshaller.InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}", $"\"{x.DDB.DataMember.Name}\"")} ?? {AttributeValueUtilityFactory.Null});")}";
+                            : $"if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {Marshaller.InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}", $"\"{x.DDB.DataMember.Name}\"", options)} ?? {AttributeValueUtilityFactory.Null});")}";
                     }
                 )
-                .Append($"if ({self}.IsValueCreated) yield return new ({self}.Value, {Marshaller.InvokeMarshallerMethod(typeSymbol, "entity", $"\"{structName}\"")} ?? {AttributeValueUtilityFactory.Null});")
+                .Append($"if ({self}.IsValueCreated) yield return new ({self}.Value, {Marshaller.InvokeMarshallerMethod(typeSymbol, "entity", $"\"{structName}\"", options)} ?? {AttributeValueUtilityFactory.Null});")
         );
 
         foreach (var yield in
@@ -74,15 +75,15 @@ public static class AttributeExpressionValue
 
         yield return $"public override string ToString() => {self}.Value;";
     }
-    internal static IEnumerable<string> CreateExpressionAttributeValue(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties)
+    internal static IEnumerable<string> CreateExpressionAttributeValue(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
     {
         // Using _comparer can double classes when there's a None nullable property mixed with a nullable property
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
 
         return arguments
-            .SelectMany(x => Conversion.ConversionMethods(x.ArgumentType, y => CreateStruct(y, getDynamoDbProperties), hashSet)).SelectMany(x => x.Code);
+            .SelectMany(x => Conversion.ConversionMethods(x.ArgumentType, y => CreateStruct(y, getDynamoDbProperties, options), hashSet)).SelectMany(x => x.Code);
     }
-    private static Conversion CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
+    private static Conversion CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
         var dataMembers = fn(typeSymbol)
             .Select(x =>
@@ -106,7 +107,7 @@ public static class AttributeExpressionValue
         var structName = TypeName(typeSymbol);
         var interfaceName = $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{typeSymbol.Representation().annotated}>";
 
-        var @struct = $"public readonly struct {structName} : {interfaceName}".CreateBlock(CreateCode(typeSymbol, dataMembers, structName, interfaceName));
+        var @struct = $"public readonly struct {structName} : {interfaceName}".CreateBlock(CreateCode(typeSymbol, dataMembers, structName, interfaceName, options));
 
         return new Conversion(@struct, dataMembers.Select(x => x.typeIdentifier).OfType<UnknownType>().Select(x => x.TypeSymbol));
 

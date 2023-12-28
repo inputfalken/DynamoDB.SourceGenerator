@@ -12,21 +12,21 @@ public static class KeyMarshaller
     private static readonly Func<ITypeSymbol, string> MethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("Keys", SymbolEqualityComparer.IncludeNullability);
     private const string PkReference = "partitionKey";
     private const string RkReference = "rangeKey";
-    private static IEnumerable<string> CreateAssignment(string validateReference, string keyReference, DynamoDbDataMember dataMember)
+    private static IEnumerable<string> CreateAssignment(string validateReference, string keyReference, DynamoDbDataMember dataMember, MarshallerOptions options)
     {
         const string reference = "value";
         var expectedType = dataMember.DataMember.Type.Representation().original;
         var expression = $"{keyReference} is {expectedType} {{ }} {reference}";
 
         var innerContent = $"if ({expression}) "
-            .CreateBlock($@"{DictionaryName}.Add(""{dataMember.AttributeName}"", {Marshaller.InvokeMarshallerMethod(dataMember.DataMember.Type, reference, $"nameof({keyReference})")});")
+            .CreateBlock($@"{DictionaryName}.Add(""{dataMember.AttributeName}"", {Marshaller.InvokeMarshallerMethod(dataMember.DataMember.Type, reference, $"nameof({keyReference})", options)});")
             .Concat($"else if ({keyReference} is null) ".CreateBlock($@"throw {ExceptionHelper.KeysArgumentNullExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"");"))
             .Concat("else".CreateBlock($@"throw {ExceptionHelper.KeysInvalidConversionExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"", {keyReference}, ""{expectedType}"");"));
 
         return $"if({validateReference})".CreateBlock(innerContent);
 
     }
-    private static IEnumerable<string> CreateBody(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
+    private static IEnumerable<string> CreateBody(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
         var keyStructure = DynamoDbDataMember.GetKeyStructure(fn(typeSymbol));
         if (keyStructure is null)
@@ -38,7 +38,7 @@ public static class KeyMarshaller
 
         yield return $"var {DictionaryName} = new Dictionary<string, AttributeValue>(2);";
 
-        var switchBody = GetAssignments(keyStructure.Value)
+        var switchBody = GetAssignments(keyStructure.Value, options)
             .SelectMany(x => $"case {(x.IndexName is null ? "null" : @$"""{x.IndexName}""")}:".CreateBlock(x.assignments).Append("break;"))
             .Append($"default: throw {ExceptionHelper.MissMatchedIndexNameExceptionMethod}(nameof(index), index);");
 
@@ -56,27 +56,27 @@ public static class KeyMarshaller
             yield return s;
 
     }
-    internal static IEnumerable<string> CreateKeys(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties)
+    internal static IEnumerable<string> CreateKeys(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
     {
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability);
 
         return arguments
-            .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, y => StaticAttributeValueDictionaryKeys(y, getDynamoDbProperties), hashSet)).SelectMany(x => x.Code);
+            .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, y => StaticAttributeValueDictionaryKeys(y, getDynamoDbProperties, options), hashSet)).SelectMany(x => x.Code);
     }
-    private static IEnumerable<(string? IndexName, IEnumerable<string> assignments)> GetAssignments(DynamoDBKeyStructure keyStructure)
+    private static IEnumerable<(string? IndexName, IEnumerable<string> assignments)> GetAssignments(DynamoDBKeyStructure keyStructure, MarshallerOptions options)
     {
         yield return keyStructure switch
         {
-            {PartitionKey: var pk, SortKey: { } sortKey} => (null, CreateAssignment(EnforcePkReference, PkReference, pk).Concat(CreateAssignment(EnforceRkReference, RkReference, sortKey))),
-            {PartitionKey: var pk, SortKey: null} => (null, CreateAssignment(EnforcePkReference, PkReference, pk).Concat(MissingAssigment(EnforceRkReference, RkReference)))
+            {PartitionKey: var pk, SortKey: { } sortKey} => (null, CreateAssignment(EnforcePkReference, PkReference, pk, options).Concat(CreateAssignment(EnforceRkReference, RkReference, sortKey, options))),
+            {PartitionKey: var pk, SortKey: null} => (null, CreateAssignment(EnforcePkReference, PkReference, pk, options).Concat(MissingAssigment(EnforceRkReference, RkReference)))
         };
 
         foreach (var gsi in keyStructure.GlobalSecondaryIndices)
         {
             yield return gsi switch
             {
-                {PartitionKey: var pk, SortKey: { } sortKey} => (gsi.Name, CreateAssignment(EnforcePkReference, PkReference, pk).Concat(CreateAssignment(EnforceRkReference, RkReference, sortKey))),
-                {PartitionKey: var pk, SortKey: null} => (gsi.Name, CreateAssignment(EnforcePkReference, PkReference, pk).Concat(MissingAssigment(EnforceRkReference, RkReference)))
+                {PartitionKey: var pk, SortKey: { } sortKey} => (gsi.Name, CreateAssignment(EnforcePkReference, PkReference, pk, options).Concat(CreateAssignment(EnforceRkReference, RkReference, sortKey, options))),
+                {PartitionKey: var pk, SortKey: null} => (gsi.Name, CreateAssignment(EnforcePkReference, PkReference, pk, options).Concat(MissingAssigment(EnforceRkReference, RkReference)))
             };
         }
 
@@ -84,7 +84,7 @@ public static class KeyMarshaller
         {
             yield return (lsi, keyStructure.PartitionKey) switch
             {
-                {PartitionKey: var pk, lsi: var sortKey} => (lsi.Name, CreateAssignment(EnforcePkReference, PkReference, pk).Concat(CreateAssignment(EnforceRkReference, RkReference, sortKey.SortKey)))
+                {PartitionKey: var pk, lsi: var sortKey} => (lsi.Name, CreateAssignment(EnforcePkReference, PkReference, pk, options).Concat(CreateAssignment(EnforceRkReference, RkReference, sortKey.SortKey, options)))
             };
         }
 
@@ -110,11 +110,11 @@ public static class KeyMarshaller
         return
             $"new {KeyMarshallerImplementationTypeName}((pk, rk, ipk, irk, dm) => {MethodName(typeSymbol)}({MarshallerOptions.PropertyName}, pk, rk, ipk, irk, dm))";
     }
-    private static Conversion StaticAttributeValueDictionaryKeys(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
+    private static Conversion StaticAttributeValueDictionaryKeys(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
 
         var code = $"private static Dictionary<string, AttributeValue> {MethodName(typeSymbol)}({MarshallerOptions.Name} {MarshallerOptions.PropertyName}, object? {PkReference}, object? {RkReference}, bool {EnforcePkReference}, bool {EnforceRkReference}, string? index = null)"
-            .CreateBlock(CreateBody(typeSymbol, fn));
+            .CreateBlock(CreateBody(typeSymbol, fn, options));
 
         return new Conversion(code);
 

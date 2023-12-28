@@ -81,9 +81,6 @@ public static class Unmarshaller
         {
             BaseType baseType when CreateSignature(baseType.TypeSymbol) is var signature => baseType.Type switch
             {
-                BaseType.SupportedType.String => signature
-                    .CreateBlock($"return {Value} is {{ S: {{ }} x }} ? x : {Else(baseType.TypeSymbol)};")
-                    .ToConversion(),
                 BaseType.SupportedType.Bool => signature
                     .CreateBlock($"return {Value} is {{ BOOL: var x }} ? x : {Else(baseType.TypeSymbol)};")
                     .ToConversion(),

@@ -12,9 +12,9 @@ public readonly struct MarshallerOptions
     public const string PropertyDeclaration = $"public {Name} {PropertyName} {{ get; }}";
 
     private MarshallerOptions(INamedTypeSymbol convertersType,
-        IReadOnlyList<KeyValuePair<string, Converter>> converters)
+        IEnumerable<KeyValuePair<string, Converter>> converters)
     {
-        Converters = converters;
+        Converters = converters.ToArray();
         _convertersType = convertersType;
     }
 
@@ -33,7 +33,7 @@ public readonly struct MarshallerOptions
     {
         var match = Converters
             .Cast<KeyValuePair<string, Converter>?>()
-            .FirstOrDefault(x => SymbolEqualityComparer.IncludeNullability.Equals(x.Value.Value.T, typeSymbol));
+            .FirstOrDefault(x => SymbolEqualityComparer.Default.Equals(x.Value.Value.T, typeSymbol));
 
         if (match is null)
             return null;
@@ -44,7 +44,7 @@ public readonly struct MarshallerOptions
     {
         var match = Converters
             .Cast<KeyValuePair<string, Converter>?>()
-            .FirstOrDefault(x => SymbolEqualityComparer.IncludeNullability.Equals(x.Value.Value.T, typeSymbol));
+            .FirstOrDefault(x => SymbolEqualityComparer.Default.Equals(x.Value.Value.T, typeSymbol));
 
         if (match is null)
             return null;
@@ -52,7 +52,12 @@ public readonly struct MarshallerOptions
         return $"{PropertyName}.{ConvertersProperty}.{match.Value.Key}.Read({attributeValueParam})";
     }
 
-    public IReadOnlyList<KeyValuePair<string, Converter>> Converters { get; }
+    public bool IsConvertable(ITypeSymbol typeSymbol)
+    {
+        return Converters.Any(x => SymbolEqualityComparer.Default.Equals(x.Value.T, typeSymbol));
+    }
+
+    private KeyValuePair<string, Converter>[] Converters { get; }
 
 
     public IEnumerable<string> ClassDeclaration
@@ -74,8 +79,7 @@ public readonly struct MarshallerOptions
         var keyValuePairs = namedTypeSymbols
             .Select(ConverterDataMemberOrNull)
             .Where(x => x.HasValue)
-            .Select(x => x!.Value)
-            .ToArray();
+            .Select(x => x!.Value);
 
         return new MarshallerOptions(typeSymbol, keyValuePairs);
     }

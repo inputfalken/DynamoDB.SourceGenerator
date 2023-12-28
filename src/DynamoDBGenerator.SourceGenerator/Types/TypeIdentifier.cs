@@ -110,7 +110,6 @@ public record BaseType : TypeIdentifier
 
     public enum SupportedType
     {
-        String = 1,
         Bool = 2,
         Char = 3,
         Enum = 4,
@@ -141,7 +140,6 @@ public record BaseType : TypeIdentifier
     {
         SupportedType? primitiveTypeAssignment = type switch
         {
-            {SpecialType: SpecialType.System_String} => SupportedType.String,
             {SpecialType: SpecialType.System_Boolean} => SupportedType.Bool,
             {SpecialType: SpecialType.System_Char} => SupportedType.Char,
             {SpecialType: SpecialType.System_Int16} => SupportedType.Int16,
