@@ -21,14 +21,15 @@ public static class DynamoDbMarshaller
             var entityTypeName = argument.AnnotatedEntityType;
             var argumentTypeName = argument.AnnotatedArgumentType;
 
-            var constructor = $"public {argument.ImplementationName}({MarshallerOptions.Name} options)".CreateBlock("Options = options;");
+            var constructor = $"public {argument.ImplementationName}({MarshallerOptions.Name} options)"
+                .CreateBlock("Options = options;", $"{KeyMarshaller.PrimaryKeyMarshallerReference} = {KeyMarshaller.Assignment(argument.EntityTypeSymbol)};");
             var interfaceImplementation = constructor
                 .Concat(Marshaller.RootSignature(argument.EntityTypeSymbol, entityTypeName))
                 .Concat(Unmarshaller.RootSignature(argument.EntityTypeSymbol, entityTypeName))
                 .Concat(KeyMarshaller.IndexKeyMarshaller(argument.EntityTypeSymbol))
                 .Concat(expressionValueMethod)
                 .Append(expressionMethodName)
-                .Append(KeyMarshaller.PrimaryKeyMarshaller(argument.EntityTypeSymbol))
+                .Append(KeyMarshaller.PrimaryKeyMarshallerDeclaration)
                 .Prepend(MarshallerOptions.PropertyDeclaration);
 
             var classImplementation = $"private sealed class {argument.ImplementationName}: {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}>"

@@ -26,7 +26,7 @@ public static class AttributeExpressionValue
         foreach (var fieldAssignment in $"public {structName}(Func<string> {ValueProvider}, {MarshallerOptions.Name} options)".CreateBlock(constructorFieldAssignments))
             yield return fieldAssignment;
 
-        yield return $"private readonly {MarshallerOptions.Name} options;";
+        yield return $"private readonly {MarshallerOptions.Name} {MarshallerOptions.PropertyName};";
         foreach (var fieldDeclaration in dataMembers)
         {
             if (fieldDeclaration.IsUnknown)

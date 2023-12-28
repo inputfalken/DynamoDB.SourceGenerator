@@ -160,7 +160,7 @@ public static class Marshaller
     {
         return typeSymbol.IsNullable()
             ? $"public static AttributeValue? {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, {MarshallerOptions.Name} {MarshallerOptions.PropertyName}, string? {DataMember} = null)"
-            : $"public static AttributeValue {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, string? {DataMember} = null)";
+            : $"public static AttributeValue {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, {MarshallerOptions.Name} {MarshallerOptions.PropertyName}, string? {DataMember} = null)";
     }
 
     private static string Else(TypeIdentifier typeIdentifier)

@@ -99,12 +99,16 @@ public static class KeyMarshaller
     {
         return $"public {Constants.DynamoDBGenerator.Marshaller.IndexKeyMarshallerInterface} IndexKeyMarshaller(string index)".CreateBlock(
             "ArgumentNullException.ThrowIfNull(index);",
-            $"return new {IndexKeyMarshallerImplementationTypeName}((pk, rk, ipk, irk) => {MethodName(typeSymbol)}({MarshallerOptions.PropertyName}, pk, rk, ipk, irk), index);"
+            $"return new {IndexKeyMarshallerImplementationTypeName}((pk, rk, ipk, irk, dm) => {MethodName(typeSymbol)}({MarshallerOptions.PropertyName}, pk, rk, ipk, irk, dm), index);"
         );
     }
-    internal static string PrimaryKeyMarshaller(ITypeSymbol typeSymbol)
+
+    public const string PrimaryKeyMarshallerReference = "PrimaryKeyMarshaller";
+    public const string PrimaryKeyMarshallerDeclaration = $"public {Constants.DynamoDBGenerator.Marshaller.KeyMarshallerInterface} {PrimaryKeyMarshallerReference} {{ get; }}";
+    internal static string Assignment(ITypeSymbol typeSymbol)
     {
-        return $"public {Constants.DynamoDBGenerator.Marshaller.KeyMarshallerInterface} PrimaryKeyMarshaller {{ get; }} = new {KeyMarshallerImplementationTypeName}((pk, rk, ipk, irk) => {MethodName(typeSymbol)}({MarshallerOptions.PropertyName}, pk, rk, ipk, irk));";
+        return
+            $"new {KeyMarshallerImplementationTypeName}((pk, rk, ipk, irk, dm) => {MethodName(typeSymbol)}({MarshallerOptions.PropertyName}, pk, rk, ipk, irk, dm))";
     }
     private static Conversion StaticAttributeValueDictionaryKeys(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn)
     {
