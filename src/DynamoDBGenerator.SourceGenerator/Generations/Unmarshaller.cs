@@ -81,15 +81,11 @@ public static class Unmarshaller
         {
             BaseType baseType when CreateSignature(baseType.TypeSymbol) is var signature => baseType.Type switch
             {
-                BaseType.SupportedType.Char => signature
-                    .CreateBlock($"return {Value} is {{ S: {{ }} x }} ? x[0] : {Else(baseType.TypeSymbol)};")
-                    .ToConversion(),
                 BaseType.SupportedType.Enum => signature
                     .CreateBlock($"return {Value} is {{ N: {{ }} x }} ? ({baseType.TypeSymbol.Representation().annotated})Int32.Parse(x) : {Else(baseType.TypeSymbol)};")
                     .ToConversion(),
                 BaseType.SupportedType.Int16
                     or BaseType.SupportedType.Byte
-                    or BaseType.SupportedType.Int32
                     or BaseType.SupportedType.Int64
                     or BaseType.SupportedType.SByte
                     or BaseType.SupportedType.UInt16
@@ -105,9 +101,6 @@ public static class Unmarshaller
                     => signature
                         .CreateBlock($"return {Value} is {{ S: {{ }} x }} ? {baseType.TypeSymbol.Representation().original}.Parse(x) : {Else(baseType.TypeSymbol)};")
                         .ToConversion(),
-                BaseType.SupportedType.MemoryStream => signature
-                    .CreateBlock($"return {Value} is {{ B: {{ }} x }} ? x : {Else(baseType.TypeSymbol)};")
-                    .ToConversion(),
                 _ => throw UncoveredConversionException(baseType, nameof(CreateMethod))
             },
             SingleGeneric singleGeneric when CreateSignature(singleGeneric.TypeSymbol) is var signature => singleGeneric.Type switch
