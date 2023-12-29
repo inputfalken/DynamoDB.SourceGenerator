@@ -70,22 +70,28 @@ public static class Marshaller
     {
         if (options.AccessConverterWrite(type, ParamReference) is {} a)
         {
-            if (type is {IsReferenceType:true} or {OriginalDefinition.SpecialType: SpecialType.System_Nullable_T })
+            return type switch 
             {
-                
-                if (type.NullableAnnotation is NullableAnnotation.None or NullableAnnotation.Annotated)
-                    return CreateSignature(type)
+                { IsValueType: true } => type switch
+                {
+                    { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => CreateSignature(type)
                         .CreateBlock($"return {ParamReference} is not null ? {a} : null;")
-                        .ToConversion();
-                
-                return CreateSignature(type)
-                    .CreateBlock($"return {ParamReference} is not null ? {a} : throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
-                    .ToConversion();
-            }
-
-            return CreateSignature(type)
-                .CreateBlock($"return {a};")
-                .ToConversion();
+                        .ToConversion(),
+                    _ => CreateSignature(type)
+                        .CreateBlock($"return {a};")
+                        .ToConversion()
+                },
+                { IsReferenceType: true } => type switch
+                {
+                    { NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated } => CreateSignature(type)
+                        .CreateBlock($"return {ParamReference} is not null ? {a} : null;")
+                        .ToConversion(),
+                    _ => CreateSignature(type)
+                        .CreateBlock($"return {ParamReference} is not null ? {a} : throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
+                        .ToConversion()
+                },
+                _ => throw new ArgumentException($"Neither ValueType or ReferenceType could be resolved for conversion. type '{type.ToDisplayString()}'.")
+            };
         }
 
         return type.TypeIdentifier() switch
