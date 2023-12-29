@@ -25,7 +25,7 @@ public static class Constants
         public const string AssemblyName = "DynamoDBGenerator";
         public const string DynamoDbDocumentPropertyFullname = $"{Namespace.AttributesFullName}.{Attribute.DynamoDBMarshaller}";
 
-        public const string DynamoDBConverterFullName = $"{AssemblyName}.{Namespace.Converters}.{Converter.AttributeValueConverters}";
+        public const string DynamoDBConverterFullName = $"{AssemblyName}.{Namespace.Options}.{Converter.AttributeValueConverters}";
 
         public static class Namespace
         {
@@ -35,6 +35,7 @@ public static class Constants
             public const string InternalFullName = $"{AssemblyName}.Internal";
             public const string ExceptionsFullName = $"{AssemblyName}.Exceptions";
             public const string Converters = "Converters";
+            public const string Options = "Options";
         }
         public static class Converter
         {

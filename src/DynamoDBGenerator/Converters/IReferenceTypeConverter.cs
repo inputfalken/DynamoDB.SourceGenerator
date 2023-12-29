@@ -3,12 +3,12 @@ using Amazon.DynamoDBv2.Model;
 namespace DynamoDBGenerator.Converters;
 
 /// <summary>
-/// Represents a converter for <see cref="AttributeValue"/> where <typeparamref name="T"/> must be a value type.
+/// Represents a converter for <see cref="AttributeValue"/> where <typeparamref name="T"/> must be a reference type.
 /// </summary>
 /// <typeparam name="T">
 /// The type to convert To and From.
 /// </typeparam>
-public interface IValueTypeConverter<T> where T : struct
+public interface IReferenceTypeConverter<T> where T : class
 {
     /// <summary>
     /// A function responsible for converting <see cref="AttributeValue"/> towards <typeparamref name="T"/>.
@@ -23,7 +23,7 @@ public interface IValueTypeConverter<T> where T : struct
     /// You should return <see langword="null" /> if you're unable to perform the mapping.
     /// </remarks>
     public T? Read(AttributeValue attributeValue);
-
+    
     /// <summary>
     /// A function responsible for converting <typeparamref name="T"/> towards <see cref="AttributeValue"/>
     /// </summary>

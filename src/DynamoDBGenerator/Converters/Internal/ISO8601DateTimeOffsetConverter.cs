@@ -1,8 +1,7 @@
 using System;
 using Amazon.DynamoDBv2.Model;
-using DynamoDBGenerator.Converters;
 
-namespace DynamoDBGenerator.Internal.Converters;
+namespace DynamoDBGenerator.Converters.Internal;
 
 internal sealed class ISO8601DateTimeOffsetConverter : IValueTypeConverter<DateTimeOffset>
 {

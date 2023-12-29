@@ -1,8 +1,9 @@
 using System;
 using System.IO;
-using DynamoDBGenerator.Internal.Converters;
+using DynamoDBGenerator.Converters;
+using DynamoDBGenerator.Converters.Internal;
 
-namespace DynamoDBGenerator.Converters;
+namespace DynamoDBGenerator.Options;
 
 /// <summary>
 /// Contains the default AttributeValue Converters.
