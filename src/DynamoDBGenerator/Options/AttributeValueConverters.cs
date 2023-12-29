@@ -96,4 +96,9 @@ public class AttributeValueConverters
     /// </summary>
     public IValueTypeConverter<ushort> UShortConverter { get; } = new UShortConverter();
     
+    /// <summary>
+    /// The <see cref="DateOnly"/> converter.
+    /// </summary>
+    public IValueTypeConverter<DateOnly> DateOnlyConverter { get; } = new ISO8601DateOnlyConverter();
+    
 }

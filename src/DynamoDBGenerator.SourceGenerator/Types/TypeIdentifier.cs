@@ -111,7 +111,6 @@ public record BaseType : TypeIdentifier
     public enum SupportedType
     {
         Enum = 4,
-        DateOnly = 18
     }
 
     private BaseType(ITypeSymbol typeSymbol, in SupportedType type) : base(typeSymbol)
@@ -125,7 +124,6 @@ public record BaseType : TypeIdentifier
         SupportedType? primitiveTypeAssignment = type switch
         {
             {TypeKind: TypeKind.Enum} => SupportedType.Enum,
-            {Name: "DateOnly"} => SupportedType.DateOnly,
             _ => null
         };
 

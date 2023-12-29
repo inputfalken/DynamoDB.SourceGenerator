@@ -84,10 +84,6 @@ public static class Unmarshaller
                 BaseType.SupportedType.Enum => signature
                     .CreateBlock($"return {Value} is {{ N: {{ }} x }} ? ({baseType.TypeSymbol.Representation().annotated})Int32.Parse(x) : {Else(baseType.TypeSymbol)};")
                     .ToConversion(),
-                BaseType.SupportedType.DateOnly
-                    => signature
-                        .CreateBlock($"return {Value} is {{ S: {{ }} x }} ? {baseType.TypeSymbol.Representation().original}.Parse(x) : {Else(baseType.TypeSymbol)};")
-                        .ToConversion(),
                 _ => throw UncoveredConversionException(baseType, nameof(CreateMethod))
             },
             SingleGeneric singleGeneric when CreateSignature(singleGeneric.TypeSymbol) is var signature => singleGeneric.Type switch
