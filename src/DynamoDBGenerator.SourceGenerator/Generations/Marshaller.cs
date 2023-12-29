@@ -73,7 +73,7 @@ public static class Marshaller
             if (type is {IsReferenceType:true} or {OriginalDefinition.SpecialType: SpecialType.System_Nullable_T })
             {
                 
-                if (type.IsNullable())
+                if (type.NullableAnnotation is NullableAnnotation.None or NullableAnnotation.Annotated)
                     return CreateSignature(type)
                         .CreateBlock($"return {ParamReference} is not null ? {a} : null;")
                         .ToConversion();
