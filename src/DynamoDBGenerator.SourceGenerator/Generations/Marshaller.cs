@@ -74,19 +74,19 @@ public static class Marshaller
             {
                 { IsValueType: true } => type switch
                 {
-                    { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => CreateSignature(type)
+                    { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => CreateSignature(type, true)
                         .CreateBlock($"return {ParamReference} is not null ? {a} : null;")
                         .ToConversion(),
-                    _ => CreateSignature(type)
+                    _ => CreateSignature(type, false)
                         .CreateBlock($"return {a};")
                         .ToConversion()
                 },
                 { IsReferenceType: true } => type switch
                 {
-                    { NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated } => CreateSignature(type)
+                    { NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated } => CreateSignature(type, true)
                         .CreateBlock($"return {ParamReference} is not null ? {a} : null;")
                         .ToConversion(),
-                    _ => CreateSignature(type)
+                    _ => CreateSignature(type, false)
                         .CreateBlock($"return {ParamReference} is not null ? {a} : throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
                         .ToConversion()
                 },
@@ -145,9 +145,9 @@ public static class Marshaller
         };
 
     }
-    private static string CreateSignature(ITypeSymbol typeSymbol)
+    private static string CreateSignature(ITypeSymbol typeSymbol, bool? isNullable = null)
     {
-        return typeSymbol.IsNullable()
+        return isNullable ?? typeSymbol.IsNullable()
             ? $"public static AttributeValue? {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, {MarshallerOptions.Name} {MarshallerOptions.PropertyName}, string? {DataMember} = null)"
             : $"public static AttributeValue {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, {MarshallerOptions.Name} {MarshallerOptions.PropertyName}, string? {DataMember} = null)";
     }
