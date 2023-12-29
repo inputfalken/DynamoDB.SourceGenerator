@@ -92,14 +92,6 @@ public static class Marshaller
         {
             BaseType baseType when CreateSignature(baseType.TypeSymbol) is var signature => baseType.Type switch
             {
-                BaseType.SupportedType.Int16
-                    or BaseType.SupportedType.Int64
-                    or BaseType.SupportedType.UInt16
-                    or BaseType.SupportedType.UInt32
-                    or BaseType.SupportedType.UInt64
-                    or BaseType.SupportedType.SByte
-                    or BaseType.SupportedType.Byte
-                    => signature.CreateBlock($"return new AttributeValue {{ N = {ParamReference}.ToString() }};").ToConversion(),
                 BaseType.SupportedType.DateOnly => signature.CreateBlock($"return new AttributeValue {{ S = {ParamReference}.ToString(\"O\") }};").ToConversion(),
                 BaseType.SupportedType.Enum => signature.CreateBlock($"return new AttributeValue {{ N = ((int){ParamReference}).ToString() }};").ToConversion(),
                 _ => throw UncoveredConversionException(baseType, nameof(CreateMethod))

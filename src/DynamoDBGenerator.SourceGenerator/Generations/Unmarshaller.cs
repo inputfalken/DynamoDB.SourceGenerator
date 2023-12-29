@@ -84,16 +84,6 @@ public static class Unmarshaller
                 BaseType.SupportedType.Enum => signature
                     .CreateBlock($"return {Value} is {{ N: {{ }} x }} ? ({baseType.TypeSymbol.Representation().annotated})Int32.Parse(x) : {Else(baseType.TypeSymbol)};")
                     .ToConversion(),
-                BaseType.SupportedType.Int16
-                    or BaseType.SupportedType.Byte
-                    or BaseType.SupportedType.Int64
-                    or BaseType.SupportedType.SByte
-                    or BaseType.SupportedType.UInt16
-                    or BaseType.SupportedType.UInt32
-                    or BaseType.SupportedType.UInt64
-                    => signature
-                        .CreateBlock($"return {Value} is {{ N: {{ }} x }} ? {baseType.TypeSymbol.Representation().original}.Parse(x) : {Else(baseType.TypeSymbol)};")
-                        .ToConversion(),
                 BaseType.SupportedType.DateOnly
                     => signature
                         .CreateBlock($"return {Value} is {{ S: {{ }} x }} ? {baseType.TypeSymbol.Representation().original}.Parse(x) : {Else(baseType.TypeSymbol)};")

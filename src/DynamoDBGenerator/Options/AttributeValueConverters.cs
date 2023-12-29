@@ -60,4 +60,40 @@ public class AttributeValueConverters
     /// The <see cref="float"/> converter.
     /// </summary>
     public IValueTypeConverter<float> FloatConverter { get; } = new FloatConverter();
+
+    /// <summary>
+    /// The <see cref="long"/> converter.
+    /// </summary>
+    public IValueTypeConverter<long> LongConverter { get; } = new LongConverter();
+
+    /// <summary>
+    /// The <see cref="ulong"/> converter.
+    /// </summary>
+    public IValueTypeConverter<ulong> ULongConverter { get; } = new ULongConverter();
+    
+    /// <summary>
+    /// The <see cref="uint"/> converter.
+    /// </summary>
+    public IValueTypeConverter<uint> UIntConverter { get; } = new UIntConverter();
+    
+    /// <summary>
+    /// The <see cref="sbyte"/> converter.
+    /// </summary>
+    public IValueTypeConverter<sbyte> SbyteConverter { get; } = new SByteConverter();
+    
+    /// <summary>
+    /// The <see cref="short"/> converter.
+    /// </summary>
+    public IValueTypeConverter<short> ShortConverter { get; } = new ShortConverter();
+    
+    /// <summary>
+    /// The <see cref="byte"/> converter.
+    /// </summary>
+    public IValueTypeConverter<byte> ByteConverter { get; } = new ByteConverter();
+    
+    /// <summary>
+    /// The <see cref="ushort"/> converter.
+    /// </summary>
+    public IValueTypeConverter<ushort> UShortConverter { get; } = new UShortConverter();
+    
 }

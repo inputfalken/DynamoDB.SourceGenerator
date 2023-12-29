@@ -111,13 +111,6 @@ public record BaseType : TypeIdentifier
     public enum SupportedType
     {
         Enum = 4,
-        Int16 = 5,
-        Byte = 6,
-        Int64 = 8,
-        SByte = 9,
-        UInt16 = 10,
-        UInt32 = 11,
-        UInt64 = 12,
         DateOnly = 18
     }
 
@@ -131,13 +124,6 @@ public record BaseType : TypeIdentifier
     {
         SupportedType? primitiveTypeAssignment = type switch
         {
-            {SpecialType: SpecialType.System_Int16} => SupportedType.Int16,
-            {SpecialType: SpecialType.System_Int64} => SupportedType.Int64,
-            {SpecialType: SpecialType.System_UInt16} => SupportedType.UInt16,
-            {SpecialType: SpecialType.System_UInt32} => SupportedType.UInt32,
-            {SpecialType: SpecialType.System_UInt64} => SupportedType.UInt64,
-            {SpecialType: SpecialType.System_Byte} => SupportedType.Byte,
-            {SpecialType: SpecialType.System_SByte} => SupportedType.SByte,
             {TypeKind: TypeKind.Enum} => SupportedType.Enum,
             {Name: "DateOnly"} => SupportedType.DateOnly,
             _ => null
