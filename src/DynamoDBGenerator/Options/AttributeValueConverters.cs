@@ -45,4 +45,19 @@ public class AttributeValueConverters
     /// The <see cref="int"/> converter.
     /// </summary>
     public IValueTypeConverter<int> Int32Converter { get; set; } = new Int32Converter();
+
+    /// <summary>
+    /// The <see cref="decimal"/> converter.
+    /// </summary>
+    public IValueTypeConverter<decimal> DecimalConverter { get; } = new DecimalConverter();
+
+    /// <summary>
+    /// The <see cref="double"/> converter.
+    /// </summary>
+    public IValueTypeConverter<double> DoubleConverter { get; } = new DoubleConverter();
+
+    /// <summary>
+    /// The <see cref="float"/> converter.
+    /// </summary>
+    public IValueTypeConverter<float> FloatConverter { get; } = new FloatConverter();
 }

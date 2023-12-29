@@ -97,9 +97,6 @@ public static class Marshaller
                     or BaseType.SupportedType.UInt16
                     or BaseType.SupportedType.UInt32
                     or BaseType.SupportedType.UInt64
-                    or BaseType.SupportedType.Double
-                    or BaseType.SupportedType.Decimal
-                    or BaseType.SupportedType.Single
                     or BaseType.SupportedType.SByte
                     or BaseType.SupportedType.Byte
                     => signature.CreateBlock($"return new AttributeValue {{ N = {ParamReference}.ToString() }};").ToConversion(),

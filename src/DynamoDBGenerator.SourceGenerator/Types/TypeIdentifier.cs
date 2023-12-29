@@ -118,9 +118,6 @@ public record BaseType : TypeIdentifier
         UInt16 = 10,
         UInt32 = 11,
         UInt64 = 12,
-        Decimal = 13,
-        Double = 14,
-        Single = 15,
         DateOnly = 18
     }
 
@@ -139,9 +136,6 @@ public record BaseType : TypeIdentifier
             {SpecialType: SpecialType.System_UInt16} => SupportedType.UInt16,
             {SpecialType: SpecialType.System_UInt32} => SupportedType.UInt32,
             {SpecialType: SpecialType.System_UInt64} => SupportedType.UInt64,
-            {SpecialType: SpecialType.System_Decimal} => SupportedType.Decimal,
-            {SpecialType: SpecialType.System_Double} => SupportedType.Double,
-            {SpecialType: SpecialType.System_Single} => SupportedType.Single,
             {SpecialType: SpecialType.System_Byte} => SupportedType.Byte,
             {SpecialType: SpecialType.System_SByte} => SupportedType.SByte,
             {TypeKind: TypeKind.Enum} => SupportedType.Enum,

@@ -91,9 +91,6 @@ public static class Unmarshaller
                     or BaseType.SupportedType.UInt16
                     or BaseType.SupportedType.UInt32
                     or BaseType.SupportedType.UInt64
-                    or BaseType.SupportedType.Decimal
-                    or BaseType.SupportedType.Double
-                    or BaseType.SupportedType.Single
                     => signature
                         .CreateBlock($"return {Value} is {{ N: {{ }} x }} ? {baseType.TypeSymbol.Representation().original}.Parse(x) : {Else(baseType.TypeSymbol)};")
                         .ToConversion(),
