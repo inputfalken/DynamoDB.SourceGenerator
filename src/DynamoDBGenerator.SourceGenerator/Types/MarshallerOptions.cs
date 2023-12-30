@@ -67,7 +67,7 @@ public readonly struct MarshallerOptions
     public static MarshallerOptions Create(INamedTypeSymbol typeSymbol)
     {
         var keyValuePairs = typeSymbol
-            .TraverseToObject()
+            .GetMembersToObject()
             .Select(ConverterDataMemberOrNull)
             .Where(x => x.HasValue)
             .Select(x => x!.Value);

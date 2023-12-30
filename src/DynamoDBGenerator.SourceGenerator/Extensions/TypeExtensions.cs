@@ -210,9 +210,9 @@ public static class TypeExtensions
 
             return tupleElements;
         }
-        
+
         return symbol
-            .TraverseToObject()
+            .GetMembersToObject()
             .Where(x => x.IsStatic is false)
             .Where(x => x.DeclaredAccessibility == Accessibility.Public)
             .Where(x => x.Kind is SymbolKind.Field or SymbolKind.Property)
@@ -225,7 +225,7 @@ public static class TypeExtensions
             })
             .Where(x => x is not null)
             .Select(x => x!.Value)
-            .ToList();
+            .ToArray();
 
         static DynamoDbDataMember? Create(DataMember dataMember)
         {
@@ -239,7 +239,7 @@ public static class TypeExtensions
 
     }
 
-    public static IEnumerable<ISymbol> TraverseToObject(this ITypeSymbol typeSymbol)
+    public static IEnumerable<ISymbol> GetMembersToObject(this ITypeSymbol typeSymbol)
     {
         // Return ImmutableArray<T> if we can.
         return typeSymbol.BaseType is {SpecialType:SpecialType.System_Object} 
@@ -249,13 +249,16 @@ public static class TypeExtensions
         static IEnumerable<ISymbol> Iterator(ITypeSymbol typeSymbol)
         {
             var namedTypeSymbol = typeSymbol;
-            while (namedTypeSymbol is { SpecialType: not SpecialType.System_Object })
+            
+            // We know that we must do this at least once.
+            do
             {
                 foreach (var member in namedTypeSymbol.GetMembers())
                     yield return member;
 
                 namedTypeSymbol = namedTypeSymbol.BaseType;
-            }
+                
+            } while (namedTypeSymbol is { SpecialType: not SpecialType.System_Object });
         }
     }
 
