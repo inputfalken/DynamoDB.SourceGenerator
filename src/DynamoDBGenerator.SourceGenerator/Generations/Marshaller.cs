@@ -178,9 +178,9 @@ public static class Marshaller
             return invocation;
 
         if (typeSymbol.TypeIdentifier() is UnknownType)
-            return typeSymbol.IsNullable() is false // Can get rid of this if the signature accepts nullable
-                ? $"new AttributeValue {{ M = {invocation} ?? throw {ExceptionHelper.NullExceptionMethod}({dataMember}) }}"
-                : $"{AttributeValueUtilityFactory.ToAttributeMap}({invocation})";
+            return typeSymbol.IsNullable() is false
+                ? $"{invocation} switch {{ {{ }} x => new AttributeValue {{ M = x }}, null => throw {ExceptionHelper.NullExceptionMethod}({dataMember}) }}"
+                : $"{invocation} switch {{ {{ }} x => new AttributeValue {{ M = x }}, null => null }}";
 
         return invocation;
     }

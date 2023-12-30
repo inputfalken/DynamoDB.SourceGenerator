@@ -12,7 +12,6 @@ namespace DynamoDBGenerator.Internal;
 public static class AttributeValueUtilityFactory
 {
 #pragma warning disable CS1591
-    public static AttributeValue? ToAttributeMap(Dictionary<string, AttributeValue>? dict) => dict is null ? null : new() {M = dict};
     public static AttributeValue Null { get; } = new() {NULL = true};
 #pragma warning restore CS1591
 

@@ -71,8 +71,6 @@ public static class Constants
         public static class AttributeValueUtilityFactory
         {
             private const string ClassName = "AttributeValueUtilityFactory";
-
-            public const string ToAttributeMap = $"{ClassName}.ToAttributeMap";
             public const string Null = $"{ClassName}.Null";
         }
         public static class ExceptionHelper
