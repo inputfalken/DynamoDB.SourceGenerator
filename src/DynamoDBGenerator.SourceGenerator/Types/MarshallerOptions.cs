@@ -80,14 +80,10 @@ public readonly struct MarshallerOptions
         return symbol switch
         {
             { DeclaredAccessibility: not (Accessibility.Public or Accessibility.Internal) } => null,
-            IFieldSymbol x when Predicate(x.Type) => new KeyValuePair<string, Converter>(x.Name,
-                new Converter(x.Type, (INamedTypeSymbol)x.Type)),
-            IPropertySymbol x when Predicate(x.Type) => new KeyValuePair<string, Converter>(x.Name,
-                new Converter(x.Type, (INamedTypeSymbol)x.Type)),
-            IFieldSymbol x when x.Type.Interfaces.FirstOrDefault(Predicate) is { } y =>
-                new KeyValuePair<string, Converter>(x.Name, new Converter(x.Type, y)),
-            IPropertySymbol x when x.Type.Interfaces.FirstOrDefault(Predicate) is { } y =>
-                new KeyValuePair<string, Converter>(x.Name, new Converter(x.Type, y)),
+            IFieldSymbol x when Predicate(x.Type) => new KeyValuePair<string, Converter>(x.Name, new Converter(x.Type, (INamedTypeSymbol)x.Type)),
+            IPropertySymbol x when Predicate(x.Type) => new KeyValuePair<string, Converter>(x.Name, new Converter(x.Type, (INamedTypeSymbol)x.Type)),
+            IFieldSymbol x when x.Type.Interfaces.FirstOrDefault(Predicate) is { } y => new KeyValuePair<string, Converter>(x.Name, new Converter(x.Type, y)),
+            IPropertySymbol x when x.Type.Interfaces.FirstOrDefault(Predicate) is { } y => new KeyValuePair<string, Converter>(x.Name, new Converter(x.Type, y)),
             _ => null
         };
 
@@ -99,7 +95,7 @@ public readonly struct MarshallerOptions
             return namedTypeSymbol is
             {
                 ContainingNamespace.Name: Constants.DynamoDBGenerator.Namespace.Converters,
-                TypeKind: TypeKind.Interface, Name: (Constants.DynamoDBGenerator.Converter.ReferenceType or Constants.DynamoDBGenerator.Converter.ValueType),
+                TypeKind: TypeKind.Interface, Name: Constants.DynamoDBGenerator.Converter.ReferenceType or Constants.DynamoDBGenerator.Converter.ValueType,
                 TypeParameters.Length: 1,
                 ContainingAssembly.Name : Constants.DynamoDBGenerator.AssemblyName
             };

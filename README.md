@@ -177,7 +177,7 @@ public partial class Repository { }
 // Implement an converter, there's also an IReferenceTypeConverter available for ReferenceTypes.
 public class UnixEpochDateTimeConverter : IValueTypeConverter<DateTime>
 {
-    // Converter the AttributeValue into a .NET type.
+    // Convert the AttributeValue into a .NET type.
     public DateTime? Read(AttributeValue attributeValue)
     {
         return long.TryParse(attributeValue.N, out var epoch) ? DateTimeOffset.FromUnixTimeSeconds(epoch) : null;
