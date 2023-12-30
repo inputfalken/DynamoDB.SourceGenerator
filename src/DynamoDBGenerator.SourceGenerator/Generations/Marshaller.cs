@@ -23,10 +23,17 @@ public static class Marshaller
             .Select(x =>
             {
                 var accessPattern = $"{ParamReference}.{x.DataMember.Name}";
+                var isNullable = x.DataMember.Type.IsNullable();
+
+                var marshallerInvocation = InvokeMarshallerMethod(x.DataMember.Type, accessPattern, $"\"{x.DataMember.Name}\"", options);
+                var assignment = isNullable
+                    ? $"if ({marshallerInvocation} is {{ }} {x.DataMember.Name})"
+                        .CreateBlock($"{DictionaryReference}.Add(\"{x.AttributeName}\", {x.DataMember.Name});" )
+                    : new[] { $"{DictionaryReference}.Add(\"{x.AttributeName}\", {marshallerInvocation})"};
+                
                 return (
-                    dictionaryAssignment: $"if ({InvokeMarshallerMethod(x.DataMember.Type, accessPattern, $"\"{x.DataMember.Name}\"", options)} is {{ }} {x.DataMember.Name})".CreateBlock(
-                        $"{DictionaryReference}.Add(\"{x.AttributeName}\", {x.DataMember.Name});"),
-                    capacityTernary: x.DataMember.Type.IsNullable() ? x.DataMember.Type.NotNullTernaryExpression(in accessPattern, "1", "0") : "1",
+                    dictionaryAssignment: assignment,
+                    capacityTernary: isNullable ? x.DataMember.Type.NotNullTernaryExpression(in accessPattern, "1", "0") : "1",
                     x.DataMember.Type
                 );
             })
@@ -74,19 +81,19 @@ public static class Marshaller
             {
                 { IsValueType: true } => type switch
                 {
-                    { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => CreateSignature(type, true)
+                    { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => CreateSignature(type)
                         .CreateBlock($"return {ParamReference} is not null ? {a} : null;")
                         .ToConversion(),
-                    _ => CreateSignature(type, false)
+                    _ => CreateSignature(type)
                         .CreateBlock($"return {a};")
                         .ToConversion()
                 },
                 { IsReferenceType: true } => type switch
                 {
-                    { NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated } => CreateSignature(type, true)
+                    { NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated } => CreateSignature(type)
                         .CreateBlock($"return {ParamReference} is not null ? {a} : null;")
                         .ToConversion(),
-                    _ => CreateSignature(type, false)
+                    _ => CreateSignature(type)
                         .CreateBlock($"return {ParamReference} is not null ? {a} : throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
                         .ToConversion()
                 },
@@ -96,7 +103,7 @@ public static class Marshaller
 
         return type.TypeIdentifier() switch
         {
-            BaseType baseType when CreateSignature(baseType.TypeSymbol, false) is var signature => baseType.Type switch
+            BaseType baseType when CreateSignature(baseType.TypeSymbol) is var signature => baseType.Type switch
             {
                 BaseType.SupportedType.Enum => signature.CreateBlock($"return new AttributeValue {{ N = ((int){ParamReference}).ToString() }};").ToConversion(),
                 _ => throw UncoveredConversionException(baseType, nameof(CreateMethod))
@@ -145,9 +152,9 @@ public static class Marshaller
         };
 
     }
-    private static string CreateSignature(ITypeSymbol typeSymbol, bool? isNullable = null)
+    private static string CreateSignature(ITypeSymbol typeSymbol)
     {
-        return isNullable ?? typeSymbol.IsNullable()
+        return typeSymbol.IsNullable()
             ? $"public static AttributeValue? {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, {MarshallerOptions.Name} {MarshallerOptions.PropertyName}, string? {DataMember} = null)"
             : $"public static AttributeValue {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, {MarshallerOptions.Name} {MarshallerOptions.PropertyName}, string? {DataMember} = null)";
     }
@@ -178,9 +185,9 @@ public static class Marshaller
             return invocation;
 
         if (typeSymbol.TypeIdentifier() is UnknownType)
-            return typeSymbol.IsNullable() is false
-                ? $"{invocation} switch {{ {{ }} x => new AttributeValue {{ M = x }}, null => throw {ExceptionHelper.NullExceptionMethod}({dataMember}) }}"
-                : $"{invocation} switch {{ {{ }} x => new AttributeValue {{ M = x }}, null => null }}";
+            return typeSymbol.IsNullable()
+                ? $"{invocation} switch {{ {{ }} x => new AttributeValue {{ M = x }}, null => null }}"
+                : $"new AttributeValue {{ M = {invocation} }}";
 
         return invocation;
     }

@@ -15,16 +15,16 @@ public static class NotNullEvaluationExtensions
 
     public static bool IsNullable(this ITypeSymbol typeSymbol)
     {
-        if (typeSymbol.TryGetNullableValueType() is not null)
-            return true;
-
-        return typeSymbol.NullableAnnotation switch
+        return typeSymbol switch
         {
-            NullableAnnotation.None or NullableAnnotation.Annotated => true,
-            NullableAnnotation.NotAnnotated => false,
-            _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
+            { IsReferenceType: true, NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated } => true,
+            { IsReferenceType: true, NullableAnnotation: NullableAnnotation.NotAnnotated } => false,
+            { IsValueType: true, OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => true,
+            { IsValueType: true } => false,
+            _ => throw new ArgumentOutOfRangeException($"Could not determine nullablity of type '{typeSymbol.ToDisplayString()}'.")
         };
     }
+
 
     private static string CreateException(in string accessPattern)
     {
