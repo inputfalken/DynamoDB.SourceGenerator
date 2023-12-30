@@ -59,7 +59,7 @@ public static class Unmarshaller
                         .SelectMany(x => x)
                         .DefaultIfEmpty("();")
                         // Is needed in order to not perform new entity? where '?' is not allowed in the end of the string.
-                        .Prepend(type.IsTupleType ? "return" : $"return new {(typeName.annotated.EndsWith("?") ? typeName.annotated.Substring(0, typeName.annotated.Length - 1) : typeName.annotated)}")
+                        .Prepend(type.IsTupleType ? "return" : $"return new {typeName.annotated.TrimEnd('?')}")
                 );
 
         var method = $"public static {typeName.annotated} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue>? {Dict}, {MarshallerOptions.Name} {MarshallerOptions.PropertyName}, string? {DataMember} = null)".CreateBlock(blockBody);
