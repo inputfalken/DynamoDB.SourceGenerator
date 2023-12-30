@@ -29,7 +29,7 @@ public static class Marshaller
                 var assignment = isNullable
                     ? $"if ({marshallerInvocation} is {{ }} {x.DataMember.Name})"
                         .CreateBlock($"{DictionaryReference}.Add(\"{x.AttributeName}\", {x.DataMember.Name});" )
-                    : new[] { $"{DictionaryReference}.Add(\"{x.AttributeName}\", {marshallerInvocation})"};
+                    : new[] { $"{DictionaryReference}.Add(\"{x.AttributeName}\", {marshallerInvocation});"};
                 
                 return (
                     dictionaryAssignment: assignment,
