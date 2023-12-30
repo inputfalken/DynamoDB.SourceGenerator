@@ -40,6 +40,7 @@ Install  the following packages from Nuget:
   * HashKey and RangeKey ✔ 
   * GlobalSecondaryIndex ✔
   * LocalSecondaryIndex ✔
+* Custom Converters: Create converters for your own types or override the [default converters](https://github.com/inputfalken/DynamoDB.SourceGenerator/blob/main/src/DynamoDBGenerator/Options/AttributeValueConverters.cs) built in to the library.
        
 
 ## TODO
@@ -59,6 +60,8 @@ Install  the following packages from Nuget:
 | `string` | `S`    |
 | `uint`   | `N`    |
 | `ulong`  | `N`    |
+| `Guid`   | `S`    |
+| `Enum`   | `N`    |
 
 ### Binary
 
@@ -74,6 +77,7 @@ Install  the following packages from Nuget:
 | `DateOnly`       | `S`   | ISO 8601 |
 | `DateTime`       | `S`   | ISO 8601 |
 | `DateTimeOffset` | `S`   | ISO 8601 |
+| `TimeSpan`       | `S`   | ISO 8601 |
 
 ### Collection Types
 
@@ -84,6 +88,7 @@ Install  the following packages from Nuget:
 | `IEnumerable<T>`                     | `L`   |                                                       |
 | `IReadOnlyList<T>`                   | `L`   |                                                       |
 | `IRedonlyDictionary<string, TValue>` | `M`   | Will treat the `Dictionary` as a **Key-Value** store. |
+| `ILookup<string, TValue>`            | `M`   | Will treat the `ILookup` as a **Key-Values** store.   |
 | `ISet<int>`                          | `NS`  |                                                       |
 | `ISet<long>`                         | `NS`  |                                                       |
 | `ISet<string>`                       | `SS`  |                                                       |
@@ -165,6 +170,47 @@ public class Person
 // It is possible to provide multiple DynamoDBMarshallerAttributes in order to source-generate multiple types in the same class.
 [DynamoDBMarshaller(typeof(Person), PropertyName = "PersonMarshaller")]
 public partial class Repository { }
+```
+
+### Applying custom converters
+```csharp
+// Implement an converter, there's also an IReferenceTypeConverter available for ReferenceTypes.
+public class UnixEpochDateTimeConverter : IValueTypeConverter<DateTime>
+{
+    // Converter the AttributeValue into a .NET type.
+    public DateTime? Read(AttributeValue attributeValue)
+    {
+        return long.TryParse(attributeValue.N, out var epoch) ? DateTimeOffset.FromUnixTimeSeconds(epoch) : null;
+    }
+
+    // Convert the .NET type into an AttributeValue.
+    public AttributeValue Write(DateTime element)
+    {
+        return new AttributeValue { N = new DateTimeOffset(element).ToUnixTimeSeconds() };
+    }
+}
+// Create a new Converters class
+// You don't have to inherit from AttributeValueConverters if you do not want to use the default converters provided.
+public class MyCustomConverters : AttributeValueConverters
+{
+    // If you take constructor parameters, the source generator will recongnize it and change the way you access it into an method.
+    // It's recommended to call the method once and save it into a class member.
+    public MyCustomConverters()
+    {
+        // Override the default behaviour.
+        DateTimeConverter = new UnixEpochDateTimeConverter();
+    }
+    // You could add more converter DataMembers as fields or properties to add your own custom conversions.
+    
+}
+
+[DynamoDBMarshallerOptions(Converter = typeof(MyCustomConverters))]
+[DynamoDBMarshaller(typeof(Person), PropertyName = "PersonMarshaller")]
+public partial Repository 
+{
+    
+}
+
 ```
 
 ## Project structure
