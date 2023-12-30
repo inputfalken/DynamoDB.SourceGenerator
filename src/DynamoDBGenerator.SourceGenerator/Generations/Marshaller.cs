@@ -75,7 +75,7 @@ public static class Marshaller
                 { IsValueType: true } => type switch
                 {
                     { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => CreateSignature(type, true)
-                        .CreateBlock($"return {ParamReference} is null ? null : {a};")
+                        .CreateBlock($"return {ParamReference} is not null ? {a} : null;")
                         .ToConversion(),
                     _ => CreateSignature(type, false)
                         .CreateBlock($"return {a};")
@@ -84,10 +84,10 @@ public static class Marshaller
                 { IsReferenceType: true } => type switch
                 {
                     { NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated } => CreateSignature(type, true)
-                        .CreateBlock($"return {ParamReference} is null ? null : {a};")
+                        .CreateBlock($"return {ParamReference} is not null ? {a} : null;")
                         .ToConversion(),
                     _ => CreateSignature(type, false)
-                        .CreateBlock($"return {ParamReference} is null ? throw {ExceptionHelper.NullExceptionMethod}({DataMember}) : {a};")
+                        .CreateBlock($"return {ParamReference} is not null ? {a} : throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
                         .ToConversion()
                 },
                 _ => throw new ArgumentException($"Neither ValueType or ReferenceType could be resolved for conversion. type '{type.ToDisplayString()}'.")

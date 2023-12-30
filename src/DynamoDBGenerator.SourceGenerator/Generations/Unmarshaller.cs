@@ -86,7 +86,7 @@ public static class Unmarshaller
                         .ToConversion(),
                 _ => CreateSignature(type)
                     .CreateBlock(
-                        $"return {Value} is null ? throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}({DataMember}) : ({a} ?? throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}({DataMember}));")
+                        $"return {Value} is not null && {a} is {{ }} x ? x : throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}({DataMember});")
                     .ToConversion()
             };
         }
