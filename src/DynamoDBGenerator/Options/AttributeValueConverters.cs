@@ -14,37 +14,37 @@ public class AttributeValueConverters
     /// <summary>
     /// The <see cref="string"/> converter.
     /// </summary>
-    public IReferenceTypeConverter<string> StringConverter { get; set; } = new StringConverter();
+    public IReferenceTypeConverter<string> StringConverter { get; } = new StringConverter();
 
     /// <summary>
     /// The <see cref="DateTime"/> converter.
     /// </summary>
-    public IValueTypeConverter<DateTime> DateTimeConverter { get; set; } = new ISO8601DateTimeConverter();
+    public IValueTypeConverter<DateTime> DateTimeConverter { get; } = new ISO8601DateTimeConverter();
 
     /// <summary>
     /// The <see cref="DateTimeOffsetConverter"/> converter.
     /// </summary>
-    public IValueTypeConverter<DateTimeOffset> DateTimeOffsetConverter { get; set; } = new ISO8601DateTimeOffsetConverter();
+    public IValueTypeConverter<DateTimeOffset> DateTimeOffsetConverter { get; } = new ISO8601DateTimeOffsetConverter();
 
     /// <summary>
     /// The <see cref="bool"/> converter.
     /// </summary>
-    public IValueTypeConverter<bool> BoolConverter { get; set; } = new BoolConverter();
+    public IValueTypeConverter<bool> BoolConverter { get; } = new BoolConverter();
 
     /// <summary>
     /// The <see cref="char"/> converter.
     /// </summary>
-    public IValueTypeConverter<char> CharConverter { get; set; } = new CharConverter();
+    public IValueTypeConverter<char> CharConverter { get; } = new CharConverter();
 
     /// <summary>
     /// The <see cref="MemoryStream"/> converter.
     /// </summary>
-    public IReferenceTypeConverter<MemoryStream> MemoryStreamConverter { get; set; } = new MemoryStreamConverter();
+    public IReferenceTypeConverter<MemoryStream> MemoryStreamConverter { get; } = new MemoryStreamConverter();
 
     /// <summary>
     /// The <see cref="int"/> converter.
     /// </summary>
-    public IValueTypeConverter<int> Int32Converter { get; set; } = new Int32Converter();
+    public IValueTypeConverter<int> Int32Converter { get; } = new Int32Converter();
 
     /// <summary>
     /// The <see cref="decimal"/> converter.
@@ -100,5 +100,10 @@ public class AttributeValueConverters
     /// The <see cref="DateOnly"/> converter.
     /// </summary>
     public IValueTypeConverter<DateOnly> DateOnlyConverter { get; } = new ISO8601DateOnlyConverter();
-    
+
+    /// <summary>
+    /// The <see cref="TimeSpan"/> converter.
+    /// </summary>
+    public IValueTypeConverter<TimeSpan> TimeSpanConverter { get; } = new ISO8601TimeSpanConveter();
+
 }
