@@ -5,6 +5,7 @@ using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.DynamoDBv2.Model;
+using AutoFixture;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
@@ -28,6 +29,10 @@ public class Marshalling
 
     public Marshalling()
     {
+        var fixture = new Fixture();
+        fixture.Behaviors.OfType<ThrowingRecursionBehavior>().ToList().ForEach(b => fixture.Behaviors.Remove(b));
+        fixture.Behaviors.Add(new OmitOnRecursionBehavior());
+
         _repository = new();
         _context = new(new AmazonDynamoDBClient(RegionEndpoint.EUWest1));
         _dynamoDbOperationConfig = new()
@@ -35,23 +40,7 @@ public class Marshalling
             Conversion = DynamoDBEntryConversion.V2
         };
 
-        _singleElement = new()
-        {
-            Id = "Abc",
-            Firstname = "John",
-            Lastname = "Doe",
-            Address = new Address
-            {
-                Id = "SomeId",
-                PostalCode = new PostalCode
-                {
-                    ZipCode = "123",
-                    Town = "Abc"
-                },
-                Street = "Abc",
-                Neighbours = new List<PersonEntity>()
-            }
-        };
+        _singleElement = fixture.Create<PersonEntity>();
         _attributeValues = _context.ToDocument(_singleElement).ToAttributeMap();
     }
 
