@@ -73,9 +73,22 @@ public static class Unmarshaller
 
         if (options.AccessConverterRead(type, Value) is {} a)
         {
-            return CreateSignature(type)
-                .CreateBlock($"return {Value} is not null ? ({a} ?? {Else(type)}) : {Else(type)};")
-                .ToConversion();
+            return type switch
+            {
+                { IsValueType: true, OriginalDefinition.SpecialType: SpecialType.System_Nullable_T }
+                    or
+                    {
+                        IsReferenceType: true,
+                        NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated
+                    }
+                    => CreateSignature(type)
+                        .CreateBlock($"return {Value} is null ? null : {a};")
+                        .ToConversion(),
+                _ => CreateSignature(type)
+                    .CreateBlock(
+                        $"return {Value} is null ? throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}({DataMember}) : ({a} ?? throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}({DataMember}));")
+                    .ToConversion()
+            };
         }
         return type.TypeIdentifier() switch
         {
