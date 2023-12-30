@@ -15,7 +15,7 @@ public readonly struct MarshallerOptions
     private MarshallerOptions(INamedTypeSymbol convertersType,
         IEnumerable<KeyValuePair<string, Converter>> converters)
     {
-        Converters = converters.ToArray();
+        Converters = converters.ToDictionary(x => x.Value.T, x => x, SymbolEqualityComparer.Default);
         _convertersType = convertersType;
         _converterFullPath = _convertersType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
     }
@@ -33,33 +33,23 @@ public readonly struct MarshallerOptions
 
     public string? AccessConverterWrite(ITypeSymbol typeSymbol, string elementParam)
     {
-        var match = Converters
-            .Cast<KeyValuePair<string, Converter>?>()
-            .FirstOrDefault(x => SymbolEqualityComparer.Default.Equals(x.Value.Value.T, typeSymbol));
-
-        if (match is null)
-            return null;
-
-        return $"{PropertyName}.{ConvertersProperty}.{match.Value.Key}.Write({elementParam})";
+        return Converters.TryGetValue(typeSymbol, out var match)
+            ? $"{PropertyName}.{ConvertersProperty}.{match.Key}.Write({elementParam})"
+            : null;
     }
     public string? AccessConverterRead(ITypeSymbol typeSymbol, string attributeValueParam)
     {
-        var match = Converters
-            .Cast<KeyValuePair<string, Converter>?>()
-            .FirstOrDefault(x => SymbolEqualityComparer.Default.Equals(x.Value.Value.T, typeSymbol));
-
-        if (match is null)
-            return null;
-
-        return $"{PropertyName}.{ConvertersProperty}.{match.Value.Key}.Read({attributeValueParam})";
+        return Converters.TryGetValue(typeSymbol, out var match) 
+            ? $"{PropertyName}.{ConvertersProperty}.{match.Key}.Read({attributeValueParam})" 
+            : null;
     }
 
     public bool IsConvertable(ITypeSymbol typeSymbol)
     {
-        return Converters.Any(x => SymbolEqualityComparer.Default.Equals(x.Value.T, typeSymbol));
+        return Converters.ContainsKey(typeSymbol);
     }
 
-    private KeyValuePair<string, Converter>[] Converters { get; }
+    private Dictionary<ISymbol?, KeyValuePair<string, Converter>> Converters { get; }
 
 
     public IEnumerable<string> ClassDeclaration
