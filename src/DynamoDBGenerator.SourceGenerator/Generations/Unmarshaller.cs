@@ -102,7 +102,7 @@ public static class Unmarshaller
             SingleGeneric singleGeneric when CreateSignature(singleGeneric.TypeSymbol) is var signature => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => signature
-                    .CreateBlock($"return {Value} is null or {{ NULL: true }} ? {Else(singleGeneric.TypeSymbol)} : {InvokeUnmarshallMethod(singleGeneric.T, Value, DataMember, options)};")
+                    .CreateBlock($"return {Value} is null or {{ NULL: true }} ? null : {InvokeUnmarshallMethod(singleGeneric.T, Value, DataMember, options)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.ICollection => signature
                     .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"", options)}).ToList() : {Else(singleGeneric.TypeSymbol)};")

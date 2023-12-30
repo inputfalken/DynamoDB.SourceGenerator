@@ -96,7 +96,7 @@ public static class Marshaller
 
         return type.TypeIdentifier() switch
         {
-            BaseType baseType when CreateSignature(baseType.TypeSymbol) is var signature => baseType.Type switch
+            BaseType baseType when CreateSignature(baseType.TypeSymbol, false) is var signature => baseType.Type switch
             {
                 BaseType.SupportedType.Enum => signature.CreateBlock($"return new AttributeValue {{ N = ((int){ParamReference}).ToString() }};").ToConversion(),
                 _ => throw UncoveredConversionException(baseType, nameof(CreateMethod))
@@ -104,7 +104,7 @@ public static class Marshaller
             SingleGeneric singleGeneric when CreateSignature(singleGeneric.TypeSymbol) is var signature => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => signature
-                    .CreateBlock($"return {ParamReference} is not null ? {InvokeMarshallerMethod(singleGeneric.T, $"{ParamReference}.Value", DataMember, options)} : {Else(singleGeneric)};")
+                    .CreateBlock($"return {ParamReference} is not null ? {InvokeMarshallerMethod(singleGeneric.T, $"{ParamReference}.Value", DataMember, options)} : null;")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.IReadOnlyCollection
                     or SingleGeneric.SupportedType.Array
