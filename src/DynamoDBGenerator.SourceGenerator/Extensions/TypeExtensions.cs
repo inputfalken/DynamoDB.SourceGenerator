@@ -211,12 +211,8 @@ public static class TypeExtensions
             return tupleElements;
         }
 
-        var members = symbol.GetMembers();
-        var list = new List<DynamoDbDataMember>(members.Length);
-        if (symbol.BaseType is {SpecialType: not SpecialType.System_Object})
-            list.AddRange(GetDynamoDbProperties(symbol.BaseType));
-
-        list.AddRange(members
+        return symbol
+            .GetMembersToObject()
             .Where(x => x.IsStatic is false)
             .Where(x => x.DeclaredAccessibility == Accessibility.Public)
             .Where(x => x.Kind is SymbolKind.Field or SymbolKind.Property)
@@ -228,9 +224,8 @@ public static class TypeExtensions
                 _ => null
             })
             .Where(x => x is not null)
-            .Select(x => x!.Value));
-
-        return list;
+            .Select(x => x!.Value)
+            .ToArray();
 
         static DynamoDbDataMember? Create(DataMember dataMember)
         {
@@ -243,4 +238,28 @@ public static class TypeExtensions
         }
 
     }
+
+    public static IEnumerable<ISymbol> GetMembersToObject(this ITypeSymbol typeSymbol)
+    {
+        // Return ImmutableArray<T> if we can.
+        return typeSymbol.BaseType is {SpecialType:SpecialType.System_Object} 
+            ? typeSymbol.GetMembers() 
+            : Iterator(typeSymbol);
+        
+        static IEnumerable<ISymbol> Iterator(ITypeSymbol typeSymbol)
+        {
+            var namedTypeSymbol = typeSymbol;
+            
+            // We know that we must do this at least once.
+            do
+            {
+                foreach (var member in namedTypeSymbol.GetMembers())
+                    yield return member;
+
+                namedTypeSymbol = namedTypeSymbol.BaseType;
+                
+            } while (namedTypeSymbol is { SpecialType: not SpecialType.System_Object });
+        }
+    }
+
 }

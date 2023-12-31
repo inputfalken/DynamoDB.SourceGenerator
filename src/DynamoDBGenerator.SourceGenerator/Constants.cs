@@ -8,6 +8,7 @@ public static class Constants
         {
             public const string DynamoDBMarshallerConstructor = "DynamoDBMarshallerConstructorAttribute";
             public const string DynamoDBMarshaller = "DynamoDBMarshallerAttribute";
+            public const string DynamoDbMarshallerOptions = "DynamoDbMarshallerOptionsAttribute";
 
             public static class DynamoDBMarshallerArgument
             {
@@ -15,10 +16,16 @@ public static class Constants
                 public const string PropertyName = "PropertyName";
                 public const string ArgumentType = "ArgumentType";
             }
+            public static class DynamoDbMarshallerOptionsArgument
+            {
+                public const string Converters = "Converters";
+            }
         }
 
         public const string AssemblyName = "DynamoDBGenerator";
         public const string DynamoDbDocumentPropertyFullname = $"{Namespace.AttributesFullName}.{Attribute.DynamoDBMarshaller}";
+
+        public const string DynamoDBConverterFullName = $"{AssemblyName}.{Namespace.Options}.{Converter.AttributeValueConverters}";
 
         public static class Namespace
         {
@@ -27,6 +34,14 @@ public static class Constants
             public const string AttributesFullName = $"{AssemblyName}.{Attributes}";
             public const string InternalFullName = $"{AssemblyName}.Internal";
             public const string ExceptionsFullName = $"{AssemblyName}.Exceptions";
+            public const string Converters = "Converters";
+            public const string Options = "Options";
+        }
+        public static class Converter
+        {
+            public const string AttributeValueConverters = "AttributeValueConverters";
+            public const string ReferenceType = "IReferenceTypeConverter";
+            public const string ValueType = "IValueTypeConverter";
         }
 
         public static class Marshaller
@@ -56,11 +71,7 @@ public static class Constants
         public static class AttributeValueUtilityFactory
         {
             private const string ClassName = "AttributeValueUtilityFactory";
-
-            public const string ToAttributeMap = $"{ClassName}.ToAttributeMap";
             public const string Null = $"{ClassName}.Null";
-            public const string True = $"{ClassName}.True";
-            public const string False = $"{ClassName}.False";
         }
         public static class ExceptionHelper
         {

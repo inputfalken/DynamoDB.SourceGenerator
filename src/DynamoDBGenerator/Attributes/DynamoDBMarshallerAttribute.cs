@@ -49,4 +49,5 @@ public class DynamoDBMarshallerAttribute : Attribute
     /// will use as its argument type-parameter.
     /// </summary>
     public Type? ArgumentType { get; set; }
+    
 }
