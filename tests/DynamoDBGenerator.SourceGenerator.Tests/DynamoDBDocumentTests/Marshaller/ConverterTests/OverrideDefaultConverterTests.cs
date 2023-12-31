@@ -4,13 +4,13 @@ using DynamoDBGenerator.Converters;
 using DynamoDBGenerator.Options;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 
-namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.CustomConverterTests;
+namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.ConverterTests;
 
 [DynamoDbMarshallerOptions(Converters = typeof(Converters))]
 [DynamoDBMarshaller(typeof(Container<DateTime>))]
-public partial class OverrideCustomConverterTests : RecordMarshalAsserter<DateTime>
+public partial class OverrideDefaultConverterTests : RecordMarshalAsserter<DateTime>
 {
-    public OverrideCustomConverterTests() :
+    public OverrideDefaultConverterTests() :
         base(new[] { new DateTime(2023, 12, 31), new DateTime(2023, 12, 30) }, UnixEpochDateTimeConverter.WriteImplementation)
     {
     }
