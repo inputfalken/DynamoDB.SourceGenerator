@@ -1,4 +1,3 @@
-using System.Net.Mail;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.Converters;
@@ -8,47 +7,70 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.A
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.ConverterTests;
 
 [DynamoDbMarshallerOptions(Converters = typeof(Converter))]
-[DynamoDBMarshaller(typeof(Container<User>))]
-public partial class AddCustomConverterTests : RecordMarshalAsserter<AddCustomConverterTests.User>
+[DynamoDBMarshaller(typeof(Container<Money>))]
+public partial class AddCustomConverterTests : RecordMarshalAsserter<AddCustomConverterTests.Money>
 {
-    
-
-    public record User(Mail Email);
-
-    public record Mail(MailAddress MailAddress);
     
     public class Converter : AttributeValueConverters
     {
-        public MailConverter MailConverter { get; } = new();
+        public MoneyConverter MoneyConverter { get; } = new();
     }
 
-    public class MailConverter : IReferenceTypeConverter<Mail>
+    public class MoneyConverter : IValueTypeConverter<Money>
     {
-        public static AttributeValue WriteImplementation(Mail element)
+        public static AttributeValue WriteImplementation(Money element)
         {
-            return new AttributeValue { S = element.MailAddress.Address };
+            return new AttributeValue { S = element.ToString() };
         }
-        public Mail Read(AttributeValue attributeValue)
+        
+        public Money? Read(AttributeValue attributeValue)
         {
-            return new Mail(new MailAddress(attributeValue.S));
+            return Money.Parse(attributeValue.S);
         }
 
-        public AttributeValue Write(Mail element)
+        public AttributeValue Write(Money element)
         {
             return WriteImplementation(element);
         }
     }
 
-    public AddCustomConverterTests() : base(new []{new User(new Mail(new MailAddress("something@domain.com")))}, x => MailConverter.WriteImplementation(x.Email))
+    
+    public readonly struct Money
+    {
+        public string Currency { get;  }
+        public decimal Value { get;  }
+
+        public Money(decimal value, string currency)
+        {
+            Value = value;
+            Currency = currency;
+        }
+
+
+        public override string ToString()
+        {
+            return $"{Value}:{Currency}";
+        }
+
+        public static Money Parse(string input)
+        {
+            var index = input.IndexOf(':');
+            var currency = input[(index + 1)..];
+            var value = input[..index];
+            return new Money(decimal.Parse(value), currency);
+        }
+    }
+
+    public AddCustomConverterTests() : base(new []{new Money(32932, "SEK"), new Money(3923, "EURO")}, MoneyConverter.WriteImplementation)
     {
     }
 
-    protected override Container<User> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+    protected override Container<Money> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
         return ContainerMarshaller.Unmarshall(attributeValues);
     }
 
-    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<User> element)
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<Money> element)
     {
         return ContainerMarshaller.Marshall(element);
     }
