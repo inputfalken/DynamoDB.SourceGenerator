@@ -180,13 +180,13 @@ public class UnixEpochDateTimeConverter : IValueTypeConverter<DateTime>
     // Convert the AttributeValue into a .NET type.
     public DateTime? Read(AttributeValue attributeValue)
     {
-        return long.TryParse(attributeValue.N, out var epoch) ? DateTimeOffset.FromUnixTimeSeconds(epoch) : null;
+        return long.TryParse(attributeValue.N, out var epoch) ? DateTimeOffset.FromUnixTimeSeconds(epoch).DateTime : null;
     }
 
     // Convert the .NET type into an AttributeValue.
     public AttributeValue Write(DateTime element)
     {
-        return new AttributeValue { N = new DateTimeOffset(element).ToUnixTimeSeconds() };
+        return new AttributeValue { N = new DateTimeOffset(element).ToUnixTimeSeconds().ToString() };
     }
 }
 // Create a new Converters class
