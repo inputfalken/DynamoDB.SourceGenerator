@@ -20,14 +20,14 @@ public static class AttributeExpressionValue
         const string self = "_self";
         var constructorFieldAssignments = dataMembers
             .Select(x => x.IsUnknown
-                ? $"_{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({ValueProvider}, options));"
+                ? $"_{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({ValueProvider}, {MarshallerOptions.ParamReference}));"
                 : $"{x.ValueRef} = new ({ValueProvider});")
             .Append($"{self} = new({ValueProvider});")
-            .Append($"{MarshallerOptions.PropertyName} = options;");
+            .Append($"{MarshallerOptions.FieldReference} = {MarshallerOptions.ParamReference};");
         foreach (var fieldAssignment in $"public {structName}(Func<string> {ValueProvider}, {MarshallerOptions.Name} options)".CreateBlock(constructorFieldAssignments))
             yield return fieldAssignment;
 
-        yield return $"private readonly {MarshallerOptions.Name} {MarshallerOptions.PropertyName};";
+        yield return MarshallerOptions.FieldDeclaration;
         foreach (var fieldDeclaration in dataMembers)
         {
             if (fieldDeclaration.IsUnknown)
@@ -62,10 +62,10 @@ public static class AttributeExpressionValue
                         var accessPattern = $"entity.{x.DDB.DataMember.Name}";
                         return x.IsUnknown
                             ? $"if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({accessPattern})) {{ yield return x; }}")}"
-                            : $"if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {Marshaller.InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}", $"\"{x.DDB.DataMember.Name}\"", options)} ?? {AttributeValueUtilityFactory.Null});")}";
+                            : $"if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {Marshaller.InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}", $"\"{x.DDB.DataMember.Name}\"", options, false)} ?? {AttributeValueUtilityFactory.Null});")}";
                     }
                 )
-                .Append($"if ({self}.IsValueCreated) yield return new ({self}.Value, {Marshaller.InvokeMarshallerMethod(typeSymbol, "entity", $"\"{structName}\"", options)} ?? {AttributeValueUtilityFactory.Null});")
+                .Append($"if ({self}.IsValueCreated) yield return new ({self}.Value, {Marshaller.InvokeMarshallerMethod(typeSymbol, "entity", $"\"{structName}\"", options, false)} ?? {AttributeValueUtilityFactory.Null});")
         );
 
         foreach (var yield in
@@ -112,7 +112,7 @@ public static class AttributeExpressionValue
         var typeName = TypeName(typeSymbol);
         return ($"public {typeName} {Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerMethodName}()".CreateBlock(
             "var incrementer = new DynamoExpressionValueIncrementer();",
-            $"return new {typeName}(incrementer.GetNext, {MarshallerOptions.PropertyName});"
+            $"return new {typeName}(incrementer.GetNext, {MarshallerOptions.FieldReference});"
         ), typeName);
     }
 }

@@ -62,7 +62,7 @@ public static class Unmarshaller
                         .Prepend(type.IsTupleType ? "return" : $"return new {typeName.annotated.TrimEnd('?')}")
                 );
 
-        var method = $"public static {typeName.annotated} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue>? {Dict}, {MarshallerOptions.Name} {MarshallerOptions.PropertyName}, string? {DataMember} = null)".CreateBlock(blockBody);
+        var method = $"public static {typeName.annotated} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue>? {Dict}, {MarshallerOptions.Name} {MarshallerOptions.ParamReference}, string? {DataMember} = null)".CreateBlock(blockBody);
 
         return new Conversion(method, assignments.Select(x => x.DDB.DataMember.Type));
 
@@ -146,7 +146,7 @@ public static class Unmarshaller
 
     private static string CreateSignature(ITypeSymbol typeSymbol)
     {
-        return $"public static {typeSymbol.Representation().annotated} {GetDeserializationMethodName(typeSymbol)}(AttributeValue? {Value}, {MarshallerOptions.Name} {MarshallerOptions.PropertyName}, string? {DataMember} = null)";
+        return $"public static {typeSymbol.Representation().annotated} {GetDeserializationMethodName(typeSymbol)}(AttributeValue? {Value}, {MarshallerOptions.Name} {MarshallerOptions.ParamReference}, string? {DataMember} = null)";
     }
     private static IEnumerable<string> CreateUnMarshaller(IEnumerable<DynamoDBMarshallerArguments> arguments,
         Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
@@ -169,11 +169,11 @@ public static class Unmarshaller
     private static string InvokeUnmarshallMethod(ITypeSymbol typeSymbol, string paramReference, string dataMember, MarshallerOptions options)
     {
         if (options.IsConvertable(typeSymbol))
-            return $"{GetDeserializationMethodName(typeSymbol)}({paramReference}, {MarshallerOptions.PropertyName}, {dataMember})";
+            return $"{GetDeserializationMethodName(typeSymbol)}({paramReference}, {MarshallerOptions.ParamReference}, {dataMember})";
         
         return typeSymbol.TypeIdentifier() is UnknownType
-            ? $"{GetDeserializationMethodName(typeSymbol)}({paramReference}?.M, {MarshallerOptions.PropertyName}, {dataMember})"
-            : $"{GetDeserializationMethodName(typeSymbol)}({paramReference}, {MarshallerOptions.PropertyName}, {dataMember})";
+            ? $"{GetDeserializationMethodName(typeSymbol)}({paramReference}?.M, {MarshallerOptions.ParamReference}, {dataMember})"
+            : $"{GetDeserializationMethodName(typeSymbol)}({paramReference}, {MarshallerOptions.ParamReference}, {dataMember})";
 
     }
     private static IEnumerable<string> ObjectAssignmentBlock(bool useParentheses, IEnumerable<string> assignments, bool applySemiColon)
@@ -210,7 +210,7 @@ public static class Unmarshaller
     {
         return $"public {rootTypeName} {Constants.DynamoDBGenerator.Marshaller.UnmarshalMethodName}(Dictionary<{nameof(String)}, {Constants.AWSSDK_DynamoDBv2.AttributeValue}> entity)".CreateBlock(
             "ArgumentNullException.ThrowIfNull(entity);",
-            $"return {UnMarshallerClass}.{GetDeserializationMethodName(typeSymbol)}(entity, {MarshallerOptions.PropertyName});");
+            $"return {UnMarshallerClass}.{GetDeserializationMethodName(typeSymbol)}(entity, {MarshallerOptions.FieldReference});");
     }
     private static IEnumerable<(string DataMember, string ParameterName)> TryGetMatchedConstructorArguments(ITypeSymbol typeSymbol)
     {

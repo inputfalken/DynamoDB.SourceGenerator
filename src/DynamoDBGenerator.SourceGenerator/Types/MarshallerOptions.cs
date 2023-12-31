@@ -7,9 +7,10 @@ public readonly struct MarshallerOptions
 {
     private readonly INamedTypeSymbol _convertersType;
     public const string Name = "MarshallerOptions";
-    public const string PropertyName = "Options";
+    public const string FieldReference = "_options";
+    public const string ParamReference = "options";
     private const string ConvertersProperty = "Converters";
-    public const string PropertyDeclaration = $"public {Name} {PropertyName} {{ get; }}";
+    public const string FieldDeclaration = $"private readonly {Name} {FieldReference};";
     private readonly string _converterFullPath;
 
     private MarshallerOptions(INamedTypeSymbol convertersType,
@@ -34,13 +35,13 @@ public readonly struct MarshallerOptions
     public string? AccessConverterWrite(ITypeSymbol typeSymbol, string elementParam)
     {
         return Converters.TryGetValue(typeSymbol, out var match)
-            ? $"{PropertyName}.{ConvertersProperty}.{match.Key}.Write({elementParam})"
+            ? $"{ParamReference}.{ConvertersProperty}.{match.Key}.Write({elementParam})"
             : null;
     }
     public string? AccessConverterRead(ITypeSymbol typeSymbol, string attributeValueParam)
     {
         return Converters.TryGetValue(typeSymbol, out var match) 
-            ? $"{PropertyName}.{ConvertersProperty}.{match.Key}.Read({attributeValueParam})" 
+            ? $"{ParamReference}.{ConvertersProperty}.{match.Key}.Read({attributeValueParam})" 
             : null;
     }
 

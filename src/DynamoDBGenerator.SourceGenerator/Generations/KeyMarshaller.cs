@@ -95,25 +95,25 @@ public static class KeyMarshaller
         var expression = $"{validateReference} && {keyReference} is not null";
         return $"if ({expression})".CreateBlock($"throw {ExceptionHelper.KeysValueWithNoCorrespondenceMethod}(\"{keyReference}\", {keyReference});");
     }
-    internal static IEnumerable<string> IndexKeyMarshaller(ITypeSymbol typeSymbol)
+    internal static IEnumerable<string> IndexKeyMarshallerRootSignature(ITypeSymbol typeSymbol)
     {
         return $"public {Constants.DynamoDBGenerator.Marshaller.IndexKeyMarshallerInterface} IndexKeyMarshaller(string index)".CreateBlock(
             "ArgumentNullException.ThrowIfNull(index);",
-            $"return new {IndexKeyMarshallerImplementationTypeName}((pk, rk, ipk, irk, dm) => {MethodName(typeSymbol)}({MarshallerOptions.PropertyName}, pk, rk, ipk, irk, dm), index);"
+            $"return new {IndexKeyMarshallerImplementationTypeName}((pk, rk, ipk, irk, dm) => {MethodName(typeSymbol)}({MarshallerOptions.FieldReference}, pk, rk, ipk, irk, dm), index);"
         );
     }
 
     public const string PrimaryKeyMarshallerReference = "PrimaryKeyMarshaller";
     public const string PrimaryKeyMarshallerDeclaration = $"public {Constants.DynamoDBGenerator.Marshaller.KeyMarshallerInterface} {PrimaryKeyMarshallerReference} {{ get; }}";
-    internal static string Assignment(ITypeSymbol typeSymbol)
+    internal static string AssignmentRoot(ITypeSymbol typeSymbol)
     {
         return
-            $"new {KeyMarshallerImplementationTypeName}((pk, rk, ipk, irk, dm) => {MethodName(typeSymbol)}({MarshallerOptions.PropertyName}, pk, rk, ipk, irk, dm))";
+            $"new {KeyMarshallerImplementationTypeName}((pk, rk, ipk, irk, dm) => {MethodName(typeSymbol)}({MarshallerOptions.FieldReference}, pk, rk, ipk, irk, dm))";
     }
     private static Conversion StaticAttributeValueDictionaryKeys(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
 
-        var code = $"private static Dictionary<string, AttributeValue> {MethodName(typeSymbol)}({MarshallerOptions.Name} {MarshallerOptions.PropertyName}, object? {PkReference}, object? {RkReference}, bool {EnforcePkReference}, bool {EnforceRkReference}, string? index = null)"
+        var code = $"private static Dictionary<string, AttributeValue> {MethodName(typeSymbol)}({MarshallerOptions.Name} {MarshallerOptions.ParamReference}, object? {PkReference}, object? {RkReference}, bool {EnforcePkReference}, bool {EnforceRkReference}, string? index = null)"
             .CreateBlock(CreateBody(typeSymbol, fn, options));
 
         return new Conversion(code);

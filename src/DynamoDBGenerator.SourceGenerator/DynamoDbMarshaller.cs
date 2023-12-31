@@ -21,16 +21,16 @@ public static class DynamoDbMarshaller
             var entityTypeName = argument.AnnotatedEntityType;
             var argumentTypeName = argument.AnnotatedArgumentType;
 
-            var constructor = $"public {argument.ImplementationName}({MarshallerOptions.Name} options)"
-                .CreateBlock("Options = options;", $"{KeyMarshaller.PrimaryKeyMarshallerReference} = {KeyMarshaller.Assignment(argument.EntityTypeSymbol)};");
+            var constructor = $"public {argument.ImplementationName}({MarshallerOptions.Name} {MarshallerOptions.ParamReference})"
+                .CreateBlock($"{MarshallerOptions.FieldReference} = {MarshallerOptions.ParamReference};", $"{KeyMarshaller.PrimaryKeyMarshallerReference} = {KeyMarshaller.AssignmentRoot(argument.EntityTypeSymbol)};");
             var interfaceImplementation = constructor
                 .Concat(Marshaller.RootSignature(argument.EntityTypeSymbol, entityTypeName))
                 .Concat(Unmarshaller.RootSignature(argument.EntityTypeSymbol, entityTypeName))
-                .Concat(KeyMarshaller.IndexKeyMarshaller(argument.EntityTypeSymbol))
+                .Concat(KeyMarshaller.IndexKeyMarshallerRootSignature(argument.EntityTypeSymbol))
                 .Concat(expressionValueMethod)
                 .Append(expressionMethodName)
                 .Append(KeyMarshaller.PrimaryKeyMarshallerDeclaration)
-                .Prepend(MarshallerOptions.PropertyDeclaration);
+                .Prepend(MarshallerOptions.FieldDeclaration);
 
             var classImplementation = $"private sealed class {argument.ImplementationName}: {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}>"
                 .CreateBlock(interfaceImplementation);
