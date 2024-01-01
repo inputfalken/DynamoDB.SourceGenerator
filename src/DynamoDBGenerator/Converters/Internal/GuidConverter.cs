@@ -13,6 +13,6 @@ internal sealed class GuidConverter : IValueTypeConverter<Guid>
 
     public AttributeValue Write(Guid element)
     {
-        return new AttributeValue { S = element.ToString("B") };
+        return new AttributeValue { S = element.ToString() };
     }
 }

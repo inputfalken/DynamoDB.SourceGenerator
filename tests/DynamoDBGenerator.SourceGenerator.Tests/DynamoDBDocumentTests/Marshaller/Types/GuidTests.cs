@@ -19,7 +19,7 @@ public partial class GuidTests : RecordMarshalAsserter<Guid>
 
 
     public GuidTests() : base(new[] { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() },
-        x => new AttributeValue { S = x.ToString("B") })
+        x => new AttributeValue { S = x.ToString() })
     {
     }
 }
@@ -38,7 +38,7 @@ public partial class NullableGuidTests : RecordMarshalAsserter<Guid?>
     }
 
     public NullableGuidTests() : base(new Guid?[] { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), null },
-        x => x is null ? null : new AttributeValue { S = x.Value.ToString("B") })
+        x => x is null ? null : new AttributeValue { S = x.Value.ToString() })
     {
     }
 }
