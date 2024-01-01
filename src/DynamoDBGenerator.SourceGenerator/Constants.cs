@@ -23,9 +23,9 @@ public static class Constants
                 
                 public static class ConversionStrategy
                 {
-                    public const int Integer = 0;
-                    public const int String = 1;
-                    public const int StringCI = 2;
+                    public const int Integer = 1;
+                    public const int String = 2;
+                    public const int StringCI = 4;
                 }
             }
         }

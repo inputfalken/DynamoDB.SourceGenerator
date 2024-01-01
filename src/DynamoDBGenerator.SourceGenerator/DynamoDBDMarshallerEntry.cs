@@ -4,7 +4,7 @@ using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Enum = System.Enum;
+using static DynamoDBGenerator.SourceGenerator.Constants.DynamoDBGenerator.Attribute.DynamoDbMarshallerOptionsArgument;
 
 namespace DynamoDBGenerator.SourceGenerator;
 
@@ -89,14 +89,14 @@ using {Constants.DynamoDBGenerator.Namespace.InternalFullName};";
             .ToArray();
 
         var enumStrategy = marshallerOptionNamedArguments
-            .Where(x => x.Key is "EnumConversionStrategy")
+            .Where(x => x.Key is EnumConversionStrategy)
             .Where(x => x.Value.Kind is TypedConstantKind.Enum)
             .Select(x => x.Value.Value)
             .OfType<int?>()
-            .FirstOrDefault(x => x is not null) ?? Constants.DynamoDBGenerator.Attribute.DynamoDbMarshallerOptionsArgument.ConversionStrategy.Integer;
+            .FirstOrDefault(x => x is not null) ?? ConversionStrategy.Integer;
 
         var converter = marshallerOptionNamedArguments
-                            .Where(x => x.Key is Constants.DynamoDBGenerator.Attribute.DynamoDbMarshallerOptionsArgument.Converters)
+                            .Where(x => x.Key is Converters)
                             .Select(x => x.Value.Value)
                             .OfType<INamedTypeSymbol>()
                             .FirstOrDefault(x => x is not null) ??
