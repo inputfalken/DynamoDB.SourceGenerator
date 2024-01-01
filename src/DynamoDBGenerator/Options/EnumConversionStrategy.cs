@@ -7,6 +7,7 @@ namespace DynamoDBGenerator.Options;
 /// </summary>
 public enum EnumConversionStrategy
 {
+    // TODO convert this into a bitflag so you can do Integer | String | StringCI and specify the order of operations if you would like to support multiple.
     /// <summary>
     /// Use the associated constant <see cref="int"/> value.
     /// </summary>
