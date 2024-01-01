@@ -90,15 +90,27 @@ public static class Unmarshaller
                     .ToConversion()
             };
         }
+        
+        if (type.TypeKind is TypeKind.Enum)
+        {
+            var signature = CreateSignature(type);
+            return options.EnumStrategy switch 
+            {
+                Constants.DynamoDBGenerator.Attribute.DynamoDbMarshallerOptionsArgument.ConversionStrategy.Integer => signature
+                    .CreateBlock($"return {Value} is {{ N: {{ }} x }} ? ({type.Representation().original})Int32.Parse(x) : {Else(type)};")
+                    .ToConversion(),
+                Constants.DynamoDBGenerator.Attribute.DynamoDbMarshallerOptionsArgument.ConversionStrategy.String => signature
+                    .CreateBlock($"return {Value} is {{ S: {{ }} x }} ? ({type.Representation().original})Enum.Parse<{type.Representation().original}>(x, false) : {Else(type)};")
+                    .ToConversion(),
+                Constants.DynamoDBGenerator.Attribute.DynamoDbMarshallerOptionsArgument.ConversionStrategy.StringCI => signature
+                    .CreateBlock($"return {Value} is {{ S: {{ }} x }} ? ({type.Representation().original})Enum.Parse<{type.Representation().original}>(x, true) : {Else(type)};")
+                    .ToConversion(),
+                _ => throw new ArgumentException($"Could not resolve enum conversion strategy from value '{options.EnumStrategy}'.")
+            };
+        }
+        
         return type.TypeIdentifier() switch
         {
-            BaseType baseType when CreateSignature(baseType.TypeSymbol) is var signature => baseType.Type switch
-            {
-                BaseType.SupportedType.Enum => signature
-                    .CreateBlock($"return {Value} is {{ N: {{ }} x }} ? ({baseType.TypeSymbol.Representation().annotated})Int32.Parse(x) : {Else(baseType.TypeSymbol)};")
-                    .ToConversion(),
-                _ => throw UncoveredConversionException(baseType, nameof(CreateMethod))
-            },
             SingleGeneric singleGeneric when CreateSignature(singleGeneric.TypeSymbol) is var signature => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => signature

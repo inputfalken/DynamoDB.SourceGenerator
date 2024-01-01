@@ -6,6 +6,7 @@ namespace DynamoDBGenerator.SourceGenerator.Types;
 public readonly struct MarshallerOptions
 {
     private readonly INamedTypeSymbol _convertersType;
+    public int EnumStrategy { get; }
     public const string Name = "MarshallerOptions";
     public const string FieldReference = "_options";
     public const string ParamReference = "options";
@@ -14,10 +15,11 @@ public readonly struct MarshallerOptions
     private readonly string _converterFullPath;
 
     private MarshallerOptions(INamedTypeSymbol convertersType,
-        IEnumerable<KeyValuePair<string, Converter>> converters)
+        IEnumerable<KeyValuePair<string, Converter>> converters, int enumStrategy)
     {
         Converters = converters.ToDictionary(x => x.Value.T, x => x, SymbolEqualityComparer.Default);
         _convertersType = convertersType;
+        EnumStrategy = enumStrategy;
         _converterFullPath = _convertersType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
     }
 
@@ -47,7 +49,7 @@ public readonly struct MarshallerOptions
 
     public bool IsConvertable(ITypeSymbol typeSymbol)
     {
-        return Converters.ContainsKey(typeSymbol);
+        return typeSymbol.TypeKind is TypeKind.Enum || Converters.ContainsKey(typeSymbol);
     }
 
     private Dictionary<ISymbol?, KeyValuePair<string, Converter>> Converters { get; }
@@ -65,7 +67,7 @@ public readonly struct MarshallerOptions
         }
     }
 
-    public static MarshallerOptions Create(INamedTypeSymbol typeSymbol)
+    public static MarshallerOptions Create(INamedTypeSymbol typeSymbol, int enumStrategy)
     {
         var keyValuePairs = typeSymbol
             .GetMembersToObject()
@@ -73,7 +75,7 @@ public readonly struct MarshallerOptions
             .Where(x => x.HasValue)
             .Select(x => x!.Value);
 
-        return new MarshallerOptions(typeSymbol, keyValuePairs);
+        return new MarshallerOptions(typeSymbol, keyValuePairs, enumStrategy);
     }
 
     private static KeyValuePair<string, Converter>? ConverterDataMemberOrNull(ISymbol symbol)

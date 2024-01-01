@@ -4,6 +4,7 @@ using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Enum = System.Enum;
 
 namespace DynamoDBGenerator.SourceGenerator;
 
@@ -78,14 +79,23 @@ using {Constants.DynamoDBGenerator.Namespace.InternalFullName};";
         Compilation compilation)
     {
         var attributes = type.GetAttributes();
-        var converter = attributes
-                            .Where(x => x.AttributeClass is
-                            {
-                                Name: Constants.DynamoDBGenerator.Attribute.DynamoDbMarshallerOptions,
-                                ContainingNamespace.Name: Constants.DynamoDBGenerator.Namespace.Attributes,
-                                ContainingAssembly.Name: Constants.DynamoDBGenerator.AssemblyName
-                            })
-                            .SelectMany(x => x.NamedArguments)
+        var marshallerOptionNamedArguments = attributes.Where(x => x.AttributeClass is
+            {
+                Name: Constants.DynamoDBGenerator.Attribute.DynamoDbMarshallerOptions,
+                ContainingNamespace.Name: Constants.DynamoDBGenerator.Namespace.Attributes,
+                ContainingAssembly.Name: Constants.DynamoDBGenerator.AssemblyName
+            })
+            .SelectMany(x => x.NamedArguments)
+            .ToArray();
+
+        var enumStrategy = marshallerOptionNamedArguments
+            .Where(x => x.Key is "EnumConversionStrategy")
+            .Where(x => x.Value.Kind is TypedConstantKind.Enum)
+            .Select(x => x.Value.Value)
+            .OfType<int?>()
+            .FirstOrDefault(x => x is not null) ?? Constants.DynamoDBGenerator.Attribute.DynamoDbMarshallerOptionsArgument.ConversionStrategy.Integer;
+
+        var converter = marshallerOptionNamedArguments
                             .Where(x => x.Key is Constants.DynamoDBGenerator.Attribute.DynamoDbMarshallerOptionsArgument.Converters)
                             .Select(x => x.Value.Value)
                             .OfType<INamedTypeSymbol>()
@@ -95,7 +105,7 @@ using {Constants.DynamoDBGenerator.Namespace.InternalFullName};";
         if (converter is null)
             throw new ArgumentException("Could not find converter implementation");
 
-        return (MarshallerOptions.Create(converter), Arguments(attributes));
+        return (MarshallerOptions.Create(converter, enumStrategy), Arguments(attributes));
 
         static IEnumerable<DynamoDBMarshallerArguments> Arguments(ImmutableArray<AttributeData> attributes)
         {

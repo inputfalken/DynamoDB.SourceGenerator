@@ -25,10 +25,6 @@ public static class TypeExtensions
 
         static TypeIdentifier Create(ITypeSymbol typeSymbol)
         {
-
-            if (BaseType.CreateInstance(typeSymbol) is { } baseType)
-                return baseType;
-
             if (SingleGeneric.CreateInstance(typeSymbol) is { } singleGeneric)
                 return singleGeneric;
 

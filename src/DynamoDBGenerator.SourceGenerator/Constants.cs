@@ -19,6 +19,14 @@ public static class Constants
             public static class DynamoDbMarshallerOptionsArgument
             {
                 public const string Converters = "Converters";
+                public const string EnumConversionStrategy = "EnumConversionStrategy";
+                
+                public static class ConversionStrategy
+                {
+                    public const int Integer = 0;
+                    public const int String = 1;
+                    public const int StringCI = 2;
+                }
             }
         }
 
