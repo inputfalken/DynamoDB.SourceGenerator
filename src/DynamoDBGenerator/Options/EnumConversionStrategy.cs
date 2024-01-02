@@ -5,7 +5,6 @@ namespace DynamoDBGenerator.Options;
 /// <summary>
 /// The strategy to persist and read <see cref="Enum"/>.
 /// </summary>
-[Flags]
 public enum EnumConversionStrategy
 {
     /// <summary>
