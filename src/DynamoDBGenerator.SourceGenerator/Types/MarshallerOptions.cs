@@ -36,13 +36,13 @@ public readonly struct MarshallerOptions
     
 
     // TODO move enum conversion in here.
-    public string? AccessConverterWrite(ITypeSymbol typeSymbol, string elementParam)
+    public string? TryWriteConversion(ITypeSymbol typeSymbol, string elementParam)
     {
         return Converters.TryGetValue(typeSymbol, out var match)
             ? $"{ParamReference}.{ConvertersProperty}.{match.Key}.Write({elementParam})"
             : null;
     }
-    public string? AccessConverterRead(ITypeSymbol typeSymbol, string attributeValueParam)
+    public string? TryReadConversion(ITypeSymbol typeSymbol, string attributeValueParam)
     {
         return Converters.TryGetValue(typeSymbol, out var match) 
             ? $"{ParamReference}.{ConvertersProperty}.{match.Key}.Read({attributeValueParam})" 

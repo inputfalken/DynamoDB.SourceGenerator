@@ -71,24 +71,16 @@ public static class Unmarshaller
         MarshallerOptions options)
     {
 
-        if (options.AccessConverterRead(type, Value) is {} a)
+        if (options.TryReadConversion(type, Value) is {} conversion)
         {
-            return type switch
-            {
-                { IsValueType: true, OriginalDefinition.SpecialType: SpecialType.System_Nullable_T }
-                    or
-                    {
-                        IsReferenceType: true,
-                        NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated
-                    }
-                    => CreateSignature(type)
-                        .CreateBlock($"return {Value} is null ? null : {a};")
-                        .ToConversion(),
-                _ => CreateSignature(type)
-                    .CreateBlock(
-                        $"return {Value} is not null && {a} is {{ }} x ? x : throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}({DataMember});")
-                    .ToConversion()
-            };
+            if (type.IsNullable())
+                return CreateSignature(type)
+                    .CreateBlock($"return {Value} is not null ? {conversion} : null;")
+                    .ToConversion();
+
+            return CreateSignature(type)
+                .CreateBlock($"return {Value} is not null && {conversion} is {{ }} x ? x : throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}({DataMember});")
+                .ToConversion();
         }
         
         if (type.TypeKind is TypeKind.Enum)
