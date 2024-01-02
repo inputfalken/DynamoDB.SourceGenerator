@@ -1,5 +1,6 @@
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using Microsoft.CodeAnalysis;
+using static DynamoDBGenerator.SourceGenerator.Constants.DynamoDBGenerator.Attribute.DynamoDbMarshallerOptionsArgument;
 
 namespace DynamoDBGenerator.SourceGenerator.Types;
 
@@ -44,9 +45,23 @@ public readonly struct MarshallerOptions
     }
     public string? TryReadConversion(ITypeSymbol typeSymbol, string attributeValueParam)
     {
-        return Converters.TryGetValue(typeSymbol, out var match) 
-            ? $"{ParamReference}.{ConvertersProperty}.{match.Key}.Read({attributeValueParam})" 
-            : null;
+        if (Converters.TryGetValue(typeSymbol, out var match))
+            return $"{ParamReference}.{ConvertersProperty}.{match.Key}.Read({attributeValueParam})";
+
+
+        if (typeSymbol.TypeKind is TypeKind.Enum)
+        {
+            var original = typeSymbol.Representation().original;
+            return EnumStrategy switch 
+            {
+                ConversionStrategy.Integer => $"Int32.TryParse({attributeValueParam}.N, out var @enum) ? ({original}?)@enum : null",
+                ConversionStrategy.String => $"Enum.TryParse<{original}>({attributeValueParam}.S, false, out var ({original}?)@enum) ? @enum : null",
+                ConversionStrategy.StringCI => $"Enum.TryParse<{original}>({attributeValueParam}.S, true, out var ({original}?)@enum) ? @enum : null",
+                _ => throw new ArgumentException($"Could not resolve enum conversion strategy from value '{EnumStrategy}'.")
+            };
+        }
+        
+        return null;
     }
 
     public bool IsConvertable(ITypeSymbol typeSymbol)

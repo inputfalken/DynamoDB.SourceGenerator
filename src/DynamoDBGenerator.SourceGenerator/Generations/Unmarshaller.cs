@@ -75,30 +75,12 @@ public static class Unmarshaller
         {
             if (type.IsNullable())
                 return CreateSignature(type)
-                    .CreateBlock($"return {Value} is not null ? {conversion} : null;")
+                    .CreateBlock($"return {Value} is not null ? ({conversion}) : null;")
                     .ToConversion();
 
             return CreateSignature(type)
-                .CreateBlock($"return {Value} is not null && {conversion} is {{ }} x ? x : throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}({DataMember});")
+                .CreateBlock($"return {Value} is not null && ({conversion}) is {{ }} x ? x : throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}({DataMember});")
                 .ToConversion();
-        }
-        
-        if (type.TypeKind is TypeKind.Enum)
-        {
-            var signature = CreateSignature(type);
-            return options.EnumStrategy switch 
-            {
-                Constants.DynamoDBGenerator.Attribute.DynamoDbMarshallerOptionsArgument.ConversionStrategy.Integer => signature
-                    .CreateBlock($"return {Value} is {{ N: {{ }} x }} ? ({type.Representation().original})Int32.Parse(x) : {Else(type)};")
-                    .ToConversion(),
-                Constants.DynamoDBGenerator.Attribute.DynamoDbMarshallerOptionsArgument.ConversionStrategy.String => signature
-                    .CreateBlock($"return {Value} is {{ S: {{ }} x }} ? Enum.Parse<{type.Representation().original}>(x, false) : {Else(type)};")
-                    .ToConversion(),
-                Constants.DynamoDBGenerator.Attribute.DynamoDbMarshallerOptionsArgument.ConversionStrategy.StringCI => signature
-                    .CreateBlock($"return {Value} is {{ S: {{ }} x }} ? Enum.Parse<{type.Representation().original}>(x, true) : {Else(type)};")
-                    .ToConversion(),
-                _ => throw new ArgumentException($"Could not resolve enum conversion strategy from value '{options.EnumStrategy}'.")
-            };
         }
         
         return type.TypeIdentifier() switch
