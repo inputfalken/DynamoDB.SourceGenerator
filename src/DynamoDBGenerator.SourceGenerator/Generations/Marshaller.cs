@@ -101,24 +101,6 @@ public static class Marshaller
             };
         }
 
-        if (type.TypeKind is TypeKind.Enum)
-        {
-            var signature = CreateSignature(type);
-            return options.EnumStrategy switch 
-            {
-                Constants.DynamoDBGenerator.Attribute.DynamoDbMarshallerOptionsArgument.ConversionStrategy.Integer => signature
-                    .CreateBlock($"return new AttributeValue {{ N = ((int){ParamReference}).ToString() }};")
-                    .ToConversion(),
-                Constants.DynamoDBGenerator.Attribute.DynamoDbMarshallerOptionsArgument.ConversionStrategy.String => signature
-                    .CreateBlock($"return new AttributeValue {{ S = {ParamReference}.ToString() }};")
-                    .ToConversion(),
-                Constants.DynamoDBGenerator.Attribute.DynamoDbMarshallerOptionsArgument.ConversionStrategy.StringCI => signature
-                    .CreateBlock($"return new AttributeValue {{ S = {ParamReference}.ToString() }};")
-                    .ToConversion(),
-                _ => throw new ArgumentException($"Could not resolve enum conversion strategy from value '{options.EnumStrategy}'.")
-            };
-        }
-
         return type.TypeIdentifier() switch
         {
             SingleGeneric singleGeneric when CreateSignature(singleGeneric.TypeSymbol) is var signature => singleGeneric.Type switch

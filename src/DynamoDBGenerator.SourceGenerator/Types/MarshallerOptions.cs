@@ -7,7 +7,7 @@ namespace DynamoDBGenerator.SourceGenerator.Types;
 public readonly struct MarshallerOptions
 {
     private readonly INamedTypeSymbol _convertersType;
-    public int EnumStrategy { get; }
+    private readonly int _enumStrategy;
     public const string Name = "MarshallerOptions";
     public const string FieldReference = "_options";
     public const string ParamReference = "options";
@@ -20,7 +20,7 @@ public readonly struct MarshallerOptions
     {
         Converters = converters.ToDictionary(x => x.Value.T, x => x, SymbolEqualityComparer.Default);
         _convertersType = convertersType;
-        EnumStrategy = enumStrategy;
+        _enumStrategy = enumStrategy;
         _converterFullPath = _convertersType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
     }
 
@@ -36,28 +36,40 @@ public readonly struct MarshallerOptions
     }
     
 
-    // TODO move enum conversion in here.
     public string? TryWriteConversion(ITypeSymbol typeSymbol, string elementParam)
     {
-        return Converters.TryGetValue(typeSymbol, out var match)
-            ? $"{ParamReference}.{ConvertersProperty}.{match.Key}.Write({elementParam})"
-            : null;
+        // Converters comes first so that you your customized converters are always prioritized.
+        if (Converters.TryGetValue(typeSymbol, out var match))
+            return $"{ParamReference}.{ConvertersProperty}.{match.Key}.Write({elementParam})";
+
+        if (typeSymbol.TypeKind is TypeKind.Enum)
+        {
+            return _enumStrategy switch
+            {
+                ConversionStrategy.Integer => $"new AttributeValue {{ N = ((int){elementParam}).ToString() }}",
+                ConversionStrategy.String => $"new AttributeValue {{ S = {elementParam}.ToString() }}",
+                ConversionStrategy.StringCI => $"new AttributeValue {{ S = {elementParam}.ToString() }}",
+                _ => throw new ArgumentException($"Could not resolve enum conversion strategy from value '{_enumStrategy}'.")
+            };
+        }
+        
+        return null;
     }
     public string? TryReadConversion(ITypeSymbol typeSymbol, string attributeValueParam)
     {
+        // Converters comes first so that you your customized converters are always prioritized.
         if (Converters.TryGetValue(typeSymbol, out var match))
             return $"{ParamReference}.{ConvertersProperty}.{match.Key}.Read({attributeValueParam})";
-
 
         if (typeSymbol.TypeKind is TypeKind.Enum)
         {
             var original = typeSymbol.Representation().original;
-            return EnumStrategy switch 
+            return _enumStrategy switch 
             {
                 ConversionStrategy.Integer => $"Int32.TryParse({attributeValueParam}.N, out var @enum) ? ({original}?)@enum : null",
                 ConversionStrategy.String => $"Enum.TryParse<{original}>({attributeValueParam}.S, false, out var ({original}?)@enum) ? @enum : null",
                 ConversionStrategy.StringCI => $"Enum.TryParse<{original}>({attributeValueParam}.S, true, out var ({original}?)@enum) ? @enum : null",
-                _ => throw new ArgumentException($"Could not resolve enum conversion strategy from value '{EnumStrategy}'.")
+                _ => throw new ArgumentException($"Could not resolve enum conversion strategy from value '{_enumStrategy}'.")
             };
         }
         
