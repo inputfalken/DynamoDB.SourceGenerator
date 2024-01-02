@@ -100,10 +100,10 @@ public static class Unmarshaller
                     .CreateBlock($"return {Value} is {{ N: {{ }} x }} ? ({type.Representation().original})Int32.Parse(x) : {Else(type)};")
                     .ToConversion(),
                 Constants.DynamoDBGenerator.Attribute.DynamoDbMarshallerOptionsArgument.ConversionStrategy.String => signature
-                    .CreateBlock($"return {Value} is {{ S: {{ }} x }} ? ({type.Representation().original})Enum.Parse<{type.Representation().original}>(x, false) : {Else(type)};")
+                    .CreateBlock($"return {Value} is {{ S: {{ }} x }} ? Enum.Parse<{type.Representation().original}>(x, false) : {Else(type)};")
                     .ToConversion(),
                 Constants.DynamoDBGenerator.Attribute.DynamoDbMarshallerOptionsArgument.ConversionStrategy.StringCI => signature
-                    .CreateBlock($"return {Value} is {{ S: {{ }} x }} ? ({type.Representation().original})Enum.Parse<{type.Representation().original}>(x, true) : {Else(type)};")
+                    .CreateBlock($"return {Value} is {{ S: {{ }} x }} ? Enum.Parse<{type.Representation().original}>(x, true) : {Else(type)};")
                     .ToConversion(),
                 _ => throw new ArgumentException($"Could not resolve enum conversion strategy from value '{options.EnumStrategy}'.")
             };
