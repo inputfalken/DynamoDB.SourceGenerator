@@ -67,8 +67,8 @@ public readonly struct MarshallerOptions
             return _enumStrategy switch 
             {
                 ConversionStrategy.Integer => $"Int32.TryParse({attributeValueParam}.N, out var @enum) ? ({original}?)@enum : null",
-                ConversionStrategy.String => $"Enum.TryParse<{original}>({attributeValueParam}.S, false, out var ({original}?)@enum) ? @enum : null",
-                ConversionStrategy.StringCI => $"Enum.TryParse<{original}>({attributeValueParam}.S, true, out var ({original}?)@enum) ? @enum : null",
+                ConversionStrategy.String => $"Enum.TryParse<{original}>({attributeValueParam}.S, false, out var @enum) ? ({original}?)@enum : null",
+                ConversionStrategy.StringCI => $"Enum.TryParse<{original}>({attributeValueParam}.S, true, out var @enum) ? ({original}?)@enum : null",
                 _ => throw new ArgumentException($"Could not resolve enum conversion strategy from value '{_enumStrategy}'.")
             };
         }
