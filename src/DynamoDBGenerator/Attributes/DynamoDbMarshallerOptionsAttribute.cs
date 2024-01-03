@@ -29,8 +29,8 @@ public class DynamoDbMarshallerOptionsAttribute : Attribute
     ///         Sets the conversion strategy will be used for all <see cref="Enum" />.
     ///     </para>
     ///     <para>
-    ///         The default strategy is <see cref="Options.EnumConversionStrategy.Integer" />.
+    ///         The default strategy is <see cref="EnumConversion.Integer" />.
     ///     </para>
     /// </summary>
-    public EnumConversionStrategy EnumConversionStrategy { get; set; }
+    public EnumConversion EnumConversion { get; set; }
 }

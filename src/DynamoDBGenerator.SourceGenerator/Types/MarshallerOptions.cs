@@ -47,8 +47,10 @@ public readonly struct MarshallerOptions
             return _enumStrategy switch
             {
                 ConversionStrategy.Integer => $"new AttributeValue {{ N = ((int){elementParam}).ToString() }}",
-                ConversionStrategy.String => $"new AttributeValue {{ S = {elementParam}.ToString() }}",
-                ConversionStrategy.StringCI => $"new AttributeValue {{ S = {elementParam}.ToString() }}",
+                ConversionStrategy.Name => $"new AttributeValue {{ S = {elementParam}.ToString() }}",
+                ConversionStrategy.NameCI => $"new AttributeValue {{ S = {elementParam}.ToString() }}",
+                ConversionStrategy.LowerCase => $"new AttributeValue {{ S = {elementParam}.ToString().ToLowerInvariant() }}",
+                ConversionStrategy.UpperCase => $"new AttributeValue {{ S = {elementParam}.ToString().ToUpperInvariant() }}",
                 _ => throw new ArgumentException($"Could not resolve enum conversion strategy from value '{_enumStrategy}'.")
             };
         }
@@ -67,8 +69,11 @@ public readonly struct MarshallerOptions
             return _enumStrategy switch 
             {
                 ConversionStrategy.Integer => $"Int32.TryParse({attributeValueParam}.N, out var @enum) ? ({original}?)@enum : null",
-                ConversionStrategy.String => $"Enum.TryParse<{original}>({attributeValueParam}.S, false, out var @enum) ? ({original}?)@enum : null",
-                ConversionStrategy.StringCI => $"Enum.TryParse<{original}>({attributeValueParam}.S, true, out var @enum) ? ({original}?)@enum : null",
+                ConversionStrategy.Name => $"Enum.TryParse<{original}>({attributeValueParam}.S, false, out var @enum) ? ({original}?)@enum : null",
+                ConversionStrategy.NameCI 
+                    or ConversionStrategy.LowerCase 
+                    or ConversionStrategy.UpperCase 
+                    => $"Enum.TryParse<{original}>({attributeValueParam}.S, true, out var @enum) ? ({original}?)@enum : null",
                 _ => throw new ArgumentException($"Could not resolve enum conversion strategy from value '{_enumStrategy}'.")
             };
         }
