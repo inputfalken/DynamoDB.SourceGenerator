@@ -71,34 +71,20 @@ public static class Unmarshaller
         MarshallerOptions options)
     {
 
-        if (options.AccessConverterRead(type, Value) is {} a)
+        if (options.TryReadConversion(type, Value) is {} conversion)
         {
-            return type switch
-            {
-                { IsValueType: true, OriginalDefinition.SpecialType: SpecialType.System_Nullable_T }
-                    or
-                    {
-                        IsReferenceType: true,
-                        NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated
-                    }
-                    => CreateSignature(type)
-                        .CreateBlock($"return {Value} is null ? null : {a};")
-                        .ToConversion(),
-                _ => CreateSignature(type)
-                    .CreateBlock(
-                        $"return {Value} is not null && {a} is {{ }} x ? x : throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}({DataMember});")
-                    .ToConversion()
-            };
+            if (type.IsNullable())
+                return CreateSignature(type)
+                    .CreateBlock($"return {Value} is not null ? ({conversion}) : null;")
+                    .ToConversion();
+
+            return CreateSignature(type)
+                .CreateBlock($"return {Value} is not null && ({conversion}) is {{ }} x ? x : throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}({DataMember});")
+                .ToConversion();
         }
+        
         return type.TypeIdentifier() switch
         {
-            BaseType baseType when CreateSignature(baseType.TypeSymbol) is var signature => baseType.Type switch
-            {
-                BaseType.SupportedType.Enum => signature
-                    .CreateBlock($"return {Value} is {{ N: {{ }} x }} ? ({baseType.TypeSymbol.Representation().annotated})Int32.Parse(x) : {Else(baseType.TypeSymbol)};")
-                    .ToConversion(),
-                _ => throw UncoveredConversionException(baseType, nameof(CreateMethod))
-            },
             SingleGeneric singleGeneric when CreateSignature(singleGeneric.TypeSymbol) is var signature => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => signature

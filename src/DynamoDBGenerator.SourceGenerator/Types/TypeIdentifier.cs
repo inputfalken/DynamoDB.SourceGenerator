@@ -104,29 +104,3 @@ public record SingleGeneric : TypeIdentifier
         return supported is null ? null : new SingleGeneric(type, type.TypeArguments[0], supported.Value);
     }
 }
-
-public record BaseType : TypeIdentifier
-{
-
-    public enum SupportedType
-    {
-        Enum = 4,
-    }
-
-    private BaseType(ITypeSymbol typeSymbol, in SupportedType type) : base(typeSymbol)
-    {
-        Type = type;
-    }
-    public SupportedType Type { get; }
-
-    public static BaseType? CreateInstance(in ITypeSymbol type)
-    {
-        SupportedType? primitiveTypeAssignment = type switch
-        {
-            {TypeKind: TypeKind.Enum} => SupportedType.Enum,
-            _ => null
-        };
-
-        return primitiveTypeAssignment is null ? null : new BaseType(type, primitiveTypeAssignment.Value);
-    }
-}

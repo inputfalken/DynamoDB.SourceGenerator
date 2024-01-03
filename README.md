@@ -41,11 +41,6 @@ Install  the following packages from Nuget:
   * GlobalSecondaryIndex ✔
   * LocalSecondaryIndex ✔
 * Custom Converters: Create converters for your own types or override the [default converters](https://github.com/inputfalken/DynamoDB.SourceGenerator/blob/main/src/DynamoDBGenerator/Options/AttributeValueConverters.cs) built in to the library.
-       
-
-## TODO
-* Streamlined DynamoDBClient based on the source-generated code.
-* Add methods to convert to request objects.
 
 ## Conversion
 
@@ -210,7 +205,13 @@ public partial Repository
 {
     
 }
+```
 
+### Changing enum conversion 
+```csharp
+[DynamoDBMarshallerOptions(EnumConversion = EnumConversion.Name)]
+[DynamoDBMarshaller(typeof(Person), PropertyName = "PersonMarshaller")]
+public partial class Repository { }
 ```
 
 ## Project structure

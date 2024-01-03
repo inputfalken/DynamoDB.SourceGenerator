@@ -75,26 +75,26 @@ public static class Marshaller
     }
     private static Conversion CreateMethod(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
-        if (options.AccessConverterWrite(type, ParamReference) is {} a)
+        if (options.TryWriteConversion(type, ParamReference) is {} conversion)
         {
             return type switch 
             {
                 { IsValueType: true } => type switch
                 {
                     { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => CreateSignature(type)
-                        .CreateBlock($"return {ParamReference} is not null ? {a} : null;")
+                        .CreateBlock($"return {ParamReference} is not null ? {conversion} : null;")
                         .ToConversion(),
                     _ => CreateSignature(type)
-                        .CreateBlock($"return {a};")
+                        .CreateBlock($"return {conversion};")
                         .ToConversion()
                 },
                 { IsReferenceType: true } => type switch
                 {
                     { NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated } => CreateSignature(type)
-                        .CreateBlock($"return {ParamReference} is not null ? {a} : null;")
+                        .CreateBlock($"return {ParamReference} is not null ? {conversion} : null;")
                         .ToConversion(),
                     _ => CreateSignature(type)
-                        .CreateBlock($"return {ParamReference} is not null ? {a} : throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
+                        .CreateBlock($"return {ParamReference} is not null ? {conversion} : throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
                         .ToConversion()
                 },
                 _ => throw new ArgumentException($"Neither ValueType or ReferenceType could be resolved for conversion. type '{type.ToDisplayString()}'.")
@@ -103,11 +103,6 @@ public static class Marshaller
 
         return type.TypeIdentifier() switch
         {
-            BaseType baseType when CreateSignature(baseType.TypeSymbol) is var signature => baseType.Type switch
-            {
-                BaseType.SupportedType.Enum => signature.CreateBlock($"return new AttributeValue {{ N = ((int){ParamReference}).ToString() }};").ToConversion(),
-                _ => throw UncoveredConversionException(baseType, nameof(CreateMethod))
-            },
             SingleGeneric singleGeneric when CreateSignature(singleGeneric.TypeSymbol) is var signature => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => signature
