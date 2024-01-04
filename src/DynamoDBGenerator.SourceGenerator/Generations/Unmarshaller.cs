@@ -91,10 +91,10 @@ public static class Unmarshaller
                     .CreateBlock($"return {Value} is not null and {{ NULL: false }} ? {InvokeUnmarshallMethod(singleGeneric.T, Value, DataMember, options)} : null;")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.ICollection => signature
-                    .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"", options)}).ToList() : {Else(singleGeneric.TypeSymbol)};")
+                    .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? {Constants.DynamoDBGenerator.MarshallerFactory.UnmarshallList}(x, (y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"", options)}) : {Else(singleGeneric.TypeSymbol)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Array or SingleGeneric.SupportedType.IReadOnlyCollection => signature
-                    .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"", options)}).ToArray() : {Else(singleGeneric.TypeSymbol)};")
+                    .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? {Constants.DynamoDBGenerator.MarshallerFactory.UnmarshallArray}(x, (y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"", options)}) : {Else(singleGeneric.TypeSymbol)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.IEnumerable => signature
                     .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"", options)}) : {Else(singleGeneric.TypeSymbol)};")

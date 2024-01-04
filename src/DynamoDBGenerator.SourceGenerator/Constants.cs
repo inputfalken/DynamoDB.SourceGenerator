@@ -78,10 +78,12 @@ public static class Constants
         public const string IndexKeyMarshallerImplementationTypeName = "IndexDynamoDBMarshallerDelegator";
 
         
-        public static class AttributeValueUtilityFactory
+        public static class MarshallerFactory
         {
-            private const string ClassName = "AttributeValueUtilityFactory";
+            private const string ClassName = "MarshallerFactory";
             public const string Null = $"{ClassName}.Null";
+            public const string UnmarshallList = $"{ClassName}.UnmarshallList";
+            public const string UnmarshallArray = $"{ClassName}.UnmarshallArray";
         }
         public static class ExceptionHelper
         {

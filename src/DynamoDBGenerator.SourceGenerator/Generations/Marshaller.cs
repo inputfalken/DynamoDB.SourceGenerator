@@ -113,7 +113,7 @@ public static class Marshaller
                     or SingleGeneric.SupportedType.IEnumerable
                     or SingleGeneric.SupportedType.ICollection => signature
                         .CreateBlock(
-                            $"return {ParamReference} is not null ? new AttributeValue {{ L = new List<AttributeValue>({ParamReference}.Select((y, i) => {InvokeMarshallerMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"", options)} {(singleGeneric.T.IsNullable() ? $"?? {AttributeValueUtilityFactory.Null}" : null)})) }} : {Else(singleGeneric)};")
+                            $"return {ParamReference} is not null ? new AttributeValue {{ L = new List<AttributeValue>({ParamReference}.Select((y, i) => {InvokeMarshallerMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"", options)} {(singleGeneric.T.IsNullable() ? $"?? {MarshallerFactory.Null}" : null)})) }} : {Else(singleGeneric)};")
                         .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.SpecialType is SpecialType.System_String
                     => signature
