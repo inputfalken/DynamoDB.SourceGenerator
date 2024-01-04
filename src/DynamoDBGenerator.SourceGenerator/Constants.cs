@@ -82,6 +82,9 @@ public static class Constants
         {
             private const string ClassName = "AttributeValueUtilityFactory";
             public const string Null = $"{ClassName}.Null";
+            public const string ToList = $"{ClassName}.ToList";
+            public const string ToArray = $"{ClassName}.ToArray";
+
         }
         public static class ExceptionHelper
         {

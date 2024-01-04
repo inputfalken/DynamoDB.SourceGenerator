@@ -1,5 +1,8 @@
+using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Amazon.DynamoDBv2.Model;
+using static System.Runtime.InteropServices.CollectionsMarshal;
 
 namespace DynamoDBGenerator.Internal;
 
@@ -12,7 +15,37 @@ namespace DynamoDBGenerator.Internal;
 public static class AttributeValueUtilityFactory
 {
 #pragma warning disable CS1591
-    public static AttributeValue Null { get; } = new() {NULL = true};
-#pragma warning restore CS1591
+    public static AttributeValue Null { get; } = new() { NULL = true };
 
+//    [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
+    public static List<TResult> ToList<TResult, TArgument>(
+        List<AttributeValue> attributeValues,
+        TArgument argument,
+        string? dataMember,
+        Func<AttributeValue, int, TArgument, string?, TResult> resultSelector
+    )
+    {
+        var span = AsSpan(attributeValues);
+        var elements = new List<TResult>(span.Length);
+        for (var i = 0; i < span.Length; i++)
+            elements.Add(resultSelector(span[i], i, argument, dataMember));
+
+        return elements;
+    }
+    
+    public static TResult[] ToArray<TResult, TArgument>(
+        List<AttributeValue> attributeValues,
+        TArgument argument,
+        string? dataMember,
+        Func<AttributeValue, int, TArgument, string?, TResult> resultSelector
+    )
+    {
+        var span = AsSpan(attributeValues);
+        var elements = new TResult[span.Length];
+        for (var i = 0; i < span.Length; i++)
+            elements[i] = resultSelector(span[i], i, argument, dataMember);
+
+        return elements;
+    }
+#pragma warning restore CS1591
 }
