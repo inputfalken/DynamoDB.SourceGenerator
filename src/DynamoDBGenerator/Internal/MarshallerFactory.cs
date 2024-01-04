@@ -17,29 +17,6 @@ public static class MarshallerFactory
 #pragma warning disable CS1591
     public static AttributeValue Null { get; } = new() { NULL = true };
 
-    public static List<T> UnmarshallList<T>(List<AttributeValue> source, Func<AttributeValue, int, T> elementMapper)
-    {
-        var span = CollectionsMarshal.AsSpan(source);
-        var list = new List<T>(span.Length);
-
-        for (var i = 0; i < span.Length; i++)
-            list[i] = elementMapper(span[i], i);
-
-        return list;
-    }
-    
-    public static T[] UnmarshallArray<T>(List<AttributeValue> source, Func<AttributeValue, int, T> elementMapper)
-    {
-        var span = CollectionsMarshal.AsSpan(source);
-        var array = new T[span.Length];
-
-        for (var i = 0; i < span.Length; i++)
-            array[i] = elementMapper(span[i], i);
-
-        return array;
-    }
-
-
     public static IEnumerable<T> IEnumerable<T>(AttributeValue source, Func<AttributeValue, T> elementMapper)
     {
         return source.L.Select(elementMapper);

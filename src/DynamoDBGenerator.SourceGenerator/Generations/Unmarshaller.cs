@@ -1,3 +1,4 @@
+using System.Collections;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
@@ -91,10 +92,10 @@ public static class Unmarshaller
                     .CreateBlock($"return {Value} is not null and {{ NULL: false }} ? {InvokeUnmarshallMethod(singleGeneric.T, Value, DataMember, options)} : null;")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.ICollection => signature
-                    .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? {Constants.DynamoDBGenerator.MarshallerFactory.UnmarshallList}(x, (y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"", options)}) : {Else(singleGeneric.TypeSymbol)};")
+                    .CreateBlock(CreateCollection(singleGeneric, options, false))
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Array or SingleGeneric.SupportedType.IReadOnlyCollection => signature
-                    .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? {Constants.DynamoDBGenerator.MarshallerFactory.UnmarshallArray}(x, (y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"", options)}) : {Else(singleGeneric.TypeSymbol)};")
+                    .CreateBlock(CreateCollection(singleGeneric, options, true))
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.IEnumerable => signature
                     .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"", options)}) : {Else(singleGeneric.TypeSymbol)};")
@@ -128,6 +129,36 @@ public static class Unmarshaller
             var typeIdentifier => throw UncoveredConversionException(typeIdentifier, nameof(CreateMethod))
         };
 
+    }
+
+    private static IEnumerable<string> CreateCollection(SingleGeneric type, MarshallerOptions options, bool isReadOnly)
+    {
+        var ifCase = $"if ({Value}?.L is null)".CreateBlock(type.TypeSymbol.IsNullable()
+            ? "return null;"
+            : $"throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}({DataMember});");
+        
+        foreach (var s in ifCase)
+            yield return s;
+
+        yield return $"var span = System.Runtime.InteropServices.CollectionsMarshal.AsSpan({Value}.L);";
+        IEnumerable<string> forLoop;
+        var typeRepresentation = type.T.Representation().annotated;
+        if (isReadOnly)
+        {
+            yield return $"var elements = new {typeRepresentation}[span.Length];";
+            forLoop = "for (var i  = 0; i < span.Length; i++)"
+                .CreateBlock($"elements[i] = {InvokeUnmarshallMethod(type.T, "span[i]", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"", options)};");
+        }
+        else
+        {
+            yield return $"var elements = new List<{typeRepresentation}>(span.Length);";
+            forLoop = "for (var i  = 0; i < span.Length; i++)".CreateBlock($"elements.Add({InvokeUnmarshallMethod(type.T, "span[i]", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"", options)});");
+        }
+        
+        foreach (var s in forLoop)
+            yield return s;
+
+        yield return "return elements;";
     }
 
     private static string CreateSignature(ITypeSymbol typeSymbol)

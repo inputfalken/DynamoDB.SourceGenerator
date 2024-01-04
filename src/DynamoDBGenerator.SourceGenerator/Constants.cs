@@ -82,8 +82,6 @@ public static class Constants
         {
             private const string ClassName = "MarshallerFactory";
             public const string Null = $"{ClassName}.Null";
-            public const string UnmarshallList = $"{ClassName}.UnmarshallList";
-            public const string UnmarshallArray = $"{ClassName}.UnmarshallArray";
         }
         public static class ExceptionHelper
         {
