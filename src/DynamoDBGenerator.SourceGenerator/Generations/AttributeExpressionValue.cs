@@ -48,7 +48,7 @@ public static class AttributeExpressionValue
         var enumerable = Enumerable.Empty<string>();
         if (typeSymbol.IsNullable())
         {
-            enumerable = $"if ({param} is null)".CreateBlock($"yield return new ({self}.Value, {MarshallerFactory.Null});", "yield break;");
+            enumerable = $"if ({param} is null)".CreateBlock($"yield return new ({self}.Value, {AttributeValueUtilityFactory.Null});", "yield break;");
         }
         else if (typeSymbol.IsReferenceType)
         {
@@ -62,10 +62,10 @@ public static class AttributeExpressionValue
                         var accessPattern = $"entity.{x.DDB.DataMember.Name}";
                         return x.IsUnknown
                             ? $"if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({accessPattern})) {{ yield return x; }}")}"
-                            : $"if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {Marshaller.InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}", $"\"{x.DDB.DataMember.Name}\"", options, false)} ?? {MarshallerFactory.Null});")}";
+                            : $"if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {Marshaller.InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}", $"\"{x.DDB.DataMember.Name}\"", options, false)} ?? {AttributeValueUtilityFactory.Null});")}";
                     }
                 )
-                .Append($"if ({self}.IsValueCreated) yield return new ({self}.Value, {Marshaller.InvokeMarshallerMethod(typeSymbol, "entity", $"\"{structName}\"", options, false)} ?? {MarshallerFactory.Null});")
+                .Append($"if ({self}.IsValueCreated) yield return new ({self}.Value, {Marshaller.InvokeMarshallerMethod(typeSymbol, "entity", $"\"{structName}\"", options, false)} ?? {AttributeValueUtilityFactory.Null});")
         );
 
         foreach (var yield in
