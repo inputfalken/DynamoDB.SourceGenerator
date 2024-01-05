@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks.Dataflow;
 using Amazon.DynamoDBv2.Model;
 using static System.Runtime.InteropServices.CollectionsMarshal;
 
@@ -68,35 +69,15 @@ public static class AttributeValueUtilityFactory
         ILookup<string, T> lookup,
         TArgument argument,
         string? dataMember,
-        Func<T, TArgument, string, AttributeValue> resultSelector
+        Func<T, TArgument, string?, AttributeValue> resultSelector
     )
     {
         var attributeValues = new Dictionary<string, AttributeValue>(lookup.Count);
 
         foreach (var grouping in lookup)
-            attributeValues[grouping.Key] = new AttributeValue
-            {
-                L = CreateList(grouping, argument, dataMember, resultSelector)
-            };
+            attributeValues[grouping.Key] = FromEnumerable(grouping, argument, $"{dataMember}[{grouping.Key}]", resultSelector);
 
         return new AttributeValue { M = attributeValues };
-
-        static List<AttributeValue> CreateList(
-            IEnumerable<T> enumerable,
-            TArgument argument,
-            string? dataMember,
-            Func<T, TArgument, string, AttributeValue> resultSelector
-        )
-        {
-            var attributeValues = new List<AttributeValue>();
-
-            foreach (var (element, i) in enumerable.Select((x, y) => (x, y)))
-            {
-                attributeValues.Add(resultSelector(element, argument, $"{dataMember}[{i}]"));
-            }
-
-            return attributeValues;
-        }
     }
 
     public static Dictionary<string, T> ToDictionary<T, TArgument>(
