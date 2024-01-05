@@ -93,7 +93,7 @@ public static class Unmarshaller
                 SingleGeneric.SupportedType.Nullable => signature
                     .CreateBlock($"return {Value} is not null and {{ NULL: false }} ? {InvokeUnmarshallMethod(singleGeneric.T, Value, DataMember, options)} : null;")
                     .ToConversion(singleGeneric.T),
-                SingleGeneric.SupportedType.ICollection => signature
+                SingleGeneric.SupportedType.List or SingleGeneric.SupportedType.ICollection => signature
                     .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? {AttributeValueUtilityFactory.ToList}(x, {MarshallerOptions.ParamReference}, {DataMember}, static (a, i, o, d) => {InvokeUnmarshallMethod(singleGeneric.T, "a", "$\"{d}[{i.ToString()}]\"", options, "o")}) : {Else(singleGeneric.TypeSymbol)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Array or SingleGeneric.SupportedType.IReadOnlyCollection => signature

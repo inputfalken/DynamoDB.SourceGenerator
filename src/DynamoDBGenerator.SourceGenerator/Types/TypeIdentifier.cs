@@ -62,7 +62,8 @@ public record SingleGeneric : TypeIdentifier
         Array = 3,
         ICollection = 4,
         IReadOnlyCollection = 5,
-        IEnumerable = 6
+        IEnumerable = 6,
+        List = 7
     }
 
     private SingleGeneric(ITypeSymbol type, ITypeSymbol innerType, in SupportedType supportedType) : base(type)
@@ -89,6 +90,7 @@ public record SingleGeneric : TypeIdentifier
         SupportedType? supported = type switch
         {
             _ when type.TryGetNullableValueType() is not null => SupportedType.Nullable,
+            _ when type.OriginalDefinition.ToDisplayString() == "System.Collections.Generic.List<T>"  => SupportedType.List,
             {Name: "ISet" } => SupportedType.Set,
             _ when type.AllInterfaces.Any(x => x is {Name: "ISet"}) => SupportedType.Set,
             {Name: "IReadOnlySet" } => SupportedType.Set,

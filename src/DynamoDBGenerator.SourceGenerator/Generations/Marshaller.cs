@@ -111,12 +111,14 @@ public static class Marshaller
                 SingleGeneric.SupportedType.Array => signature
                     .CreateBlock($"return {ParamReference} is not null ? {AttributeValueUtilityFactory.FromArray}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, i, o, d) => {InvokeMarshallerMethod(singleGeneric.T, "a", "$\"{d}[{i.ToString()}]\"", options, "o")}{(singleGeneric.T.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)}) : {Else(singleGeneric)};")
                     .ToConversion(singleGeneric.T),
+                SingleGeneric.SupportedType.List => signature
+                    .CreateBlock($"return {ParamReference} is not null ? {AttributeValueUtilityFactory.FromList}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, i, o, d) => {InvokeMarshallerMethod(singleGeneric.T, "a", "$\"{d}[{i.ToString()}]\"", options, "o")}{(singleGeneric.T.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)}) : {Else(singleGeneric)};")
+                    .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.IReadOnlyCollection
                     or SingleGeneric.SupportedType.IEnumerable
                     or SingleGeneric.SupportedType.ICollection => signature
-                        .CreateBlock(
-                            $"return {ParamReference} is not null ? new AttributeValue {{ L = new List<AttributeValue>({ParamReference}.Select((y, i) => {InvokeMarshallerMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"", options)} {(singleGeneric.T.IsNullable() ? $"?? {AttributeValueUtilityFactory.Null}" : null)})) }} : {Else(singleGeneric)};")
-                        .ToConversion(singleGeneric.T),
+                    .CreateBlock($"return {ParamReference} is not null ? {AttributeValueUtilityFactory.FromEnumerable}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, i, o, d) => {InvokeMarshallerMethod(singleGeneric.T, "a", "$\"{d}[{i.ToString()}]\"", options, "o")}{(singleGeneric.T.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)}) : {Else(singleGeneric)};")
+                    .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.SpecialType is SpecialType.System_String
                     => signature
                         .CreateBlock(
