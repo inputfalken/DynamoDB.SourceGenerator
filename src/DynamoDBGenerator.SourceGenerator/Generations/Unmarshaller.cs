@@ -100,7 +100,7 @@ public static class Unmarshaller
                     .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? {AttributeValueUtilityFactory.ToArray}(x, {MarshallerOptions.ParamReference}, {DataMember}, static (a, i, o, d) => {InvokeUnmarshallMethod(singleGeneric.T, "a", "$\"{d}[{i.ToString()}]\"", options, "o")}) : {Else(singleGeneric.TypeSymbol)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.IEnumerable => signature
-                    .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? x.Select((y, i) => {InvokeUnmarshallMethod(singleGeneric.T, "y", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"", options)}) : {Else(singleGeneric.TypeSymbol)};")
+                    .CreateBlock($"return {Value} is {{ L: {{ }} x }} ? {AttributeValueUtilityFactory.ToEnumerable}(x, {MarshallerOptions.ParamReference}, {DataMember}, static (a, i, o, d) => {InvokeUnmarshallMethod(singleGeneric.T, "a", "$\"{d}[{i.ToString()}]\"", options, "o")}) : {Else(singleGeneric.TypeSymbol)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.SpecialType is SpecialType.System_String => signature
                     .CreateBlock(

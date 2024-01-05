@@ -1,5 +1,7 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Amazon.DynamoDBv2.Model;
 using static System.Runtime.InteropServices.CollectionsMarshal;
@@ -17,6 +19,21 @@ public static class AttributeValueUtilityFactory
 #pragma warning disable CS1591
     public static AttributeValue Null { get; } = new() { NULL = true };
 
+
+//    public static AttributeValue ToList<T, TArgument>(
+//        List<T> list,
+//        TArgument argument,
+//        string? dataMember,
+//        Func<T, int, TArgument, string?, AttributeValue> resultSelector)
+//    {
+//        var span = AsSpan(list);
+//        var attributeValues = new List<AttributeValue>(span.Length);
+//        for (var i = 0; i < span.Length; i++) 
+//            attributeValues.Add(resultSelector(span[i], i, argument, dataMember));
+//
+//        return new AttributeValue {L = attributeValues};
+//    }
+    
 //    [MethodImpl(MethodImplOptions.AggressiveOptimization | MethodImplOptions.AggressiveInlining)]
     public static List<TResult> ToList<TResult, TArgument>(
         List<AttributeValue> attributeValues,
@@ -31,6 +48,17 @@ public static class AttributeValueUtilityFactory
             elements.Add(resultSelector(span[i], i, argument, dataMember));
 
         return elements;
+    }
+    
+    public static IEnumerable<TResult> ToEnumerable<TResult, TArgument>(
+        List<AttributeValue> attributeValues,
+        TArgument argument,
+        string? dataMember,
+        Func<AttributeValue, int, TArgument, string?, TResult> resultSelector
+    )
+    {
+        for (var i = 0; i < attributeValues.Count; i++)
+            yield return resultSelector(attributeValues[i], i, argument, dataMember);
     }
     
     public static TResult[] ToArray<TResult, TArgument>(

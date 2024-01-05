@@ -84,6 +84,7 @@ public static class Constants
             public const string Null = $"{ClassName}.Null";
             public const string ToList = $"{ClassName}.ToList";
             public const string ToArray = $"{ClassName}.ToArray";
+            public const string ToEnumerable = $"{ClassName}.ToEnumerable";
 
         }
         public static class ExceptionHelper
