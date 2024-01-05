@@ -75,7 +75,8 @@ public static class AttributeValueUtilityFactory
         var attributeValues = new Dictionary<string, AttributeValue>(lookup.Count);
 
         foreach (var grouping in lookup)
-            attributeValues[grouping.Key] = FromEnumerable(grouping, argument, $"{dataMember}[{grouping.Key}]", resultSelector);
+            attributeValues[grouping.Key] =
+                FromEnumerable(grouping, argument, $"{dataMember}[{grouping.Key}]", resultSelector);
 
         return new AttributeValue { M = attributeValues };
     }
@@ -84,12 +85,12 @@ public static class AttributeValueUtilityFactory
         IReadOnlyDictionary<string, AttributeValue> dictionary,
         TArgument argument,
         string? dataMember,
-        Func<AttributeValue, string, TArgument, string?, T> resultSelector)
+        Func<AttributeValue, TArgument, string?, T> resultSelector)
     {
         var elements = new Dictionary<string, T>(dictionary.Count);
 
         foreach (var (key, value) in dictionary)
-            elements[key] = resultSelector(value, key, argument, dataMember);
+            elements[key] = resultSelector(value, argument, $"{dataMember}[{key}]");
 
         return elements;
     }
@@ -142,13 +143,13 @@ public static class AttributeValueUtilityFactory
         List<AttributeValue> attributeValues,
         TArgument argument,
         string? dataMember,
-        Func<AttributeValue, int, TArgument, string?, TResult> resultSelector
+        Func<AttributeValue, TArgument, string?, TResult> resultSelector
     )
     {
         var span = AsSpan(attributeValues);
         var elements = new List<TResult>(span.Length);
         for (var i = 0; i < span.Length; i++)
-            elements.Add(resultSelector(span[i], i, argument, dataMember));
+            elements.Add(resultSelector(span[i], argument, $"{dataMember}[{i}]"));
 
         return elements;
     }
@@ -157,24 +158,24 @@ public static class AttributeValueUtilityFactory
         List<AttributeValue> attributeValues,
         TArgument argument,
         string? dataMember,
-        Func<AttributeValue, int, TArgument, string?, TResult> resultSelector
+        Func<AttributeValue, TArgument, string?, TResult> resultSelector
     )
     {
         for (var i = 0; i < attributeValues.Count; i++)
-            yield return resultSelector(attributeValues[i], i, argument, dataMember);
+            yield return resultSelector(attributeValues[i], argument, $"{dataMember}[{i}]");
     }
 
     public static TResult[] ToArray<TResult, TArgument>(
         List<AttributeValue> attributeValues,
         TArgument argument,
         string? dataMember,
-        Func<AttributeValue, int, TArgument, string?, TResult> resultSelector
+        Func<AttributeValue, TArgument, string?, TResult> resultSelector
     )
     {
         var span = AsSpan(attributeValues);
         var elements = new TResult[span.Length];
         for (var i = 0; i < span.Length; i++)
-            elements[i] = resultSelector(span[i], i, argument, dataMember);
+            elements[i] = resultSelector(span[i], argument, $"{dataMember}[{i}]");
 
         return elements;
     }
