@@ -19,6 +19,7 @@ public static class AttributeValueUtilityFactory
 #pragma warning disable CS1591
     public static AttributeValue Null { get; } = new() { NULL = true };
 
+
     public static AttributeValue FromDictionary<T, TArgument>(
         IEnumerable<KeyValuePair<string, T>> dictionary,
         TArgument argument,
@@ -35,9 +36,68 @@ public static class AttributeValueUtilityFactory
         foreach (var (key, value) in dictionary)
             elements[key] = resultSelector(value, key, argument, dataMember);
 
-        return new AttributeValue {M = elements};
+        return new AttributeValue { M = elements };
     }
-    
+
+
+    public static ILookup<string, T> ToLookup<T, TArgument>(
+        Dictionary<string, AttributeValue> dictionary,
+        TArgument argument,
+        string? dataMember,
+        Func<AttributeValue, string, TArgument, T> resultSelector
+    )
+    {
+        return Iterator(dictionary, argument, dataMember, resultSelector)
+            .ToLookup(static x => x.Key, static x => x.Value);
+
+        static IEnumerable<KeyValuePair<string, T>> Iterator(
+            Dictionary<string, AttributeValue> dictionary,
+            TArgument argument,
+            string? dataMember,
+            Func<AttributeValue, string, TArgument, T> resultSelector
+        )
+        {
+            foreach (var (key, (attributeValue, i)) in dictionary.SelectMany(
+                         static x => x.Value.L.Select(static (x, i) => (x, y: i)), static (x, y) => (x.Key, y)))
+                yield return new KeyValuePair<string, T>(key,
+                    resultSelector(attributeValue, $"{dataMember}[{key}][{i}]", argument));
+        }
+    }
+
+    public static AttributeValue FromLookup<T, TArgument>(
+        ILookup<string, T> lookup,
+        TArgument argument,
+        string? dataMember,
+        Func<T, string, TArgument, AttributeValue> resultSelector
+    )
+    {
+        var attributeValues = new Dictionary<string, AttributeValue>(lookup.Count);
+
+        foreach (var grouping in lookup)
+            attributeValues[grouping.Key] = new AttributeValue
+            {
+                L = CreateList(grouping, argument, dataMember, resultSelector)
+            };
+
+        return new AttributeValue { M = attributeValues };
+
+        static List<AttributeValue> CreateList(
+            IEnumerable<T> enumerable,
+            TArgument argument,
+            string? dataMember,
+            Func<T, string, TArgument, AttributeValue> resultSelector
+        )
+        {
+            var attributeValues = new List<AttributeValue>();
+
+            foreach (var (element, i) in enumerable.Select((x, y) => (x, y)))
+            {
+                attributeValues.Add(resultSelector(element, $"{dataMember}[{i}]", argument));
+            }
+
+            return attributeValues;
+        }
+    }
 
     public static Dictionary<string, T> ToDictionary<T, TArgument>(
         IReadOnlyDictionary<string, AttributeValue> dictionary,
@@ -90,7 +150,7 @@ public static class AttributeValueUtilityFactory
         var attributeValues = enumerable.TryGetNonEnumeratedCount(out var count)
             ? new List<AttributeValue>(count)
             : new List<AttributeValue>();
-        
+
         foreach (var (element, i) in enumerable.Select((x, y) => (x, y)))
             attributeValues.Add(resultSelector(element, i, argument, dataMember));
 

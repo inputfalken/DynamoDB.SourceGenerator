@@ -90,7 +90,8 @@ public static class Constants
             public const string FromList = $"{ClassName}.FromList";
             public const string FromDictionary = $"{ClassName}.FromDictionary";
             public const string ToDictionary = $"{ClassName}.ToDictionary";
-
+            public const string ToLookup = $"{ClassName}.ToLookup";
+            public const string FromLookup = $"{ClassName}.FromLookup";
         }
         public static class ExceptionHelper
         {
