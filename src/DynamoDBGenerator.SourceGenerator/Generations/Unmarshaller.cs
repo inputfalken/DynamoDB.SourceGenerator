@@ -132,36 +132,6 @@ public static class Unmarshaller
 
     }
 
-    private static IEnumerable<string> CreateCollection(SingleGeneric type, MarshallerOptions options, bool isReadOnly)
-    {
-        var ifCase = $"if ({Value}?.L is null)".CreateBlock(type.TypeSymbol.IsNullable()
-            ? "return null;"
-            : $"throw {ExceptionHelper.NullExceptionMethod}({DataMember});");
-        
-        foreach (var s in ifCase)
-            yield return s;
-
-        yield return $"var span = System.Runtime.InteropServices.CollectionsMarshal.AsSpan({Value}.L);";
-        IEnumerable<string> forLoop;
-        var typeRepresentation = type.T.Representation().annotated;
-        if (isReadOnly)
-        {
-            yield return $"var elements = new {typeRepresentation}[span.Length];";
-            forLoop = "for (var i  = 0; i < span.Length; i++)"
-                .CreateBlock($"elements[i] = {InvokeUnmarshallMethod(type.T, "span[i]", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"", options)};");
-        }
-        else
-        {
-            yield return $"var elements = new List<{typeRepresentation}>(span.Length);";
-            forLoop = "for (var i  = 0; i < span.Length; i++)".CreateBlock($"elements.Add({InvokeUnmarshallMethod(type.T, "span[i]", $"$\"{{{DataMember}}}[{{i.ToString()}}]\"", options)});");
-        }
-        
-        foreach (var s in forLoop)
-            yield return s;
-
-        yield return "return elements;";
-    }
-
     private static string CreateSignature(ITypeSymbol typeSymbol)
     {
         return $"public static {typeSymbol.Representation().annotated} {GetDeserializationMethodName(typeSymbol)}(AttributeValue? {Value}, {MarshallerOptions.Name} {MarshallerOptions.ParamReference}, string? {DataMember} = null)";
