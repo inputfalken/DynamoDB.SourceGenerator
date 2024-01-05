@@ -19,6 +19,33 @@ public static class AttributeValueUtilityFactory
 #pragma warning disable CS1591
     public static AttributeValue Null { get; } = new() { NULL = true };
 
+    public static AttributeValue FromDictionary<T, TArgument>(
+        IReadOnlyDictionary<string, T> dictionary,
+        TArgument argument,
+        Func<T, TArgument, string?, AttributeValue> resultSelector)
+    {
+        var attributeValues = new Dictionary<string, AttributeValue>(dictionary.Count);
+
+        foreach (var (key, value) in dictionary)
+            attributeValues[key] = resultSelector(value, argument, key);
+
+        return new AttributeValue { M = attributeValues };
+    }
+
+    public static Dictionary<string, T> ToDictionary<T, TArgument>(
+        IReadOnlyDictionary<string, AttributeValue> dictionary,
+        TArgument argument,
+        string? dataMember,
+        Func<AttributeValue, string, TArgument, string?, T> resultSelector)
+    {
+        var elements = new Dictionary<string, T>(dictionary.Count);
+
+        foreach (var (key, value) in dictionary)
+            elements[key] = resultSelector(value, key, argument, dataMember);
+
+        return elements;
+    }
+
     public static AttributeValue FromArray<T, TArgument>(
         T[] array,
         TArgument argument,

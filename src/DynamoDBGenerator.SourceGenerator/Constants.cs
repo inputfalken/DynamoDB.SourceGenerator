@@ -88,6 +88,8 @@ public static class Constants
             public const string FromEnumerable = $"{ClassName}.FromEnumerable";
             public const string FromArray = $"{ClassName}.FromArray";
             public const string FromList = $"{ClassName}.FromList";
+            public const string FromDictionary = $"{ClassName}.FromDictionary";
+            public const string ToDictionary = $"{ClassName}.ToDictionary";
 
         }
         public static class ExceptionHelper
