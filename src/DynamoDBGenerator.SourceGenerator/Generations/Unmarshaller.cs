@@ -118,7 +118,7 @@ public static class Unmarshaller
             KeyValueGeneric keyValueGeneric when CreateSignature(keyValueGeneric.TypeSymbol) is var signature => keyValueGeneric.Type switch
             {
                 KeyValueGeneric.SupportedType.Dictionary => signature
-                    .CreateBlock($"return {Value} is {{ M: {{ }} x }} ? {AttributeValueUtilityFactory.ToDictionary}(x, {MarshallerOptions.ParamReference}, {DataMember}, static (a, i, o, d) => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "a", "$\"{d}[{i}]\"", options, "o")}) : {Else(keyValueGeneric.TValue)};")
+                    .CreateBlock($"return {Value} is {{ M: {{ }} x }} ? {AttributeValueUtilityFactory.ToDictionary}(x, {MarshallerOptions.ParamReference}, {DataMember}, static (a, i, o, d) => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "a", "$\"{d}[{i}]\"", options, "o")}) : {Else(keyValueGeneric.TypeSymbol)};")
                     .ToConversion(keyValueGeneric.TValue),
                 KeyValueGeneric.SupportedType.LookUp => signature
                     .CreateBlock(
