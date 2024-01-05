@@ -24,7 +24,7 @@ public static class AttributeValueUtilityFactory
         IEnumerable<KeyValuePair<string, T>> dictionary,
         TArgument argument,
         string? dataMember,
-        Func<T, string, TArgument, string?, AttributeValue> resultSelector)
+        Func<T, TArgument, string?, AttributeValue> resultSelector)
     {
         var elements = dictionary switch
         {
@@ -34,7 +34,7 @@ public static class AttributeValueUtilityFactory
         };
 
         foreach (var (key, value) in dictionary)
-            elements[key] = resultSelector(value, key, argument, dataMember);
+            elements[key] = resultSelector(value, argument, $"{dataMember}[{key}]");
 
         return new AttributeValue { M = elements };
     }
@@ -44,7 +44,7 @@ public static class AttributeValueUtilityFactory
         Dictionary<string, AttributeValue> dictionary,
         TArgument argument,
         string? dataMember,
-        Func<AttributeValue, string, TArgument, T> resultSelector
+        Func<AttributeValue, TArgument, string, T> resultSelector
     )
     {
         return Iterator(dictionary, argument, dataMember, resultSelector)
@@ -54,13 +54,13 @@ public static class AttributeValueUtilityFactory
             Dictionary<string, AttributeValue> dictionary,
             TArgument argument,
             string? dataMember,
-            Func<AttributeValue, string, TArgument, T> resultSelector
+            Func<AttributeValue, TArgument, string, T> resultSelector
         )
         {
             foreach (var (key, (attributeValue, i)) in dictionary.SelectMany(
                          static x => x.Value.L.Select(static (x, i) => (x, y: i)), static (x, y) => (x.Key, y)))
                 yield return new KeyValuePair<string, T>(key,
-                    resultSelector(attributeValue, $"{dataMember}[{key}][{i}]", argument));
+                    resultSelector(attributeValue, argument, $"{dataMember}[{key}][{i}]"));
         }
     }
 
@@ -68,7 +68,7 @@ public static class AttributeValueUtilityFactory
         ILookup<string, T> lookup,
         TArgument argument,
         string? dataMember,
-        Func<T, string, TArgument, AttributeValue> resultSelector
+        Func<T, TArgument, string, AttributeValue> resultSelector
     )
     {
         var attributeValues = new Dictionary<string, AttributeValue>(lookup.Count);
@@ -85,14 +85,14 @@ public static class AttributeValueUtilityFactory
             IEnumerable<T> enumerable,
             TArgument argument,
             string? dataMember,
-            Func<T, string, TArgument, AttributeValue> resultSelector
+            Func<T, TArgument, string, AttributeValue> resultSelector
         )
         {
             var attributeValues = new List<AttributeValue>();
 
             foreach (var (element, i) in enumerable.Select((x, y) => (x, y)))
             {
-                attributeValues.Add(resultSelector(element, $"{dataMember}[{i}]", argument));
+                attributeValues.Add(resultSelector(element, argument, $"{dataMember}[{i}]"));
             }
 
             return attributeValues;
@@ -117,12 +117,12 @@ public static class AttributeValueUtilityFactory
         T[] array,
         TArgument argument,
         string? dataMember,
-        Func<T, int, TArgument, string?, AttributeValue> resultSelector)
+        Func<T, TArgument, string?, AttributeValue> resultSelector)
     {
         var span = array.AsSpan();
         var attributeValues = new List<AttributeValue>(span.Length);
         for (var i = 0; i < span.Length; i++)
-            attributeValues.Add(resultSelector(span[i], i, argument, dataMember));
+            attributeValues.Add(resultSelector(span[i], argument, $"{dataMember}[{i}]"));
 
         return new AttributeValue { L = attributeValues };
     }
@@ -131,12 +131,12 @@ public static class AttributeValueUtilityFactory
         List<T> list,
         TArgument argument,
         string? dataMember,
-        Func<T, int, TArgument, string?, AttributeValue> resultSelector)
+        Func<T, TArgument, string?, AttributeValue> resultSelector)
     {
         var span = AsSpan(list);
         var attributeValues = new List<AttributeValue>(span.Length);
         for (var i = 0; i < span.Length; i++)
-            attributeValues.Add(resultSelector(span[i], i, argument, dataMember));
+            attributeValues.Add(resultSelector(span[i], argument, $"{dataMember}[{i}]"));
 
         return new AttributeValue { L = attributeValues };
     }
@@ -145,14 +145,14 @@ public static class AttributeValueUtilityFactory
         IEnumerable<T> enumerable,
         TArgument argument,
         string? dataMember,
-        Func<T, int, TArgument, string?, AttributeValue> resultSelector)
+        Func<T, TArgument, string?, AttributeValue> resultSelector)
     {
         var attributeValues = enumerable.TryGetNonEnumeratedCount(out var count)
             ? new List<AttributeValue>(count)
             : new List<AttributeValue>();
 
         foreach (var (element, i) in enumerable.Select((x, y) => (x, y)))
-            attributeValues.Add(resultSelector(element, i, argument, dataMember));
+            attributeValues.Add(resultSelector(element, argument, $"{dataMember}[{i}]"));
 
         return new AttributeValue { L = attributeValues };
     }

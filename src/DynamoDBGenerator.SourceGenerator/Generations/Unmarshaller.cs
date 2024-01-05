@@ -121,7 +121,7 @@ public static class Unmarshaller
                     .CreateBlock($"return {Value} is {{ M: {{ }} x }} ? {AttributeValueUtilityFactory.ToDictionary}(x, {MarshallerOptions.ParamReference}, {DataMember}, static (a, i, o, d) => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "a", "$\"{d}[{i}]\"", options, "o")}) : {Else(keyValueGeneric.TypeSymbol)};")
                     .ToConversion(keyValueGeneric.TValue),
                 KeyValueGeneric.SupportedType.LookUp => signature
-                    .CreateBlock($"return {Value} is {{ M: {{ }} x }} ? {AttributeValueUtilityFactory.ToLookup}(x, {MarshallerOptions.ParamReference}, {DataMember}, static (a, i, o) => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "a", "i", options, "o")}) : {Else(keyValueGeneric.TypeSymbol)};")
+                    .CreateBlock($"return {Value} is {{ M: {{ }} x }} ? {AttributeValueUtilityFactory.ToLookup}(x, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "a", "d", options, "o")}) : {Else(keyValueGeneric.TypeSymbol)};")
                     .ToConversion(keyValueGeneric.TValue),
                 _ => throw UncoveredConversionException(keyValueGeneric, nameof(CreateMethod))
 
