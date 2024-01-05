@@ -108,8 +108,10 @@ public static class Marshaller
                 SingleGeneric.SupportedType.Nullable => signature
                     .CreateBlock($"return {ParamReference} is not null ? {InvokeMarshallerMethod(singleGeneric.T, $"{ParamReference}.Value", DataMember, options)} : null;")
                     .ToConversion(singleGeneric.T),
+                SingleGeneric.SupportedType.Array => signature
+                    .CreateBlock($"return {ParamReference} is not null ? {AttributeValueUtilityFactory.FromArray}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, i, o, d) => {InvokeMarshallerMethod(singleGeneric.T, "a", "$\"{d}[{i.ToString()}]\"", options, "o")}{(singleGeneric.T.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)}) : {Else(singleGeneric)};")
+                    .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.IReadOnlyCollection
-                    or SingleGeneric.SupportedType.Array
                     or SingleGeneric.SupportedType.IEnumerable
                     or SingleGeneric.SupportedType.ICollection => signature
                         .CreateBlock(
@@ -172,9 +174,9 @@ public static class Marshaller
         }
     }
 
-    internal static string InvokeMarshallerMethod(ITypeSymbol typeSymbol, string parameterReference, string dataMember, MarshallerOptions options, bool useOptionParam = true)
+    internal static string InvokeMarshallerMethod(ITypeSymbol typeSymbol, string parameterReference, string dataMember, MarshallerOptions options, string optionParam = MarshallerOptions.ParamReference)
     {
-        var invocation = $"{ClassName}.{GetSerializationMethodName(typeSymbol)}({parameterReference}, {(useOptionParam ? MarshallerOptions.ParamReference : MarshallerOptions.FieldReference )}, {dataMember})";
+        var invocation = $"{ClassName}.{GetSerializationMethodName(typeSymbol)}({parameterReference}, {optionParam}, {dataMember})";
 
         if (options.IsConvertable(typeSymbol))
             return invocation;
