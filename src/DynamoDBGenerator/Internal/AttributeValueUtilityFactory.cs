@@ -20,17 +20,24 @@ public static class AttributeValueUtilityFactory
     public static AttributeValue Null { get; } = new() { NULL = true };
 
     public static AttributeValue FromDictionary<T, TArgument>(
-        IReadOnlyDictionary<string, T> dictionary,
+        IEnumerable<KeyValuePair<string, T>> dictionary,
         TArgument argument,
-        Func<T, TArgument, string?, AttributeValue> resultSelector)
+        string? dataMember,
+        Func<T, string, TArgument, string?, AttributeValue> resultSelector)
     {
-        var attributeValues = new Dictionary<string, AttributeValue>(dictionary.Count);
+        var elements = dictionary switch
+        {
+            IReadOnlyDictionary<string, T> a => new Dictionary<string, AttributeValue>(a.Count),
+            IDictionary<string, T> a => new Dictionary<string, AttributeValue>(a.Count),
+            _ => new Dictionary<string, AttributeValue>()
+        };
 
         foreach (var (key, value) in dictionary)
-            attributeValues[key] = resultSelector(value, argument, key);
+            elements[key] = resultSelector(value, key, argument, dataMember);
 
-        return new AttributeValue { M = attributeValues };
+        return new AttributeValue {M = elements};
     }
+    
 
     public static Dictionary<string, T> ToDictionary<T, TArgument>(
         IReadOnlyDictionary<string, AttributeValue> dictionary,
