@@ -1,9 +1,6 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks.Dataflow;
 using Amazon.DynamoDBv2.Model;
 using static System.Runtime.InteropServices.CollectionsMarshal;
 
@@ -15,7 +12,7 @@ namespace DynamoDBGenerator.Internal;
 ///     any release. You should only use it directly in your code with extreme caution and knowing that
 ///     doing so can result in application failures when updating to a new version.
 /// </summary>
-public static class AttributeValueUtilityFactory
+public static class MarshallHelper
 {
 #pragma warning disable CS1591
     public static AttributeValue Null { get; } = new() { NULL = true };
