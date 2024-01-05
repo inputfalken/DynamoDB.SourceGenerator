@@ -80,20 +80,12 @@ public static class AttributeValueUtilityFactory
         string? dataMember,
         Func<T, int, TArgument, string?, AttributeValue> resultSelector)
     {
-        List<AttributeValue> attributeValues;
-        if (enumerable.TryGetNonEnumeratedCount(out var count))
-        {
-            attributeValues = new List<AttributeValue>(count);
-            foreach (var (element, i) in enumerable.Select((x, y) => (x, y)))
-                // We can skip the resize checks by doing this.
-                attributeValues[i] = resultSelector(element, i, argument, dataMember);
-        }
-        else
-        {
-            attributeValues = new List<AttributeValue>();
-            foreach (var (element, i) in enumerable.Select((x, y) => (x, y)))
-                attributeValues.Add(resultSelector(element, i, argument, dataMember));
-        }
+        var attributeValues = enumerable.TryGetNonEnumeratedCount(out var count)
+            ? new List<AttributeValue>(count)
+            : new List<AttributeValue>();
+        
+        foreach (var (element, i) in enumerable.Select((x, y) => (x, y)))
+            attributeValues.Add(resultSelector(element, i, argument, dataMember));
 
         return new AttributeValue { L = attributeValues };
     }
