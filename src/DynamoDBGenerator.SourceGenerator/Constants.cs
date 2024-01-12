@@ -80,8 +80,18 @@ public static class Constants
         
         public static class AttributeValueUtilityFactory
         {
-            private const string ClassName = "AttributeValueUtilityFactory";
+            private const string ClassName = "MarshallHelper";
             public const string Null = $"{ClassName}.Null";
+            public const string ToList = $"{ClassName}.ToList";
+            public const string ToArray = $"{ClassName}.ToArray";
+            public const string ToEnumerable = $"{ClassName}.ToEnumerable";
+            public const string FromEnumerable = $"{ClassName}.FromEnumerable";
+            public const string FromArray = $"{ClassName}.FromArray";
+            public const string FromList = $"{ClassName}.FromList";
+            public const string FromDictionary = $"{ClassName}.FromDictionary";
+            public const string ToDictionary = $"{ClassName}.ToDictionary";
+            public const string ToLookup = $"{ClassName}.ToLookup";
+            public const string FromLookup = $"{ClassName}.FromLookup";
         }
         public static class ExceptionHelper
         {
