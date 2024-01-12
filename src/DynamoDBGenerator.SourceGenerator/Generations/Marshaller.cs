@@ -136,10 +136,10 @@ public static class Marshaller
             KeyValueGeneric keyValueGeneric when CreateSignature(keyValueGeneric.TypeSymbol) is var signature => keyValueGeneric.Type switch
             {
                 KeyValueGeneric.SupportedType.Dictionary => signature
-                    .CreateBlock($"return {ParamReference} is not null ? {AttributeValueUtilityFactory.FromDictionary}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(keyValueGeneric.TValue, "a", "d", options, "o")}) : {Else(keyValueGeneric)};")
+                    .CreateBlock($"return {ParamReference} is not null ? {AttributeValueUtilityFactory.FromDictionary}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(keyValueGeneric.TValue, "a", "d", options, "o")}{(keyValueGeneric.TValue.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)}) : {Else(keyValueGeneric)};")
                     .ToConversion(keyValueGeneric.TValue),
                 KeyValueGeneric.SupportedType.LookUp => signature
-                    .CreateBlock($"return {ParamReference} is not null ? {AttributeValueUtilityFactory.FromLookup}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(keyValueGeneric.TValue, "a", "d", options, "o")}) : {Else(keyValueGeneric)};")
+                    .CreateBlock($"return {ParamReference} is not null ? {AttributeValueUtilityFactory.FromLookup}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(keyValueGeneric.TValue, "a", "d", options, "o")}{(keyValueGeneric.TValue.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)}) : {Else(keyValueGeneric)};")
                     .ToConversion(keyValueGeneric.TValue),
                 _ => throw UncoveredConversionException(keyValueGeneric, nameof(CreateMethod))
             },
