@@ -234,8 +234,8 @@ internal static class Program
         );
 
         // the index can be used to retrieve the expressions in the same order as you provide the string interpolations in the method call above.
-        var condition = attributeExpression.Values[0];
-        var update = attributeExpression.Values[1];
+        var condition = attributeExpression.Expressions[0];
+        var update = attributeExpression.Expressions[1];
         var keys = repository.UpdateFirstName.PrimaryKeyMarshaller.PartitionKey("personId");
 
         // The idea is be able to apply this convention to other types of requests such as PutItemRequest or QueryRequest as well.
