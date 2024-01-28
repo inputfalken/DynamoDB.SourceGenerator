@@ -257,6 +257,3 @@ internal static class Program
 
 The `DynamoDBGenerator.SourceGenerator` assembly is responsible for doing the heavy lifting by generating the building
 blocks for the `DynamoDBGenerator` assembly to extend with convenient functionality.
-Such as
-the [ToPutItemRequest](https://github.com/inputfalken/DynamoDB.SourceGenerator/blob/main/tests/DynamoDBGenerator.SourceGenerator.Tests/Extensions/ToPutItemRequestTests.cs)
-extension method.
