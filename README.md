@@ -246,7 +246,7 @@ internal static class Program
             UpdateExpression = update,
             ExpressionAttributeNames = attributeExpression.Names,
             ExpressionAttributeValues = attributeExpression.Values,
-            Key = keys;
+            Key = keys,
             TableName = "MyTable"
         }
     }
