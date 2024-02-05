@@ -7,7 +7,6 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshall
 [DynamoDBMarshaller(typeof(Container<TimeOnly>))]
 public partial class TimeOnlyTests : RecordMarshalAsserter<TimeOnly>
 {
-
     protected override Container<TimeOnly> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
         return ContainerMarshaller.Unmarshall(attributeValues);
