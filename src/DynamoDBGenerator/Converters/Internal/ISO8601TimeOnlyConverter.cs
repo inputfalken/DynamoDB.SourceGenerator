@@ -3,7 +3,7 @@ using Amazon.DynamoDBv2.Model;
 
 namespace DynamoDBGenerator.Converters.Internal;
 
-public class ISO8601TimeOnlyConverter: IValueTypeConverter<TimeOnly>
+internal class ISO8601TimeOnlyConverter: IValueTypeConverter<TimeOnly>
 {
     public TimeOnly? Read(AttributeValue attributeValue)
     {
