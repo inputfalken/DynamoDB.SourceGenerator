@@ -17,7 +17,8 @@ Install  the following packages from Nuget:
 [3]: https://img.shields.io/nuget/v/DynamoDBGenerator.SourceGenerator.svg?label=DynamoDBGenerator.SourceGenerator
 [4]: https://www.nuget.org/packages/DynamoDBGenerator.SourceGenerator
 
-
+The `DynamoDBGenerator.SourceGenerator` is where the source generator is implemented.
+The source generator will look for attributes and implement interfaces that exists in `DynamoDBGenerator`.
 
 ## Goals:
 
@@ -126,16 +127,9 @@ public string MyUnknownString { get; set; }
 
 ## Usage sample
 
-```csharp
-internal static class Program
-{
-    public static void Main()
-    {
-        Repository repository = new Repository();
-        PutItemRequest putItemRequest = repository.PersonMarshaller.ToPutItemRequest(new Person(), "TABLENAME");
-    }
-}
+An example DTO class could look like the one below. The following examples will use this sample class.
 
+```csharp
 public class Person
 {
     // Will be included as 'PK' in DynamoDB.
@@ -159,6 +153,22 @@ public class Person
         public string Email { get; set;}
     }
 }
+```
+
+### Creating request objects
+
+#### PutItemRequest
+
+```csharp
+internal static class Program
+{
+    public static void Main()
+    {
+        Repository repository = new Repository();
+        PutItemRequest putItemRequest = repository.PersonMarshaller.ToPutItemRequest(new Person(), "TABLENAME");
+    }
+}
+
 
 // This DynamoDBMarshallerAttribute is what will cause the source generation to kick in.
 // The type provided to the DynamoDBMarshallerAttribute is what will get functionality.
@@ -167,7 +177,92 @@ public class Person
 public partial class Repository { }
 ```
 
-### Applying custom converters
+#### UpdateRequest without providing the DTO
+
+```csharp
+// A typical scenario would be that you would use multuple DynamoDBMarshaller and describe your operaitons via PropertyName.
+// If you do not specify an ArgumentType it will use your main entity Type instead which is typically useful for PUT operations.
+[DynamoDBMarshaller(typeof(Person), ArgumentType = typeof((string PersonId, string Firstname)), PropertyName = "UpdateFirstName")]
+public partial class Repository { }
+
+internal static class Program
+{
+    public static void Main()
+    {
+        Repository repository = new Repository();
+
+        // Creating an AttributeExpression can be done through string interpolation where the source generator will mimic your DTO types and give you an consistent API to build the attributeExpressions.
+        var attributeExpression = repository.UpdateFirstName.ToAttributeExpression(
+          ("personId", "John"),
+          (dbRef, argRef) => $"{dbRef.Id} = {argRef.PersonId}", // The condition
+          (dbRef, argRef) => $"SET {dbRef.Firstname} = {argRef.FirstName}" // The update operation
+        );
+
+        // the index can be used to retrieve the expressions in the same order as you provide the string interpolations in the method call above.
+        var condition = attributeExpression.Expressions[0];
+        var update = attributeExpression.Expressions[1];
+        var keys = repository.UpdateFirstName.PrimaryKeyMarshaller.PartitionKey("personId");
+
+        // The idea is be able to apply this convention to other types of requests such as PutItemRequest or QueryRequest as well.
+        // Theres also plans that there will be helper methods to achieve this kind of behaviour with less code
+        var request = new UpdateItemRequest
+        {
+            ConditionExpression = condition,
+            UpdateExpression = update,
+            ExpressionAttributeNames = attributeExpression.Names,
+            ExpressionAttributeValues = attributeExpression.Values,
+            Key = keys,
+            TableName = "MyTable"
+        }
+    }
+}
+```
+
+### Key conversion
+
+```csharp
+
+public class EntityDTO
+{
+    [DynamoDBHashKey("PK")]
+    public string Id { get; set; }
+
+    [DynamoDBRangeKey("RK")]
+    public string RangeKey { get; set; }
+
+    [DynamoDBLocalSecondaryIndexRangeKey("LSI")]
+    public string SecondaryRangeKey { get; set; }
+
+    [DynamoDBGlobalSecondaryIndexHashKey("GSI")]
+    public string GlobalSecondaryIndexId { get; set; }
+
+    [DynamoDBGlobalSecondaryIndexRangeKey("GSI")]
+    public string GlobalSecondaryIndexRangeKey { get; set; }
+}
+
+[DynamoDBMarshaller(typeof(EntityDTO))]
+public partial class Repository { }
+
+internal static class Program
+{
+    public static void Main()
+    {
+        var repository = new Repository();
+        // PrimaryKeyMarshaller is used to convert the keys obtained from the [DynamoDBHashKey] and [DynamoDBRangeKey] attributes.
+        var keyMarshaller = repository.PrimaryKeyMarshaller;
+
+        // IndexKeyMarshaller requires an argument that is the index name so it can provide you with the correct conversion based on the indexes you may have.
+        // It works the same way for both LocalSecondaryIndex and GlobalSecondaryIndex attributes.
+        var GSIKeyMarshaller = repository.IndexKeyMarshaller("GSI");
+        var LSIKeyMarshaller = repository.IndexKeyMarshaller("LSI");
+    }
+}
+```
+
+### Configuring the marshaller
+
+#### Custom converters
+
 ```csharp
 // Implement an converter, there's also an IReferenceTypeConverter available for ReferenceTypes.
 public class UnixEpochDateTimeConverter : IValueTypeConverter<DateTime>
@@ -207,50 +302,12 @@ public partial Repository
 }
 ```
 
-### Changing enum conversion 
+#### Enum conversion
+
 ```csharp
 [DynamoDBMarshallerOptions(EnumConversion = EnumConversion.Name)]
 [DynamoDBMarshaller(typeof(Person), PropertyName = "PersonMarshaller")]
 public partial class Repository { }
-```
-### Using ArgumentType for an UpdateRequest
-```csharp
-// A typical scenario would be that you would use multuple DynamoDBMarshaller and describe your operaitons via PropertyName.
-// If you do not specify an ArgumentType it will use your main entity Type instead which is typically useful for PUT operations.
-[DynamoDBMarshaller(typeof(Person), ArgumentType = typeof((string PersonId, string Firstname)), PropertyName = "UpdateFirstName")]
-public partial class Repository { }
-
-internal static class Program
-{
-    public static void Main()
-    {
-        Repository repository = new Repository();
-
-        // Creating an AttributeExpression can be done through string interpolation where the source generator will mimic your DTO types and give you an consistent API to build the attributeExpressions.
-        var attributeExpression = repository.UpdateFirstName.ToAttributeExpression(
-          ("personId", "John"),
-          (dbRef, argRef) => $"{dbRef.Id} = {argRef.PersonId}", // The condition
-          (dbRef, argRef) => $"SET {dbRef.Firstname} = {argRef.FirstName}" // The update operation
-        );
-
-        // the index can be used to retrieve the expressions in the same order as you provide the string interpolations in the method call above.
-        var condition = attributeExpression.Expressions[0];
-        var update = attributeExpression.Expressions[1];
-        var keys = repository.UpdateFirstName.PrimaryKeyMarshaller.PartitionKey("personId");
-
-        // The idea is be able to apply this convention to other types of requests such as PutItemRequest or QueryRequest as well.
-        // Theres also plans that there will be helper methods to achieve this kind of behaviour with less code
-        var request = new UpdateItemRequest
-        {
-            ConditionExpression = condition,
-            UpdateExpression = update,
-            ExpressionAttributeNames = attributeExpression.Names,
-            ExpressionAttributeValues = attributeExpression.Values,
-            Key = keys,
-            TableName = "MyTable"
-        }
-    }
-}
 ```
 
 ## Project structure
