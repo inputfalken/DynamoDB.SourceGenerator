@@ -100,6 +100,11 @@ public class AttributeValueConverters
     /// The <see cref="DateOnly"/> converter.
     /// </summary>
     public IValueTypeConverter<DateOnly> DateOnlyConverter { get; protected init; } = new ISO8601DateOnlyConverter();
+    
+    /// <summary>
+    /// The <see cref="TimeOnly"/> converter.
+    /// </summary>
+    public IValueTypeConverter<TimeOnly> TimeOnlyConverter { get; protected init; } = new ISO8601TimeOnlyConverter();
 
     /// <summary>
     /// The <see cref="TimeSpan"/> converter.
