@@ -221,6 +221,17 @@ internal static class Program
 
 ### Key conversion
 
+The key marshallers contain three methods based on your intent.
+The source generator will internally validate your object arguments. So if you pass a `int` but the actual key is represented as a `string`, then you will get an `exception`.
+
+* `Keys(object partitionKey, object rangeKey)`
+  * Used when you want convert both a partion key and a range key.
+* `PartionKey(object key)`
+  * Used when you only want to only convert a partiton key without a range key.
+* `RangeKey(object key)`
+  * Used when you only want to only convert a range key without a partition key.
+
+
 ```csharp
 
 public class EntityDTO
