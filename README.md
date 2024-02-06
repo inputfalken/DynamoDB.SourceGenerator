@@ -126,7 +126,7 @@ public string MyRequiredString { get; set; }
 public string MyUnknownString { get; set; }
 ```
 
-## Usage sample
+## Code examples
 
 An example DTO class could look like the one below. The following examples will use this sample class.
 
