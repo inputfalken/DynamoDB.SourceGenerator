@@ -71,6 +71,7 @@ The source generator will look for attributes and implement interfaces that exis
 | Type             | Field | Format   |
 |------------------|-------|----------|
 | `DateOnly`       | `S`   | ISO 8601 |
+| `TimeOnly`       | `S`   | ISO 8601 |
 | `DateTime`       | `S`   | ISO 8601 |
 | `DateTimeOffset` | `S`   | ISO 8601 |
 | `TimeSpan`       | `S`   | ISO 8601 |
