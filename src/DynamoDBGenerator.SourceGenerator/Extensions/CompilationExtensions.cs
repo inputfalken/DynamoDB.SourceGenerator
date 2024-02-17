@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -6,13 +7,23 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 // Great source:  https://github.com/dotnet/runtime/blob/main/src/tools/illink/src/ILLink.RoslynAnalyzer/CompilationExtensions.cs
 public static class CompilationExtensions
 {
-    private static ITypeSymbol? GetTypeSymbol(this Compilation compilation, SyntaxNode typeDeclarationSyntax)
+    public static ReadOnlySpan<ITypeSymbol> GetTypeSymbols(this Compilation compilation, ImmutableArray<ClassDeclarationSyntax> classDeclarations)
     {
-        return compilation.GetSemanticModel(typeDeclarationSyntax.SyntaxTree).GetDeclaredSymbol(typeDeclarationSyntax) as ITypeSymbol;
-    }
+        var span = classDeclarations.AsSpan();
+        var symbols = new ITypeSymbol[classDeclarations.Length];
+        for (var i = 0; i < span.Length; i++)
+        {
+            var classDeclarationSyntax = span[i];
 
-    public static IEnumerable<ITypeSymbol> GetTypeSymbols(this Compilation compilation, IEnumerable<TypeDeclarationSyntax> typeDeclarationSyntax)
-    {
-        return typeDeclarationSyntax.Select(x => GetTypeSymbol(compilation, x)).Where(x => x is not null) as IEnumerable<ITypeSymbol>;
+            if (compilation
+                    .GetSemanticModel(classDeclarationSyntax.SyntaxTree)
+                    .GetDeclaredSymbol(classDeclarationSyntax)
+                is not ITypeSymbol typeSymbol)
+                throw new ArgumentException($"Could not convert the '{classDeclarationSyntax.ToFullString()}' into a '{nameof(ITypeSymbol)}'.");
+
+            symbols[i] = typeSymbol;
+        }
+
+        return new ReadOnlySpan<ITypeSymbol>(symbols);
     }
 }

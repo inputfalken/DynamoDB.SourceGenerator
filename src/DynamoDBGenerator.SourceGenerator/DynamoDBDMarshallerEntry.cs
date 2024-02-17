@@ -40,8 +40,10 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
                 ? null
                 : $"{typeSymbol.ContainingNamespace}.";
 
-            context.AddSource($"{typeNamespace}{typeSymbol.Name}.g",
-                string.Join(Constants.NewLine, CreateFileContent(typeSymbol, compilation)));
+            context.AddSource(
+                $"{typeNamespace}{typeSymbol.Name}.g",
+                string.Join(Constants.NewLine, CreateFileContent(typeSymbol, compilation))
+            );
         }
     }
 
