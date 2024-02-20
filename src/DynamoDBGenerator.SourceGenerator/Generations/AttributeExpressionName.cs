@@ -19,7 +19,7 @@ public static class AttributeExpressionName
             .SelectMany(x => CodeFactory.Create(x.EntityTypeSymbol, y => CreateStruct(y, getDynamoDbProperties, options), hashSet));
 
     }
-    private static IEnumerable<string> CreateCode(
+    private static IEnumerable<string> TypeContent(
         ITypeSymbol typeSymbol,
         (bool IsUnknown, DynamoDbDataMember DDB, string NameRef, string AttributeReference, string AttributeInterfaceName)[] dataMembers,
         string structName)
@@ -80,7 +80,7 @@ public static class AttributeExpressionName
 
         var structName = TypeName(typeSymbol);
 
-        var @class = $"public readonly struct {structName} : {AttributeExpressionNameTrackerInterface}".CreateScope(CreateCode(typeSymbol, dataMembers, structName));
+        var @class = $"public readonly struct {structName} : {AttributeExpressionNameTrackerInterface}".CreateScope(TypeContent(typeSymbol, dataMembers, structName));
         return new CodeFactory(@class, dataMembers.Where(x => x.IsUnknown).Select(x => x.DDB.DataMember.Type));
 
     }

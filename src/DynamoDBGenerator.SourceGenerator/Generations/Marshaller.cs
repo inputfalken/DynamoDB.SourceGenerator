@@ -14,7 +14,7 @@ public static class Marshaller
 
     internal static IEnumerable<string> CreateClass(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
     {
-        return $"private static class {ClassName}".CreateScope(CreateMarshaller(arguments, getDynamoDbProperties, options));
+        return $"private static class {ClassName}".CreateScope(TypeContent(arguments, getDynamoDbProperties, options));
     }
     private static CodeFactory CreateDictionaryMethod(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
@@ -59,7 +59,7 @@ public static class Marshaller
 
     }
 
-    private static IEnumerable<string> CreateMarshaller(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
+    private static IEnumerable<string> TypeContent(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
     {
         var hashset = new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability);
 

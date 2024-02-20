@@ -7,7 +7,7 @@ using static DynamoDBGenerator.SourceGenerator.Constants.DynamoDBGenerator;
 
 namespace DynamoDBGenerator.SourceGenerator.Generations;
 
-public static class Unmarshaller
+public static class UnMarshaller
 {
     private const string DataMember = "dataMember";
     private const string Dict = "dict";
@@ -45,7 +45,7 @@ public static class Unmarshaller
     internal static IEnumerable<string> CreateClass(IEnumerable<DynamoDBMarshallerArguments> arguments,
         Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
     {
-        return $"private static class {UnMarshallerClass}".CreateScope(CreateUnMarshaller(arguments, getDynamoDbProperties, options));
+        return $"private static class {UnMarshallerClass}".CreateScope(CreateTypeContents(arguments, getDynamoDbProperties, options));
     }
     private static CodeFactory CreateCode(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
@@ -136,7 +136,7 @@ public static class Unmarshaller
     {
         return $"public static {typeSymbol.Representation().annotated} {GetDeserializationMethodName(typeSymbol)}(AttributeValue? {Value}, {MarshallerOptions.Name} {MarshallerOptions.ParamReference}, string? {DataMember} = null)";
     }
-    private static IEnumerable<string> CreateUnMarshaller(IEnumerable<DynamoDBMarshallerArguments> arguments,
+    private static IEnumerable<string> CreateTypeContents(IEnumerable<DynamoDBMarshallerArguments> arguments,
         Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
     {
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability);

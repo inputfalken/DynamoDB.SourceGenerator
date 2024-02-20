@@ -25,7 +25,7 @@ public static class DynamoDbMarshaller
                 .CreateScope($"{MarshallerOptions.FieldReference} = {MarshallerOptions.ParamReference};", $"{KeyMarshaller.PrimaryKeyMarshallerReference} = {KeyMarshaller.AssignmentRoot(argument.EntityTypeSymbol)};");
             var interfaceImplementation = constructor
                 .Concat(Marshaller.RootSignature(argument.EntityTypeSymbol, entityTypeName))
-                .Concat(Unmarshaller.RootSignature(argument.EntityTypeSymbol, entityTypeName))
+                .Concat(UnMarshaller.RootSignature(argument.EntityTypeSymbol, entityTypeName))
                 .Concat(KeyMarshaller.IndexKeyMarshallerRootSignature(argument.EntityTypeSymbol))
                 .Concat(expressionValueMethod)
                 .Append(expressionMethodName)
@@ -54,7 +54,7 @@ public static class DynamoDbMarshaller
         var getDynamoDbProperties = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, TypeExtensions.GetDynamoDbProperties);
         var code = CreateImplementations(loadedArguments, options)
             .Concat(Marshaller.CreateClass(loadedArguments, getDynamoDbProperties, options))
-            .Concat(Unmarshaller.CreateClass(loadedArguments, getDynamoDbProperties, options))
+            .Concat(UnMarshaller.CreateClass(loadedArguments, getDynamoDbProperties, options))
             .Concat(AttributeExpressionName.CreateClasses(loadedArguments, getDynamoDbProperties, options))
             .Concat(AttributeExpressionValue.CreateExpressionAttributeValue(loadedArguments, getDynamoDbProperties, options))
             .Concat(KeyMarshaller.CreateKeys(loadedArguments, getDynamoDbProperties, options));

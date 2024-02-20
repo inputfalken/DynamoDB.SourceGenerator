@@ -9,7 +9,7 @@ public static class AttributeExpressionValue
     private static readonly Func<ITypeSymbol, string> TypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Values", SymbolEqualityComparer.Default);
 
     private const string ValueProvider = "valueIdProvider";
-    private static IEnumerable<string> CreateCode(
+    private static IEnumerable<string> TypeContents(
         ITypeSymbol typeSymbol,
         (bool IsUnknown, DynamoDbDataMember DDB, string ValueRef, string AttributeReference, string AttributeInterfaceName)[] dataMembers,
         string structName,
@@ -101,7 +101,7 @@ public static class AttributeExpressionValue
         var structName = TypeName(typeSymbol);
         var interfaceName = $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{typeSymbol.Representation().annotated}>";
 
-        var @struct = $"public readonly struct {structName} : {interfaceName}".CreateScope(CreateCode(typeSymbol, dataMembers, structName, interfaceName, options));
+        var @struct = $"public readonly struct {structName} : {interfaceName}".CreateScope(TypeContents(typeSymbol, dataMembers, structName, interfaceName, options));
 
         return new CodeFactory(@struct, dataMembers.Where(x => x.IsUnknown).Select(x => x.DDB.DataMember.Type));
 

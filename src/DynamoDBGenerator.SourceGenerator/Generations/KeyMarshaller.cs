@@ -26,7 +26,7 @@ public static class KeyMarshaller
         return $"if({validateReference})".CreateScope(innerContent);
 
     }
-    private static IEnumerable<string> CreateBody(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
+    private static IEnumerable<string> MethodBody(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
         var keyStructure = DynamoDbDataMember.GetKeyStructure(fn(typeSymbol));
         if (keyStructure is null)
@@ -114,7 +114,7 @@ public static class KeyMarshaller
     {
 
         var code = $"private static Dictionary<string, AttributeValue> {MethodName(typeSymbol)}({MarshallerOptions.Name} {MarshallerOptions.ParamReference}, object? {PkReference}, object? {RkReference}, bool {EnforcePkReference}, bool {EnforceRkReference}, string? index = null)"
-            .CreateScope(CreateBody(typeSymbol, fn, options));
+            .CreateScope(MethodBody(typeSymbol, fn, options));
 
         return new CodeFactory(code);
 
