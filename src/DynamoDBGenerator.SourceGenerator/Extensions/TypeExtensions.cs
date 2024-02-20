@@ -81,7 +81,7 @@ public static class TypeExtensions
                 return $"({string.Join(", ", tupleElements)})";
             }
 
-            var index = displayString.IndexOf("<", StringComparison.Ordinal);
+            var index = displayString.AsSpan().IndexOf('<');
             if (index == -1)
                 return displayString;
 
