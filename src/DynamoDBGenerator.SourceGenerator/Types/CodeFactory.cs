@@ -4,27 +4,27 @@ namespace DynamoDBGenerator.SourceGenerator.Types;
 
 public readonly struct CodeFactory
 {
-    public CodeFactory(IEnumerable<string> code, IEnumerable<ITypeSymbol> typeIdentifiers)
+    public CodeFactory(IEnumerable<string> lines, IEnumerable<ITypeSymbol> dependantTypes)
     {
-        _code = code;
-        TypeIdentifiers = typeIdentifiers;
+        _lines = lines;
+        DependantTypes = dependantTypes;
     }
 
-    public CodeFactory(IEnumerable<string> code)
+    public CodeFactory(IEnumerable<string> lines)
     {
-        _code = code;
-        TypeIdentifiers = Enumerable.Empty<ITypeSymbol>();
+        _lines = lines;
+        DependantTypes = Enumerable.Empty<ITypeSymbol>();
     }
 
     /// <summary>
-    ///     The code surrounding all assignments.
+    ///     The code lines.
     /// </summary>
-    private readonly IEnumerable<string> _code;
+    private readonly IEnumerable<string> _lines;
 
     /// <summary>
-    ///     The assignments that occur within the method.
+    ///     The types that are <see cref="_lines"/> are dependant on.
     /// </summary>
-    private IEnumerable<ITypeSymbol> TypeIdentifiers { get; }
+    private IEnumerable<ITypeSymbol> DependantTypes { get; }
 
     public static IEnumerable<string> Create(
         ITypeSymbol typeSymbol,
@@ -38,11 +38,11 @@ public readonly struct CodeFactory
 
         var code = codeSelector(typeSymbol);
 
-        foreach (var s in code._code)
+        foreach (var s in code._lines)
             yield return s;
 
-        foreach (var x in code.TypeIdentifiers)
-        foreach (var assignment in Create(x, codeSelector, handledTypes))
-            yield return assignment;
+        foreach (var nestedTypeSymbol in code.DependantTypes)
+        foreach (var nestedCode in Create(nestedTypeSymbol, codeSelector, handledTypes))
+            yield return nestedCode;
     }
 }
