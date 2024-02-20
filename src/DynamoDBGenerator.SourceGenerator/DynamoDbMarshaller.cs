@@ -22,7 +22,7 @@ public static class DynamoDbMarshaller
             var argumentTypeName = argument.AnnotatedArgumentType;
 
             var constructor = $"public {argument.ImplementationName}({MarshallerOptions.Name} {MarshallerOptions.ParamReference})"
-                .CreateBlock($"{MarshallerOptions.FieldReference} = {MarshallerOptions.ParamReference};", $"{KeyMarshaller.PrimaryKeyMarshallerReference} = {KeyMarshaller.AssignmentRoot(argument.EntityTypeSymbol)};");
+                .CreateScope($"{MarshallerOptions.FieldReference} = {MarshallerOptions.ParamReference};", $"{KeyMarshaller.PrimaryKeyMarshallerReference} = {KeyMarshaller.AssignmentRoot(argument.EntityTypeSymbol)};");
             var interfaceImplementation = constructor
                 .Concat(Marshaller.RootSignature(argument.EntityTypeSymbol, entityTypeName))
                 .Concat(Unmarshaller.RootSignature(argument.EntityTypeSymbol, entityTypeName))
@@ -33,7 +33,7 @@ public static class DynamoDbMarshaller
                 .Prepend(MarshallerOptions.FieldDeclaration);
 
             var classImplementation = $"private sealed class {argument.ImplementationName}: {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}>"
-                .CreateBlock(interfaceImplementation);
+                .CreateScope(interfaceImplementation);
 
             yield return options.TryInstantiate() switch
             {

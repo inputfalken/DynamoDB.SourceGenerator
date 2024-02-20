@@ -21,7 +21,7 @@ public static class StringExtensions
 
         return indent;
     }
-    public static IEnumerable<string> CreateBlock(this string header, IEnumerable<string> content, int indentLevel)
+    public static IEnumerable<string> CreateScope(this string header, IEnumerable<string> content, int indentLevel)
     {
         var indent = Indent(indentLevel);
 
@@ -33,7 +33,7 @@ public static class StringExtensions
 
         yield return string.Intern($"{indent}}}");
     }
-    public static IEnumerable<string> CreateBlock(this string header, IEnumerable<string> content)
+    public static IEnumerable<string> CreateScope(this string header, IEnumerable<string> content)
     {
         yield return header;
         yield return "{";
@@ -44,7 +44,7 @@ public static class StringExtensions
         yield return "}";
     }
 
-    public static IEnumerable<string> CreateBlock(this string header, string content)
+    public static IEnumerable<string> CreateScope(this string header, string content)
     {
         yield return header;
         yield return "{";
@@ -54,7 +54,7 @@ public static class StringExtensions
         yield return "}";
     }
     
-    public static IEnumerable<string> CreateBlock(this string header, string content, string second)
+    public static IEnumerable<string> CreateScope(this string header, string content, string second)
     {
         yield return header;
         yield return "{";

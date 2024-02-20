@@ -94,10 +94,10 @@ public readonly struct MarshallerOptions
         get
         {
             var body = $"public {Name} ({_converterFullPath} converters)"
-                .CreateBlock($"{ConvertersProperty} = converters;")
+                .CreateScope($"{ConvertersProperty} = converters;")
                 .Append($"public {_converterFullPath} {ConvertersProperty} {{ get; }}");
 
-            return $"public sealed class {Name}".CreateBlock(body);
+            return $"public sealed class {Name}".CreateScope(body);
         }
     }
 

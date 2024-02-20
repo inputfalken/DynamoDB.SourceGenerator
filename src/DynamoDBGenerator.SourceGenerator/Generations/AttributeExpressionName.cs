@@ -35,7 +35,7 @@ public static class AttributeExpressionName
             })
             .Append($@"{self} = new(() => {ConstructorAttributeName} ?? throw new NotImplementedException(""Root element AttributeExpressionName reference.""));");
 
-        foreach (var fieldAssignment in $"public {structName}(string? {ConstructorAttributeName})".CreateBlock(constructorFieldAssignments))
+        foreach (var fieldAssignment in $"public {structName}(string? {ConstructorAttributeName})".CreateScope(constructorFieldAssignments))
             yield return fieldAssignment;
 
         foreach (var fieldDeclaration in dataMembers)
@@ -61,7 +61,7 @@ public static class AttributeExpressionName
             )
             .Append($@"if ({self}.IsValueCreated) yield return new ({self}.Value, ""{typeSymbol.Name}"");");
 
-        foreach (var s in $"IEnumerable<KeyValuePair<string, string>> {AttributeExpressionNameTrackerInterface}.{AttributeExpressionNameTrackerInterfaceAccessedNames}()".CreateBlock(yields))
+        foreach (var s in $"IEnumerable<KeyValuePair<string, string>> {AttributeExpressionNameTrackerInterface}.{AttributeExpressionNameTrackerInterfaceAccessedNames}()".CreateScope(yields))
             yield return s;
 
         yield return $"public override string ToString() => {self}.Value;";
@@ -80,7 +80,7 @@ public static class AttributeExpressionName
 
         var structName = TypeName(typeSymbol);
 
-        var @class = $"public readonly struct {structName} : {AttributeExpressionNameTrackerInterface}".CreateBlock(CreateCode(typeSymbol, dataMembers, structName));
+        var @class = $"public readonly struct {structName} : {AttributeExpressionNameTrackerInterface}".CreateScope(CreateCode(typeSymbol, dataMembers, structName));
         return new Conversion(@class, dataMembers.Where(x => x.IsUnknown).Select(x => x.DDB.DataMember.Type));
 
     }
