@@ -164,13 +164,13 @@ public static class TypeExtensions
         static string ExceptionMessage(ITypeSymbol typeSymbol) => $"Could not apply naming suffix on type: {typeSymbol.ToDisplayString()}";
     }
 
-    public static Conversion ToConversion(this IEnumerable<string> enumerable)
+    public static CodeFactory ToConversion(this IEnumerable<string> enumerable)
     {
-        return new Conversion(enumerable);
+        return new CodeFactory(enumerable);
     }
-    public static Conversion ToConversion(this IEnumerable<string> enumerable, ITypeSymbol typeSymbol)
+    public static CodeFactory ToConversion(this IEnumerable<string> enumerable, ITypeSymbol typeSymbol)
     {
-        return new Conversion(enumerable, new[] {typeSymbol});
+        return new CodeFactory(enumerable, new[] {typeSymbol});
     }
 
     public static INamedTypeSymbol? TryGetNullableValueType(this ITypeSymbol type)

@@ -47,7 +47,7 @@ public static class Unmarshaller
     {
         return $"private static class {UnMarshallerClass}".CreateScope(CreateUnMarshaller(arguments, getDynamoDbProperties, options));
     }
-    private static Conversion CreateCode(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
+    private static CodeFactory CreateCode(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
         var assignments = fn(type)
             .Select(x => (DDB: x, MethodCall: InvokeUnmarshallMethod(x.DataMember.Type, $"{Dict}.GetValueOrDefault(\"{x.AttributeName}\")", $"\"{x.DataMember.Name}\"", options), x.DataMember.Name))
@@ -67,10 +67,10 @@ public static class Unmarshaller
 
         var method = $"public static {typeName.annotated} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue>? {Dict}, {MarshallerOptions.Name} {MarshallerOptions.ParamReference}, string? {DataMember} = null)".CreateScope(blockBody);
 
-        return new Conversion(method, assignments.Select(x => x.DDB.DataMember.Type));
+        return new CodeFactory(method, assignments.Select(x => x.DDB.DataMember.Type));
 
     }
-    private static Conversion CreateMethod(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn,
+    private static CodeFactory CreateMethod(ITypeSymbol type, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn,
         MarshallerOptions options)
     {
 
@@ -141,13 +141,12 @@ public static class Unmarshaller
     {
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability);
         return arguments.SelectMany(x =>
-                Conversion.ConversionMethods(
-                    x.EntityTypeSymbol,
-                    y => CreateMethod(y, getDynamoDbProperties, options),
-                    hashSet
-                )
+            CodeFactory.Create(
+                x.EntityTypeSymbol,
+                y => CreateMethod(y, getDynamoDbProperties, options),
+                hashSet
             )
-            .SelectMany(x => x.Code);
+        );
     }
     private static string Else(ITypeSymbol typeSymbol)
     {

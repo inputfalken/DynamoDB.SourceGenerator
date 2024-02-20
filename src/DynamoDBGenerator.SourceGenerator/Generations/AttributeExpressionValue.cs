@@ -81,9 +81,9 @@ public static class AttributeExpressionValue
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
 
         return arguments
-            .SelectMany(x => Conversion.ConversionMethods(x.ArgumentType, y => CreateStruct(y, getDynamoDbProperties, options), hashSet)).SelectMany(x => x.Code);
+            .SelectMany(x => CodeFactory.Create(x.ArgumentType, y => CreateStruct(y, getDynamoDbProperties, options), hashSet));
     }
-    private static Conversion CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
+    private static CodeFactory CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
         var dataMembers = fn(typeSymbol)
             .Select(x =>
@@ -103,7 +103,7 @@ public static class AttributeExpressionValue
 
         var @struct = $"public readonly struct {structName} : {interfaceName}".CreateScope(CreateCode(typeSymbol, dataMembers, structName, interfaceName, options));
 
-        return new Conversion(@struct, dataMembers.Where(x => x.IsUnknown).Select(x => x.DDB.DataMember.Type));
+        return new CodeFactory(@struct, dataMembers.Where(x => x.IsUnknown).Select(x => x.DDB.DataMember.Type));
 
     }
 

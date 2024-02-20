@@ -16,7 +16,7 @@ public static class AttributeExpressionName
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
 
         return arguments
-            .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, y => CreateStruct(y, getDynamoDbProperties, options), hashSet)).SelectMany(x => x.Code);
+            .SelectMany(x => CodeFactory.Create(x.EntityTypeSymbol, y => CreateStruct(y, getDynamoDbProperties, options), hashSet));
 
     }
     private static IEnumerable<string> CreateCode(
@@ -66,7 +66,7 @@ public static class AttributeExpressionName
 
         yield return $"public override string ToString() => {self}.Value;";
     }
-    private static Conversion CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
+    private static CodeFactory CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
         var dataMembers = fn(typeSymbol)
             .Select(x => (
@@ -81,7 +81,7 @@ public static class AttributeExpressionName
         var structName = TypeName(typeSymbol);
 
         var @class = $"public readonly struct {structName} : {AttributeExpressionNameTrackerInterface}".CreateScope(CreateCode(typeSymbol, dataMembers, structName));
-        return new Conversion(@class, dataMembers.Where(x => x.IsUnknown).Select(x => x.DDB.DataMember.Type));
+        return new CodeFactory(@class, dataMembers.Where(x => x.IsUnknown).Select(x => x.DDB.DataMember.Type));
 
     }
 

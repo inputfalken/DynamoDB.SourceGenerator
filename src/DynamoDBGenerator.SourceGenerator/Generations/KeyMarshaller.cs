@@ -61,7 +61,7 @@ public static class KeyMarshaller
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability);
 
         return arguments
-            .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, y => StaticAttributeValueDictionaryKeys(y, getDynamoDbProperties, options), hashSet)).SelectMany(x => x.Code);
+            .SelectMany(x => CodeFactory.Create(x.EntityTypeSymbol, y => StaticAttributeValueDictionaryKeys(y, getDynamoDbProperties, options), hashSet));
     }
     private static IEnumerable<(string? IndexName, IEnumerable<string> assignments)> GetAssignments(DynamoDBKeyStructure keyStructure, MarshallerOptions options)
     {
@@ -110,13 +110,13 @@ public static class KeyMarshaller
         return
             $"new {KeyMarshallerImplementationTypeName}((pk, rk, ipk, irk, dm) => {MethodName(typeSymbol)}({MarshallerOptions.FieldReference}, pk, rk, ipk, irk, dm))";
     }
-    private static Conversion StaticAttributeValueDictionaryKeys(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
+    private static CodeFactory StaticAttributeValueDictionaryKeys(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
 
         var code = $"private static Dictionary<string, AttributeValue> {MethodName(typeSymbol)}({MarshallerOptions.Name} {MarshallerOptions.ParamReference}, object? {PkReference}, object? {RkReference}, bool {EnforcePkReference}, bool {EnforceRkReference}, string? index = null)"
             .CreateScope(CreateBody(typeSymbol, fn, options));
 
-        return new Conversion(code);
+        return new CodeFactory(code);
 
     }
 }
