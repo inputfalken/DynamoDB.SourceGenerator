@@ -7,13 +7,13 @@ public readonly struct CodeFactory
     public CodeFactory(IEnumerable<string> lines, IEnumerable<ITypeSymbol> dependantTypes)
     {
         _lines = lines;
-        DependantTypes = dependantTypes;
+        _dependantTypes = dependantTypes;
     }
 
     public CodeFactory(IEnumerable<string> lines)
     {
         _lines = lines;
-        DependantTypes = Enumerable.Empty<ITypeSymbol>();
+        _dependantTypes = Enumerable.Empty<ITypeSymbol>();
     }
 
     /// <summary>
@@ -24,7 +24,7 @@ public readonly struct CodeFactory
     /// <summary>
     ///     The types that are <see cref="_lines"/> are dependant on.
     /// </summary>
-    private IEnumerable<ITypeSymbol> DependantTypes { get; }
+    private readonly IEnumerable<ITypeSymbol> _dependantTypes;
 
     public static IEnumerable<string> Create(
         ITypeSymbol typeSymbol,
@@ -41,7 +41,7 @@ public readonly struct CodeFactory
         foreach (var s in code._lines)
             yield return s;
 
-        foreach (var nestedTypeSymbol in code.DependantTypes)
+        foreach (var nestedTypeSymbol in code._dependantTypes)
         foreach (var nestedCode in Create(nestedTypeSymbol, codeSelector, handledTypes))
             yield return nestedCode;
     }
