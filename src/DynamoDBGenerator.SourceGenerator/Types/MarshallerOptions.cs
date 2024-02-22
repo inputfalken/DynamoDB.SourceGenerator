@@ -16,9 +16,9 @@ public readonly struct MarshallerOptions
     private readonly string _converterFullPath;
 
     private MarshallerOptions(INamedTypeSymbol convertersType,
-        IEnumerable<KeyValuePair<string, Converter>> converters, int enumStrategy)
+        IEnumerable<KeyValuePair<string, ITypeSymbol>> converters, int enumStrategy)
     {
-        Converters = converters.ToDictionary(x => x.Value.T, x => x, SymbolEqualityComparer.Default);
+        Converters = converters.ToDictionary(x => x.Value, x => x, SymbolEqualityComparer.Default);
         _convertersType = convertersType;
         _enumStrategy = enumStrategy;
         _converterFullPath = _convertersType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
@@ -86,8 +86,7 @@ public readonly struct MarshallerOptions
         return typeSymbol.TypeKind is TypeKind.Enum || Converters.ContainsKey(typeSymbol);
     }
 
-    private Dictionary<ISymbol?, KeyValuePair<string, Converter>> Converters { get; }
-
+    private Dictionary<ISymbol?, KeyValuePair<string, ITypeSymbol>> Converters { get; }
 
     public IEnumerable<string> ClassDeclaration
     {
@@ -112,15 +111,15 @@ public readonly struct MarshallerOptions
         return new MarshallerOptions(typeSymbol, keyValuePairs, enumStrategy);
     }
 
-    private static KeyValuePair<string, Converter>? ConverterDataMemberOrNull(ISymbol symbol)
+    private static KeyValuePair<string, ITypeSymbol>? ConverterDataMemberOrNull(ISymbol symbol)
     {
         return symbol switch
         {
             { DeclaredAccessibility: not (Accessibility.Public or Accessibility.Internal) } => null,
-            IFieldSymbol x when Predicate(x.Type) => new KeyValuePair<string, Converter>(x.Name, new Converter(x.Type, (INamedTypeSymbol)x.Type)),
-            IPropertySymbol x when Predicate(x.Type) => new KeyValuePair<string, Converter>(x.Name, new Converter(x.Type, (INamedTypeSymbol)x.Type)),
-            IFieldSymbol x when x.Type.Interfaces.FirstOrDefault(Predicate) is { } y => new KeyValuePair<string, Converter>(x.Name, new Converter(x.Type, y)),
-            IPropertySymbol x when x.Type.Interfaces.FirstOrDefault(Predicate) is { } y => new KeyValuePair<string, Converter>(x.Name, new Converter(x.Type, y)),
+            IFieldSymbol x when Predicate(x.Type) => new KeyValuePair<string, ITypeSymbol>(x.Name, ((INamedTypeSymbol)x.Type).TypeArguments[0]),
+            IPropertySymbol x when Predicate(x.Type) => new KeyValuePair<string, ITypeSymbol>(x.Name, ((INamedTypeSymbol)x.Type).TypeArguments[0]),
+            IFieldSymbol x when x.Type.Interfaces.FirstOrDefault(Predicate) is { } y => new KeyValuePair<string, ITypeSymbol>(x.Name, y.TypeArguments[0]),
+            IPropertySymbol x when x.Type.Interfaces.FirstOrDefault(Predicate) is { } y => new KeyValuePair<string, ITypeSymbol>(x.Name, y.TypeArguments[0]),
             _ => null
         };
 
@@ -137,22 +136,5 @@ public readonly struct MarshallerOptions
                 ContainingAssembly.Name : Constants.DynamoDBGenerator.AssemblyName
             };
         }
-    }
-
-    public readonly struct Converter
-    {
-        public Converter(ITypeSymbol originalType, INamedTypeSymbol converterType)
-        {
-            OriginalType = originalType;
-            ConverterType = converterType;
-            T = converterType.TypeArguments[0];
-            PropertyAccess = OriginalType.Name;
-        }
-
-
-        public ITypeSymbol OriginalType { get; }
-        public INamedTypeSymbol ConverterType { get; }
-        public ITypeSymbol T { get; }
-        public string PropertyAccess { get; }
     }
 }
