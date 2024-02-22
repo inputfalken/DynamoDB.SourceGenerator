@@ -116,63 +116,7 @@ public static class TypeExtensions
         Func<ITypeSymbol, string> implementation;
         if (Equals(comparer, SymbolEqualityComparer.IncludeNullability))
         {
-            string NullableAnnotation(ITypeSymbol x)
-            {
-                return x switch
-                {
-                    // Could cause a NullReference exception but very unlikely since all IArrayTypeSymbol should inherit from Array.
-                    IArrayTypeSymbol
-                        {
-                            NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated
-                        } array => $"NN_{array.BaseType!.Name}_{NullableAnnotation(array.ElementType)}",
-                    IArrayTypeSymbol { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None } array =>
-                        $"{array.BaseType!.Name}_{NullableAnnotation(array.ElementType)}",
-                    IArrayTypeSymbol { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated } array
-                        => $"N_{array.BaseType!.Name}_{NullableAnnotation(array.ElementType)}",
-                    INamedTypeSymbol
-                        {
-                            OriginalDefinition.SpecialType: not SpecialType.System_Nullable_T,
-                            TypeArguments.Length : > 0, IsTupleType: false
-                        } namedTypeSymbol
-                        when string.Join("_", namedTypeSymbol.TypeArguments.Select(NullableAnnotation)) is var a
-                        => namedTypeSymbol switch
-                        {
-                            { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated } =>
-                                $"NN_{namedTypeSymbol.Name}_{a}",
-                            { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None } =>
-                                $"{namedTypeSymbol.Name}_{a}",
-                            { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated } =>
-                                $"N_{namedTypeSymbol.Name}_{a}",
-                            _ => throw new NotImplementedException(ExceptionMessage(namedTypeSymbol))
-                        },
-                    INamedTypeSymbol { IsTupleType: true } single when string.Join("_",
-                            single.TupleElements.Select(y => $"{y.Name}_{NullableAnnotation(y.Type)}")) is var tuple =>
-                        single switch
-                        {
-                            { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None } => tuple,
-                            { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated } => $"N_{tuple}",
-                            {
-                                    NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated
-                                } => $"NN_{tuple}",
-                            _ => throw new NotImplementedException(ExceptionMessage(single))
-                        },
-                    { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated } =>
-                        $"NN_{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
-                    { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None } =>
-                        $"{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
-                    { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated } =>
-                        $"N_{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
-                    _ => throw new NotImplementedException(ExceptionMessage(x))
-                };
-            }
-
-            implementation = x =>
-            {
-                if (dict.TryGetValue(x, out var res))
-                    return res;
-
-                return dict[x] = $"{NullableAnnotation(x)}{suffix}";
-            };
+            implementation = x => dict.TryGetValue(x, out var res) ? res : dict[x] = $"{NullableAnnotation(x)}{suffix}";
         }
         else
         {
@@ -191,8 +135,58 @@ public static class TypeExtensions
 
         return implementation;
 
-        static string ExceptionMessage(ITypeSymbol typeSymbol) =>
-            $"Could not apply naming suffix on type: {typeSymbol.ToDisplayString()}";
+        static string NullableAnnotation(ITypeSymbol x)
+        {
+            return x switch
+            {
+                // Could cause a NullReference exception but very unlikely since all IArrayTypeSymbol should inherit from Array.
+                IArrayTypeSymbol
+                    {
+                        NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated
+                    } array => $"NN_{array.BaseType!.Name}_{NullableAnnotation(array.ElementType)}",
+                IArrayTypeSymbol { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None } array =>
+                    $"{array.BaseType!.Name}_{NullableAnnotation(array.ElementType)}",
+                IArrayTypeSymbol { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated } array
+                    => $"N_{array.BaseType!.Name}_{NullableAnnotation(array.ElementType)}",
+                INamedTypeSymbol
+                    {
+                        OriginalDefinition.SpecialType: not SpecialType.System_Nullable_T,
+                        TypeArguments.Length : > 0, IsTupleType: false
+                    } namedTypeSymbol
+                    when string.Join("_", namedTypeSymbol.TypeArguments.Select(NullableAnnotation)) is var a
+                    => namedTypeSymbol switch
+                    {
+                        { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated } =>
+                            $"NN_{namedTypeSymbol.Name}_{a}",
+                        { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None } =>
+                            $"{namedTypeSymbol.Name}_{a}",
+                        { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated } =>
+                            $"N_{namedTypeSymbol.Name}_{a}",
+                        _ => throw new NotImplementedException(ExceptionMessage(namedTypeSymbol))
+                    },
+                INamedTypeSymbol { IsTupleType: true } single when string.Join("_",
+                        single.TupleElements.Select(y => $"{y.Name}_{NullableAnnotation(y.Type)}")) is var tuple =>
+                    single switch
+                    {
+                        { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None } => tuple,
+                        { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated } => $"N_{tuple}",
+                        {
+                                NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated
+                            } => $"NN_{tuple}",
+                        _ => throw new NotImplementedException(ExceptionMessage(single))
+                    },
+                { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated } =>
+                    $"NN_{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
+                { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None } =>
+                    $"{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
+                { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated } =>
+                    $"N_{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
+                _ => throw new NotImplementedException(ExceptionMessage(x))
+            };
+
+            static string ExceptionMessage(ITypeSymbol typeSymbol) =>
+                $"Could not apply naming suffix on type: {typeSymbol.ToDisplayString()}";
+        }
     }
 
     public static CodeFactory ToConversion(this IEnumerable<string> enumerable)
