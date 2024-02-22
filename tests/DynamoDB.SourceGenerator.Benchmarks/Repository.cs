@@ -1,3 +1,4 @@
+using System.Net.Sockets;
 using DynamoDB.SourceGenerator.Benchmarks.Models;
 using DynamoDBGenerator.Attributes;
 
