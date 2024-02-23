@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
@@ -19,14 +20,14 @@ public static class KeyMarshaller
         var expression = $"{keyReference} is {expectedType} {{ }} {reference}";
 
         var innerContent = $"if ({expression}) "
-            .CreateBlock($@"{DictionaryName}.Add(""{dataMember.AttributeName}"", {Marshaller.InvokeMarshallerMethod(dataMember.DataMember.Type, reference, $"nameof({keyReference})", options)});")
-            .Concat($"else if ({keyReference} is null) ".CreateBlock($@"throw {ExceptionHelper.KeysArgumentNullExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"");"))
-            .Concat("else".CreateBlock($@"throw {ExceptionHelper.KeysInvalidConversionExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"", {keyReference}, ""{expectedType}"");"));
+            .CreateScope($@"{DictionaryName}.Add(""{dataMember.AttributeName}"", {Marshaller.InvokeMarshallerMethod(dataMember.DataMember.Type, reference, $"nameof({keyReference})", options)});")
+            .Concat($"else if ({keyReference} is null) ".CreateScope($@"throw {ExceptionHelper.KeysArgumentNullExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"");"))
+            .Concat("else".CreateScope($@"throw {ExceptionHelper.KeysInvalidConversionExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"", {keyReference}, ""{expectedType}"");"));
 
-        return $"if({validateReference})".CreateBlock(innerContent);
+        return $"if({validateReference})".CreateScope(innerContent);
 
     }
-    private static IEnumerable<string> CreateBody(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
+    private static IEnumerable<string> MethodBody(ITypeSymbol typeSymbol, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
         var keyStructure = DynamoDbDataMember.GetKeyStructure(fn(typeSymbol));
         if (keyStructure is null)
@@ -39,29 +40,29 @@ public static class KeyMarshaller
         yield return $"var {DictionaryName} = new Dictionary<string, AttributeValue>(2);";
 
         var switchBody = GetAssignments(keyStructure.Value, options)
-            .SelectMany(x => $"case {(x.IndexName is null ? "null" : @$"""{x.IndexName}""")}:".CreateBlock(x.assignments).Append("break;"))
+            .SelectMany(x => $"case {(x.IndexName is null ? "null" : @$"""{x.IndexName}""")}:".CreateScope(x.assignments).Append("break;"))
             .Append($"default: throw {ExceptionHelper.MissMatchedIndexNameExceptionMethod}(nameof(index), index);");
 
-        foreach (var s in "switch (index)".CreateBlock(switchBody))
+        foreach (var s in "switch (index)".CreateScope(switchBody))
             yield return s;
 
         var validateSwitch = $"if ({EnforcePkReference} && {EnforceRkReference} && {DictionaryName}.Count == 2)"
-            .CreateBlock($"return {DictionaryName};")
-            .Concat($"if ({EnforcePkReference} && {EnforceRkReference} is false && {DictionaryName}.Count == 1)".CreateBlock($"return {DictionaryName};"))
-            .Concat($"if ({EnforcePkReference} is false && {EnforceRkReference} && {DictionaryName}.Count == 1)".CreateBlock($"return {DictionaryName};"))
-            .Concat($"if ({EnforcePkReference} && {EnforceRkReference} && {DictionaryName}.Count == 1)".CreateBlock($"throw {ExceptionHelper.KeysMissingDynamoDBAttributeExceptionMethod}({PkReference}, {RkReference});"))
+            .CreateScope($"return {DictionaryName};")
+            .Concat($"if ({EnforcePkReference} && {EnforceRkReference} is false && {DictionaryName}.Count == 1)".CreateScope($"return {DictionaryName};"))
+            .Concat($"if ({EnforcePkReference} is false && {EnforceRkReference} && {DictionaryName}.Count == 1)".CreateScope($"return {DictionaryName};"))
+            .Concat($"if ({EnforcePkReference} && {EnforceRkReference} && {DictionaryName}.Count == 1)".CreateScope($"throw {ExceptionHelper.KeysMissingDynamoDBAttributeExceptionMethod}({PkReference}, {RkReference});"))
             .Append($"throw {ExceptionHelper.ShouldNeverHappenExceptionMethod}();");
 
         foreach (var s in validateSwitch)
             yield return s;
 
     }
-    internal static IEnumerable<string> CreateKeys(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
+    internal static IEnumerable<string> CreateKeys(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
     {
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability);
 
         return arguments
-            .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, y => StaticAttributeValueDictionaryKeys(y, getDynamoDbProperties, options), hashSet)).SelectMany(x => x.Code);
+            .SelectMany(x => CodeFactory.Create(x.EntityTypeSymbol, y => StaticAttributeValueDictionaryKeys(y, getDynamoDbProperties, options), hashSet));
     }
     private static IEnumerable<(string? IndexName, IEnumerable<string> assignments)> GetAssignments(DynamoDBKeyStructure keyStructure, MarshallerOptions options)
     {
@@ -93,11 +94,11 @@ public static class KeyMarshaller
     {
 
         var expression = $"{validateReference} && {keyReference} is not null";
-        return $"if ({expression})".CreateBlock($"throw {ExceptionHelper.KeysValueWithNoCorrespondenceMethod}(\"{keyReference}\", {keyReference});");
+        return $"if ({expression})".CreateScope($"throw {ExceptionHelper.KeysValueWithNoCorrespondenceMethod}(\"{keyReference}\", {keyReference});");
     }
     internal static IEnumerable<string> IndexKeyMarshallerRootSignature(ITypeSymbol typeSymbol)
     {
-        return $"public {Constants.DynamoDBGenerator.Marshaller.IndexKeyMarshallerInterface} IndexKeyMarshaller(string index)".CreateBlock(
+        return $"public {Constants.DynamoDBGenerator.Marshaller.IndexKeyMarshallerInterface} IndexKeyMarshaller(string index)".CreateScope(
             "ArgumentNullException.ThrowIfNull(index);",
             $"return new {IndexKeyMarshallerImplementationTypeName}((pk, rk, ipk, irk, dm) => {MethodName(typeSymbol)}({MarshallerOptions.FieldReference}, pk, rk, ipk, irk, dm), index);"
         );
@@ -110,13 +111,13 @@ public static class KeyMarshaller
         return
             $"new {KeyMarshallerImplementationTypeName}((pk, rk, ipk, irk, dm) => {MethodName(typeSymbol)}({MarshallerOptions.FieldReference}, pk, rk, ipk, irk, dm))";
     }
-    private static Conversion StaticAttributeValueDictionaryKeys(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
+    private static CodeFactory StaticAttributeValueDictionaryKeys(ITypeSymbol typeSymbol, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
 
         var code = $"private static Dictionary<string, AttributeValue> {MethodName(typeSymbol)}({MarshallerOptions.Name} {MarshallerOptions.ParamReference}, object? {PkReference}, object? {RkReference}, bool {EnforcePkReference}, bool {EnforceRkReference}, string? index = null)"
-            .CreateBlock(CreateBody(typeSymbol, fn, options));
+            .CreateScope(MethodBody(typeSymbol, fn, options));
 
-        return new Conversion(code);
+        return new CodeFactory(code);
 
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
@@ -10,16 +11,16 @@ public static class AttributeExpressionName
     private const string ConstructorAttributeName = "nameRef";
 
     private static readonly Func<ITypeSymbol, string> TypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", SymbolEqualityComparer.Default);
-    internal static IEnumerable<string> CreateClasses(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
+    internal static IEnumerable<string> CreateClasses(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
     {
         // Using _comparer can double classes when there's a None nullable property mixed with a nullable property
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
 
         return arguments
-            .SelectMany(x => Conversion.ConversionMethods(x.EntityTypeSymbol, y => CreateStruct(y, getDynamoDbProperties, options), hashSet)).SelectMany(x => x.Code);
+            .SelectMany(x => CodeFactory.Create(x.EntityTypeSymbol, y => CreateStruct(y, getDynamoDbProperties, options), hashSet));
 
     }
-    private static IEnumerable<string> CreateCode(
+    private static IEnumerable<string> TypeContent(
         ITypeSymbol typeSymbol,
         (bool IsUnknown, DynamoDbDataMember DDB, string NameRef, string AttributeReference, string AttributeInterfaceName)[] dataMembers,
         string structName)
@@ -35,7 +36,7 @@ public static class AttributeExpressionName
             })
             .Append($@"{self} = new(() => {ConstructorAttributeName} ?? throw new NotImplementedException(""Root element AttributeExpressionName reference.""));");
 
-        foreach (var fieldAssignment in $"public {structName}(string? {ConstructorAttributeName})".CreateBlock(constructorFieldAssignments))
+        foreach (var fieldAssignment in $"public {structName}(string? {ConstructorAttributeName})".CreateScope(constructorFieldAssignments))
             yield return fieldAssignment;
 
         foreach (var fieldDeclaration in dataMembers)
@@ -61,12 +62,12 @@ public static class AttributeExpressionName
             )
             .Append($@"if ({self}.IsValueCreated) yield return new ({self}.Value, ""{typeSymbol.Name}"");");
 
-        foreach (var s in $"IEnumerable<KeyValuePair<string, string>> {AttributeExpressionNameTrackerInterface}.{AttributeExpressionNameTrackerInterfaceAccessedNames}()".CreateBlock(yields))
+        foreach (var s in $"IEnumerable<KeyValuePair<string, string>> {AttributeExpressionNameTrackerInterface}.{AttributeExpressionNameTrackerInterfaceAccessedNames}()".CreateScope(yields))
             yield return s;
 
         yield return $"public override string ToString() => {self}.Value;";
     }
-    private static Conversion CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
+    private static CodeFactory CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
         var dataMembers = fn(typeSymbol)
             .Select(x => (
@@ -80,8 +81,8 @@ public static class AttributeExpressionName
 
         var structName = TypeName(typeSymbol);
 
-        var @class = $"public readonly struct {structName} : {AttributeExpressionNameTrackerInterface}".CreateBlock(CreateCode(typeSymbol, dataMembers, structName));
-        return new Conversion(@class, dataMembers.Where(x => x.IsUnknown).Select(x => x.DDB.DataMember.Type));
+        var @class = $"public readonly struct {structName} : {AttributeExpressionNameTrackerInterface}".CreateScope(TypeContent(typeSymbol, dataMembers, structName));
+        return new CodeFactory(@class, dataMembers.Where(x => x.IsUnknown).Select(x => x.DDB.DataMember.Type));
 
     }
 

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
@@ -9,7 +10,7 @@ public static class AttributeExpressionValue
     private static readonly Func<ITypeSymbol, string> TypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Values", SymbolEqualityComparer.Default);
 
     private const string ValueProvider = "valueIdProvider";
-    private static IEnumerable<string> CreateCode(
+    private static IEnumerable<string> TypeContents(
         ITypeSymbol typeSymbol,
         (bool IsUnknown, DynamoDbDataMember DDB, string ValueRef, string AttributeReference, string AttributeInterfaceName)[] dataMembers,
         string structName,
@@ -24,7 +25,7 @@ public static class AttributeExpressionValue
                 : $"{x.ValueRef} = new ({ValueProvider});")
             .Append($"{self} = new({ValueProvider});")
             .Append($"{MarshallerOptions.FieldReference} = {MarshallerOptions.ParamReference};");
-        foreach (var fieldAssignment in $"public {structName}(Func<string> {ValueProvider}, {MarshallerOptions.Name} options)".CreateBlock(constructorFieldAssignments))
+        foreach (var fieldAssignment in $"public {structName}(Func<string> {ValueProvider}, {MarshallerOptions.Name} options)".CreateScope(constructorFieldAssignments))
             yield return fieldAssignment;
 
         yield return MarshallerOptions.FieldDeclaration;
@@ -48,11 +49,11 @@ public static class AttributeExpressionValue
         var enumerable = Enumerable.Empty<string>();
         if (typeSymbol.IsNullable())
         {
-            enumerable = $"if ({param} is null)".CreateBlock($"yield return new ({self}.Value, {AttributeValueUtilityFactory.Null});", "yield break;");
+            enumerable = $"if ({param} is null)".CreateScope($"yield return new ({self}.Value, {AttributeValueUtilityFactory.Null});", "yield break;");
         }
         else if (typeSymbol.IsReferenceType)
         {
-            enumerable = $"if ({param} is null)".CreateBlock($"throw {ExceptionHelper.NullExceptionMethod}(\"{structName}\");");
+            enumerable = $"if ({param} is null)".CreateScope($"throw {ExceptionHelper.NullExceptionMethod}(\"{structName}\");");
         }
 
         var yields = enumerable.Concat(
@@ -70,20 +71,20 @@ public static class AttributeExpressionValue
 
         foreach (var yield in
                  $"IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({typeSymbol.Representation().annotated} entity)"
-                     .CreateBlock(yields))
+                     .CreateScope(yields))
             yield return yield;
 
         yield return $"public override string ToString() => {self}.Value;";
     }
-    internal static IEnumerable<string> CreateExpressionAttributeValue(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
+    internal static IEnumerable<string> CreateExpressionAttributeValue(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
     {
         // Using _comparer can double classes when there's a None nullable property mixed with a nullable property
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
 
         return arguments
-            .SelectMany(x => Conversion.ConversionMethods(x.ArgumentType, y => CreateStruct(y, getDynamoDbProperties, options), hashSet)).SelectMany(x => x.Code);
+            .SelectMany(x => CodeFactory.Create(x.ArgumentType, y => CreateStruct(y, getDynamoDbProperties, options), hashSet));
     }
-    private static Conversion CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, IReadOnlyList<DynamoDbDataMember>> fn, MarshallerOptions options)
+    private static CodeFactory CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
         var dataMembers = fn(typeSymbol)
             .Select(x =>
@@ -101,16 +102,16 @@ public static class AttributeExpressionValue
         var structName = TypeName(typeSymbol);
         var interfaceName = $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{typeSymbol.Representation().annotated}>";
 
-        var @struct = $"public readonly struct {structName} : {interfaceName}".CreateBlock(CreateCode(typeSymbol, dataMembers, structName, interfaceName, options));
+        var @struct = $"public readonly struct {structName} : {interfaceName}".CreateScope(TypeContents(typeSymbol, dataMembers, structName, interfaceName, options));
 
-        return new Conversion(@struct, dataMembers.Where(x => x.IsUnknown).Select(x => x.DDB.DataMember.Type));
+        return new CodeFactory(@struct, dataMembers.Where(x => x.IsUnknown).Select(x => x.DDB.DataMember.Type));
 
     }
 
     internal static (IEnumerable<string> method, string typeName) RootSignature(ITypeSymbol typeSymbol)
     {
         var typeName = TypeName(typeSymbol);
-        return ($"public {typeName} {Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerMethodName}()".CreateBlock(
+        return ($"public {typeName} {Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerMethodName}()".CreateScope(
             "var incrementer = new DynamoExpressionValueIncrementer();",
             $"return new {typeName}(incrementer.GetNext, {MarshallerOptions.FieldReference});"
         ), typeName);

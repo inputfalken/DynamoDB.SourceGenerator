@@ -9,21 +9,21 @@ public readonly struct DynamoDbDataMember
 {
     public DynamoDbDataMember(in DataMember dataMember, IReadOnlyList<AttributeData> attributeData)
     {
-        Attributes = attributeData;
-        AttributeName = Attributes
+        _attributes = attributeData;
+        AttributeName = _attributes
             .Select(AttributeNameSelector)
             .FirstOrDefault(x => string.IsNullOrWhiteSpace(x) is false) ?? dataMember.Name;
         DataMember = dataMember;
     }
 
-    private static string? AttributeNameSelector(AttributeData attributeData1)
+    private static string? AttributeNameSelector(AttributeData attributeData)
     {
-        return attributeData1 switch
+        return attributeData switch
         {
             {AttributeClass: null} => null,
-            {AttributeClass.Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBHashKey, ConstructorArguments.Length: 1} when FilterString(attributeData1.ConstructorArguments[0]) is { } attributeName => attributeName,
-            {AttributeClass.Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBRangeKey, ConstructorArguments.Length: 1} when FilterString(attributeData1.ConstructorArguments[0]) is { } attributeName => attributeName,
-            {AttributeClass.Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBProperty, ConstructorArguments.Length: 1} when FilterString(attributeData1.ConstructorArguments[0]) is { } attributeName => attributeName,
+            {AttributeClass.Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBHashKey, ConstructorArguments.Length: 1} when FilterString(attributeData.ConstructorArguments[0]) is { } attributeName => attributeName,
+            {AttributeClass.Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBRangeKey, ConstructorArguments.Length: 1} when FilterString(attributeData.ConstructorArguments[0]) is { } attributeName => attributeName,
+            {AttributeClass.Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBProperty, ConstructorArguments.Length: 1} when FilterString(attributeData.ConstructorArguments[0]) is { } attributeName => attributeName,
             {
                 AttributeClass.Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBHashKey or Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBRangeKey or Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBProperty,
                 ConstructorArguments.Length: > 0
@@ -44,7 +44,7 @@ public readonly struct DynamoDbDataMember
     /// <inheritdoc cref="Types.DataMember" />
     public DataMember DataMember { get; }
 
-    private IReadOnlyList<AttributeData> Attributes { get; }
+    private readonly IReadOnlyList<AttributeData> _attributes;
 
 
     public static AttributeData[] GetDynamoDbAttributes(ISymbol symbol)
@@ -57,13 +57,12 @@ public readonly struct DynamoDbDataMember
     public static bool IsIgnored(AttributeData[] attributes)
     {
         return attributes.Length is not 0 && attributes.Any(x => x.AttributeClass is {Name: Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBIgnore});
-
     }
 
     public static DynamoDBKeyStructure? GetKeyStructure(IEnumerable<DynamoDbDataMember> members)
     {
         var items = members
-            .SelectMany(x => x.Attributes, (x, y) => (DataMember: x, Attribute: y))
+            .SelectMany(x => x._attributes, (x, y) => (DataMember: x, Attribute: y))
             .ToArray();
 
         var partitionKey = items

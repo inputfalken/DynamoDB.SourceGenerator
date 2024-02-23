@@ -40,8 +40,10 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
                 ? null
                 : $"{typeSymbol.ContainingNamespace}.";
 
-            context.AddSource($"{typeNamespace}{typeSymbol.Name}.g",
-                string.Join(Constants.NewLine, CreateFileContent(typeSymbol, compilation)));
+            context.AddSource(
+                $"{typeNamespace}{typeSymbol.Name}.g",
+                string.Join(Constants.NewLine, CreateFileContent(typeSymbol, compilation))
+            );
         }
     }
 
@@ -62,10 +64,10 @@ using {Constants.DynamoDBGenerator.Namespace.InternalFullName};";
 
         var (options, args) = CreateArguments(type, compilation);
         var classContent =
-            $"public sealed partial class {type.Name}".CreateBlock(DynamoDbMarshaller.CreateRepository(args, options));
+            $"public sealed partial class {type.Name}".CreateScope(DynamoDbMarshaller.CreateRepository(args, options));
         var content = type.ContainingNamespace.IsGlobalNamespace
             ? classContent
-            : $"namespace {type.ContainingNamespace.ToDisplayString()}".CreateBlock(classContent);
+            : $"namespace {type.ContainingNamespace.ToDisplayString()}".CreateScope(classContent);
 
         foreach (var s in content)
             yield return s;
