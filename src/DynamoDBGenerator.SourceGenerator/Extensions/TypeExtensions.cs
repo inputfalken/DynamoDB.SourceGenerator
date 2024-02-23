@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
@@ -37,17 +38,16 @@ public static class TypeExtensions
         }
     }
 
-    private static readonly Dictionary<ITypeSymbol, (string, string)> RepresentationDictionary =
+    private static readonly ConcurrentDictionary<ITypeSymbol, (string, string)> RepresentationDictionary =
         new(SymbolEqualityComparer.IncludeNullability);
 
     public static (string annotated, string original) Representation(this ITypeSymbol typeSymbol)
     {
-        if (RepresentationDictionary.TryGetValue(typeSymbol, out var res))
-            return res;
-
-        var displayString = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-
-        return RepresentationDictionary[typeSymbol] = (ToString(typeSymbol, displayString), displayString);
+        return RepresentationDictionary.GetOrAdd(typeSymbol, x =>
+        {
+            var displayString = x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            return RepresentationDictionary[typeSymbol] = (ToString(typeSymbol, displayString), displayString);
+        });
 
         static string ToString(ITypeSymbol x, string displayString)
         {
@@ -111,27 +111,17 @@ public static class TypeExtensions
     public static Func<ITypeSymbol, string> SuffixedTypeSymbolNameFactory(string? suffix,
         IEqualityComparer<ISymbol?> comparer)
     {
-        var dict = new Dictionary<ITypeSymbol, string>(comparer);
+        var dict = new ConcurrentDictionary<ITypeSymbol, string>(comparer);
 
         Func<ITypeSymbol, string> implementation;
         if (Equals(comparer, SymbolEqualityComparer.IncludeNullability))
-        {
-            implementation = x => dict.TryGetValue(x, out var res) ? res : dict[x] = $"{NullableAnnotation(x)}{suffix}";
-        }
+            implementation = x => dict.GetOrAdd(x, y => $"{NullableAnnotation(y)}{suffix}");
         else
-        {
-            implementation = x =>
-            {
-                if (dict.TryGetValue(x, out var res))
-                    return res;
-
-                var displayString = x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-                // Could cause a NullReference exception but very unlikely since all IArrayTypeSymbol should inherit from Array.
-                return dict[x] = x is IArrayTypeSymbol
-                    ? $"{displayString}_{x.BaseType!.ToDisplayString()}{suffix}"
-                    : $"{displayString.ToAlphaNumericMethodName()}{suffix}";
-            };
-        }
+            implementation = x => dict.GetOrAdd(x,
+                y => y is IArrayTypeSymbol
+                    ? $"{y.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}_{y.BaseType!.ToDisplayString()}{suffix}"
+                    : $"{y.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}{suffix}"
+            );
 
         return implementation;
 
