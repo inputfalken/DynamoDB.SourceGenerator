@@ -1,8 +1,12 @@
 using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.DataModel;
 using AutoFixture;
 using DynamoDBGenerator.Attributes;
-using DynamoDBGenerator.Extensions;
-namespace DynamoDBGenerator.SourceGenerator.Tests.Extensions;
+using Dynatello.Builders;
+using Dynatello.Builders.Types;
+using FluentAssertions;
+
+namespace Dynatello.Tests;
 
 [DynamoDBMarshaller(typeof(User))]
 public partial class ToPutItemRequestTests
@@ -13,7 +17,9 @@ public partial class ToPutItemRequestTests
     public void Without_ConditionExpression_ShouldNotIncludeExpressionFields()
     {
         var user = _fixture.Create<User>();
-        var putItemRequest = UserMarshaller.ToPutItemRequest(user, ReturnValue.NONE, "TABLE");
+        var putItemRequest = UserMarshaller.OnTable("TABLE")
+            .ToPutRequestBuilder()
+            .Build(user);
 
         putItemRequest.ConditionExpression.Should().BeNullOrWhiteSpace();
         putItemRequest.ExpressionAttributeNames.Should().BeNullOrEmpty();
@@ -28,7 +34,7 @@ public partial class ToPutItemRequestTests
             x.Key.Should().Be(nameof(user.Metadata.ModifiedAt));
             x.Value.S.Should().Be(user.Metadata.ModifiedAt.ToString("O"));
         });
-        putItemRequest.ReturnValues.Should().Be(ReturnValue.NONE);
+        putItemRequest.ReturnValues.Should().Be(null);
         putItemRequest.TableName.Should().Be("TABLE");
     }
 
@@ -36,7 +42,11 @@ public partial class ToPutItemRequestTests
     public void With_ConditionExpression_ShouldIncludeExpressionFields()
     {
         var user = _fixture.Create<User>();
-        var putItemRequest = UserMarshaller.ToPutItemRequest(user, (x, y) => $"{x.Email} <> {y.Email} AND {x.Firstname} = {y.Firstname}", ReturnValue.NONE, "TABLE");
+        var putItemRequest = UserMarshaller
+            .OnTable("TABLE")
+            .WithConditionExpression((x, y) => $"{x.Email} <> {y.Email} AND {x.Firstname} = {y.Firstname}")
+            .ToPutRequestBuilder()
+            .Build(user);
 
         putItemRequest.ConditionExpression.Should().Be("#Email <> :p1 AND #Firstname = :p2");
         putItemRequest.ExpressionAttributeNames.Should().HaveCount(2);
@@ -55,10 +65,9 @@ public partial class ToPutItemRequestTests
             x.Key.Should().Be(nameof(user.Metadata.ModifiedAt));
             x.Value.S.Should().Be(user.Metadata.ModifiedAt.ToString("O"));
         });
-        putItemRequest.ReturnValues.Should().Be(ReturnValue.NONE);
+        putItemRequest.ReturnValues.Should().Be(null);
         putItemRequest.TableName.Should().Be("TABLE");
     }
-
 }
 
 public class User

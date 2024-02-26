@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <PackageVersion>0.0.0</PackageVersion>
+        <Title>Dynatello</Title>
+        <Authors>Robert Andersson</Authors>
+        <Description>Contains functionality to improve the convinience when working the DynamoDB.SourceGenerator.</Description>
+        <Copyright>Robert Anderson</Copyright>
+        <PackageProjectUrl>https://github.com/inputfalken/DynamoDB.SourceGenerator</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/inputfalken/DynamoDB.SourceGenerator</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="DynamoDBGenerator" Version="0.7.4"/>
+        <PackageReference Include="DynamoDBGenerator.SourceGenerator" Version="0.7.4"/>
+    </ItemGroup>
+
+</Project>
