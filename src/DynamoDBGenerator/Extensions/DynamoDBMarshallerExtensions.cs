@@ -11,23 +11,23 @@ namespace DynamoDBGenerator.Extensions;
 /// </summary>
 public static class DynamoDBMarshallerExtensions
 {
-
     /// <summary>
     /// Creates an <see cref="IAttributeExpression"/> based on the expressions being built inside <paramref name="expressionBuilders"/>
     /// The expression can be accessed in the same order as you passed arguments to <paramref name="expressionBuilders"/>.
     /// </summary>
-    public static IAttributeExpression ToAttributeExpression<T, TArg, TReferences, TArgumentReferences>(
-        this IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> item,
+    public static IAttributeExpression ToAttributeExpression<TArg, TReferences, TArgumentReferences>(
+        Func<TReferences> entityReferences,
+        Func<TArgumentReferences> argumentReferences,
         TArg arg,
         params Func<TReferences, TArgumentReferences, string>[] expressionBuilders
     )
         where TReferences : IAttributeExpressionNameTracker
         where TArgumentReferences : IAttributeExpressionValueTracker<TArg>
     {
+        var nameTracker = entityReferences();
+        var valueTracker = argumentReferences();
 
-        var nameTracker = item.AttributeExpressionNameTracker();
-        var valueTracker = item.AttributeExpressionValueTracker();
-        var expressions = Expressions(nameTracker, valueTracker, expressionBuilders).ToArray();
+        var expressions = Expressions(nameTracker, valueTracker, expressionBuilders);
 
         return new AttributeExpression(
             Expressions: expressions,
@@ -35,7 +35,8 @@ public static class DynamoDBMarshallerExtensions
             Names: CreateDictionary(nameTracker.AccessedNames())
         );
 
-        static Dictionary<string, TValue> CreateDictionary<TValue>(IEnumerable<KeyValuePair<string, TValue>> keyValuePairs)
+        static Dictionary<string, TValue> CreateDictionary<TValue>(
+            IEnumerable<KeyValuePair<string, TValue>> keyValuePairs)
         {
             var dict = new Dictionary<string, TValue>();
             foreach (var keyValuePair in keyValuePairs)
@@ -44,12 +45,34 @@ public static class DynamoDBMarshallerExtensions
             return dict;
         }
 
-        static IEnumerable<string> Expressions(TReferences references, TArgumentReferences argumentReferences, IEnumerable<Func<TReferences, TArgumentReferences, string>> expressionBuilders)
+        static string[] Expressions(
+            TReferences references,
+            TArgumentReferences argumentReferences,
+            Func<TReferences, TArgumentReferences, string>[] expressionBuilders)
         {
-            foreach (var expressionBuilder in expressionBuilders)
-                yield return expressionBuilder(references, argumentReferences);
-        }
+            var arr = new string[expressionBuilders.Length];
+            for (var i = 0; i < expressionBuilders.Length; i++) 
+                arr[i] = expressionBuilders[i](references, argumentReferences);
 
+            return arr;
+        }
+    }
+
+    /// <inheritdoc cref="ToAttributeExpression{TArg,TReferences,TArgumentReferences}"/>
+    public static IAttributeExpression ToAttributeExpression<T, TArg, TReferences, TArgumentReferences>(
+        this IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> item,
+        TArg arg,
+        params Func<TReferences, TArgumentReferences, string>[] expressionBuilders
+    )
+        where TReferences : IAttributeExpressionNameTracker
+        where TArgumentReferences : IAttributeExpressionValueTracker<TArg>
+    {
+        return ToAttributeExpression(
+            item.AttributeExpressionNameTracker,
+            item.AttributeExpressionValueTracker,
+            arg,
+            expressionBuilders
+        );
     }
 
     /// <summary>
