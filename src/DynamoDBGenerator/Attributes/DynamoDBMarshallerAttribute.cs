@@ -24,7 +24,7 @@ namespace DynamoDBGenerator.Attributes;
 ///         }
 ///     </code>
 /// </example>
-[AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = true)]
 public class DynamoDBMarshallerAttribute : Attribute
 {
     // ReSharper disable once NotAccessedField.Local
