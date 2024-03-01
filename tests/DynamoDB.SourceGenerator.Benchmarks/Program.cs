@@ -21,7 +21,6 @@ BenchmarkRunner.Run<Marshalling>();
 [MemoryDiagnoser]
 public class Marshalling
 {
-    private readonly Repository _repository;
     private readonly DynamoDBContext _context;
     private readonly DynamoDBOperationConfig _dynamoDbOperationConfig;
     private readonly PersonEntity _singleElement;
@@ -33,7 +32,6 @@ public class Marshalling
         fixture.Behaviors.OfType<ThrowingRecursionBehavior>().ToList().ForEach(b => fixture.Behaviors.Remove(b));
         fixture.Behaviors.Add(new OmitOnRecursionBehavior());
 
-        _repository = new();
         _context = new(new AmazonDynamoDBClient(RegionEndpoint.EUWest1));
         _dynamoDbOperationConfig = new()
         {
@@ -54,7 +52,7 @@ public class Marshalling
     [Benchmark]
     public Dictionary<string, AttributeValue> Marshall_SG()
     {
-        return _repository.PersonEntityMarshaller.Marshall(_singleElement);
+        return Repository.PersonEntityMarshaller.Marshall(_singleElement);
     }
     
     [Benchmark]
@@ -66,7 +64,7 @@ public class Marshalling
     [Benchmark]
     public PersonEntity Unmarshall_SG()
     {
-        return _repository.PersonEntityMarshaller.Unmarshall(_attributeValues);
+        return Repository.PersonEntityMarshaller.Unmarshall(_attributeValues);
     }
 
 }

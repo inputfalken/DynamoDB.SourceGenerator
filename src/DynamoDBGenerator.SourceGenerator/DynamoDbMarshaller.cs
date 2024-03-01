@@ -38,8 +38,8 @@ public static class DynamoDbMarshaller
             yield return options.TryInstantiate() switch
             {
                 {} arg =>
-                    $"public {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.PropertyName} {{ get; }} = new {argument.ImplementationName}({arg});",
-                null => $"public {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.PropertyName}({MarshallerOptions.Name} options) => new {argument.ImplementationName}(options);"
+                    $"public static {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.PropertyName} {{ get; }} = new {argument.ImplementationName}({arg});",
+                null => $"public static {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.PropertyName}({MarshallerOptions.Name} options) => new {argument.ImplementationName}(options);"
             };
 
             foreach (var s in classImplementation)
