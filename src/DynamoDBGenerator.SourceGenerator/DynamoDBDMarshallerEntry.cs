@@ -36,12 +36,8 @@ public class DynamoDBDMarshallerEntry : IIncrementalGenerator
 
         foreach (var typeSymbol in compilation.GetTypeSymbols(classDeclarationSyntax))
         {
-            var typeNamespace = typeSymbol.ContainingNamespace.IsGlobalNamespace
-                ? null
-                : $"{typeSymbol.ContainingNamespace}.";
-
             context.AddSource(
-                $"{typeNamespace}{typeSymbol.Name}.g",
+                $"{typeSymbol.ToDisplayString()}.g",
                 string.Join(Constants.NewLine, CreateFileContent(typeSymbol, compilation))
             );
         }
@@ -64,15 +60,26 @@ using {Constants.DynamoDBGenerator.Namespace.InternalFullName};";
 
         var typeType = type switch
         {
-            {IsRecord: true} => "sealed partial record",
-            {TypeKind: TypeKind.Class} => "sealed partial class",
-            {TypeKind: TypeKind.Struct or TypeKind.Structure} => throw new NotImplementedException("Structs are not implemented yet."),
+            { IsRecord: true, TypeKind: TypeKind.Class, IsSealed: true } => "sealed partial record",
+            { IsRecord: true, TypeKind: TypeKind.Class, IsSealed: false } => "partial record",
+            { IsRecord: false, TypeKind: TypeKind.Class, IsSealed: true } => "sealed partial class",
+            { IsRecord: false, TypeKind: TypeKind.Class, IsSealed: false } => "partial class",
+            { IsRecord: true, TypeKind: TypeKind.Struct or TypeKind.Structure, IsReadOnly: true } => "readonly partial record struct",
+            { IsRecord: false, TypeKind: TypeKind.Struct or TypeKind.Structure, IsReadOnly: true } => "readonly partial struct",
+            { IsRecord: false, TypeKind: TypeKind.Struct or TypeKind.Structure, IsReadOnly: false } => "partial struct",
             _ => throw new NotImplementedException("Could not determine whether the type is a struct, class or record.")
         };
+
+        if (type.DeclaredAccessibility is not Accessibility.Public)
+            throw new NotImplementedException(
+                $"Generate accessibility of '{type.DeclaredAccessibility}' on '{type.ToDisplayParts()}' only '{type.DeclaredAccessibility == Accessibility.Public}' is supported."
+            );
+        var @static = type.IsStatic ? "static " : null;
         
-    var (options, args) = CreateArguments(type, compilation);
+
+        var (options, args) = CreateArguments(type, compilation);
         var classContent =
-            $"public {typeType} {type.Name}".CreateScope(DynamoDbMarshaller.CreateRepository(args, options));
+            $"public {@static}{typeType} {type.Name}".CreateScope(DynamoDbMarshaller.CreateRepository(args, options));
         var content = type.ContainingNamespace.IsGlobalNamespace
             ? classContent
             : $"namespace {type.ContainingNamespace.ToDisplayString()}".CreateScope(classContent);

@@ -4,7 +4,8 @@ using DynamoDBGenerator.Attributes;
 
 namespace DynamoDB.SourceGenerator.Benchmarks;
 
+
 [DynamoDBMarshaller(typeof(PersonEntity))]
-public partial class Repository
+public static partial class Repository
 {
 }
