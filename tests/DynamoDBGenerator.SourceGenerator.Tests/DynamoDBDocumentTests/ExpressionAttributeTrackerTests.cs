@@ -3,6 +3,7 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 
 [DynamoDBMarshaller(typeof(Person), ArgumentType = typeof((string firstName, DateTime timeStamp)), PropertyName = "PersonWithTupleArgument")]
 [DynamoDBMarshaller(typeof(Person))]
+[DynamoDBMarshaller(typeof(Person), PropertyName = "PrimitiveArgument", ArgumentType = typeof(string))]
 [DynamoDBMarshaller(typeof(SelfReferencingClass))]
 [DynamoDBMarshaller(typeof(ClassWithOverriddenAttributeName))]
 [DynamoDBMarshaller(typeof(InheritedClass))]
