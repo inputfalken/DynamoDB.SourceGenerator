@@ -1,3 +1,4 @@
+using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator;
 using Dynatello.Builders.Types;
 using static DynamoDBGenerator.Extensions.DynamoDBMarshallerExtensions;
@@ -13,6 +14,22 @@ public static class DynamoDBMarshallerExtensions
         where TArgumentReferences : IAttributeExpressionValueTracker<TArg>
     {
         return new TableAccess<T, TArg, TReferences, TArgumentReferences>(in tableName, in item);
+    }
+
+    internal static Func<TArg, Dictionary<string, AttributeValue>> ComposeKeys<TArg>
+    (
+        this IDynamoDBKeyMarshaller source,
+        Func<TArg, object> partitionKeySelector,
+        Func<TArg, object>? rangeKeySelector
+    )
+    {
+        return (partitionKeySelector, rangeKeySelector) switch
+        {
+            (not null, not null) => y => source.Keys(partitionKeySelector(y), rangeKeySelector(y)),
+            (not null, null) => y => source.PartitionKey(partitionKeySelector(y)),
+            (null, not null) => y => source.RangeKey(rangeKeySelector(y)),
+            (null, null) => throw new ArgumentNullException("")
+        };
     }
 
     internal static Func<TArg, IAttributeExpression> ComposeAttributeExpression<T, TArg, TReferences,

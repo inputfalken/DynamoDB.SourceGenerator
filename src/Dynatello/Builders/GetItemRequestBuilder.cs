@@ -4,10 +4,9 @@ using DynamoDBGenerator;
 
 namespace Dynatello.Builders;
 
-public readonly record struct GetItemRequestBuilder<TKey> where TKey : notnull
+public readonly record struct GetItemRequestBuilder<T> 
 {
-    private readonly IDynamoDBKeyMarshaller _keyMarshaller;
-    private readonly Func<IDynamoDBKeyMarshaller, TKey, Dictionary<string, AttributeValue>> _keysSelector;
+    private readonly Func< T, Dictionary<string, AttributeValue>> _keysSelector;
 
     /// <inheritdoc cref="GetItemRequest.TableName"/>
     public string TableName { get; init; }
@@ -19,21 +18,21 @@ public readonly record struct GetItemRequestBuilder<TKey> where TKey : notnull
     /// <inheritdoc cref="GetItemRequest.ReturnConsumedCapacity"/>
     public ReturnConsumedCapacity? ReturnConsumedCapacity { get; init; } = null;
 
-    internal GetItemRequestBuilder(string tableName, IDynamoDBKeyMarshaller keyMarshaller,
-        Func<IDynamoDBKeyMarshaller, TKey, Dictionary<string, AttributeValue>> keysSelector)
+    internal GetItemRequestBuilder(
+        string tableName,
+        Func<T, Dictionary<string, AttributeValue>> keysSelector)
     {
-        _keyMarshaller = keyMarshaller;
         _keysSelector = keysSelector;
         TableName = tableName;
     }
 
-    public GetItemRequest Build(TKey key)
+    public GetItemRequest Build(T arg)
     {
         var request = new GetItemRequest
         {
             ReturnConsumedCapacity = ReturnConsumedCapacity,
             TableName = TableName,
-            Key = _keysSelector(_keyMarshaller, key)
+            Key = _keysSelector(arg)
         };
 
         if (ConsistentRead is { } consistentRead)

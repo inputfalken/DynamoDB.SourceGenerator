@@ -30,33 +30,36 @@ public static class Extensions
         );
     }
 
-    public static GetItemRequestBuilder<TPartition> ToGetRequestBuilder<T, TArg, TReferences, TArgumentReferences, TPartition>(
+    public static GetItemRequestBuilder<TArg> ToGetRequestBuilder<T, TArg, TReferences, TArgumentReferences,
+        TPartition>(
         this TableAccess<T, TArg, TReferences, TArgumentReferences> source,
-        // ReSharper disable once UnusedParameter.Global is used to determined typing
-        Func<T, TPartition> partitionKeySelector)
+        Func<TArg, TPartition> partitionKeySelector)
         where TReferences : IAttributeExpressionNameTracker
         where TArgumentReferences : IAttributeExpressionValueTracker<TArg>
         where TPartition : notnull
     {
-        return new GetItemRequestBuilder<TPartition>(source.TableName, source.Item.PrimaryKeyMarshaller,
-            (x, y) => x.PartitionKey(y));
+        return new GetItemRequestBuilder<TArg>(
+            source.TableName,
+            source.Item.PrimaryKeyMarshaller.ComposeKeys<TArg>(y => partitionKeySelector(y), null)
+        );
     }
 
-    public static GetItemRequestBuilder<(TPartition partionKey, TRange rangeKey)> ToGetRequestBuilder<T, TArg,
+    public static GetItemRequestBuilder<TArg> ToGetRequestBuilder<T, TArg,
         TReferences, TArgumentReferences, TPartition, TRange>(
         this TableAccess<T, TArg, TReferences, TArgumentReferences> source,
-        // ReSharper disable once UnusedParameter.Global is used to determined typing
-        Func<T, TPartition> partitionKeySelector,
-        // ReSharper disable once UnusedParameter.Global is used to determined typing
-        Func<T, TRange> rangeKeySelector)
+        Func<TArg, TPartition> partitionKeySelector,
+        Func<TArg, TRange> rangeKeySelector)
         where TReferences : IAttributeExpressionNameTracker
         where TArgumentReferences : IAttributeExpressionValueTracker<TArg>
         where TPartition : notnull
         where TRange : notnull
     {
-        return new GetItemRequestBuilder<(TPartition partionKey, TRange rangeKey)>(source.TableName,
-            source.Item.PrimaryKeyMarshaller, (x, y) => x.Keys(y.partionKey, y.rangeKey));
+        return new GetItemRequestBuilder<TArg>(
+            source.TableName,
+            source.Item.PrimaryKeyMarshaller.ComposeKeys<TArg>(y => partitionKeySelector(y), y => rangeKeySelector(y))
+        );
     }
+
 
     public static UpdateRequestBuilder<TArg> ToUpdateItemRequestBuilder<T, TArg, TReferences, TArgumentReferences>(
         this UpdateExpression<T, TArg, TReferences, TArgumentReferences> source,

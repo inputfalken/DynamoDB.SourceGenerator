@@ -13,16 +13,16 @@ public class ToGetItemRequestTests
 
     static ToGetItemRequestTests()
     {
-        GetCatByPartitionKey = Cat.QueryWithCuteness.OnTable("TABLE").ToGetRequestBuilder(x => x.Id);
-        GetCatByCompositeKeys = Cat.QueryWithCuteness.OnTable("TABLE").ToGetRequestBuilder(x => x.Id, x => x.HomeId);
+        GetCatByPartitionKey = Cat.GetById.OnTable("TABLE").ToGetRequestBuilder(x => x);
+        GetCatByCompositeKeys = Cat.GetByCompositeKey.OnTable("TABLE").ToGetRequestBuilder(x => x.Id, x => x.HomeId);
     }
 
     [Fact]
     public void Build_Request_CompositeKeys_InvalidPartition()
     {
-        var act = () => Cat.QueryWithCuteness
+        var act = () => Cat.GetByCompositeInvalidPartition
             .OnTable("TABLE")
-            .ToGetRequestBuilder(x => x.Name, x => x.HomeId)
+            .ToGetRequestBuilder(x => x.Item1, x => x.Item2)
             .Build(("", Guid.Empty));
 
         act.Should()
@@ -33,9 +33,9 @@ public class ToGetItemRequestTests
     [Fact]
     public void Build_Request_CompositeKeys_InvalidRange()
     {
-        var act = () => Cat.QueryWithCuteness
+        var act = () => Cat.GetByCompositeInvalidRange
             .OnTable("TABLE")
-            .ToGetRequestBuilder(x => x.Id, x => x.Name)
+            .ToGetRequestBuilder(x => x.Item1, x => x.Item2)
             .Build((Guid.Empty, ""));
 
         act.Should()
@@ -46,9 +46,9 @@ public class ToGetItemRequestTests
     [Fact]
     public void Build_Request_CompositeKeys_InvalidPartitionAndRange()
     {
-        var act = () => Cat.QueryWithCuteness
+        var act = () => Cat.GetByCompositeInvalidPartitionAndRange
             .OnTable("TABLE")
-            .ToGetRequestBuilder(x => x.Cuteness, x => x.Name)
+            .ToGetRequestBuilder(x => x.Item1, x => x.Item2)
             .Build((2.3, ""));
 
         act.Should()
@@ -59,10 +59,11 @@ public class ToGetItemRequestTests
     [Fact]
     public void Build_Request_WithInvalidPartitionKey()
     {
-        var act = () => Cat.QueryWithCuteness
+        var act = () => Cat.GetByInvalidPartition
             .OnTable("TABLE")
-            .ToGetRequestBuilder(x => x.Name)
+            .ToGetRequestBuilder(x => x)
             .Build("TEST");
+        
         act.Should()
             .Throw<DynamoDBMarshallingException>()
             .WithMessage("Value '*' from argument '*' is not convertable*");
