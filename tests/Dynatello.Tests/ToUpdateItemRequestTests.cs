@@ -1,4 +1,3 @@
-using Amazon.DynamoDBv2;
 using AutoFixture;
 using DynamoDBGenerator.Attributes;
 using Dynatello.Builders;

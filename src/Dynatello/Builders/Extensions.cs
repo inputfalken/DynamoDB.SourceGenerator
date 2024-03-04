@@ -30,7 +30,7 @@ public static class Extensions
         );
     }
 
-    public static GetItemRequestBuilder<TArg> ToGetRequestBuilder<T, TArg, TReferences, TArgumentReferences,
+    public static GetRequestBuilder<TArg> ToGetRequestBuilder<T, TArg, TReferences, TArgumentReferences,
         TPartition>(
         this TableAccess<T, TArg, TReferences, TArgumentReferences> source,
         Func<TArg, TPartition> partitionKeySelector)
@@ -38,13 +38,13 @@ public static class Extensions
         where TArgumentReferences : IAttributeExpressionValueTracker<TArg>
         where TPartition : notnull
     {
-        return new GetItemRequestBuilder<TArg>(
+        return new GetRequestBuilder<TArg>(
             source.TableName,
             source.Item.PrimaryKeyMarshaller.ComposeKeys<TArg>(y => partitionKeySelector(y), null)
         );
     }
 
-    public static GetItemRequestBuilder<TArg> ToGetRequestBuilder<T, TArg,
+    public static GetRequestBuilder<TArg> ToGetRequestBuilder<T, TArg,
         TReferences, TArgumentReferences, TPartition, TRange>(
         this TableAccess<T, TArg, TReferences, TArgumentReferences> source,
         Func<TArg, TPartition> partitionKeySelector,
@@ -54,7 +54,7 @@ public static class Extensions
         where TPartition : notnull
         where TRange : notnull
     {
-        return new GetItemRequestBuilder<TArg>(
+        return new GetRequestBuilder<TArg>(
             source.TableName,
             source.Item.PrimaryKeyMarshaller.ComposeKeys<TArg>(y => partitionKeySelector(y), y => rangeKeySelector(y))
         );

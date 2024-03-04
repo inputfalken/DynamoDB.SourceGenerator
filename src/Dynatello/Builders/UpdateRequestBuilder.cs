@@ -34,7 +34,7 @@ public readonly record struct UpdateRequestBuilder<T>
         _keyMarshaller = keyMarshaller;
     }
 
-    /// <inheritdoc cref="PutItemRequest.TableName"/>
+    /// <inheritdoc cref="PutItemRequest.TableName" />
     public string TableName
     {
         get => _tableName;

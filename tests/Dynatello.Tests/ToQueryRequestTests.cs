@@ -2,7 +2,6 @@ using System.Globalization;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.Model;
 using AutoFixture;
-using AutoFixture.Dsl;
 using DynamoDBGenerator.Attributes;
 using Dynatello.Builders;
 using Dynatello.Builders.Types;
@@ -12,6 +11,8 @@ namespace Dynatello.Tests;
 
 public class ToQueryRequestTests
 {
+    private static readonly QueryRequestBuilder<(Guid Id, double MinimumCuteness)> QueryCatWithIdAndMinimumCuteness;
+    private static readonly QueryRequestBuilder<(Guid Id, double MinimumCuteness)> QueryCatWithId;
 
     static ToQueryRequestTests()
     {
@@ -19,14 +20,11 @@ public class ToQueryRequestTests
             .OnTable("TABLE")
             .WithKeyConditionExpression((x, y) => $"{x.Id} = {y.Id}");
         QueryCatWithId = withKeyConditionExpression.ToQueryRequestBuilder();
-        
+
         QueryCatWithIdAndMinimumCuteness = withKeyConditionExpression
             .WithFilterExpression((x, y) => $"{x.Cuteness} > {y.MinimumCuteness}")
             .ToQueryRequestBuilder();
     }
-
-    private static readonly QueryRequestBuilder<(Guid Id, double MinimumCuteness)> QueryCatWithIdAndMinimumCuteness;
-    private static readonly QueryRequestBuilder<(Guid Id, double MinimumCuteness)> QueryCatWithId;
 
     [Fact]
     public void Build_Request()
@@ -43,7 +41,7 @@ public class ToQueryRequestTests
 
             request.ExpressionAttributeValues.Should().BeEquivalentTo(new Dictionary<string, AttributeValue>
             {
-                { ":p1", new AttributeValue { S = tuple.Id.ToString() } },
+                { ":p1", new AttributeValue { S = tuple.Id.ToString() } }
             });
 
             request.KeyConditionExpression.Should().Be("#Id = :p1");
@@ -76,19 +74,22 @@ public class ToQueryRequestTests
     }
 }
 
-[DynamoDBMarshaller(typeof(Cat), PropertyName = "QueryWithCuteness", ArgumentType = typeof((Guid Id, double MinimumCuteness)))]
+[DynamoDBMarshaller(typeof(Cat), PropertyName = "QueryWithCuteness",
+    ArgumentType = typeof((Guid Id, double MinimumCuteness)))]
 [DynamoDBMarshaller(typeof(Cat), PropertyName = "GetByCompositeKey", ArgumentType = typeof((Guid Id, Guid HomeId)))]
 [DynamoDBMarshaller(typeof(Cat), PropertyName = "GetById", ArgumentType = typeof(Guid))]
 [DynamoDBMarshaller(typeof(Cat), PropertyName = "GetByInvalidPartition", ArgumentType = typeof(string))]
-[DynamoDBMarshaller(typeof(Cat), PropertyName = "GetByCompositeInvalidPartition", ArgumentType = typeof((string Id, Guid HomeId)))]
-[DynamoDBMarshaller(typeof(Cat), PropertyName = "GetByCompositeInvalidRange", ArgumentType = typeof((Guid Id, string HomeId)))]
-[DynamoDBMarshaller(typeof(Cat), PropertyName = "GetByCompositeInvalidPartitionAndRange", ArgumentType = typeof((double Id, string HomeId)))]
+[DynamoDBMarshaller(typeof(Cat), PropertyName = "GetByCompositeInvalidPartition",
+    ArgumentType = typeof((string Id, Guid HomeId)))]
+[DynamoDBMarshaller(typeof(Cat), PropertyName = "GetByCompositeInvalidRange",
+    ArgumentType = typeof((Guid Id, string HomeId)))]
+[DynamoDBMarshaller(typeof(Cat), PropertyName = "GetByCompositeInvalidPartitionAndRange",
+    ArgumentType = typeof((double Id, string HomeId)))]
 public readonly partial record struct Cat(
     [property: DynamoDBHashKey] Guid Id,
     [property: DynamoDBRangeKey] Guid HomeId,
     string Name,
     double Cuteness)
 {
-    public static readonly Fixture Fixture = new Fixture();
-
+    public static readonly Fixture Fixture = new();
 }

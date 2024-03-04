@@ -8,15 +8,6 @@ namespace Dynatello.Tests;
 
 public class ToGetItemRequestTests
 {
-    private static readonly GetItemRequestBuilder<Guid> GetCatByPartitionKey;
-    private static readonly GetItemRequestBuilder<(Guid partionKey, Guid rangeKey)> GetCatByCompositeKeys;
-
-    static ToGetItemRequestTests()
-    {
-        GetCatByPartitionKey = Cat.GetById.OnTable("TABLE").ToGetRequestBuilder(x => x);
-        GetCatByCompositeKeys = Cat.GetByCompositeKey.OnTable("TABLE").ToGetRequestBuilder(x => x.Id, x => x.HomeId);
-    }
-
     [Fact]
     public void Build_Request_CompositeKeys_InvalidPartition()
     {
@@ -63,7 +54,7 @@ public class ToGetItemRequestTests
             .OnTable("TABLE")
             .ToGetRequestBuilder(x => x)
             .Build("TEST");
-        
+
         act.Should()
             .Throw<DynamoDBMarshallingException>()
             .WithMessage("Value '*' from argument '*' is not convertable*");
@@ -72,13 +63,16 @@ public class ToGetItemRequestTests
     [Fact]
     public void Build_Request_PartitionKeyOnly()
     {
+        var getCatByPartitionKey = Cat.GetById
+            .OnTable("TABLE")
+            .ToGetRequestBuilder(x => x);
         Cat.Fixture.CreateMany<Guid>().Should().AllSatisfy(partitionKey =>
         {
-            var request = GetCatByPartitionKey.Build(partitionKey);
+            var request = getCatByPartitionKey.Build(partitionKey);
 
             request.Key
                 .Should()
-                .BeEquivalentTo(new Dictionary<string, AttributeValue>()
+                .BeEquivalentTo(new Dictionary<string, AttributeValue>
                     { { nameof(Cat.Id), new AttributeValue { S = partitionKey.ToString() } } }
                 );
 
@@ -89,13 +83,17 @@ public class ToGetItemRequestTests
     [Fact]
     public void Build_Request_CompositeKeys()
     {
+        var getCatByCompositeKeys = Cat.GetByCompositeKey
+            .OnTable("TABLE")
+            .ToGetRequestBuilder(x => x.Id, x => x.HomeId);
+
         Cat.Fixture.CreateMany<(Guid PartitionKey, Guid RangeKey)>().Should().AllSatisfy(keys =>
         {
-            var request = GetCatByCompositeKeys.Build(keys);
+            var request = getCatByCompositeKeys.Build(keys);
 
             request.Key
                 .Should()
-                .BeEquivalentTo(new Dictionary<string, AttributeValue>()
+                .BeEquivalentTo(new Dictionary<string, AttributeValue>
                     {
                         { nameof(Cat.Id), new AttributeValue { S = keys.PartitionKey.ToString() } },
                         { nameof(Cat.HomeId), new AttributeValue { S = keys.RangeKey.ToString() } }

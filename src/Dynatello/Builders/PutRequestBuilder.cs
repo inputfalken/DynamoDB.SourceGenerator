@@ -26,7 +26,13 @@ public readonly record struct PutRequestBuilder<T>
         _tableName = tableName;
     }
 
-    /// <inheritdoc cref="PutItemRequest.TableName"/>
+    [Obsolete("Do not used this constructor!", true)]
+    public PutRequestBuilder()
+    {
+        throw new InvalidOperationException("This is an invalid constructor access.");
+    }
+
+    /// <inheritdoc cref="PutItemRequest.TableName" />
     public string TableName
     {
         get => _tableName;
@@ -59,13 +65,13 @@ public readonly record struct PutRequestBuilder<T>
             ExpressionAttributeValues = null
         };
 
-        if (ReturnValues is not null) 
+        if (ReturnValues is not null)
             request.ReturnValues = ReturnValues;
-        if (ReturnConsumedCapacity is not null) 
+        if (ReturnConsumedCapacity is not null)
             request.ReturnConsumedCapacity = ReturnConsumedCapacity;
-        if (ReturnItemCollectionMetrics is not null) 
+        if (ReturnItemCollectionMetrics is not null)
             request.ReturnItemCollectionMetrics = ReturnItemCollectionMetrics;
-        if (ReturnValuesOnConditionCheckFailure is not null) 
+        if (ReturnValuesOnConditionCheckFailure is not null)
             request.ReturnValuesOnConditionCheckFailure = ReturnValuesOnConditionCheckFailure;
 
         if (_attributeExpressionSelector is null) return request;

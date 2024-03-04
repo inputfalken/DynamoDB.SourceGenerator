@@ -1,4 +1,3 @@
-using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using AutoFixture;
 using DynamoDBGenerator.Attributes;
