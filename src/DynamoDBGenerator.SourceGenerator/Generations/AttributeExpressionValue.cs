@@ -86,6 +86,11 @@ public static class AttributeExpressionValue
     }
     private static CodeFactory CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
+        // TODO
+        if (options.IsConvertable(typeSymbol))
+        {
+            
+        }
         var dataMembers = fn(typeSymbol)
             .Select(x =>
             {

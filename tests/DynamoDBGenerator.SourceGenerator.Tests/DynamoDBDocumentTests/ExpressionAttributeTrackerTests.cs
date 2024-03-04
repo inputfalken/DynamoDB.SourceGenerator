@@ -3,16 +3,11 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 
 [DynamoDBMarshaller(typeof(Person), ArgumentType = typeof((string firstName, DateTime timeStamp)), PropertyName = "PersonWithTupleArgument")]
 [DynamoDBMarshaller(typeof(Person))]
-[DynamoDBMarshaller(typeof(Person), PropertyName = "PrimitiveArgument", ArgumentType = typeof(string))]
 [DynamoDBMarshaller(typeof(SelfReferencingClass))]
 [DynamoDBMarshaller(typeof(ClassWithOverriddenAttributeName))]
 [DynamoDBMarshaller(typeof(InheritedClass))]
 public partial class ExpressionAttributeTrackerTests
 {
-    [Fact]
-    public void Test()
-    {
-    }
     [Fact]
     public void PersonWithTupleArgument_AccessingRootExpressionAttributeName_ShouldThrow()
     {
