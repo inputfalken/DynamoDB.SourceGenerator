@@ -66,18 +66,26 @@ public class ToGetItemRequestTests
         var getCatByPartitionKey = Cat.GetById
             .OnTable("TABLE")
             .ToGetRequestBuilder(x => x);
-        Cat.Fixture.CreateMany<Guid>().Should().AllSatisfy(partitionKey =>
-        {
-            var request = getCatByPartitionKey.Build(partitionKey);
 
-            request.Key
+        Cat.Fixture
+            .CreateMany<Guid>()
+            .Should()
+            .AllSatisfy(x => getCatByPartitionKey
+                .Build(x)
                 .Should()
-                .BeEquivalentTo(new Dictionary<string, AttributeValue>
-                    { { nameof(Cat.Id), new AttributeValue { S = partitionKey.ToString() } } }
-                );
-
-            request.TableName.Should().Be("TABLE");
-        });
+                .BeEquivalentTo(new GetItemRequest
+                {
+                    Key = new Dictionary<string, AttributeValue>
+                    {
+                        { nameof(Cat.Id), new AttributeValue { S = x.ToString() } }
+                    },
+                    TableName = "TABLE",
+                    ConsistentRead = false,
+                    ExpressionAttributeNames = new Dictionary<string, string>(),
+                    ProjectionExpression = null,
+                    ReturnConsumedCapacity = null,
+                    AttributesToGet = new List<string>()
+                }));
     }
 
     [Fact]
@@ -87,20 +95,27 @@ public class ToGetItemRequestTests
             .OnTable("TABLE")
             .ToGetRequestBuilder(x => x.Id, x => x.HomeId);
 
-        Cat.Fixture.CreateMany<(Guid PartitionKey, Guid RangeKey)>().Should().AllSatisfy(keys =>
-        {
-            var request = getCatByCompositeKeys.Build(keys);
-
-            request.Key
+        Cat.Fixture
+            .CreateMany<(Guid PartitionKey, Guid RangeKey)>()
+            .Should()
+            .AllSatisfy(x => getCatByCompositeKeys
+                .Build(x)
                 .Should()
-                .BeEquivalentTo(new Dictionary<string, AttributeValue>
+                .BeEquivalentTo(new GetItemRequest
                     {
-                        { nameof(Cat.Id), new AttributeValue { S = keys.PartitionKey.ToString() } },
-                        { nameof(Cat.HomeId), new AttributeValue { S = keys.RangeKey.ToString() } }
+                        Key = new Dictionary<string, AttributeValue>
+                        {
+                            { nameof(Cat.Id), new AttributeValue { S = x.PartitionKey.ToString() } },
+                            { nameof(Cat.HomeId), new AttributeValue { S = x.RangeKey.ToString() } }
+                        },
+                        TableName = "TABLE",
+                        ConsistentRead = false,
+                        ExpressionAttributeNames = new Dictionary<string, string>(),
+                        ProjectionExpression = null,
+                        ReturnConsumedCapacity = null,
+                        AttributesToGet = new List<string>()
                     }
-                );
-
-            request.TableName.Should().Be("TABLE");
-        });
+                )
+            );
     }
 }
