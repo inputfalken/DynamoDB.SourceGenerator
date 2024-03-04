@@ -80,9 +80,9 @@ public class ToQueryRequestTests
 [DynamoDBMarshaller(typeof(Cat), PropertyName = "GetByCompositeKey", ArgumentType = typeof((Guid Id, Guid HomeId)))]
 [DynamoDBMarshaller(typeof(Cat), PropertyName = "GetById", ArgumentType = typeof(Guid))]
 [DynamoDBMarshaller(typeof(Cat), PropertyName = "GetByInvalidPartition", ArgumentType = typeof(string))]
-[DynamoDBMarshaller(typeof(Cat), PropertyName = "GetByCompositeInvalidPartition", ArgumentType = typeof((string, Guid)))]
-[DynamoDBMarshaller(typeof(Cat), PropertyName = "GetByCompositeInvalidRange", ArgumentType = typeof((Guid, string)))]
-[DynamoDBMarshaller(typeof(Cat), PropertyName = "GetByCompositeInvalidPartitionAndRange", ArgumentType = typeof((double, string)))]
+[DynamoDBMarshaller(typeof(Cat), PropertyName = "GetByCompositeInvalidPartition", ArgumentType = typeof((string Id, Guid HomeId)))]
+[DynamoDBMarshaller(typeof(Cat), PropertyName = "GetByCompositeInvalidRange", ArgumentType = typeof((Guid Id, string HomeId)))]
+[DynamoDBMarshaller(typeof(Cat), PropertyName = "GetByCompositeInvalidPartitionAndRange", ArgumentType = typeof((double Id, string HomeId)))]
 public readonly partial record struct Cat(
     [property: DynamoDBHashKey] Guid Id,
     [property: DynamoDBRangeKey] Guid HomeId,

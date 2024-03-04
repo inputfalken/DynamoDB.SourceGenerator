@@ -22,7 +22,7 @@ public class ToGetItemRequestTests
     {
         var act = () => Cat.GetByCompositeInvalidPartition
             .OnTable("TABLE")
-            .ToGetRequestBuilder(x => x.Item1, x => x.Item2)
+            .ToGetRequestBuilder(x => x.Id, x => x.HomeId)
             .Build(("", Guid.Empty));
 
         act.Should()
@@ -35,7 +35,7 @@ public class ToGetItemRequestTests
     {
         var act = () => Cat.GetByCompositeInvalidRange
             .OnTable("TABLE")
-            .ToGetRequestBuilder(x => x.Item1, x => x.Item2)
+            .ToGetRequestBuilder(x => x.Id, x => x.HomeId)
             .Build((Guid.Empty, ""));
 
         act.Should()
@@ -48,7 +48,7 @@ public class ToGetItemRequestTests
     {
         var act = () => Cat.GetByCompositeInvalidPartitionAndRange
             .OnTable("TABLE")
-            .ToGetRequestBuilder(x => x.Item1, x => x.Item2)
+            .ToGetRequestBuilder(x => x.Id, x => x.HomeId)
             .Build((2.3, ""));
 
         act.Should()
