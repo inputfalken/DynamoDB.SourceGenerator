@@ -9,10 +9,6 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 public partial class ExpressionAttributeTrackerTests
 {
     [Fact]
-    public void Test()
-    {
-    }
-    [Fact]
     public void PersonWithTupleArgument_AccessingRootExpressionAttributeName_ShouldThrow()
     {
         var nameTracker = PersonWithTupleArgument.AttributeExpressionNameTracker();
