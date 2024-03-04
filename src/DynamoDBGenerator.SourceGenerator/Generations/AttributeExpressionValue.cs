@@ -86,23 +86,25 @@ public static class AttributeExpressionValue
     }
     private static CodeFactory CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
-        // TODO
-        if (options.IsConvertable(typeSymbol))
-        {
-            
-        }
-        var dataMembers = fn(typeSymbol)
-            .Select(x =>
-            {
-                return (
-                    IsUnknown: !options.IsConvertable(x.DataMember.Type) && x.DataMember.Type.TypeIdentifier() is UnknownType,
-                    DDB: x,
-                    ValueRef: $"_{x.DataMember.Name}ValueRef",
-                    AttributeReference: TypeName(x.DataMember.Type),
-                    AttributeInterfaceName: $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{x.DataMember.Type.Representation().annotated}>"
-                );
-            })
-            .ToArray();
+        var dataMembers =
+            options.IsConvertable(typeSymbol)
+                ? Array
+                    .Empty<(bool IsUnknown, DynamoDbDataMember DDB, string ValueRef, string AttributeReference, string
+                        AttributeInterfaceName)>()
+                : fn(typeSymbol)
+                    .Select(x =>
+                    {
+                        return (
+                            IsUnknown: !options.IsConvertable(x.DataMember.Type) &&
+                                       x.DataMember.Type.TypeIdentifier() is UnknownType,
+                            DDB: x,
+                            ValueRef: $"_{x.DataMember.Name}ValueRef",
+                            AttributeReference: TypeName(x.DataMember.Type),
+                            AttributeInterfaceName:
+                            $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{x.DataMember.Type.Representation().annotated}>"
+                        );
+                    })
+                    .ToArray();
 
         var structName = TypeName(typeSymbol);
         var interfaceName = $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{typeSymbol.Representation().annotated}>";
