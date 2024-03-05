@@ -11,65 +11,91 @@ namespace Dynatello.Tests;
 
 public class ToQueryRequestTests
 {
-    private static readonly QueryRequestBuilder<(Guid Id, double MinimumCuteness)> QueryCatWithIdAndMinimumCuteness;
-    private static readonly QueryRequestBuilder<(Guid Id, double MinimumCuteness)> QueryCatWithId;
-
-    static ToQueryRequestTests()
-    {
-        var withKeyConditionExpression = Cat.QueryWithCuteness
-            .OnTable("TABLE")
-            .WithKeyConditionExpression((x, y) => $"{x.Id} = {y.Id}");
-        QueryCatWithId = withKeyConditionExpression.ToQueryRequestBuilder();
-
-        QueryCatWithIdAndMinimumCuteness = withKeyConditionExpression
-            .WithFilterExpression((x, y) => $"{x.Cuteness} > {y.MinimumCuteness}")
-            .ToQueryRequestBuilder();
-    }
-
     [Fact]
     public void Build_Request()
     {
+        var builder = Cat.QueryWithCuteness
+            .OnTable("TABLE")
+            .WithKeyConditionExpression((x, y) => $"{x.Id} = {y.Id}")
+            .ToQueryRequestBuilder();
         Cat.Fixture.CreateMany<(Guid Id, double MinimumCuteness)>(10).Should().AllSatisfy(tuple =>
         {
-            var request = QueryCatWithId.Build(tuple);
+            builder.Build(tuple).Should().BeEquivalentTo(
+                new QueryRequest
+                {
+                    TableName = "TABLE",
+                    ExpressionAttributeNames = new Dictionary<string, string>
+                    {
+                        { "#Id", nameof(Cat.Id) }
+                    },
 
-            request.TableName.Should().Be("TABLE");
-            request.ExpressionAttributeNames.Should().BeEquivalentTo(new Dictionary<string, string>
-            {
-                { "#Id", nameof(Cat.Id) }
-            });
-
-            request.ExpressionAttributeValues.Should().BeEquivalentTo(new Dictionary<string, AttributeValue>
-            {
-                { ":p1", new AttributeValue { S = tuple.Id.ToString() } }
-            });
-
-            request.KeyConditionExpression.Should().Be("#Id = :p1");
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                    {
+                        { ":p1", new AttributeValue { S = tuple.Id.ToString() } }
+                    },
+                    KeyConditionExpression = "#Id = :p1",
+                    KeyConditions = null,
+                    ConditionalOperator = null,
+                    AttributesToGet = null,
+                    ReturnConsumedCapacity = null,
+                    FilterExpression = null,
+                    Limit = 0,
+                    ConsistentRead = false,
+                    Select = null,
+                    ProjectionExpression = null,
+                    IndexName = null,
+                    QueryFilter = null,
+                    ExclusiveStartKey = new Dictionary<string, AttributeValue>(),
+                    IsLimitSet = false,
+                    ScanIndexForward = false
+                });
         });
     }
 
     [Fact]
     public void Build_Request_FilterExpression()
     {
+        var builder = Cat.QueryWithCuteness
+            .OnTable("TABLE")
+            .WithKeyConditionExpression((x, y) => $"{x.Id} = {y.Id}")
+            .WithFilterExpression((x, y) => $"{x.Cuteness} > {y.MinimumCuteness}")
+            .ToQueryRequestBuilder();
         Cat.Fixture.CreateMany<(Guid Id, double MinimumCuteness)>(10).Should().AllSatisfy(tuple =>
         {
-            var request = QueryCatWithIdAndMinimumCuteness.Build(tuple);
+            builder.Build(tuple).Should().BeEquivalentTo(
+                new QueryRequest
+                {
+                    TableName = "TABLE",
+                    ExpressionAttributeNames = new Dictionary<string, string>
+                    {
+                        { "#Id", nameof(Cat.Id) },
+                        { "#Cuteness", nameof(Cat.Cuteness) }
+                    },
 
-            request.TableName.Should().Be("TABLE");
-            request.ExpressionAttributeNames.Should().BeEquivalentTo(new Dictionary<string, string>
-            {
-                { "#Id", nameof(Cat.Id) },
-                { "#Cuteness", nameof(Cat.Cuteness) }
-            });
-
-            request.ExpressionAttributeValues.Should().BeEquivalentTo(new Dictionary<string, AttributeValue>
-            {
-                { ":p1", new AttributeValue { S = tuple.Id.ToString() } },
-                { ":p2", new AttributeValue { N = tuple.MinimumCuteness.ToString(CultureInfo.InvariantCulture) } }
-            });
-
-            request.KeyConditionExpression.Should().Be("#Id = :p1");
-            request.FilterExpression.Should().Be("#Cuteness > :p2");
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                    {
+                        { ":p1", new AttributeValue { S = tuple.Id.ToString() } },
+                        {
+                            ":p2",
+                            new AttributeValue { N = tuple.MinimumCuteness.ToString(CultureInfo.InvariantCulture) }
+                        }
+                    },
+                    KeyConditionExpression = "#Id = :p1",
+                    KeyConditions = null,
+                    ConditionalOperator = null,
+                    AttributesToGet = null,
+                    ReturnConsumedCapacity = null,
+                    FilterExpression = "#Cuteness > :p2",
+                    Limit = 0,
+                    ConsistentRead = false,
+                    Select = null,
+                    ProjectionExpression = null,
+                    IndexName = null,
+                    QueryFilter = null,
+                    ExclusiveStartKey = new Dictionary<string, AttributeValue>(),
+                    IsLimitSet = false,
+                    ScanIndexForward = false
+                });
         });
     }
 }
