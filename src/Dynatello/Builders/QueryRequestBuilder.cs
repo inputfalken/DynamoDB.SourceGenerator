@@ -55,7 +55,7 @@ public readonly record struct QueryRequestBuilder<T>
             ExpressionAttributeValues = attributeExpression.Values,
             ExpressionAttributeNames = attributeExpression.Names,
             TableName = TableName,
-            IndexName = IndexName,
+            IndexName = null,
             ProjectionExpression = null
         };
 
