@@ -1,4 +1,5 @@
 using Amazon.DynamoDBv2.DataModel;
+using Amazon.DynamoDBv2.Model;
 using AutoFixture;
 using DynamoDBGenerator.Attributes;
 using Dynatello.Builders;
@@ -15,57 +16,101 @@ public partial class ToPutItemRequestTests
     [Fact]
     public void Without_ConditionExpression_ShouldNotIncludeExpressionFields()
     {
-        var user = _fixture.Create<User>();
-        var putItemRequest = UserMarshaller.OnTable("TABLE")
-            .ToPutRequestBuilder()
-            .Build(user);
-
-        putItemRequest.ConditionExpression.Should().BeNullOrWhiteSpace();
-        putItemRequest.ExpressionAttributeNames.Should().BeNullOrEmpty();
-        putItemRequest.ExpressionAttributeValues.Should().BeNullOrEmpty();
-        putItemRequest.Item.Should().HaveCount(5);
-        putItemRequest.Item[nameof(user.Email)].S.Should().Be(user.Email);
-        putItemRequest.Item[nameof(user.Firstname)].S.Should().Be(user.Firstname);
-        putItemRequest.Item[nameof(user.Lastname)].S.Should().Be(user.Lastname);
-        putItemRequest.Item[nameof(user.Id)].S.Should().Be(user.Id);
-        putItemRequest.Item[nameof(user.Metadata)].M.Should().SatisfyRespectively(x =>
+        var builder = UserMarshaller
+            .OnTable("TABLE")
+            .ToPutRequestBuilder();
+        _fixture.CreateMany<User>().Should().AllSatisfy(user =>
         {
-            x.Key.Should().Be(nameof(user.Metadata.ModifiedAt));
-            x.Value.S.Should().Be(user.Metadata.ModifiedAt.ToString("O"));
+            builder.Build(user)
+                .Should()
+                .BeEquivalentTo(new PutItemRequest
+                {
+                    ConditionExpression = null,
+                    ExpressionAttributeNames = null,
+                    ExpressionAttributeValues = null,
+                    Item = new Dictionary<string, AttributeValue>
+                    {
+                        { nameof(user.Email), new AttributeValue { S = user.Email } },
+                        { nameof(user.Firstname), new AttributeValue { S = user.Firstname } },
+                        { nameof(user.Lastname), new AttributeValue { S = user.Lastname } },
+                        { nameof(user.Id), new AttributeValue { S = user.Id } },
+                        {
+                            nameof(user.Metadata), new AttributeValue
+                            {
+                                M = new Dictionary<string, AttributeValue>
+                                {
+                                    {
+                                        nameof(user.Metadata.ModifiedAt),
+                                        new AttributeValue { S = user.Metadata.ModifiedAt.ToString("O") }
+                                    }
+                                }
+                            }
+                        },
+                    },
+                    ReturnValues = null,
+                    TableName = "TABLE",
+                    Expected = null,
+                    ReturnConsumedCapacity = null,
+                    ConditionalOperator = null,
+                    ReturnItemCollectionMetrics = null,
+                    ReturnValuesOnConditionCheckFailure = null
+                });
         });
-        putItemRequest.ReturnValues.Should().Be(null);
-        putItemRequest.TableName.Should().Be("TABLE");
     }
 
     [Fact]
     public void With_ConditionExpression_ShouldIncludeExpressionFields()
     {
-        var user = _fixture.Create<User>();
-        var putItemRequest = UserMarshaller
+        var builder = UserMarshaller
             .OnTable("TABLE")
             .WithConditionExpression((x, y) => $"{x.Email} <> {y.Email} AND {x.Firstname} = {y.Firstname}")
-            .ToPutRequestBuilder()
-            .Build(user);
-
-        putItemRequest.ConditionExpression.Should().Be("#Email <> :p1 AND #Firstname = :p2");
-        putItemRequest.ExpressionAttributeNames.Should().HaveCount(2);
-        putItemRequest.ExpressionAttributeNames["#Email"].Should().Be(nameof(user.Email));
-        putItemRequest.ExpressionAttributeNames["#Firstname"].Should().Be(nameof(user.Firstname));
-        putItemRequest.ExpressionAttributeValues.Should().HaveCount(2);
-        putItemRequest.ExpressionAttributeValues[":p1"].S.Should().Be(user.Email);
-        putItemRequest.ExpressionAttributeValues[":p2"].S.Should().Be(user.Firstname);
-        putItemRequest.Item.Should().HaveCount(5);
-        putItemRequest.Item[nameof(user.Email)].S.Should().Be(user.Email);
-        putItemRequest.Item[nameof(user.Firstname)].S.Should().Be(user.Firstname);
-        putItemRequest.Item[nameof(user.Lastname)].S.Should().Be(user.Lastname);
-        putItemRequest.Item[nameof(user.Id)].S.Should().Be(user.Id);
-        putItemRequest.Item[nameof(user.Metadata)].M.Should().SatisfyRespectively(x =>
+            .ToPutRequestBuilder();
+        
+        _fixture.CreateMany<User>().Should().AllSatisfy(user =>
         {
-            x.Key.Should().Be(nameof(user.Metadata.ModifiedAt));
-            x.Value.S.Should().Be(user.Metadata.ModifiedAt.ToString("O"));
+            builder.Build(user)
+                .Should()
+                .BeEquivalentTo(new PutItemRequest
+                {
+                    ConditionExpression = "#Email <> :p1 AND #Firstname = :p2",
+                    ExpressionAttributeNames = new Dictionary<string, string>
+                    {
+                        { "#Email", nameof(user.Email) },
+                        { "#Firstname", nameof(user.Firstname) }
+                    },
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                    {
+                        { ":p1", new AttributeValue { S = user.Email } },
+                        { ":p2", new AttributeValue { S = user.Firstname } }
+                    },
+                    Item = new Dictionary<string, AttributeValue>
+                    {
+                        { nameof(user.Email), new AttributeValue { S = user.Email } },
+                        { nameof(user.Firstname), new AttributeValue { S = user.Firstname } },
+                        { nameof(user.Lastname), new AttributeValue { S = user.Lastname } },
+                        { nameof(user.Id), new AttributeValue { S = user.Id } },
+                        {
+                            nameof(user.Metadata), new AttributeValue
+                            {
+                                M = new Dictionary<string, AttributeValue>
+                                {
+                                    {
+                                        nameof(user.Metadata.ModifiedAt),
+                                        new AttributeValue { S = user.Metadata.ModifiedAt.ToString("O") }
+                                    }
+                                }
+                            }
+                        },
+                    },
+                    ReturnValues = null,
+                    TableName = "TABLE",
+                    Expected = null,
+                    ReturnConsumedCapacity = null,
+                    ConditionalOperator = null,
+                    ReturnItemCollectionMetrics = null,
+                    ReturnValuesOnConditionCheckFailure = null
+                });
         });
-        putItemRequest.ReturnValues.Should().Be(null);
-        putItemRequest.TableName.Should().Be("TABLE");
     }
 }
 
