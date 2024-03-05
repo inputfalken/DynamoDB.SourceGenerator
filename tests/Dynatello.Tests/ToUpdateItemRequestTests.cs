@@ -1,3 +1,4 @@
+using Amazon.DynamoDBv2.Model;
 using AutoFixture;
 using DynamoDBGenerator.Attributes;
 using Dynatello.Builders;
@@ -15,78 +16,169 @@ public partial class ToUpdateItemRequestTests
     [Fact]
     public void ArgumentTypeProvided_WithConditionExpression_ShouldIncludeUpdateAndConditionExpressionFields()
     {
-        var updateUserEmail = _fixture.Create<UpdateUserEmail>();
-        var updateItemRequest = UpdateEmail
+        var updateFirst = UpdateEmail
             .OnTable("TABLE")
             .WithUpdateExpression((x, y) => $"SET {x.Email} = {y.UserEmail}, {x.Metadata.ModifiedAt} = {y.TimeStamp}")
             .WithConditionExpression((x, y) => $"{x.Id} = {y.UserId} AND {x.Email} <> {y.UserEmail}")
-            .ToUpdateItemRequestBuilder((x, y) => x.Keys(y.UserId, y.UserEmail))
-            .Build(updateUserEmail);
+            .ToUpdateItemRequestBuilder((x, y) => x.Keys(y.UserId, y.UserEmail));
 
-        updateItemRequest.ConditionExpression.Should().Be("#Id = :p3 AND #Email <> :p1");
-        updateItemRequest.ExpressionAttributeNames.Should().HaveCount(3);
-        updateItemRequest.ExpressionAttributeNames["#Email"].Should().Be(nameof(User.Email));
-        updateItemRequest.ExpressionAttributeNames["#Id"].Should().Be(nameof(User.Id));
-        updateItemRequest.ExpressionAttributeNames["#Metadata.#ModifiedAt"].Should()
-            .Be(nameof(User.Metadata.ModifiedAt));
-        updateItemRequest.ExpressionAttributeValues.Should().HaveCount(3);
-        updateItemRequest.ExpressionAttributeValues[":p1"].S.Should().Be(updateUserEmail.UserEmail);
-        updateItemRequest.ExpressionAttributeValues[":p2"].S.Should().Be(updateUserEmail.TimeStamp.ToString("O"));
-        updateItemRequest.ExpressionAttributeValues[":p3"].S.Should().Be(updateUserEmail.UserId);
-        updateItemRequest.Key[nameof(User.Email)].S.Should().Be(updateUserEmail.UserEmail);
-        updateItemRequest.Key[nameof(User.Id)].S.Should().Be(updateUserEmail.UserId);
-        updateItemRequest.ReturnValues.Should().Be(null);
-        updateItemRequest.TableName.Should().Be("TABLE");
-        updateItemRequest.UpdateExpression.Should().Be("SET #Email = :p1, #Metadata.#ModifiedAt = :p2");
+        var conditionFirst = UpdateEmail
+            .OnTable("TABLE")
+            .WithConditionExpression((x, y) => $"{x.Id} = {y.UserId} AND {x.Email} <> {y.UserEmail}")
+            .WithUpdateExpression((x, y) => $"SET {x.Email} = {y.UserEmail}, {x.Metadata.ModifiedAt} = {y.TimeStamp}")
+            .ToUpdateItemRequestBuilder((x, y) => x.Keys(y.UserId, y.UserEmail));
+
+        _fixture
+            .CreateMany<UpdateUserEmail>()
+            .Should()
+            .AllSatisfy(x => Expected(x, updateFirst));
+        _fixture
+            .CreateMany<UpdateUserEmail>()
+            .Should()
+            .AllSatisfy(x => Expected(x, conditionFirst));
+
+        static void Expected(UpdateUserEmail updateUserEmail, UpdateRequestBuilder<UpdateUserEmail> builder) =>
+            builder.Build(updateUserEmail)
+                .Should()
+                .BeEquivalentTo(new UpdateItemRequest
+                {
+                    ConditionExpression = "#Id = :p3 AND #Email <> :p1",
+                    ExpressionAttributeNames = new Dictionary<string, string>
+                    {
+                        { "#Email", nameof(User.Email) }, { "#Id", nameof(User.Id) },
+                        { "#Metadata.#ModifiedAt", nameof(User.Metadata.ModifiedAt) }
+                    },
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                    {
+                        { ":p1", new AttributeValue { S = updateUserEmail.UserEmail } },
+                        { ":p2", new AttributeValue { S = updateUserEmail.TimeStamp.ToString("O") } },
+                        { ":p3", new AttributeValue { S = updateUserEmail.UserId } }
+                    },
+                    Key = new Dictionary<string, AttributeValue>
+                    {
+                        { nameof(User.Id), new AttributeValue { S = updateUserEmail.UserId } },
+                        { nameof(User.Email), new AttributeValue { S = updateUserEmail.UserEmail } }
+                    },
+                    ReturnValues = null,
+                    TableName = "TABLE",
+                    UpdateExpression = "SET #Email = :p1, #Metadata.#ModifiedAt = :p2",
+                    ReturnConsumedCapacity = null,
+                    ConditionalOperator = null,
+                    Expected = null,
+                    ReturnItemCollectionMetrics = null,
+                    ReturnValuesOnConditionCheckFailure = null,
+                    AttributeUpdates = null
+                });
     }
 
     [Fact]
     public void ArgumentTypeProvided_WithoutConditionExpression_ShouldOnlyIncludeUpdateExpressionFields()
     {
-        var updateUserEmail = _fixture.Create<UpdateUserEmail>();
-        var updateItemRequest = UpdateEmail
+        var builder = UpdateEmail
             .OnTable("TABLE")
             .WithUpdateExpression((x, y) => $"SET {x.Email} = {y.UserEmail}, {x.Metadata.ModifiedAt} = {y.TimeStamp}")
-            .ToUpdateItemRequestBuilder((x, y) => x.Keys(y.UserId, y.UserEmail))
-            .Build(updateUserEmail);
+            .ToUpdateItemRequestBuilder((x, y) => x.Keys(y.UserId, y.UserEmail));
 
-        updateItemRequest.ConditionExpression.Should().BeNullOrWhiteSpace();
-        updateItemRequest.ExpressionAttributeNames.Should().HaveCount(2);
-        updateItemRequest.ExpressionAttributeNames["#Email"].Should().Be(nameof(User.Email));
-        updateItemRequest.ExpressionAttributeNames["#Metadata.#ModifiedAt"].Should()
-            .Be(nameof(User.Metadata.ModifiedAt));
-        updateItemRequest.ExpressionAttributeValues.Should().HaveCount(2);
-        updateItemRequest.ExpressionAttributeValues[":p1"].S.Should().Be(updateUserEmail.UserEmail);
-        updateItemRequest.ExpressionAttributeValues[":p2"].S.Should().Be(updateUserEmail.TimeStamp.ToString("O"));
-        updateItemRequest.Key[nameof(User.Email)].S.Should().Be(updateUserEmail.UserEmail);
-        updateItemRequest.Key[nameof(User.Id)].S.Should().Be(updateUserEmail.UserId);
-        updateItemRequest.ReturnValues.Should().Be(null);
-        updateItemRequest.TableName.Should().Be("TABLE");
-        updateItemRequest.UpdateExpression.Should().Be("SET #Email = :p1, #Metadata.#ModifiedAt = :p2");
+        _fixture
+            .CreateMany<UpdateUserEmail>()
+            .Should()
+            .AllSatisfy(updateUserEmail => builder
+                .Build(updateUserEmail)
+                .Should()
+                .BeEquivalentTo(new UpdateItemRequest
+                {
+                    ConditionExpression = null,
+                    ExpressionAttributeNames = new Dictionary<string, string>
+                    {
+                        { "#Email", nameof(User.Email) },
+                        { "#Metadata.#ModifiedAt", nameof(User.Metadata.ModifiedAt) }
+                    },
+                    ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                    {
+                        {
+                            ":p1", new AttributeValue
+                            {
+                                S = updateUserEmail.UserEmail
+                            }
+                        },
+                        {
+                            ":p2", new AttributeValue
+                            {
+                                S = updateUserEmail.TimeStamp.ToString("O")
+                            }
+                        }
+                    },
+                    Key = new Dictionary<string, AttributeValue>
+                    {
+                        { nameof(User.Id), new AttributeValue { S = updateUserEmail.UserId } },
+                        { nameof(User.Email), new AttributeValue { S = updateUserEmail.UserEmail } }
+                    },
+                    ReturnValues = null,
+                    TableName = "TABLE",
+                    UpdateExpression = "SET #Email = :p1, #Metadata.#ModifiedAt = :p2",
+                    ReturnConsumedCapacity = null,
+                    ConditionalOperator = null,
+                    Expected = null,
+                    ReturnItemCollectionMetrics = null,
+                    ReturnValuesOnConditionCheckFailure = null,
+                    AttributeUpdates = null
+                }));
     }
 
     [Fact]
     public void NoArgumentTypeProvided_WithoutConditionExpression_ShouldOnlyIncludeUpdateExpressionFields()
     {
-        var user = _fixture.Create<User>();
-        var updateItemRequest = UserMarshaller
+        var builder = UserMarshaller
             .OnTable("TABLE")
             .WithUpdateExpression((x, y) => $"SET {x.Email} = {y.Email}, {x.Firstname} = {y.Firstname}")
-            .ToUpdateItemRequestBuilder((x, y) => x.Keys(y.Id, y.Lastname))
-            .Build(user);
+            .ToUpdateItemRequestBuilder((x, y) => x.Keys(y.Id, y.Email));
 
-        updateItemRequest.ConditionExpression.Should().BeNullOrWhiteSpace();
-        updateItemRequest.ExpressionAttributeNames.Should().HaveCount(2);
-        updateItemRequest.ExpressionAttributeNames["#Email"].Should().Be(nameof(user.Email));
-        updateItemRequest.ExpressionAttributeNames["#Firstname"].Should().Be(nameof(user.Firstname));
-        updateItemRequest.ExpressionAttributeValues.Should().HaveCount(2);
-        updateItemRequest.ExpressionAttributeValues[":p1"].S.Should().Be(user.Email);
-        updateItemRequest.ExpressionAttributeValues[":p2"].S.Should().Be(user.Firstname);
-        updateItemRequest.Key[nameof(user.Id)].S.Should().Be(user.Id);
-        updateItemRequest.Key[nameof(user.Email)].S.Should().Be(user.Lastname);
-        updateItemRequest.ReturnValues.Should().Be(null);
-        updateItemRequest.TableName.Should().Be("TABLE");
-        updateItemRequest.UpdateExpression.Should().Be("SET #Email = :p1, #Firstname = :p2");
+        _fixture.CreateMany<User>()
+            .Should()
+            .AllSatisfy(user =>
+            {
+                builder
+                    .Build(user)
+                    .Should()
+                    .BeEquivalentTo(new UpdateItemRequest
+                    {
+                        ConditionExpression = null,
+                        ExpressionAttributeNames = new Dictionary<string, string>
+                        {
+                            { "#Email", nameof(User.Email) },
+                            { "#Firstname", nameof(User.Firstname) }
+                        },
+                        ExpressionAttributeValues = new Dictionary<string, AttributeValue>
+                        {
+                            {
+                                ":p1", new AttributeValue
+                                {
+                                    S = user.Email
+                                }
+                            },
+                            {
+                                ":p2", new AttributeValue
+                                {
+                                    S = user.Firstname
+                                }
+                            }
+                        },
+                        Key = new Dictionary<string, AttributeValue>
+                        {
+                            { nameof(User.Id), new AttributeValue { S = user.Id } },
+                            { nameof(User.Email), new AttributeValue { S = user.Email } }
+                        },
+                        ReturnValues = null,
+                        TableName = "TABLE",
+                        UpdateExpression = "SET #Email = :p1, #Firstname = :p2",
+                        ReturnConsumedCapacity = null,
+                        ConditionalOperator = null,
+                        Expected = null,
+                        ReturnItemCollectionMetrics = null,
+                        ReturnValuesOnConditionCheckFailure = null,
+                        AttributeUpdates = null
+                    });
+            });
     }
 
     [Fact]
