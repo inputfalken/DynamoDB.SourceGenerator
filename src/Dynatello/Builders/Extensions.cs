@@ -30,6 +30,18 @@ public static class Extensions
         );
     }
 
+    public static GetRequestBuilder<TArg> ToGetRequestBuilder<T, TArg, TReferences, TArgumentReferences>(
+        this TableAccess<T, TArg, TReferences, TArgumentReferences> source)
+        where TReferences : IAttributeExpressionNameTracker
+        where TArgumentReferences : IAttributeExpressionValueTracker<TArg>
+        where TArg : notnull
+    {
+        return new GetRequestBuilder<TArg>(
+            source.TableName,
+            source.Item.PrimaryKeyMarshaller.ComposeKeys<TArg>(y => y, null)
+        );
+    }
+
     public static GetRequestBuilder<TArg> ToGetRequestBuilder<T, TArg, TReferences, TArgumentReferences,
         TPartition>(
         this TableAccess<T, TArg, TReferences, TArgumentReferences> source,
