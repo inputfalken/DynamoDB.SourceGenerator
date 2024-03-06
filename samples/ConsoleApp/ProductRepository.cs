@@ -105,9 +105,8 @@ public class ProductRepository
 [DynamoDBMarshaller(typeof(ProductEntity), ArgumentType = typeof((string Id, decimal NewPrice, DateTime TimeStamp)), PropertyName = "UpdatePrice")]
 [DynamoDBMarshaller(typeof(ProductEntity), ArgumentType = typeof(decimal), PropertyName = "QueryByPrice")]
 public partial record ProductEntity(
-    [property: DynamoDBHashKey] string Id,
-    [property: DynamoDBGlobalSecondaryIndexHashKey(ProductEntity.PriceIndex)]
-    decimal Price,
+    [property: DynamoDBHashKey, DynamoDBGlobalSecondaryIndexRangeKey(ProductEntity.PriceIndex)] string Id,
+    [property: DynamoDBGlobalSecondaryIndexHashKey(ProductEntity.PriceIndex)] decimal Price,
     string Description,
     ProductEntity.MetadataEntity Metadata
 )
