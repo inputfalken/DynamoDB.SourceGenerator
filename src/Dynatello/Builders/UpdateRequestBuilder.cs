@@ -15,10 +15,10 @@ public readonly record struct UpdateRequestBuilder<T>
 
     private readonly string _tableName;
 
-    [Obsolete("Do not used this constructor!", true)]
+    [Obsolete(Constants.ObsoleteConstructorMessage, true)]
     public UpdateRequestBuilder()
     {
-        throw new InvalidOperationException("This is an invalid constructor access.");
+        throw Constants.InvalidConstructor();
     }
 
     internal UpdateRequestBuilder(

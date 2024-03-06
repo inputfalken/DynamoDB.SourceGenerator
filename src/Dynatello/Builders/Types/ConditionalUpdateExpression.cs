@@ -10,10 +10,10 @@ public readonly record struct ConditionalUpdateExpression<T, TArg, TReferences, 
     internal readonly TableAccess<T, TArg, TReferences, TArgumentReferences> TableAccess;
     internal readonly Func<TReferences, TArgumentReferences, string> Update;
 
-    [Obsolete("Do not use this constructor!", true)]
+    [Obsolete(Constants.ObsoleteConstructorMessage, true)]
     public ConditionalUpdateExpression()
     {
-        throw new InvalidOperationException("This is an invalid constructor access.");
+        throw Constants.InvalidConstructor();
     }
 
     internal ConditionalUpdateExpression(

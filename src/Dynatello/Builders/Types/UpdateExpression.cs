@@ -9,10 +9,10 @@ public readonly record struct UpdateExpression<T, TArg, TReferences, TArgumentRe
     internal readonly TableAccess<T, TArg, TReferences, TArgumentReferences> TableAccess;
     internal readonly Func<TReferences, TArgumentReferences, string> Update;
 
-    [Obsolete("Do not use this constructor!", true)]
+    [Obsolete(Constants.ObsoleteConstructorMessage, true)]
     public UpdateExpression()
     {
-        throw new InvalidOperationException("This is an invalid constructor access.");
+        throw Constants.InvalidConstructor();
     }
 
     internal UpdateExpression(

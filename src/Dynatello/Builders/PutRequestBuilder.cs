@@ -26,10 +26,10 @@ public readonly record struct PutRequestBuilder<T>
         _tableName = tableName;
     }
 
-    [Obsolete("Do not used this constructor!", true)]
+    [Obsolete(Constants.ObsoleteConstructorMessage, true)]
     public PutRequestBuilder()
     {
-        throw new InvalidOperationException("This is an invalid constructor access.");
+        throw Constants.InvalidConstructor();
     }
 
     /// <inheritdoc cref="PutItemRequest.TableName" />

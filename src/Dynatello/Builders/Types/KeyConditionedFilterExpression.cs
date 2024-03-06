@@ -10,10 +10,10 @@ public readonly struct KeyConditionedFilterExpression<T, TArg, TReferences, TArg
     internal readonly Func<TReferences, TArgumentReferences, string> Filter;
     internal readonly TableAccess<T, TArg, TReferences, TArgumentReferences> TableAccess;
 
-    [Obsolete("Do not use this constructor!", true)]
+    [Obsolete(Constants.ObsoleteConstructorMessage, true)]
     public KeyConditionedFilterExpression()
     {
-        throw new InvalidOperationException("This is an invalid constructor access.");
+        throw Constants.InvalidConstructor();
     }
 
     internal KeyConditionedFilterExpression(

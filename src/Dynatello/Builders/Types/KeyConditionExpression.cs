@@ -9,10 +9,10 @@ public readonly struct KeyConditionExpression<T, TArg, TReferences, TArgumentRef
     internal readonly Func<TReferences, TArgumentReferences, string> Condition;
     internal readonly TableAccess<T, TArg, TReferences, TArgumentReferences> TableAccess;
 
-    [Obsolete("Do not use this constructor!", true)]
+    [Obsolete(Constants.ObsoleteConstructorMessage, true)]
     public KeyConditionExpression()
     {
-        throw new InvalidOperationException("This is an invalid constructor access.");
+        throw Constants.InvalidConstructor();
     }
 
     internal KeyConditionExpression(

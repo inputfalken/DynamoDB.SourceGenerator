@@ -15,10 +15,10 @@ public readonly record struct GetRequestBuilder<T>
         TableName = tableName;
     }
 
-    [Obsolete("Do not used this constructor!", true)]
+    [Obsolete(Constants.ObsoleteConstructorMessage, true)]
     public GetRequestBuilder()
     {
-        throw new InvalidOperationException("This is an invalid constructor access.");
+        throw Constants.InvalidConstructor();
     }
 
     /// <inheritdoc cref="GetItemRequest.TableName" />

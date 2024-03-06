@@ -6,10 +6,10 @@ public readonly record struct TableAccess<T, TArg, TReferences, TArgumentReferen
     where TReferences : IAttributeExpressionNameTracker
     where TArgumentReferences : IAttributeExpressionValueTracker<TArg>
 {
-    [Obsolete("Do not use this constructor!", true)]
+    [Obsolete(Constants.ObsoleteConstructorMessage, true)]
     public TableAccess()
     {
-        throw new InvalidOperationException("This is an invalid constructor access.");
+        throw Constants.InvalidConstructor();
     }
 
     internal TableAccess(in string tableName, in IDynamoDBMarshaller<T, TArg, TReferences, TArgumentReferences> item)

@@ -14,10 +14,10 @@ public readonly record struct QueryRequestBuilder<T>
         TableName = tableName;
     }
 
-    [Obsolete("Do not used this constructor!", true)]
+    [Obsolete(Constants.ObsoleteConstructorMessage, true)]
     public QueryRequestBuilder()
     {
-        throw new InvalidOperationException("This is an invalid constructor access.");
+        throw Constants.InvalidConstructor();
     }
 
     /// <inheritdoc cref="QueryRequest.TableName" />
