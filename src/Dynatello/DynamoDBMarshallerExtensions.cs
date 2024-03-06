@@ -44,28 +44,9 @@ public static class DynamoDBMarshallerExtensions
         return (update, condition) switch
         {
             (null, null) => throw new ArgumentNullException(""),
-            (not null, not null) => y =>
-                ToAttributeExpression(
-                    source.AttributeExpressionNameTracker,
-                    source.AttributeExpressionValueTracker,
-                    y,
-                    update,
-                    condition
-                ),
-            (not null, null) => y =>
-                ToAttributeExpression(
-                    source.AttributeExpressionNameTracker,
-                    source.AttributeExpressionValueTracker,
-                    y,
-                    update
-                ),
-            (null, not null) => y =>
-                ToAttributeExpression(
-                    source.AttributeExpressionNameTracker,
-                    source.AttributeExpressionValueTracker,
-                    y,
-                    condition
-                )
+            (not null, not null) => y => source.ToAttributeExpression(y, update, condition),
+            (not null, null) => y => source.ToAttributeExpression(y, update),
+            (null, not null) => y => source.ToAttributeExpression(y, condition)
         };
     }
 }
