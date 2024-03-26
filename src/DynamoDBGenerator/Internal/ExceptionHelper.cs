@@ -23,7 +23,7 @@ public static class ExceptionHelper
 
     public static DynamoDBMarshallingException KeysInvalidConversion(string memberName, string argumentName, object value, string expectedType)
     {
-        return new DynamoDBMarshallingException(memberName, $"Value '{{{value}}}' from argument '{{nameof({argumentName})}}' is not convertable to '{expectedType}'.");
+        return new DynamoDBMarshallingException(memberName, $"Value '{{{value}}}' from argument '{argumentName}' is not convertable to '{expectedType}'.");
     }
 
     public static InvalidOperationException KeysValueWithNoCorrespondence(string argumentName, object value)

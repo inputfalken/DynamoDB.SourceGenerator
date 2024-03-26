@@ -6,7 +6,15 @@ This source generator is crafted to simplify DynamoDB integration for your proje
 This project has not been tested in any real scenario and currently serves as a hobby project.
 
 ## Installation
-Install  the following packages from Nuget:
+Theres two way to install this project either by the using `Dynatello` or by `DynamoDBGenerator.SourceGenerator` & `DynamoDBGenerator`.
+
+* `DynamoDBGenerator.SourceGenerator` & `DynamoDBGenerator` is the base functionality where you get reusable marshaller that's source generated.
+* Dyntello extends the marshaller in order to create reusable generic request builders. See this [example](https://github.com/inputfalken/DynamoDB.SourceGenerator/blob/main/samples/DynatelloRepository/Program.cs).
+  * NOTE: If you install Dynatello, you do not need to specify `DynamoDBGenerator.SourceGenerator` & `DynamoDBGenerator` as dependencies.
+
+[![DynamoDBGenerator][5]][6] 
+
+--- 
 
 [![DynamoDBGenerator][1]][2] 
 
@@ -16,6 +24,8 @@ Install  the following packages from Nuget:
 [2]: https://www.nuget.org/packages/DynamoDBGenerator
 [3]: https://img.shields.io/nuget/v/DynamoDBGenerator.SourceGenerator.svg?label=DynamoDBGenerator.SourceGenerator
 [4]: https://www.nuget.org/packages/DynamoDBGenerator.SourceGenerator
+[5]: https://img.shields.io/nuget/v/Dynatello.svg?label=Dynatello
+[6]: https://www.nuget.org/packages/Dynatello
 
 The `DynamoDBGenerator.SourceGenerator` is where the source generator is implemented.
 The source generator will look for attributes and implement interfaces that exists in `DynamoDBGenerator`.
