@@ -2,6 +2,9 @@ using DynamoDBGenerator;
 
 namespace Dynatello.Builders.Types;
 
+/// <summary>
+/// A type that can be used to chain behaviour through a builder pattern.
+/// </summary>
 public readonly record struct TableAccess<T, TArg, TReferences, TArgumentReferences>
     where TReferences : IAttributeExpressionNameTracker
     where TArgumentReferences : IAttributeExpressionValueTracker<TArg>

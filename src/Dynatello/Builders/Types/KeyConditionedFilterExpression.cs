@@ -2,6 +2,9 @@ using DynamoDBGenerator;
 
 namespace Dynatello.Builders.Types;
 
+/// <summary>
+/// Represents a AttributeExpression with both a key condition and a filter.
+/// </summary>
 public readonly struct KeyConditionedFilterExpression<T, TArg, TReferences, TArgumentReferences>
     where TReferences : IAttributeExpressionNameTracker
     where TArgumentReferences : IAttributeExpressionValueTracker<TArg>

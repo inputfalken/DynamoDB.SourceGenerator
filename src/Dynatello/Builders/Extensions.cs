@@ -4,8 +4,14 @@ using Dynatello.Builders.Types;
 
 namespace Dynatello.Builders;
 
+/// <summary>
+/// Contains extension methods to create builders.
+/// </summary>
 public static class Extensions
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public static QueryRequestBuilder<TArg> ToQueryRequestBuilder<T, TArg, TReferences, TArgumentReferences>(
         this KeyConditionedFilterExpression<T, TArg, TReferences, TArgumentReferences> source
     )
@@ -18,6 +24,9 @@ public static class Extensions
         );
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public static QueryRequestBuilder<TArg> ToQueryRequestBuilder<T, TArg, TReferences, TArgumentReferences>(
         this KeyConditionExpression<T, TArg, TReferences, TArgumentReferences> source
     )
@@ -30,6 +39,9 @@ public static class Extensions
         );
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public static GetRequestBuilder<TArg> ToGetRequestBuilder<T, TArg, TReferences, TArgumentReferences>(
         this TableAccess<T, TArg, TReferences, TArgumentReferences> source)
         where TReferences : IAttributeExpressionNameTracker
@@ -42,6 +54,9 @@ public static class Extensions
         );
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public static GetRequestBuilder<TArg> ToGetRequestBuilder<T, TArg, TReferences, TArgumentReferences,
         TPartition>(
         this TableAccess<T, TArg, TReferences, TArgumentReferences> source,
@@ -56,6 +71,9 @@ public static class Extensions
         );
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public static GetRequestBuilder<TArg> ToGetRequestBuilder<T, TArg,
         TReferences, TArgumentReferences, TPartition, TRange>(
         this TableAccess<T, TArg, TReferences, TArgumentReferences> source,
@@ -72,7 +90,9 @@ public static class Extensions
         );
     }
 
-
+    /// <summary>
+    /// 
+    /// </summary>
     public static UpdateRequestBuilder<TArg> ToUpdateItemRequestBuilder<T, TArg, TReferences, TArgumentReferences>(
         this UpdateExpression<T, TArg, TReferences, TArgumentReferences> source,
         Func<IDynamoDBKeyMarshaller, TArg, Dictionary<string, AttributeValue>> keySelector
@@ -88,6 +108,9 @@ public static class Extensions
         );
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public static UpdateRequestBuilder<TArg> ToUpdateItemRequestBuilder<T, TArg, TReferences, TArgumentReferences>(
         this ConditionalUpdateExpression<T, TArg, TReferences, TArgumentReferences> source,
         Func<IDynamoDBKeyMarshaller, TArg, Dictionary<string, AttributeValue>> keySelector
@@ -103,6 +126,9 @@ public static class Extensions
         );
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public static KeyConditionExpression<T, TArg, TReferences, TArgumentReferences> WithKeyConditionExpression<T, TArg,
         TReferences, TArgumentReferences>(
         this TableAccess<T, TArg, TReferences, TArgumentReferences> source,
@@ -113,6 +139,9 @@ public static class Extensions
         return new KeyConditionExpression<T, TArg, TReferences, TArgumentReferences>(source, condition);
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public static PutRequestBuilder<T> ToPutRequestBuilder<T, TReferences,
         TArgumentReferences>(
         this TableAccess<T, T, TReferences, TArgumentReferences> source
@@ -128,6 +157,9 @@ public static class Extensions
         );
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public static PutRequestBuilder<T> ToPutRequestBuilder<T, TReferences,
         TArgumentReferences>(
         this ConditionExpression<T, T, TReferences, TArgumentReferences> source

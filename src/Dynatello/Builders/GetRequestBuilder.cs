@@ -3,6 +3,12 @@ using Amazon.DynamoDBv2.Model;
 
 namespace Dynatello.Builders;
 
+/// <summary>
+/// A <see cref="GetItemRequest"/> builder that can be configured through the record `with` syntax.
+/// </summary>
+/// <typeparam name="T">
+/// The type you need to provide in you execution.
+/// </typeparam>
 public readonly record struct GetRequestBuilder<T>
 {
     private readonly Func<T, Dictionary<string, AttributeValue>> _keysSelector;
@@ -30,6 +36,13 @@ public readonly record struct GetRequestBuilder<T>
     /// <inheritdoc cref="GetItemRequest.ReturnConsumedCapacity" />
     public ReturnConsumedCapacity? ReturnConsumedCapacity { get; init; } = null;
 
+    /// <summary>
+    /// Creates a <see cref="GetItemRequest"/>.
+    /// </summary>
+    /// <param name="arg">
+    /// The argument required to extract the keys.
+    /// </param>
+    /// <returns>A <see cref="GetItemRequest"/></returns>
     public GetItemRequest Build(T arg)
     {
         var request = new GetItemRequest

@@ -2,6 +2,9 @@ using DynamoDBGenerator;
 
 namespace Dynatello.Builders.Types;
 
+/// <summary>
+/// Represents a AttributeExpression with a update.
+/// </summary>
 public readonly record struct UpdateExpression<T, TArg, TReferences, TArgumentReferences>
     where TReferences : IAttributeExpressionNameTracker
     where TArgumentReferences : IAttributeExpressionValueTracker<TArg>

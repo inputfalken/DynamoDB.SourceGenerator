@@ -5,8 +5,11 @@ using DynamoDBGenerator;
 namespace Dynatello.Builders;
 
 /// <summary>
-///     A record based builder for creating <see cref="UpdateItemRequest" /> that can be configured via the `with` syntax.
+/// A <see cref="UpdateItemRequest"/> builder that can be configured through the record `with` syntax.
 /// </summary>
+/// <typeparam name="T">
+/// The type you need to provide in you execution.
+/// </typeparam>
 public readonly record struct UpdateRequestBuilder<T>
 {
     private readonly Func<T, IAttributeExpression> _attributeExpressionSelector;

@@ -4,6 +4,12 @@ using DynamoDBGenerator;
 
 namespace Dynatello.Builders;
 
+/// <summary>
+/// A <see cref="QueryRequest"/> builder that can be configured through the record `with` syntax.
+/// </summary>
+/// <typeparam name="T">
+/// The type you need to provide in you execution.
+/// </typeparam>
 public readonly record struct QueryRequestBuilder<T>
 {
     private readonly Func<T, IAttributeExpression> _attributeExpressionSelector;
