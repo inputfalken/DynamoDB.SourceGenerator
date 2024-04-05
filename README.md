@@ -163,26 +163,6 @@ public class Person
 
 ### Creating request objects
 
-#### PutItemRequest
-
-```csharp
-internal static class Program
-{
-    public static void Main()
-    {
-        Repository repository = new Repository();
-        PutItemRequest putItemRequest = repository.PersonMarshaller.ToPutItemRequest(new Person(), "TABLENAME");
-    }
-}
-
-
-// This DynamoDBMarshallerAttribute is what will cause the source generation to kick in.
-// The type provided to the DynamoDBMarshallerAttribute is what will get functionality.
-// It is possible to provide multiple DynamoDBMarshallerAttributes in order to source-generate multiple types in the same class.
-[DynamoDBMarshaller(typeof(Person), PropertyName = "PersonMarshaller")]
-public partial class Repository { }
-```
-
 #### UpdateRequest without providing the DTO
 
 ```csharp
