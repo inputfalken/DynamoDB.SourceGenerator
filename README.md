@@ -168,7 +168,7 @@ public class Person
 ```csharp
 // A typical scenario would be that you would use multuple DynamoDBMarshaller and describe your operaitons via PropertyName.
 // If you do not specify an ArgumentType it will use your main entity Type instead which is typically useful for PUT operations.
-[DynamoDBMarshaller(typeof(Person), ArgumentType = typeof((string PersonId, string Firstname)), PropertyName = "UpdateFirstName")]
+[DynamoDBMarshaller(EntityType = typeof(Person), ArgumentType = typeof((string PersonId, string Firstname)), PropertyName = "UpdateFirstName")]
 public partial class Repository { }
 
 internal static class Program
@@ -237,7 +237,7 @@ public class EntityDTO
     public string GlobalSecondaryIndexRangeKey { get; set; }
 }
 
-[DynamoDBMarshaller(typeof(EntityDTO))]
+[DynamoDBMarshaller(EntityType = typeof(EntityDTO))]
 public partial class Repository { }
 
 internal static class Program
@@ -292,7 +292,7 @@ public class MyCustomConverters : AttributeValueConverters
 }
 
 [DynamoDBMarshallerOptions(Converter = typeof(MyCustomConverters))]
-[DynamoDBMarshaller(typeof(Person), PropertyName = "PersonMarshaller")]
+[DynamoDBMarshaller(EntityType = typeof(Person), PropertyName = "PersonMarshaller")]
 public partial Repository 
 {
 
@@ -303,7 +303,7 @@ public partial Repository
 
 ```csharp
 [DynamoDBMarshallerOptions(EnumConversion = EnumConversion.Name)]
-[DynamoDBMarshaller(typeof(Person), PropertyName = "PersonMarshaller")]
+[DynamoDBMarshaller(EntityType = typeof(Person), PropertyName = "PersonMarshaller")]
 public partial class Repository { }
 ```
 
