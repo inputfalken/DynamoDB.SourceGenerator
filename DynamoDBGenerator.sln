@@ -6,7 +6,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamoDBGenerator", "src\Dy
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamoDBGenerator.SourceGenerator.Tests", "tests\DynamoDBGenerator.SourceGenerator.Tests\DynamoDBGenerator.SourceGenerator.Tests.csproj", "{D8EABA41-D014-49BD-B109-54829DB835E7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamoDB.SourceGenerator.Benchmarks", "tests\DynamoDB.SourceGenerator.Benchmarks\DynamoDB.SourceGenerator.Benchmarks.csproj", "{A80AC940-3BD8-4377-BDB9-AE82FD4DF944}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamoDBGenerator.SourceGenerator.Benchmarks", "tests\DynamoDBGenerator.SourceGenerator.Benchmarks\DynamoDBGenerator.SourceGenerator.Benchmarks.csproj", "{A80AC940-3BD8-4377-BDB9-AE82FD4DF944}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{E84C4630-5241-4FAA-8F86-964AB25A2C6F}"
 EndProject

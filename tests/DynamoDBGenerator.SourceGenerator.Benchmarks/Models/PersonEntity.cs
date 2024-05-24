@@ -1,7 +1,10 @@
 using Amazon.DynamoDBv2.DataModel;
-namespace DynamoDB.SourceGenerator.Benchmarks.Models;
+using DynamoDBGenerator.Attributes;
+namespace DynamoDBGenerator.SourceGenerator.Benchmarks.Models;
 
-public class PersonEntity
+
+[DynamoDBMarshaller(typeof(PersonEntity))]
+public partial class PersonEntity
 {
     [DynamoDBHashKey]
     public string Id { get; set; } = null!;

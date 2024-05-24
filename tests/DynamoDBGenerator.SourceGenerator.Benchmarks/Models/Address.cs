@@ -1,4 +1,4 @@
-namespace DynamoDB.SourceGenerator.Benchmarks.Models;
+namespace DynamoDBGenerator.SourceGenerator.Benchmarks.Models;
 
 public class Address
 {

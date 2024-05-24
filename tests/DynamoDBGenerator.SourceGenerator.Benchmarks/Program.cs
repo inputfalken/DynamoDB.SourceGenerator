@@ -9,9 +9,8 @@ using AutoFixture;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
-using DynamoDB.SourceGenerator.Benchmarks;
-using DynamoDB.SourceGenerator.Benchmarks.Models;
-using Microsoft.Diagnostics.Tracing.Parsers.MicrosoftWindowsTCPIP;
+using DynamoDBGenerator.SourceGenerator.Benchmarks.Models;
+using DynamoDBGenerator.SourceGenerator.Benchmarks;
 
 
 BenchmarkRunner.Run<Marshalling>();
@@ -52,9 +51,9 @@ public class Marshalling
     [Benchmark]
     public Dictionary<string, AttributeValue> Marshall_SG()
     {
-        return Repository.PersonEntityMarshaller.Marshall(_singleElement);
+        return PersonEntity.PersonEntityMarshaller.Marshall(_singleElement);
     }
-    
+
     [Benchmark]
     public PersonEntity Unmarshall_AWS()
     {
@@ -64,7 +63,7 @@ public class Marshalling
     [Benchmark]
     public PersonEntity Unmarshall_SG()
     {
-        return Repository.PersonEntityMarshaller.Unmarshall(_attributeValues);
+        return PersonEntity.PersonEntityMarshaller.Unmarshall(_attributeValues);
     }
 
 }
