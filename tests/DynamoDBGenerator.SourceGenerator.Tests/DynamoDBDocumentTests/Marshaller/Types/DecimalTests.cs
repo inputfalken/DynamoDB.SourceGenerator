@@ -6,7 +6,7 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshall
 
 
 
-[DynamoDBMarshaller(typeof(Container<decimal>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<decimal>))]
 public partial class DecimalTests : RecordMarshalAsserter<decimal>
 {
     public DecimalTests() : base(new[] {30.32093290329m}, x => new() {N = x.ToString(CultureInfo.InvariantCulture)})
@@ -24,7 +24,7 @@ public partial class DecimalTests : RecordMarshalAsserter<decimal>
 
 }
 
-[DynamoDBMarshaller(typeof(Container<decimal?>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<decimal?>))]
 public partial class NullableDecimalTests : RecordMarshalAsserter<decimal?>
 {
     public NullableDecimalTests() : base(new decimal?[] {null, 30.32093290329m}, x => x is null ? null : new AttributeValue {N = x.Value.ToString(CultureInfo.InvariantCulture)})

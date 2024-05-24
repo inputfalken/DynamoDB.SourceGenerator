@@ -6,7 +6,7 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.A
 
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Tuples;
 
-[DynamoDBMarshaller(typeof((string FirstName, int Age, IReadOnlyCollection<((string Address, string? ZipCode) Address, (string Email, string Phone)? Mediums)> PhoneAndEmail )))]
+[DynamoDBMarshaller(EntityType = typeof((string FirstName, int Age, IReadOnlyCollection<((string Address, string? ZipCode) Address, (string Email, string Phone)? Mediums)> PhoneAndEmail )))]
 public partial class ComplexTupleTests : MarshalAsserter<(string FirstName, int Age,
     IReadOnlyCollection<((string Address, string? ZipCode) Address, (string Email, string Phone)? Mediums)> PhoneAndEmail)>
 {

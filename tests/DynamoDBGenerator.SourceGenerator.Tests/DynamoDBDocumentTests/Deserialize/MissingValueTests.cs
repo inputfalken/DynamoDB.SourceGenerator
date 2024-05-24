@@ -3,9 +3,9 @@ using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.Exceptions;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize;
 
-[DynamoDBMarshaller(typeof(RequiredReferenceTypeValueMissingClass))]
-[DynamoDBMarshaller(typeof(OptionalReferenceTypeValueMissingClass))]
-[DynamoDBMarshaller(typeof(RequiredValueTypeValueMissingClass))]
+[DynamoDBMarshaller(EntityType = typeof(RequiredReferenceTypeValueMissingClass))]
+[DynamoDBMarshaller(EntityType = typeof(OptionalReferenceTypeValueMissingClass))]
+[DynamoDBMarshaller(EntityType = typeof(RequiredValueTypeValueMissingClass))]
 public partial class MissingValueTests
 {
     [Fact]

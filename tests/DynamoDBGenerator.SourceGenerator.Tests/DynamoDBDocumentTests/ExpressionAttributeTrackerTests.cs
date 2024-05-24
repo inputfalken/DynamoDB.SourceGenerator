@@ -1,11 +1,11 @@
 using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 
-[DynamoDBMarshaller(typeof(Person), ArgumentType = typeof((string firstName, DateTime timeStamp)), PropertyName = "PersonWithTupleArgument")]
-[DynamoDBMarshaller(typeof(Person))]
-[DynamoDBMarshaller(typeof(SelfReferencingClass))]
-[DynamoDBMarshaller(typeof(ClassWithOverriddenAttributeName))]
-[DynamoDBMarshaller(typeof(InheritedClass))]
+[DynamoDBMarshaller(EntityType = typeof(Person), ArgumentType = typeof((string firstName, DateTime timeStamp)), PropertyName = "PersonWithTupleArgument")]
+[DynamoDBMarshaller(EntityType = typeof(Person))]
+[DynamoDBMarshaller(EntityType = typeof(SelfReferencingClass))]
+[DynamoDBMarshaller(EntityType = typeof(ClassWithOverriddenAttributeName))]
+[DynamoDBMarshaller(EntityType = typeof(InheritedClass))]
 public partial class ExpressionAttributeTrackerTests
 {
     [Fact]

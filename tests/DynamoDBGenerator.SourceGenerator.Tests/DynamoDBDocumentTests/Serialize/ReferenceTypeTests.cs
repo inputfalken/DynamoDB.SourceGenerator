@@ -1,7 +1,7 @@
 using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
-[DynamoDBMarshaller(typeof(ReferenceTypeClass))]
+[DynamoDBMarshaller(EntityType = typeof(ReferenceTypeClass))]
 public partial class ReferenceTypeTests
 {
     [Fact]

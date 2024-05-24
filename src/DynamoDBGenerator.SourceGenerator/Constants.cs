@@ -12,7 +12,7 @@ public static class Constants
 
             public static class DynamoDBMarshallerArgument
             {
-
+                public const string EntityType = "EntityType";
                 public const string PropertyName = "PropertyName";
                 public const string ArgumentType = "ArgumentType";
             }

@@ -4,7 +4,7 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.A
 
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Container<TimeOnly>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<TimeOnly>))]
 public partial class TimeOnlyTests : RecordMarshalAsserter<TimeOnly>
 {
     protected override Container<TimeOnly> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
@@ -21,7 +21,7 @@ public partial class TimeOnlyTests : RecordMarshalAsserter<TimeOnly>
     }
 }
 
-[DynamoDBMarshaller(typeof(Container<TimeOnly?>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<TimeOnly?>))]
 public partial class NullableTimeOnlyTests : RecordMarshalAsserter<TimeOnly?>
 {
 

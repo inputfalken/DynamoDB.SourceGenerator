@@ -4,7 +4,7 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.A
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets;
 
-[DynamoDBMarshaller(typeof(Container<HashSet<int>>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<HashSet<int>>))]
 public partial class IntHashSetTests : SetAsserter<HashSet<int>, int>
 {
 
@@ -21,7 +21,7 @@ public partial class IntHashSetTests : SetAsserter<HashSet<int>, int>
     }
 }
 
-[DynamoDBMarshaller(typeof(Container<HashSet<decimal>>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<HashSet<decimal>>))]
 public partial class DecimalHashSetTests : SetAsserter<HashSet<decimal>, decimal>
 {
 

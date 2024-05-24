@@ -1,7 +1,7 @@
 using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBMarshaller(typeof(NullableValueTypeClass))]
+[DynamoDBMarshaller(EntityType = typeof(NullableValueTypeClass))]
 public partial class NullableTests
 {
     [Fact]

@@ -3,7 +3,7 @@ using AutoFixture;
 using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize;
 
-[DynamoDBMarshaller(typeof(Cat))]
+[DynamoDBMarshaller(EntityType = typeof(Cat))]
 public partial class InheritanceTests
 {
     [Fact]

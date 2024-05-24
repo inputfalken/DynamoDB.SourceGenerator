@@ -4,7 +4,7 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.A
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets;
 
-[DynamoDBMarshaller(typeof(Container<SortedSet<string>>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<SortedSet<string>>))]
 public partial class SortedSetTests : NoneNullableElementAsserter<SortedSet<string>, string>
 {
     public SortedSetTests() : base(Strings(), x => new SortedSet<string>(x))

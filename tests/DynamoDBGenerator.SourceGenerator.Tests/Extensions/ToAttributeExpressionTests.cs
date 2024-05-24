@@ -3,7 +3,7 @@ using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.Extensions;
 namespace DynamoDBGenerator.SourceGenerator.Tests.Extensions;
 
-[DynamoDBMarshaller(typeof(OrderAttributeExpressionTests))]
+[DynamoDBMarshaller(EntityType = typeof(OrderAttributeExpressionTests))]
 public partial class ToAttributeExpressionTests
 {
     private readonly Fixture _fixture = new();

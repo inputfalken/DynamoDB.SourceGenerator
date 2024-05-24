@@ -5,7 +5,7 @@ using DynamoDBGenerator.Exceptions;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Tuples;
 
-[DynamoDBMarshaller(typeof((string FirstName, string LastName, string? EmailAddress)))]
+[DynamoDBMarshaller(EntityType = typeof((string FirstName, string LastName, string? EmailAddress)))]
 public partial class SimpleTupleTests : MarshalAsserter<(string FirstName, string LastName, string? EmailAddress)>
 {
     private static readonly Fixture Fixture = new();

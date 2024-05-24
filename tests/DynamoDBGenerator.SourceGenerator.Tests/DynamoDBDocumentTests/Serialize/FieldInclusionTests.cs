@@ -1,10 +1,10 @@
 using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
-[DynamoDBMarshaller(typeof(EmptyClass))]
-[DynamoDBMarshaller(typeof(ClassWithIgnoredField))]
-[DynamoDBMarshaller(typeof(ClassWithOneField))]
-[DynamoDBMarshaller(typeof(ClassWithOneDDBField))]
+[DynamoDBMarshaller(EntityType = typeof(EmptyClass))]
+[DynamoDBMarshaller(EntityType = typeof(ClassWithIgnoredField))]
+[DynamoDBMarshaller(EntityType = typeof(ClassWithOneField))]
+[DynamoDBMarshaller(EntityType = typeof(ClassWithOneDDBField))]
 public partial class FieldInclusionTests
 {
 

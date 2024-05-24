@@ -2,7 +2,7 @@ using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize;
 
-[DynamoDBMarshaller(typeof(PropertyWithMixedNames))]
+[DynamoDBMarshaller(EntityType = typeof(PropertyWithMixedNames))]
 public partial class PropertyRenamingTests
 {
     [Fact]

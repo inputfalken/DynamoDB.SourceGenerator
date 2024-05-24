@@ -1,7 +1,7 @@
 using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
-[DynamoDBMarshaller(typeof(CollectionClass))]
+[DynamoDBMarshaller(EntityType = typeof(CollectionClass))]
 public partial class CollectionTests
 {
 

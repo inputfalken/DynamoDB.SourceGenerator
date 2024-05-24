@@ -4,7 +4,7 @@ using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Container<float>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<float>))]
 public partial class FloatTests : RecordMarshalAsserter<float>
 {
     public FloatTests() : base(new[] {3_000.5F}, x => new() {N = x.ToString(CultureInfo.InvariantCulture)})
@@ -21,7 +21,7 @@ public partial class FloatTests : RecordMarshalAsserter<float>
     }
 }
 
-[DynamoDBMarshaller(typeof(Container<float?>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<float?>))]
 public partial class NullableFloatTests : RecordMarshalAsserter<float?>
 {
     public NullableFloatTests() : base(new float?[] {3_000.5F, null}, x => x is null ? null : new AttributeValue {N = x.Value.ToString(CultureInfo.InvariantCulture)})

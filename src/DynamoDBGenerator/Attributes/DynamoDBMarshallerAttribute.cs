@@ -8,7 +8,7 @@ namespace DynamoDBGenerator.Attributes;
 /// <example>
 ///     The example below demonstrates the usage of this attribute in a repository class:
 ///     <code>
-///         [DynamoDBMarshaller(typeof(OrderEntity), PropertyName = "MyCustomPropertyName")]
+///         [DynamoDBMarshaller(EntityType = typeof(OrderEntity), PropertyName = "MyCustomPropertyName"))]
 ///         public class Repository
 ///         {
 ///             public Repository()
@@ -27,17 +27,10 @@ namespace DynamoDBGenerator.Attributes;
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = true)]
 public class DynamoDBMarshallerAttribute : Attribute
 {
-    // ReSharper disable once NotAccessedField.Local
-    private readonly Type _entityType;
-
     /// <summary>
-    /// Initializes a new instance of the <see cref="DynamoDBMarshallerAttribute"/> class.
+    /// Gets or sets the type that will be used for marshalling and unmarshalling.
     /// </summary>
-    /// <param name="entityType">The type to be represented as a DynamoDB entity.</param>
-    public DynamoDBMarshallerAttribute(Type entityType)
-    {
-        _entityType = entityType;
-    }
+    public Type? EntityType { get; set; }
 
     /// <summary>
     /// Gets or sets the name of the property to use when accessing the marshaller.
@@ -49,5 +42,5 @@ public class DynamoDBMarshallerAttribute : Attribute
     /// will use as its argument type-parameter.
     /// </summary>
     public Type? ArgumentType { get; set; }
-    
+
 }

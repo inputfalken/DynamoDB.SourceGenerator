@@ -4,7 +4,7 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.A
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections;
 
-[DynamoDBMarshaller(typeof(Container<IReadOnlyList<string>>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<IReadOnlyList<string>>))]
 // ReSharper disable once UnusedType.Global
 public partial class NoneNullableIReadOnlyListElementTests : NoneNullableElementAsserter<IReadOnlyList<string>, string>
 {
@@ -27,7 +27,7 @@ public partial class NoneNullableIReadOnlyListElementTests : NoneNullableElement
     }
 }
 
-[DynamoDBMarshaller(typeof(Container<IReadOnlyList<string?>>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<IReadOnlyList<string?>>))]
 // ReSharper disable once UnusedType.Global
 public partial class NullableIReadOnlyListElementTests : NullableElementAsserter<IReadOnlyList<string?>, string?>
 {

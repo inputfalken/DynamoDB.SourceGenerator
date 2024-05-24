@@ -4,7 +4,7 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serializ
 // TODO these tests are giving warnings due to the return type of Unmarshall does not take nullability into account.
 // This could maybe be solved by digging down into generic the types in order to determine whether they should be nullable and then build the return type based on that information.
 // This behaviour is already solved for methods that should follow the nullability of data members.
-[DynamoDBMarshaller(typeof(KeyValuePairClass))]
+[DynamoDBMarshaller(EntityType = typeof(KeyValuePairClass))]
 public partial class KeyValuePairTests
 {
     [Fact]

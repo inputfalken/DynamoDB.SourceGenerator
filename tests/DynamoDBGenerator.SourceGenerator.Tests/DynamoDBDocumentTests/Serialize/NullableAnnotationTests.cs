@@ -3,8 +3,8 @@ using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.Exceptions;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
-[DynamoDBMarshaller(typeof(NestedNullableAnnotationTestClass))]
-[DynamoDBMarshaller(typeof(NullableAnnotationTestClass))]
+[DynamoDBMarshaller(EntityType = typeof(NestedNullableAnnotationTestClass))]
+[DynamoDBMarshaller(EntityType = typeof(NullableAnnotationTestClass))]
 public partial class NullableAnnotationTests
 {
 
