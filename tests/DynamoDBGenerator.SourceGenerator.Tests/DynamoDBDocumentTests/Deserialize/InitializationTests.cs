@@ -9,8 +9,8 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserial
 [DynamoDBMarshaller(EntityType = typeof(InlinedRecord))]
 [DynamoDBMarshaller(EntityType = typeof(ExplicitConstructorRecord))]
 [DynamoDBMarshaller(EntityType = typeof(InlineRecordWithNestedRecord))]
-[DynamoDBMarshaller(EntityType = typeof(ClassWithConstructorThatObjectInitializerShouldOnlyBeUsed), PropertyName = "InitializerOnly")]
-[DynamoDBMarshaller(EntityType = typeof(ClassWithConstructorThatShouldOnlyBeUsed), PropertyName = "ConstructorOnly")]
+[DynamoDBMarshaller(EntityType = typeof(ClassWithConstructorThatObjectInitializerShouldOnlyBeUsed), AccessName = "InitializerOnly")]
+[DynamoDBMarshaller(EntityType = typeof(ClassWithConstructorThatShouldOnlyBeUsed), AccessName = "ConstructorOnly")]
 public partial class InitializationTests
 {
 

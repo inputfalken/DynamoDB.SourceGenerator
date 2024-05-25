@@ -6,10 +6,10 @@ using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.Exceptions;
 namespace DynamoDBGenerator.SourceGenerator.Tests;
 
-[DynamoDBMarshaller(EntityType = typeof(TypeWithPartitionKeyOnly), PropertyName = "PartitionKeyOnly")]
-[DynamoDBMarshaller(EntityType = typeof(TypeWithRangeKeyOnly), PropertyName = "TypeWithRangeOnly")]
-[DynamoDBMarshaller(EntityType = typeof(TypeWithKeys), PropertyName = "TypeWithKeys")]
-[DynamoDBMarshaller(EntityType = typeof(TypeWithoutKeys), PropertyName = "TypeWithoutKeys")]
+[DynamoDBMarshaller(EntityType = typeof(TypeWithPartitionKeyOnly), AccessName = "PartitionKeyOnly")]
+[DynamoDBMarshaller(EntityType = typeof(TypeWithRangeKeyOnly), AccessName = "TypeWithRangeOnly")]
+[DynamoDBMarshaller(EntityType = typeof(TypeWithKeys), AccessName = "TypeWithKeys")]
+[DynamoDBMarshaller(EntityType = typeof(TypeWithoutKeys), AccessName = "TypeWithoutKeys")]
 public partial class DynamoDBPrimaryKeyMarshallerTests
 {
     private readonly Fixture _fixture = new();

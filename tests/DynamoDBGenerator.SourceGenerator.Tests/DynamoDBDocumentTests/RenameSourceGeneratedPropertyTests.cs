@@ -1,7 +1,7 @@
 using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 
-[DynamoDBMarshaller(EntityType = typeof(WillHaveChangedPropertyName), PropertyName = "SomethingElse")]
+[DynamoDBMarshaller(EntityType = typeof(WillHaveChangedPropertyName), AccessName = "SomethingElse")]
 public partial class RenameSourceGeneratedPropertyTests
 {
 

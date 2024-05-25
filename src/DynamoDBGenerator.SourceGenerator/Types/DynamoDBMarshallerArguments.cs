@@ -10,8 +10,8 @@ public readonly record struct DynamoDBMarshallerArguments
         ArgumentType = argumentType is null
             ? EntityTypeSymbol
             : (INamedTypeSymbol)argumentType.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
-        PropertyName = propertyName ?? $"{EntityTypeSymbol.Name}Marshaller";
-        ImplementationName = $"{PropertyName}Implementation";
+        Accessname = propertyName ?? $"{EntityTypeSymbol.Name}Marshaller";
+        ImplementationName = $"{Accessname}Implementation";
 
         AnnotatedEntityType = EntityTypeSymbol.Representation().annotated;
         AnnotatedArgumentType = argumentType is null ? AnnotatedEntityType : ArgumentType.Representation().annotated;
@@ -20,7 +20,7 @@ public readonly record struct DynamoDBMarshallerArguments
     public string ImplementationName { get; }
     public INamedTypeSymbol EntityTypeSymbol { get; }
     public INamedTypeSymbol ArgumentType { get; }
-    public string PropertyName { get; }
+    public string Accessname { get; }
 
     public string AnnotatedEntityType { get; }
     public string AnnotatedArgumentType { get; }

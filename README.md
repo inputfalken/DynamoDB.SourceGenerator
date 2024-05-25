@@ -165,9 +165,9 @@ public class Person
 #### UpdateRequest without providing the DTO
 
 ```csharp
-// A typical scenario would be that you would use multuple DynamoDBMarshaller and describe your operaitons via PropertyName.
+// A typical scenario would be that you would use multuple DynamoDBMarshaller and describe your operaitons via AccessName.
 // If you do not specify an ArgumentType it will use your main entity Type instead which is typically useful for PUT operations.
-[DynamoDBMarshaller(EntityType = typeof(Person), ArgumentType = typeof((string PersonId, string Firstname)), PropertyName = "UpdateFirstName")]
+[DynamoDBMarshaller(EntityType = typeof(Person), ArgumentType = typeof((string PersonId, string Firstname)), AccessName = "UpdateFirstName")]
 public partial class Repository { }
 
 internal static class Program
@@ -218,7 +218,7 @@ The source generator will internally validate your object arguments. So if you p
 
 ```csharp
 
-[DynamoDBMarshaller(PropertyName = 'KeyMarshallerSample')]
+[DynamoDBMarshaller(AccessName = 'KeyMarshallerSample')]
 public class EntityDTO
 {
     [DynamoDBHashKey("PK")]
@@ -287,7 +287,7 @@ public class MyCustomConverters : AttributeValueConverters
 }
 
 [DynamoDBMarshallerOptions(Converter = typeof(MyCustomConverters))]
-[DynamoDBMarshaller(EntityType = typeof(Person), PropertyName = "PersonMarshaller")]
+[DynamoDBMarshaller(EntityType = typeof(Person), AccessName = "PersonMarshaller")]
 public partial Repository 
 {
 
@@ -298,7 +298,7 @@ public partial Repository
 
 ```csharp
 [DynamoDBMarshallerOptions(EnumConversion = EnumConversion.Name)]
-[DynamoDBMarshaller(EntityType = typeof(Person), PropertyName = "PersonMarshaller")]
+[DynamoDBMarshaller(EntityType = typeof(Person), AccessName = "PersonMarshaller")]
 public partial class Repository { }
 ```
 

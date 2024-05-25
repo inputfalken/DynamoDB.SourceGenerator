@@ -23,7 +23,7 @@ namespace DynamoDBGenerator.Attributes;
 ///                 }
 ///             }
 ///         }
-///         [DynamoDBMarshaller(EntityType = typeof(OrderEntity), PropertyName = "MyCustomPropertyName"))]
+///         [DynamoDBMarshaller(EntityType = typeof(OrderEntity), AccessName = "MyCustomPropertyName"))]
 ///         public class OrderEntity
 ///         {
 ///             [DynamoDBHashKey]
@@ -44,12 +44,17 @@ public class DynamoDBMarshallerAttribute : Attribute
     public Type? EntityType { get; set; }
 
     /// <summary>
-    /// Gets or sets the name of the property to use when accessing the marshaller.
+    /// Gets or sets the name for how the marshaller is accessed.
     /// </summary>
     /// <remarks>
-    /// The default value will be dependant on the <see cref="EntityType"/> by having the naming format of `{Type.Name}Marshaller` but without the reflection.
+    /// <para> 
+    ///   The default value will be dependant on the <see cref="EntityType"/> by having the naming format of `{Type.Name}Marshaller` but without the reflection.
+    /// </para>
+    /// <para>
+    ///   By default it the marshaller can be accessed as a property, but can be transformed into a method if you add constructor dependencies to <see cref="DynamoDbMarshallerOptionsAttribute.Converters" />
+    /// </para>
     /// </remarks>
-    public string? PropertyName { get; set; }
+    public string? AccessName { get; set; }
 
     /// <summary>
     /// Gets or sets the type that <see cref="IDynamoDBMarshaller{TEntity,TArg,TEntityAttributeNameTracker,TArgumentAttributeValueTracker}"/>
