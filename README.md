@@ -111,7 +111,6 @@ As part of the source generation process, two additional types will be mirrored 
 * A reference tracker that functions as attribute references for the arguments you provide to DynamoDB.
 
 These trackers enable you to consistently construct your AttributeExpressions using string interpolation. 
-
 For an illustrative example, refer to the [tests](https://github.com/inputfalken/DynamoDB.SourceGenerator/blob/main/tests/DynamoDBGenerator.SourceGenerator.Tests/Extensions/ToAttributeExpressionTests.cs).
 
 ## Nullable reference types
@@ -219,6 +218,7 @@ The source generator will internally validate your object arguments. So if you p
 
 ```csharp
 
+[DynamoDBMarshaller(PropertyName = 'KeyMarshallerSample')]
 public class EntityDTO
 {
     [DynamoDBHashKey("PK")]
@@ -237,21 +237,17 @@ public class EntityDTO
     public string GlobalSecondaryIndexRangeKey { get; set; }
 }
 
-[DynamoDBMarshaller(EntityType = typeof(EntityDTO))]
-public partial class Repository { }
-
 internal static class Program
 {
     public static void Main()
     {
-        var repository = new Repository();
         // PrimaryKeyMarshaller is used to convert the keys obtained from the [DynamoDBHashKey] and [DynamoDBRangeKey] attributes.
-        var keyMarshaller = repository.PrimaryKeyMarshaller;
+        var keyMarshaller = EntityDTO.KeyMarshallerSample.PrimaryKeyMarshaller;
 
         // IndexKeyMarshaller requires an argument that is the index name so it can provide you with the correct conversion based on the indexes you may have.
         // It works the same way for both LocalSecondaryIndex and GlobalSecondaryIndex attributes.
-        var GSIKeyMarshaller = repository.IndexKeyMarshaller("GSI");
-        var LSIKeyMarshaller = repository.IndexKeyMarshaller("LSI");
+        var GSIKeyMarshaller = EntityDTO.KeyMarshallerSample.IndexKeyMarshaller("GSI");
+        var LSIKeyMarshaller = EntityDTO.KeyMarshallerSample.IndexKeyMarshaller("LSI");
     }
 }
 ```
