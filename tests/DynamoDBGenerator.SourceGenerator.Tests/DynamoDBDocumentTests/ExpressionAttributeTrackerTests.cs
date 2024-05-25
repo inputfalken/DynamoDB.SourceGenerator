@@ -1,7 +1,7 @@
 using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 
-[DynamoDBMarshaller(EntityType = typeof(Person), ArgumentType = typeof((string firstName, DateTime timeStamp)), PropertyName = "PersonWithTupleArgument")]
+[DynamoDBMarshaller(EntityType = typeof(Person), ArgumentType = typeof((string firstName, DateTime timeStamp)), AccessName = "PersonWithTupleArgument")]
 [DynamoDBMarshaller(EntityType = typeof(Person))]
 [DynamoDBMarshaller(EntityType = typeof(SelfReferencingClass))]
 [DynamoDBMarshaller(EntityType = typeof(ClassWithOverriddenAttributeName))]

@@ -4,8 +4,8 @@ using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.Extensions;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Tuples;
 
-[DynamoDBMarshaller(EntityType = typeof(Animal), ArgumentType = typeof((string Id, Animal.Status Status, DateTime TimeStamp)), PropertyName = "SetStatus")]
-[DynamoDBMarshaller(EntityType = typeof(Animal), PropertyName = "SaveAnimal", ArgumentType = typeof((Animal animal, Animal.Status adopted, Animal.Status pending)))]
+[DynamoDBMarshaller(EntityType = typeof(Animal), ArgumentType = typeof((string Id, Animal.Status Status, DateTime TimeStamp)), AccessName = "SetStatus")]
+[DynamoDBMarshaller(EntityType = typeof(Animal), AccessName = "SaveAnimal", ArgumentType = typeof((Animal animal, Animal.Status adopted, Animal.Status pending)))]
 public partial class TupleArgumentTests
 {
 

@@ -2,9 +2,9 @@ using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
 [DynamoDBMarshaller(EntityType = typeof(TupleClass))]
-[DynamoDBMarshaller(EntityType = typeof((int X, int Y)), PropertyName = "XAndYTuple")]
-[DynamoDBMarshaller(EntityType = typeof((int, int )), PropertyName = "UnnamedTuple")]
-[DynamoDBMarshaller(EntityType = typeof((string Id, (int X, int Y) Coordinates)), PropertyName = "NestedXAndYTuple")]
+[DynamoDBMarshaller(EntityType = typeof((int X, int Y)), AccessName = "XAndYTuple")]
+[DynamoDBMarshaller(EntityType = typeof((int, int )), AccessName = "UnnamedTuple")]
+[DynamoDBMarshaller(EntityType = typeof((string Id, (int X, int Y) Coordinates)), AccessName = "NestedXAndYTuple")]
 public partial class TupleTests
 {
     [Fact]

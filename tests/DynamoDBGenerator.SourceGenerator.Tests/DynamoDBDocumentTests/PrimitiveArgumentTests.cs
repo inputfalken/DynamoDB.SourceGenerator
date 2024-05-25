@@ -4,9 +4,9 @@ using DynamoDBGenerator.Extensions;
 
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 
-[DynamoDBMarshaller(EntityType = typeof((Guid, Guid)), PropertyName = "STRING", ArgumentType = typeof(string))]
-[DynamoDBMarshaller(EntityType = typeof((Guid, Guid)), PropertyName = "GUID", ArgumentType = typeof(Guid))]
-[DynamoDBMarshaller(EntityType = typeof((Guid, Guid)), PropertyName = "INT", ArgumentType = typeof(int))]
+[DynamoDBMarshaller(EntityType = typeof((Guid, Guid)), AccessName = "STRING", ArgumentType = typeof(string))]
+[DynamoDBMarshaller(EntityType = typeof((Guid, Guid)), AccessName = "GUID", ArgumentType = typeof(Guid))]
+[DynamoDBMarshaller(EntityType = typeof((Guid, Guid)), AccessName = "INT", ArgumentType = typeof(int))]
 public partial class PrimitiveArgumentTests
 {
     [Fact]

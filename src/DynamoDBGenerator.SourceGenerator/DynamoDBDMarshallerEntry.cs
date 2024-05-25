@@ -150,7 +150,7 @@ using {Constants.DynamoDBGenerator.Namespace.InternalFullName};";
                     throw new ArgumentException("Could not determine type conversion from attribute constructor.");
 
                 var propertyName = attributeData.NamedArguments.FirstOrDefault(x =>
-                    x.Key is Constants.DynamoDBGenerator.Attribute.DynamoDBMarshallerArgument.PropertyName).Value;
+                    x.Key is Constants.DynamoDBGenerator.Attribute.DynamoDBMarshallerArgument.AccessName).Value;
                 yield return new DynamoDBMarshallerArguments(
                     entityTypeSymbol,
                     attributeData.NamedArguments
