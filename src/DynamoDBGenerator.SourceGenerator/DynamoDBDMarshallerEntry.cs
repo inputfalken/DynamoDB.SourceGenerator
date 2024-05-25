@@ -75,7 +75,7 @@ using {Constants.DynamoDBGenerator.Namespace.InternalFullName};";
                 $"Generate accessibility of '{type.DeclaredAccessibility}' on '{type.ToDisplayParts()}' only '{type.DeclaredAccessibility == Accessibility.Public}' is supported."
             );
         var @static = type.IsStatic ? "static " : null;
-        
+
 
         var (options, args) = CreateArguments(type, compilation);
         var classContent =
@@ -97,11 +97,11 @@ using {Constants.DynamoDBGenerator.Namespace.InternalFullName};";
     {
         var attributes = type.GetAttributes();
         var marshallerOptionNamedArguments = attributes.Where(x => x.AttributeClass is
-            {
-                Name: Constants.DynamoDBGenerator.Attribute.DynamoDbMarshallerOptions,
-                ContainingNamespace.Name: Constants.DynamoDBGenerator.Namespace.Attributes,
-                ContainingAssembly.Name: Constants.DynamoDBGenerator.AssemblyName
-            })
+        {
+            Name: Constants.DynamoDBGenerator.Attribute.DynamoDbMarshallerOptions,
+            ContainingNamespace.Name: Constants.DynamoDBGenerator.Namespace.Attributes,
+            ContainingAssembly.Name: Constants.DynamoDBGenerator.AssemblyName
+        })
             .SelectMany(x => x.NamedArguments)
             .ToArray();
 
@@ -122,9 +122,9 @@ using {Constants.DynamoDBGenerator.Namespace.InternalFullName};";
         if (converter is null)
             throw new ArgumentException("Could not find converter implementation");
 
-        return (MarshallerOptions.Create(converter, enumStrategy), Arguments(attributes));
+        return (MarshallerOptions.Create(converter, enumStrategy), Arguments(attributes, type));
 
-        static IEnumerable<DynamoDBMarshallerArguments> Arguments(ImmutableArray<AttributeData> attributes)
+        static IEnumerable<DynamoDBMarshallerArguments> Arguments(ImmutableArray<AttributeData> attributes, ISymbol type)
         {
             foreach (var attributeData in attributes)
             {
@@ -136,9 +136,15 @@ using {Constants.DynamoDBGenerator.Namespace.InternalFullName};";
                     } is false)
                     continue;
 
-                var entityType = attributeData.ConstructorArguments
-                    .Select(x => x is { Kind: TypedConstantKind.Type, Value: not null } ? x.Value : null)
-                    .FirstOrDefault(x => x is not null);
+                var entityType = attributeData.NamedArguments
+                  .Where(x => x.Key is Constants.DynamoDBGenerator.Attribute.DynamoDBMarshallerArgument.EntityType)
+                  .Cast<KeyValuePair<string, TypedConstant>?>()
+                  .FirstOrDefault() is { } entityType1
+                  ? entityType1.Value is { Value: INamedTypeSymbol et }
+                    ? et
+                    : throw new ArgumentException(
+                                $"Could not determine type conversion from argument '{entityType1.Key}'.")
+                : type;
 
                 if (entityType is not INamedTypeSymbol entityTypeSymbol)
                     throw new ArgumentException("Could not determine type conversion from attribute constructor.");
@@ -153,7 +159,7 @@ using {Constants.DynamoDBGenerator.Namespace.InternalFullName};";
                         .Cast<KeyValuePair<string, TypedConstant>?>()
                         .FirstOrDefault() is { } argumentType
                         ? argumentType.Value is
-                            { Value : INamedTypeSymbol namedTypeSymbol }
+                        { Value: INamedTypeSymbol namedTypeSymbol }
                             ? namedTypeSymbol
                             : throw new ArgumentException(
                                 $"Could not determine type conversion from argument '{argumentType.Key}'.")

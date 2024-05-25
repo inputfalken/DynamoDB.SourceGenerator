@@ -7,7 +7,7 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.A
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.ConverterTests;
 
 [DynamoDbMarshallerOptions(Converters = typeof(Converter))]
-[DynamoDBMarshaller(typeof(Container<Money>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<Money>))]
 public partial class AddCustomConverterWithParamTests : RecordMarshalAsserter<AddCustomConverterWithParamTests.Money>
 {
     

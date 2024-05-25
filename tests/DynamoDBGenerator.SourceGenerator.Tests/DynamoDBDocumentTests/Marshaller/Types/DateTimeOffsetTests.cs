@@ -3,7 +3,7 @@ using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Container<DateTimeOffset>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<DateTimeOffset>))]
 public partial class DateTimeOffsetTests : RecordMarshalAsserter<DateTimeOffset>
 {
 
@@ -21,7 +21,7 @@ public partial class DateTimeOffsetTests : RecordMarshalAsserter<DateTimeOffset>
     }
 }
 
-[DynamoDBMarshaller(typeof(Container<DateTimeOffset?>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<DateTimeOffset?>))]
 public partial class NullableDateTimeOffsetTests : RecordMarshalAsserter<DateTimeOffset?>
 {
 

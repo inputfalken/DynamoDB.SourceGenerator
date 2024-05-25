@@ -3,7 +3,7 @@ using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Container<MemoryStream>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<MemoryStream>))]
 public partial class MemoryStreamTests : NotNullRecordElementMarshalAsserter<MemoryStream>
 {
 
@@ -22,7 +22,7 @@ public partial class MemoryStreamTests : NotNullRecordElementMarshalAsserter<Mem
     }
 }
 
-[DynamoDBMarshaller(typeof(Container<MemoryStream?>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<MemoryStream?>))]
 public partial class NullableMemoryStreamTests : RecordMarshalAsserter<MemoryStream?>
 {
 

@@ -4,7 +4,7 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.A
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets;
 
-[DynamoDBMarshaller(typeof(Container<ISet<string>>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<ISet<string>>))]
 public partial class ISetTests : NoneNullableElementAsserter<ISet<string>, string>
 {
     public ISetTests() : base(Strings(), x => new HashSet<string>(x))

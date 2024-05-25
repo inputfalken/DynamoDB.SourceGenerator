@@ -2,15 +2,15 @@ using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize;
 
-[DynamoDBMarshaller(typeof(ConstructorOnlyClass))]
-[DynamoDBMarshaller(typeof(ObjectInitializerOnlyClass))]
-[DynamoDBMarshaller(typeof(ObjectInitializerMixedWithConstructorClass))]
-[DynamoDBMarshaller(typeof(ConstructorClassWithMixedName))]
-[DynamoDBMarshaller(typeof(InlinedRecord))]
-[DynamoDBMarshaller(typeof(ExplicitConstructorRecord))]
-[DynamoDBMarshaller(typeof(InlineRecordWithNestedRecord))]
-[DynamoDBMarshaller(typeof(ClassWithConstructorThatObjectInitializerShouldOnlyBeUsed), PropertyName = "InitializerOnly")]
-[DynamoDBMarshaller(typeof(ClassWithConstructorThatShouldOnlyBeUsed), PropertyName = "ConstructorOnly")]
+[DynamoDBMarshaller(EntityType = typeof(ConstructorOnlyClass))]
+[DynamoDBMarshaller(EntityType = typeof(ObjectInitializerOnlyClass))]
+[DynamoDBMarshaller(EntityType = typeof(ObjectInitializerMixedWithConstructorClass))]
+[DynamoDBMarshaller(EntityType = typeof(ConstructorClassWithMixedName))]
+[DynamoDBMarshaller(EntityType = typeof(InlinedRecord))]
+[DynamoDBMarshaller(EntityType = typeof(ExplicitConstructorRecord))]
+[DynamoDBMarshaller(EntityType = typeof(InlineRecordWithNestedRecord))]
+[DynamoDBMarshaller(EntityType = typeof(ClassWithConstructorThatObjectInitializerShouldOnlyBeUsed), PropertyName = "InitializerOnly")]
+[DynamoDBMarshaller(EntityType = typeof(ClassWithConstructorThatShouldOnlyBeUsed), PropertyName = "ConstructorOnly")]
 public partial class InitializationTests
 {
 

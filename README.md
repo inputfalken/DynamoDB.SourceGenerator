@@ -7,7 +7,7 @@ This project has not been tested in any real scenario and currently serves as a 
 
 ## Installation
 
-If you want access to a more high level abstraction of this functionality check out [Dynatello!](https://github.com/inputfalken/Dynatello)
+If you want access to a more high level abstraction utilizing builder patterns from the functionality of this library, check out [Dynatello!](https://github.com/inputfalken/Dynatello)
 
 ---
 
@@ -111,8 +111,7 @@ As part of the source generation process, two additional types will be mirrored 
 * A reference tracker that functions as attribute references for the arguments you provide to DynamoDB.
 
 These trackers enable you to consistently construct your AttributeExpressions using string interpolation. 
-
-For an illustrative example, refer to the [tests](https://github.com/inputfalken/DynamoDB.SourceGenerator/blob/main/tests/DynamoDBGenerator.SourceGenerator.Tests/Extensions/ToAttributeExpressionTests.cs).
+For an illustrative example, refer to the [tests](tests/DynamoDBGenerator.SourceGenerator.Tests/Extensions/ToAttributeExpressionTests.cs).
 
 ## Nullable reference types
 
@@ -168,7 +167,7 @@ public class Person
 ```csharp
 // A typical scenario would be that you would use multuple DynamoDBMarshaller and describe your operaitons via PropertyName.
 // If you do not specify an ArgumentType it will use your main entity Type instead which is typically useful for PUT operations.
-[DynamoDBMarshaller(typeof(Person), ArgumentType = typeof((string PersonId, string Firstname)), PropertyName = "UpdateFirstName")]
+[DynamoDBMarshaller(EntityType = typeof(Person), ArgumentType = typeof((string PersonId, string Firstname)), PropertyName = "UpdateFirstName")]
 public partial class Repository { }
 
 internal static class Program
@@ -219,6 +218,7 @@ The source generator will internally validate your object arguments. So if you p
 
 ```csharp
 
+[DynamoDBMarshaller(PropertyName = 'KeyMarshallerSample')]
 public class EntityDTO
 {
     [DynamoDBHashKey("PK")]
@@ -236,22 +236,17 @@ public class EntityDTO
     [DynamoDBGlobalSecondaryIndexRangeKey("GSI")]
     public string GlobalSecondaryIndexRangeKey { get; set; }
 }
-
-[DynamoDBMarshaller(typeof(EntityDTO))]
-public partial class Repository { }
-
 internal static class Program
 {
     public static void Main()
     {
-        var repository = new Repository();
         // PrimaryKeyMarshaller is used to convert the keys obtained from the [DynamoDBHashKey] and [DynamoDBRangeKey] attributes.
-        var keyMarshaller = repository.PrimaryKeyMarshaller;
+        var keyMarshaller = EntityDTO.KeyMarshallerSample.PrimaryKeyMarshaller;
 
         // IndexKeyMarshaller requires an argument that is the index name so it can provide you with the correct conversion based on the indexes you may have.
         // It works the same way for both LocalSecondaryIndex and GlobalSecondaryIndex attributes.
-        var GSIKeyMarshaller = repository.IndexKeyMarshaller("GSI");
-        var LSIKeyMarshaller = repository.IndexKeyMarshaller("LSI");
+        var GSIKeyMarshaller = EntityDTO.KeyMarshallerSample.IndexKeyMarshaller("GSI");
+        var LSIKeyMarshaller = EntityDTO.KeyMarshallerSample.IndexKeyMarshaller("LSI");
     }
 }
 ```
@@ -292,7 +287,7 @@ public class MyCustomConverters : AttributeValueConverters
 }
 
 [DynamoDBMarshallerOptions(Converter = typeof(MyCustomConverters))]
-[DynamoDBMarshaller(typeof(Person), PropertyName = "PersonMarshaller")]
+[DynamoDBMarshaller(EntityType = typeof(Person), PropertyName = "PersonMarshaller")]
 public partial Repository 
 {
 
@@ -303,11 +298,11 @@ public partial Repository
 
 ```csharp
 [DynamoDBMarshallerOptions(EnumConversion = EnumConversion.Name)]
-[DynamoDBMarshaller(typeof(Person), PropertyName = "PersonMarshaller")]
+[DynamoDBMarshaller(EntityType = typeof(Person), PropertyName = "PersonMarshaller")]
 public partial class Repository { }
 ```
 
 ## Project structure
 
-The `DynamoDBGenerator.SourceGenerator` assembly is responsible for doing the heavy lifting by generating the building
-blocks for the `DynamoDBGenerator` assembly to extend with convenient functionality.
+The `DynamoDBGenerator` assembly contains functionality that the `DynamoDBGenerator.SourceGenerator` rely on such as the [attribute](src/DynamoDBGenerator/Attributes/DynamoDBMarshallerAttribute.cs) that will trigger the source generation.
+In other words both assemblies needs to be installed in order for the source generator to work as expected.

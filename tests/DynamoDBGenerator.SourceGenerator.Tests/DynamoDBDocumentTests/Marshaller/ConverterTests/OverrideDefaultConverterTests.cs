@@ -7,7 +7,7 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.A
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.ConverterTests;
 
 [DynamoDbMarshallerOptions(Converters = typeof(Converters))]
-[DynamoDBMarshaller(typeof(Container<DateTime>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<DateTime>))]
 public partial class OverrideDefaultConverterTests : RecordMarshalAsserter<DateTime>
 {
     public OverrideDefaultConverterTests() :

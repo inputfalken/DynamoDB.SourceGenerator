@@ -4,7 +4,7 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.A
 
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Container<Guid>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<Guid>))]
 public partial class GuidTests : RecordMarshalAsserter<Guid>
 {
     protected override Container<Guid> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
@@ -24,7 +24,7 @@ public partial class GuidTests : RecordMarshalAsserter<Guid>
     }
 }
 
-[DynamoDBMarshaller(typeof(Container<Guid?>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<Guid?>))]
 public partial class NullableGuidTests : RecordMarshalAsserter<Guid?>
 {
     protected override Container<Guid?> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)

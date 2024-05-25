@@ -4,7 +4,7 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.A
 
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Lookups;
 
-[DynamoDBMarshaller(typeof(Container<ILookup<string, Entity>>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<ILookup<string, Entity>>))]
 public partial class ILookupTests : RecordMarshalAsserter<ILookup<string, ILookupTests.Entity>>
 {
     public record Entity(string Foo, string Bar);
@@ -67,7 +67,7 @@ public partial class ILookupTests : RecordMarshalAsserter<ILookup<string, ILooku
     }
 }
 
-//[DynamoDBMarshaller(typeof(Container<ILookup<string, Entity?>>))]
+//[DynamoDBMarshaller(EntityType = typeof(Container<ILookup<string, Entity?>>))]
 //public partial class
 //    NullableILookupElementsTests : RecordMarshalAsserter<ILookup<string, NullableILookupElementsTests.Entity?>>
 //{

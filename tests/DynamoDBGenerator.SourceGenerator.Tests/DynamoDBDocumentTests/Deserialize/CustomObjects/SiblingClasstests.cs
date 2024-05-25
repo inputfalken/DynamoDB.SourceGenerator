@@ -2,7 +2,7 @@ using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.CustomObjects;
 
-[DynamoDBMarshaller(typeof(SiblingClassOne))]
+[DynamoDBMarshaller(EntityType = typeof(SiblingClassOne))]
 public partial class SiblingClassTests
 {
     [Fact]

@@ -1,7 +1,7 @@
 using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 
-[DynamoDBMarshaller(typeof(ReverseAccessIndexSetup))]
+[DynamoDBMarshaller(EntityType = typeof(ReverseAccessIndexSetup))]
 public partial class DynamoDBIndexTests
 {
 

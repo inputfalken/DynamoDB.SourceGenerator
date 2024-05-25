@@ -1,10 +1,10 @@
 using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
-[DynamoDBMarshaller(typeof(EmptyClass))]
-[DynamoDBMarshaller(typeof(ClassWithIgnoredProperty))]
-[DynamoDBMarshaller(typeof(ClassWithOneProperty))]
-[DynamoDBMarshaller(typeof(ClassWithOneDDBProperty))]
+[DynamoDBMarshaller(EntityType = typeof(EmptyClass))]
+[DynamoDBMarshaller(EntityType = typeof(ClassWithIgnoredProperty))]
+[DynamoDBMarshaller(EntityType = typeof(ClassWithOneProperty))]
+[DynamoDBMarshaller(EntityType = typeof(ClassWithOneDDBProperty))]
 public partial class PropertyInclusionTests
 {
 

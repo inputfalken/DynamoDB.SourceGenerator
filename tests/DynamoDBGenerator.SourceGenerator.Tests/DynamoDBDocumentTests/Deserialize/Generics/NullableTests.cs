@@ -3,7 +3,7 @@ using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.Exceptions;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Generics;
 
-[DynamoDBMarshaller(typeof(OptionalIntegerClass))]
+[DynamoDBMarshaller(EntityType = typeof(OptionalIntegerClass))]
 public partial class NullableTests
 {
     [Fact]

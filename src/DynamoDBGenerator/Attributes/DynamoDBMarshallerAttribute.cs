@@ -2,20 +2,28 @@ using System;
 namespace DynamoDBGenerator.Attributes;
 
 /// <summary>
-/// Attribute to generate an implementation of <see cref="IDynamoDBMarshaller{TEntity,TArg,TEntityAttributeNameTracker,TArgumentAttributeValueTracker}" />
-/// for the specified type.
+/// Attribute used to source generate an implementation of <see cref="IDynamoDBMarshaller{TEntity,TArg,TEntityAttributeNameTracker,TArgumentAttributeValueTracker}" />.
 /// </summary>
 /// <example>
-///     The example below demonstrates the usage of this attribute in a repository class:
+///     The example below demonstrates a console app where this attribute is used:
 ///     <code>
-///         [DynamoDBMarshaller(typeof(OrderEntity), PropertyName = "MyCustomPropertyName")]
-///         public class Repository
+///         public class Program
 ///         {
-///             public Repository()
+///             public static void Main(string[] args)
 ///             {
-///                 var orderMarshaller = MyCustomPropertyName;
+///                 var orderEntity = new OrderEntity 
+///                                    {
+///                                        Id = "1",
+///                                        Cost = 2.3
+///                                    };
+///                 var attributeValues  = OrderEntity.MyCustomPropertyName.Marshall(orderEntity);
+///                 foreach(var keyValue in attributeValues)
+///                 {
+///                     Console.WriteLine(attributeValues);
+///                 }
 ///             }
 ///         }
+///         [DynamoDBMarshaller(EntityType = typeof(OrderEntity), PropertyName = "MyCustomPropertyName"))]
 ///         public class OrderEntity
 ///         {
 ///             [DynamoDBHashKey]
@@ -27,27 +35,29 @@ namespace DynamoDBGenerator.Attributes;
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = true)]
 public class DynamoDBMarshallerAttribute : Attribute
 {
-    // ReSharper disable once NotAccessedField.Local
-    private readonly Type _entityType;
-
     /// <summary>
-    /// Initializes a new instance of the <see cref="DynamoDBMarshallerAttribute"/> class.
+    /// Gets or sets the type that will be used for marshalling and unmarshalling.
     /// </summary>
-    /// <param name="entityType">The type to be represented as a DynamoDB entity.</param>
-    public DynamoDBMarshallerAttribute(Type entityType)
-    {
-        _entityType = entityType;
-    }
+    /// <remarks>
+    /// The default value will be the type where the attribute was applied to.
+    /// </remarks>
+    public Type? EntityType { get; set; }
 
     /// <summary>
     /// Gets or sets the name of the property to use when accessing the marshaller.
     /// </summary>
+    /// <remarks>
+    /// The default value will be dependant on the <see cref="EntityType"/> by having the naming format of `{Type.Name}Marshaller` but without the reflection.
+    /// </remarks>
     public string? PropertyName { get; set; }
 
     /// <summary>
     /// Gets or sets the type that <see cref="IDynamoDBMarshaller{TEntity,TArg,TEntityAttributeNameTracker,TArgumentAttributeValueTracker}"/>
     /// will use as its argument type-parameter.
     /// </summary>
+    /// <remarks>
+    /// The default value will be <see cref="EntityType"/>, this is will make the the generated code be implemented in a PUT oriented manner.
+    /// </remarks>
     public Type? ArgumentType { get; set; }
-    
+
 }

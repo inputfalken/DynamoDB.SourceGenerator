@@ -4,7 +4,7 @@ using DynamoDBGenerator.Exceptions;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Container<char>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<char>))]
 public partial class CharTests : RecordMarshalAsserter<char>
 {
 
@@ -30,7 +30,7 @@ public partial class CharTests : RecordMarshalAsserter<char>
     }
 }
 
-[DynamoDBMarshaller(typeof(Container<char?>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<char?>))]
 public partial class NullableCharTests : RecordMarshalAsserter<char?>
 {
 

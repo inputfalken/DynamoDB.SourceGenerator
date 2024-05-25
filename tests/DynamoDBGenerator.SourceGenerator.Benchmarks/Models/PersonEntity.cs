@@ -3,7 +3,7 @@ using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Benchmarks.Models;
 
 
-[DynamoDBMarshaller(typeof(PersonEntity))]
+[DynamoDBMarshaller(EntityType = typeof(PersonEntity))]
 public partial class PersonEntity
 {
     [DynamoDBHashKey]

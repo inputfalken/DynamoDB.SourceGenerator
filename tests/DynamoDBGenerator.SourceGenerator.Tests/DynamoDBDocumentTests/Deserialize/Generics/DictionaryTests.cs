@@ -2,7 +2,7 @@ using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Generics;
 
-[DynamoDBMarshaller(typeof(DictionaryClass))]
+[DynamoDBMarshaller(EntityType = typeof(DictionaryClass))]
 public partial class DictionaryTests
 {
     [Fact]

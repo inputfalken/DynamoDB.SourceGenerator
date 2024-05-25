@@ -3,7 +3,7 @@ using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Container<sbyte>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<sbyte>))]
 public partial class SByteTests : RecordMarshalAsserter<sbyte>
 {
     public SByteTests() : base(new sbyte[] {1, 3, 4, 5}, x => new AttributeValue {N = x.ToString()})
@@ -19,7 +19,7 @@ public partial class SByteTests : RecordMarshalAsserter<sbyte>
     }
 }
 
-[DynamoDBMarshaller(typeof(Container<sbyte?>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<sbyte?>))]
 public partial class NullableSByteTests : RecordMarshalAsserter<sbyte?>
 {
     public NullableSByteTests() : base(new sbyte?[] {1, 3, 4, 5}.Append(null), x => x is null ? null : new AttributeValue {N = x.Value.ToString()})

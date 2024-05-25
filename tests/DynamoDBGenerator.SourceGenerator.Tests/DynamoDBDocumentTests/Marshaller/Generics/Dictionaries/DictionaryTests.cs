@@ -5,7 +5,7 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.G
 
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Dictionaries;
 
-[DynamoDBMarshaller(typeof(Container<Dictionary<string, Entity>>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<Dictionary<string, Entity>>))]
 public partial class DictionaryTests : RecordMarshalAsserter<Dictionary<string, DictionaryTests.Entity>>
 {
     private const string Element1 = "hello";
@@ -54,7 +54,7 @@ public partial class DictionaryTests : RecordMarshalAsserter<Dictionary<string, 
     public record Entity(string Foo, string Bar);
 }
 
-//[DynamoDBMarshaller(typeof(Container<Dictionary<string, Entity?>>))]
+//[DynamoDBMarshaller(EntityType = typeof(Container<Dictionary<string, Entity?>>))]
 //public partial class
 //    NullableDictionaryElementsTests : RecordMarshalAsserter<Dictionary<string, NullableDictionaryElementsTests.Entity?>>
 //{

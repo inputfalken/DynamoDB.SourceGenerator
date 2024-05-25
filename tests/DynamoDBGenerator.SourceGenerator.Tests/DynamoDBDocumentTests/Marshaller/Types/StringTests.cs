@@ -3,7 +3,7 @@ using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Container<string>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<string>))]
 public partial class StringTests : NotNullRecordElementMarshalAsserter<string>
 {
     protected override Container<string> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
@@ -21,7 +21,7 @@ public partial class StringTests : NotNullRecordElementMarshalAsserter<string>
     }
 }
 
-[DynamoDBMarshaller(typeof(Container<string?>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<string?>))]
 public partial class NullableStringTests : RecordMarshalAsserter<string?>
 {
     protected override Container<string?> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)

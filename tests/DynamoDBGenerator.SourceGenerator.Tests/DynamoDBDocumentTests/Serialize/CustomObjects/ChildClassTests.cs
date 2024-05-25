@@ -1,7 +1,7 @@
 using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.CustomObjects;
 
-[DynamoDBMarshaller(typeof(ParentClass))]
+[DynamoDBMarshaller(EntityType = typeof(ParentClass))]
 public partial class ChildClassTests
 {
     [Fact]

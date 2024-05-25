@@ -3,7 +3,7 @@ using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Container<int>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<int>))]
 public partial class IntTests : RecordMarshalAsserter<int>
 {
 
@@ -20,7 +20,7 @@ public partial class IntTests : RecordMarshalAsserter<int>
     }
 }
 
-[DynamoDBMarshaller(typeof(Container<int?>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<int?>))]
 public partial class NullableIntTests : RecordMarshalAsserter<int?>
 {
 

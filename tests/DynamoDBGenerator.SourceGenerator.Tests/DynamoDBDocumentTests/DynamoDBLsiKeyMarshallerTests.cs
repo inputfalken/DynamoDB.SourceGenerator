@@ -1,7 +1,7 @@
 using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 
-[DynamoDBMarshaller(typeof(LsiHashAndRangeKey))]
+[DynamoDBMarshaller(EntityType = typeof(LsiHashAndRangeKey))]
 public partial class DynamoDBLsiKeyMarshallerTests
 {
     [Fact(Skip = "Could be nice to validate this before the marshaller is created.")]

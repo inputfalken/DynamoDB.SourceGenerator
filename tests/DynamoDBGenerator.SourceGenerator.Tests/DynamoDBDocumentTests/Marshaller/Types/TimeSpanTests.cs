@@ -5,7 +5,7 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.A
 
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Types;
 
-[DynamoDBMarshaller(typeof(Container<TimeSpan>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<TimeSpan>))]
 public partial class TimeSpanTests : RecordMarshalAsserter<TimeSpan>
 {
     public TimeSpanTests() : base(new []{TimeSpan.FromDays(1)}, _ => new() {S = "P1D"})
@@ -23,7 +23,7 @@ public partial class TimeSpanTests : RecordMarshalAsserter<TimeSpan>
 
 }
 
-[DynamoDBMarshaller(typeof(Container<TimeSpan?>))]
+[DynamoDBMarshaller(EntityType = typeof(Container<TimeSpan?>))]
 public partial class NullableTimeSpanTests : RecordMarshalAsserter<TimeSpan?>
 {
     public NullableTimeSpanTests() : base(new TimeSpan?[]{TimeSpan.FromDays(1), null}, x => x is not null ? new() {S = "P1D"} : null)
