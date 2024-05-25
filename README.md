@@ -7,7 +7,7 @@ This project has not been tested in any real scenario and currently serves as a 
 
 ## Installation
 
-If you want access to a more high level abstraction of this functionality check out [Dynatello!](https://github.com/inputfalken/Dynatello)
+If you want access to a more high level abstraction utilizing builder patterns from the functionality of this library, check out [Dynatello!](https://github.com/inputfalken/Dynatello)
 
 ---
 
@@ -111,7 +111,7 @@ As part of the source generation process, two additional types will be mirrored 
 * A reference tracker that functions as attribute references for the arguments you provide to DynamoDB.
 
 These trackers enable you to consistently construct your AttributeExpressions using string interpolation. 
-For an illustrative example, refer to the [tests](https://github.com/inputfalken/DynamoDB.SourceGenerator/blob/main/tests/DynamoDBGenerator.SourceGenerator.Tests/Extensions/ToAttributeExpressionTests.cs).
+For an illustrative example, refer to the [tests](tests/DynamoDBGenerator.SourceGenerator.Tests/Extensions/ToAttributeExpressionTests.cs).
 
 ## Nullable reference types
 
@@ -236,7 +236,6 @@ public class EntityDTO
     [DynamoDBGlobalSecondaryIndexRangeKey("GSI")]
     public string GlobalSecondaryIndexRangeKey { get; set; }
 }
-
 internal static class Program
 {
     public static void Main()
@@ -305,5 +304,5 @@ public partial class Repository { }
 
 ## Project structure
 
-The `DynamoDBGenerator.SourceGenerator` assembly is responsible for doing the heavy lifting by generating the building
-blocks for the `DynamoDBGenerator` assembly to extend with convenient functionality.
+The `DynamoDBGenerator` assembly contains functionality that the `DynamoDBGenerator.SourceGenerator` rely on such as the [attribute](src/DynamoDBGenerator/Attributes/DynamoDBMarshallerAttribute.cs) that will trigger the source generation.
+In other words both assemblies needs to be installed in order for the source generator to work as expected.
