@@ -194,13 +194,14 @@ public static class UnMarshaller
 
     }
 
-    internal static IEnumerable<string> RootSignature(ITypeSymbol typeSymbol, string typeName, string methodName)
+    internal static IEnumerable<string> RootSignature(MarshallerOptions options, ITypeSymbol typeSymbol, string typeName, string methodName)
     {
         return $"public {typeName} {methodName}(Dictionary<{nameof(String)}, {Constants.AWSSDK_DynamoDBv2.AttributeValue}> entity)".CreateScope(
             "ArgumentNullException.ThrowIfNull(entity);",
-             typeSymbol.TypeIdentifier() is UnknownType
-             ? $"return {UnMarshallerClass}.{GetDeserializationMethodName(typeSymbol)}(entity, {MarshallerOptions.FieldReference});"
-             : "throw new Exception();");
+            options.IsConvertable(typeSymbol) || typeSymbol.TypeIdentifier() is not UnknownType
+              ? "throw new Exception();"
+              : $"return {UnMarshallerClass}.{GetDeserializationMethodName(typeSymbol)}(entity, {MarshallerOptions.FieldReference});"
+        );
     }
     private static IEnumerable<(string DataMember, string ParameterName)> TryGetMatchedConstructorArguments(ITypeSymbol typeSymbol)
     {

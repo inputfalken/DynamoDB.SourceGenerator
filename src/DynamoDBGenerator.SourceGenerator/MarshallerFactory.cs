@@ -22,8 +22,8 @@ public static class MarshallerFactory
                 .CreateScope($"{MarshallerOptions.FieldReference} = {MarshallerOptions.ParamReference};", $"{KeyMarshaller.PrimaryKeyMarshallerReference} = {KeyMarshaller.AssignmentRoot(argument.EntityTypeSymbol)};");
             var interfaceImplementation = constructor
                 .Concat(Marshaller.RootSignature(argument.EntityTypeSymbol, argument.AnnotatedEntityType))
-                .Concat(UnMarshaller.RootSignature(argument.EntityTypeSymbol, argument.AnnotatedEntityType, Constants.DynamoDBGenerator.Marshaller.UnmarshalMethodName))
-                .Concat(UnMarshaller.RootSignature(argument.ArgumentType, argument.AnnotatedArgumentType, Constants.DynamoDBGenerator.Marshaller.UnmarshalArgumentMethodName))
+                .Concat(UnMarshaller.RootSignature(options, argument.EntityTypeSymbol, argument.AnnotatedEntityType, Constants.DynamoDBGenerator.Marshaller.UnmarshalMethodName))
+                .Concat(UnMarshaller.RootSignature(options, argument.ArgumentType, argument.AnnotatedArgumentType, Constants.DynamoDBGenerator.Marshaller.UnmarshalArgumentMethodName))
                 .Concat(KeyMarshaller.IndexKeyMarshallerRootSignature(argument.EntityTypeSymbol))
                 .Concat(expressionValueMethod)
                 .Append(expressionMethodName)
