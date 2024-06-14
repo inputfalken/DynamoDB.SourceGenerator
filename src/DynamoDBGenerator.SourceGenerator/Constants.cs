@@ -33,7 +33,7 @@ public static class Constants
         }
 
         public const string AssemblyName = "DynamoDBGenerator";
-        public const string DynamoDbDocumentPropertyFullname = $"{Namespace.AttributesFullName}.{Attribute.DynamoDBMarshaller}";
+        public const string DynamoDBMarshallerFullname = $"{Namespace.AttributesFullName}.{Attribute.DynamoDBMarshaller}";
 
         public const string DynamoDBConverterFullName = $"{AssemblyName}.{Namespace.Options}.{Converter.AttributeValueConverters}";
 

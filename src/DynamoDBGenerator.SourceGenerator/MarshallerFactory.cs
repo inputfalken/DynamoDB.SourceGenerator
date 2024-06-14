@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis;
 using static DynamoDBGenerator.SourceGenerator.Constants.DynamoDBGenerator.Marshaller;
 namespace DynamoDBGenerator.SourceGenerator;
 
-public static class DynamoDbMarshaller
+public static class MarshallerFactory
 {
     private static IEnumerable<string> CreateImplementations(IEnumerable<DynamoDBMarshallerArguments> arguments,
         MarshallerOptions options)

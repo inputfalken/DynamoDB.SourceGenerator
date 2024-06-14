@@ -10,13 +10,13 @@ namespace DynamoDBGenerator.SourceGenerator;
 
 [Generator]
 // ReSharper disable once InconsistentNaming
-public class DynamoDBDMarshallerEntry : IIncrementalGenerator
+public class DynamoDBDMarshaller : IIncrementalGenerator
 {
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var updateClassDeclarations = context.SyntaxProvider
             .ForAttributeWithMetadataName(
-                Constants.DynamoDBGenerator.DynamoDbDocumentPropertyFullname,
+                Constants.DynamoDBGenerator.DynamoDBMarshallerFullname,
                 (n, _) => n is ClassDeclarationSyntax or RecordDeclarationSyntax or StructDeclarationSyntax,
                 (c, _) => c.TargetNode
             );
@@ -74,12 +74,11 @@ using {Constants.DynamoDBGenerator.Namespace.InternalFullName};";
             throw new NotImplementedException(
                 $"Generate accessibility of '{type.DeclaredAccessibility}' on '{type.ToDisplayParts()}' only '{type.DeclaredAccessibility == Accessibility.Public}' is supported."
             );
-        var @static = type.IsStatic ? "static " : null;
-
 
         var (options, args) = CreateArguments(type, compilation);
-        var classContent =
-            $"public {@static}{typeType} {type.Name}".CreateScope(DynamoDbMarshaller.CreateRepository(args, options));
+        var classContent = $"public {(type.IsStatic ? "static " : null)}{typeType} {type.Name}"
+              .CreateScope(MarshallerFactory.CreateRepository(args, options));
+
         var content = type.ContainingNamespace.IsGlobalNamespace
             ? classContent
             : $"namespace {type.ContainingNamespace.ToDisplayString()}".CreateScope(classContent);
