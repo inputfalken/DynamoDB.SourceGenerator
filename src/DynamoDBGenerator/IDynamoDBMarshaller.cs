@@ -10,7 +10,7 @@ namespace DynamoDBGenerator;
 /// <typeparam name="TArgument">The type of argument used for marshalling.</typeparam>
 /// <typeparam name="TEntityAttributeNameTracker">The type for tracking attribute names related to <typeparamref name="TEntity"/>.</typeparam>
 /// <typeparam name="TArgumentAttributeValueTracker">The type for tracking argument attribute values related to <typeparamref name="TArgument"/>.</typeparam>
-public interface IDynamoDBMarshaller<TEntity, in TArgument, out TEntityAttributeNameTracker, out TArgumentAttributeValueTracker>
+public interface IDynamoDBMarshaller<TEntity, TArgument, out TEntityAttributeNameTracker, out TArgumentAttributeValueTracker>
     where TEntityAttributeNameTracker : IAttributeExpressionNameTracker
     where TArgumentAttributeValueTracker : IAttributeExpressionValueTracker<TArgument>
 {
@@ -39,6 +39,13 @@ public interface IDynamoDBMarshaller<TEntity, in TArgument, out TEntityAttribute
     /// <param name="attributes">The AttributeValues to be deserialized.</param>
     /// <returns>An object of type <typeparamref name="TEntity"/>.</returns>
     public TEntity Unmarshall(Dictionary<string, AttributeValue> attributes);
+    
+    /// <summary>
+    /// Unmarshalls a collection of AttributeValues into an object of type <typeparamref name="TArgument"/>.
+    /// </summary>
+    /// <param name="attributes">The AttributeValues to be deserialized.</param>
+    /// <returns>An object of type <typeparamref name="TEntity"/>.</returns>
+    public TArgument UnmarshallArgument(Dictionary<string, AttributeValue> attributes);
 
     /// <inheritdoc cref="IDynamoDBKeyMarshaller"/>
     public IDynamoDBKeyMarshaller PrimaryKeyMarshaller { get; }

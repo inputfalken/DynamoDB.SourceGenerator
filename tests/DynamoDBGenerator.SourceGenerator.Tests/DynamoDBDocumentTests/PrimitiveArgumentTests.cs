@@ -1,6 +1,5 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
-using DynamoDBGenerator.Extensions;
 
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 

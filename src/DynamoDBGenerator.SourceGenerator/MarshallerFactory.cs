@@ -18,28 +18,26 @@ public static class MarshallerFactory
             var (expressionValueMethod, valueTrackerTypeName) = AttributeExpressionValue.RootSignature(argument.ArgumentType);
             var (expressionMethodName, nameTrackerTypeName) = AttributeExpressionName.RootSignature(argument.EntityTypeSymbol);
 
-            var entityTypeName = argument.AnnotatedEntityType;
-            var argumentTypeName = argument.AnnotatedArgumentType;
-
             var constructor = $"public {argument.ImplementationName}({MarshallerOptions.Name} {MarshallerOptions.ParamReference})"
                 .CreateScope($"{MarshallerOptions.FieldReference} = {MarshallerOptions.ParamReference};", $"{KeyMarshaller.PrimaryKeyMarshallerReference} = {KeyMarshaller.AssignmentRoot(argument.EntityTypeSymbol)};");
             var interfaceImplementation = constructor
-                .Concat(Marshaller.RootSignature(argument.EntityTypeSymbol, entityTypeName))
-                .Concat(UnMarshaller.RootSignature(argument.EntityTypeSymbol, entityTypeName))
+                .Concat(Marshaller.RootSignature(argument.EntityTypeSymbol, argument.AnnotatedEntityType))
+                .Concat(UnMarshaller.RootSignature(argument.EntityTypeSymbol, argument.AnnotatedEntityType, Constants.DynamoDBGenerator.Marshaller.UnmarshalMethodName))
+                .Concat(UnMarshaller.RootSignature(argument.ArgumentType, argument.AnnotatedArgumentType, Constants.DynamoDBGenerator.Marshaller.UnmarshalArgumentMethodName))
                 .Concat(KeyMarshaller.IndexKeyMarshallerRootSignature(argument.EntityTypeSymbol))
                 .Concat(expressionValueMethod)
                 .Append(expressionMethodName)
                 .Append(KeyMarshaller.PrimaryKeyMarshallerDeclaration)
                 .Prepend(MarshallerOptions.FieldDeclaration);
 
-            var classImplementation = $"private sealed class {argument.ImplementationName}: {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}>"
+            var classImplementation = $"private sealed class {argument.ImplementationName}: {Interface}<{argument.AnnotatedEntityType}, {argument.AnnotatedArgumentType}, {nameTrackerTypeName}, {valueTrackerTypeName}>"
                 .CreateScope(interfaceImplementation);
 
             yield return options.TryInstantiate() switch
             {
-                {} arg =>
-                    $"public static {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.Accessname} {{ get; }} = new {argument.ImplementationName}({arg});",
-                null => $"public static {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.Accessname}({MarshallerOptions.Name} options) => new {argument.ImplementationName}(options);"
+                { } arg =>
+                    $"public static {Interface}<{argument.AnnotatedEntityType}, {argument.AnnotatedArgumentType}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.Accessname} {{ get; }} = new {argument.ImplementationName}({arg});",
+                null => $"public static {Interface}<{argument.AnnotatedEntityType}, {argument.AnnotatedArgumentType}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.Accessname}({MarshallerOptions.Name} options) => new {argument.ImplementationName}(options);"
             };
 
             foreach (var s in classImplementation)
