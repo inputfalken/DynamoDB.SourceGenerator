@@ -40,6 +40,11 @@ public static class ExceptionHelper
     {
         return new InvalidOperationException($"Could not create keys for type '{typeName}', include DynamoDBKeyAttribute on the correct properties.");
     }
+    
+    public static InvalidOperationException InvalidTypeRepresentation(string typeName)
+    {
+        return new InvalidOperationException($"Could not unmarshall the type '{typeName}' from an 'Dictionary<String, AttributeValue>'.");
+    }
 
     public static Exception ShouldNeverHappen()
     {

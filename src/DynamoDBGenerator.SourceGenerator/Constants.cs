@@ -34,7 +34,6 @@ public static class Constants
 
         public const string AssemblyName = "DynamoDBGenerator";
         public const string DynamoDBMarshallerFullname = $"{Namespace.AttributesFullName}.{Attribute.DynamoDBMarshaller}";
-
         public const string DynamoDBConverterFullName = $"{AssemblyName}.{Namespace.Options}.{Converter.AttributeValueConverters}";
 
         public static class Namespace
@@ -47,6 +46,7 @@ public static class Constants
             public const string Converters = "Converters";
             public const string Options = "Options";
         }
+        
         public static class Converter
         {
             public const string AttributeValueConverters = "AttributeValueConverters";
@@ -74,10 +74,8 @@ public static class Constants
             public const string MarshallMethodName = "Marshall";
         }
 
-
         public const string KeyMarshallerImplementationTypeName = "DynamoDBKeyMarshallerDelegator";
         public const string IndexKeyMarshallerImplementationTypeName = "IndexDynamoDBMarshallerDelegator";
-
         
         public static class AttributeValueUtilityFactory
         {
@@ -94,6 +92,7 @@ public static class Constants
             public const string ToLookup = $"{ClassName}.ToLookup";
             public const string FromLookup = $"{ClassName}.FromLookup";
         }
+        
         public static class ExceptionHelper
         {
             private const string ExceptionHelperClass = "ExceptionHelper";
@@ -105,9 +104,8 @@ public static class Constants
             public const string ShouldNeverHappenExceptionMethod = $"{ExceptionHelperClass}.ShouldNeverHappen";
             public const string MissMatchedIndexNameExceptionMethod = $"{ExceptionHelperClass}.MissMatchedIndex";
             public const string NoDynamoDBKeyAttributesExceptionMethod = $"{ExceptionHelperClass}.NoDynamoDBAttributes";
+            public const string InvalidTypeRepresentationExceptionMethod = $"{ExceptionHelperClass}.InvalidTypeRepresentation";
         }
-
-
     }
 
     // ReSharper disable once IdentifierTypo
@@ -133,7 +131,6 @@ public static class Constants
             public const string DynamoDBGlobalSecondaryIndexHashKey = "DynamoDBGlobalSecondaryIndexHashKeyAttribute";
             public const string DynamoDBGlobalSecondaryIndexRangeKey = "DynamoDBGlobalSecondaryIndexRangeKeyAttribute";
         }
-
     }
 
     public const string NewLine = @"

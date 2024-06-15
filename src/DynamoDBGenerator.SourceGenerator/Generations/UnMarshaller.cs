@@ -199,7 +199,7 @@ public static class UnMarshaller
         return $"public {typeName} {methodName}(Dictionary<{nameof(String)}, {Constants.AWSSDK_DynamoDBv2.AttributeValue}> entity)".CreateScope(
             "ArgumentNullException.ThrowIfNull(entity);",
             options.IsConvertable(typeSymbol) || typeSymbol.TypeIdentifier() is not UnknownType
-              ? "throw new Exception();"
+              ? $"throw {Constants.DynamoDBGenerator.ExceptionHelper.InvalidTypeRepresentationExceptionMethod}(\"{typeSymbol.Name}\");"
               : $"return {UnMarshallerClass}.{GetDeserializationMethodName(typeSymbol)}(entity, {MarshallerOptions.FieldReference});"
         );
     }
