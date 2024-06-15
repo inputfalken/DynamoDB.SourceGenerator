@@ -9,6 +9,36 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 public partial class PrimitiveArgumentTests
 {
     [Fact]
+    public void UnmarshallArgument_GUID_ShouldThrowInvalidOperationException()
+    {
+        var act = () => GUID.UnmarshallArgument(new Dictionary<string, AttributeValue>());
+
+        act.Should()
+          .Throw<InvalidOperationException>()
+          .WithMessage("Could not unmarshall the type 'Guid'*");
+    }
+
+    [Fact]
+    public void UnmarshallArgument_INT_ShouldThrowInvalidOperationException()
+    {
+        var act = () => INT.UnmarshallArgument(new Dictionary<string, AttributeValue>());
+
+        act.Should()
+          .Throw<InvalidOperationException>()
+          .WithMessage("Could not unmarshall the type 'Int32'*");
+    }
+
+    [Fact]
+    public void UnmarshallArgument_STRING_ShouldThrowInvalidOperationException()
+    {
+        var act = () => STRING.UnmarshallArgument(new Dictionary<string, AttributeValue>());
+
+        act.Should()
+          .Throw<InvalidOperationException>()
+          .WithMessage("Could not unmarshall the type 'String'*");
+    }
+
+    [Fact]
     public void ExpressionValueTracker_STRING_ShouldBeExpandedCorrectly()
     {
         IAttributeExpressionValueTracker<string> valueTracker = STRING.AttributeExpressionValueTracker();
