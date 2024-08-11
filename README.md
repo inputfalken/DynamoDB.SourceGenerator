@@ -47,6 +47,7 @@ The source generator will look for attributes and implement interfaces that exis
   * GlobalSecondaryIndex ✔
   * LocalSecondaryIndex ✔
 * Custom Converters: Create converters for your own types or override the [default converters](https://github.com/inputfalken/DynamoDB.SourceGenerator/blob/main/src/DynamoDBGenerator/Options/AttributeValueConverters.cs) built in to the library.
+* `ValueTuple<T>` support: You don't have to declare your own types and could instead use tuples with custom named properties that will act as if the tuple was a type with with those properties.
 
 ## Conversion
 
