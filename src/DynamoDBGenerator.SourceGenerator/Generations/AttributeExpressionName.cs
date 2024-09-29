@@ -57,8 +57,8 @@ public static class AttributeExpressionName
 
         var yields = dataMembers
             .Select(static x => x.IsUnknown
-                ? $@"if ({x.NameRef}.IsValueCreated) {{ yield return new (""#{x.DbRef}"", ""{x.DDB.AttributeName}""); foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{AttributeExpressionNameTrackerInterfaceAccessedNames}()) {{ yield return x; }} }}"
-                : $@"if ({x.NameRef}.IsValueCreated) yield return new (""#{x.DbRef}"", ""{x.DDB.AttributeName}"");"
+                ? $@"if ({x.NameRef}.IsValueCreated) {{ yield return new (""{x.DbRef}"", ""{x.DDB.AttributeName}""); foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{AttributeExpressionNameTrackerInterfaceAccessedNames}()) {{ yield return x; }} }}"
+                : $@"if ({x.NameRef}.IsValueCreated) yield return new (""{x.DbRef}"", ""{x.DDB.AttributeName}"");"
             )
             .Append($@"if ({self}.IsValueCreated) yield return new ({self}.Value, ""{typeSymbol.Name}"");");
 
