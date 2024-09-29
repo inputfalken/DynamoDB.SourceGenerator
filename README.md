@@ -7,7 +7,7 @@ This project has not been tested in any real scenario and currently serves as a 
 
 ## Installation
 
-If you want access to a more high level abstraction utilizing builder patterns from the functionality of this library, check out [Dynatello!](https://github.com/inputfalken/Dynatello)
+If you want access to a more high level reusable abstractions utilizing builder patterns from the functionality of this library, check out [Dynatello!](https://github.com/inputfalken/Dynatello)
 
 ---
 
@@ -189,8 +189,6 @@ internal static class Program
         var update = attributeExpression.Expressions[1];
         var keys = repository.UpdateFirstName.PrimaryKeyMarshaller.PartitionKey("personId");
 
-        // The idea is be able to apply this convention to other types of requests such as PutItemRequest or QueryRequest as well.
-        // Theres also plans that there will be helper methods to achieve this kind of behaviour with less code
         var request = new UpdateItemRequest
         {
             ConditionExpression = condition,
