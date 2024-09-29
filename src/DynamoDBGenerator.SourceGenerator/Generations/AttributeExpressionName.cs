@@ -60,10 +60,7 @@ public static class AttributeExpressionName
         yield return $"private readonly HashSet<KeyValuePair<string, string>> {SetFieldName};";
 
         var yields = dataMembers
-            .Select(static x => x.IsUnknown
-                ? $@"if ({x.NameRef}.IsValueCreated) {{ if (new KeyValuePair<string, string>(""{x.DbRef}"", ""{x.DDB.AttributeName}"") is var {x.IfBranchAlias} && {SetFieldName}.Add({x.IfBranchAlias})) {{ yield return {x.IfBranchAlias}; }} foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{AttributeExpressionNameTrackerInterfaceAccessedNames}()) {{ yield return x; }} }}"
-                : $@"if ({x.NameRef}.IsValueCreated && new KeyValuePair<string, string>(""{x.DbRef}"", ""{x.DDB.AttributeName}"") is var {x.IfBranchAlias} && {SetFieldName}.Add({x.IfBranchAlias})) yield return {x.IfBranchAlias};"
-            )
+            .SelectMany(YieldSelector)
             .Append($@"if ({self}.IsValueCreated) yield return new ({self}.Value, ""{typeSymbol.Name}"");");
 
         foreach (var s in $"IEnumerable<KeyValuePair<string, string>> {AttributeExpressionNameTrackerInterface}.{AttributeExpressionNameTrackerInterfaceAccessedNames}()".CreateScope(yields))
@@ -71,13 +68,29 @@ public static class AttributeExpressionName
 
         yield return $"public override string ToString() => {self}.Value;";
     }
+
+    private static IEnumerable<string> YieldSelector((bool IsUnknown, DynamoDbDataMember DDB, string IfBranchAlias, string DbRef, string NameRef, string AttributeReference, string AttributeInterfaceName) x)
+    {
+
+        if (x.IsUnknown)
+        {
+            return $"if ({x.NameRef}.IsValueCreated)"
+              .CreateScope($@"if (new KeyValuePair<string, string>(""{x.DbRef}"", ""{x.DDB.AttributeName}"") is var {x.IfBranchAlias} && {SetFieldName}.Add({x.IfBranchAlias}))".CreateScope($"yield return {x.IfBranchAlias};"))
+              .Concat($"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{AttributeExpressionNameTrackerInterfaceAccessedNames}())".CreateScope("yield return x;"));
+        }
+        else
+        {
+            return $@"if ({x.NameRef}.IsValueCreated && new KeyValuePair<string, string>(""{x.DbRef}"", ""{x.DDB.AttributeName}"") is var {x.IfBranchAlias} && {SetFieldName}.Add({x.IfBranchAlias}))".CreateScope($"yield return {x.IfBranchAlias};");
+        }
+    }
+
     private static CodeFactory CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
         var dataMembers = fn(typeSymbol)
             .Select(x => (
                 IsUnknown: !options.IsConvertable(x.DataMember.Type) && x.DataMember.Type.TypeIdentifier() is UnknownType,
                 DDB: x,
-                IfBranchAlias : $"__{x.DataMember.Name}__",
+                IfBranchAlias: $"__{x.DataMember.Name}__",
                 DbRef: $"#{x.AttributeName}",
                 NameRef: $"_{x.DataMember.Name}NameRef",
                 AttributeReference: TypeName(x.DataMember.Type),
