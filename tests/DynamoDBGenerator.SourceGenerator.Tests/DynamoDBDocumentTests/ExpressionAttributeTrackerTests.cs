@@ -92,6 +92,8 @@ public partial class ExpressionAttributeTrackerTests
         var nametracker = DuplicatedNavigationPropertiesMarshaller.AttributeExpressionNameTracker();
         var field1 = nametracker.Person1.CreatedAt;
         var field2 = nametracker.Person2.CreatedAt;
+        var field3 = nametracker.Person1.Address.Name;
+        var field4 = nametracker.Person2.Address.Street.Name;
 
         (nametracker as IAttributeExpressionNameTracker)
           .AccessedNames()
@@ -99,11 +101,16 @@ public partial class ExpressionAttributeTrackerTests
           .BeEquivalentTo(new KeyValuePair<string, string>[] {
               new KeyValuePair<string ,string>("#CreatedAt", "CreatedAt"),
               new KeyValuePair<string ,string>("#Person1", "Person1"),
-              new KeyValuePair<string ,string>("#Person2", "Person2")
+              new KeyValuePair<string ,string>("#Person2", "Person2"),
+              new KeyValuePair<string ,string>("#Address", "Address"),
+              new KeyValuePair<string ,string>("#Name", "Name"),
+              new KeyValuePair<string ,string>("#Street", "Street")
           });
 
-        field1.Should().Be("#Self.#Self.#Self.#Self.#Field1");
-        field2.Should().Be("#Self.#Self.#Self.#Field2");
+        field1.Should().Be("#Person1.#CreatedAt");
+        field2.Should().Be("#Person2.#CreatedAt");
+        field3.Should().Be("#Person1.#Address.#Name");
+        field4.Should().Be("#Person2.#Address.#Street.#Name");
     }
 
     [Theory]
