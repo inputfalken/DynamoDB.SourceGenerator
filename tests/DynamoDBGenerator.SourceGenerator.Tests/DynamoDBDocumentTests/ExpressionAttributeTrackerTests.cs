@@ -81,6 +81,9 @@ public partial class ExpressionAttributeTrackerTests
               new KeyValuePair<string ,string>("#Field1", "Field1"),
               new KeyValuePair<string ,string>("#Field2", "Field2")
           });
+
+        field1.Should().Be("#Self.#Self.#Self.#Self.#Field1");
+        field2.Should().Be("#Self.#Self.#Self.#Field2");
     }
 
     [Theory]
