@@ -7,6 +7,7 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 [DynamoDBMarshaller(EntityType = typeof(SelfReferencingClass))]
 [DynamoDBMarshaller(EntityType = typeof(ClassWithOverriddenAttributeName))]
 [DynamoDBMarshaller(EntityType = typeof(InheritedClass))]
+[DynamoDBMarshaller(EntityType = typeof(DuplicatedNavigationProperties))]
 public partial class ExpressionAttributeTrackerTests
 {
     [Fact]
@@ -80,6 +81,25 @@ public partial class ExpressionAttributeTrackerTests
               new KeyValuePair<string ,string>("#Self", "Self"),
               new KeyValuePair<string ,string>("#Field1", "Field1"),
               new KeyValuePair<string ,string>("#Field2", "Field2")
+          });
+
+        field1.Should().Be("#Self.#Self.#Self.#Self.#Field1");
+        field2.Should().Be("#Self.#Self.#Self.#Field2");
+    }
+    [Fact]
+    public void DuplicatedNavigationProperties_AttributeNames_EnsureUniquness()
+    {
+        var nametracker = DuplicatedNavigationPropertiesMarshaller.AttributeExpressionNameTracker();
+        var field1 = nametracker.Person1.CreatedAt;
+        var field2 = nametracker.Person2.CreatedAt;
+
+        (nametracker as IAttributeExpressionNameTracker)
+          .AccessedNames()
+          .Should()
+          .BeEquivalentTo(new KeyValuePair<string, string>[] {
+              new KeyValuePair<string ,string>("#CreatedAt", "CreatedAt"),
+              new KeyValuePair<string ,string>("#Person1", "Person1"),
+              new KeyValuePair<string ,string>("#Person2", "Person2")
           });
 
         field1.Should().Be("#Self.#Self.#Self.#Self.#Field1");
@@ -218,6 +238,12 @@ public class ClassWithOverriddenAttributeName
     public string Foo { get; set; } = null!;
 }
 
+
+public class DuplicatedNavigationProperties
+{
+    public Person Person1 { get; set; } = null!;
+    public Person Person2 { get; set; } = null!;
+}
 public class SelfReferencingClass
 {
     public string Field1 { get; set; } = null!;
