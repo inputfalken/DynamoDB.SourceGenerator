@@ -9,6 +9,8 @@ public static class AttributeExpressionName
 {
 
     private const string ConstructorAttributeName = "nameRef";
+    private const string ConstructorSetName = "set";
+    private const string SetFieldName = "___set___";
 
     private static readonly Func<ITypeSymbol, string> TypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", SymbolEqualityComparer.Default);
     internal static IEnumerable<string> CreateClasses(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
@@ -22,7 +24,7 @@ public static class AttributeExpressionName
     }
     private static IEnumerable<string> TypeContent(
         ITypeSymbol typeSymbol,
-        (bool IsUnknown, DynamoDbDataMember DDB, string NameRef, string AttributeReference, string AttributeInterfaceName)[] dataMembers,
+        (bool IsUnknown, DynamoDbDataMember DDB, string IfBranchAlias, string DbRef, string NameRef, string AttributeReference, string AttributeInterfaceName)[] dataMembers,
         string structName)
     {
         const string self = "_self";
@@ -31,20 +33,21 @@ public static class AttributeExpressionName
             {
                 var ternaryExpressionName = $"{ConstructorAttributeName} is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{{ConstructorAttributeName}}}.#{x.DDB.AttributeName}"""}";
                 return x.IsUnknown
-                    ? $"_{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({ternaryExpressionName}));"
+                    ? $"{x.NameRef} = new (() => new {x.AttributeReference}({ternaryExpressionName}, {ConstructorSetName}));"
                     : $"{x.NameRef} = new (() => {ternaryExpressionName});";
             })
+            .Append($"{SetFieldName} = {ConstructorSetName};")
             .Append($@"{self} = new(() => {ConstructorAttributeName} ?? throw new NotImplementedException(""Root element AttributeExpressionName reference.""));");
 
-        foreach (var fieldAssignment in $"public {structName}(string? {ConstructorAttributeName})".CreateScope(constructorFieldAssignments))
+        foreach (var fieldAssignment in $"public {structName}(string? {ConstructorAttributeName}, HashSet<KeyValuePair<string, string>> {ConstructorSetName})".CreateScope(constructorFieldAssignments))
             yield return fieldAssignment;
 
         foreach (var fieldDeclaration in dataMembers)
         {
             if (fieldDeclaration.IsUnknown)
             {
-                yield return $"private readonly Lazy<{fieldDeclaration.AttributeReference}> _{fieldDeclaration.DDB.DataMember.Name};";
-                yield return $"public {fieldDeclaration.AttributeReference} {fieldDeclaration.DDB.DataMember.Name} => _{fieldDeclaration.DDB.DataMember.Name}.Value;";
+                yield return $"private readonly Lazy<{fieldDeclaration.AttributeReference}> {fieldDeclaration.NameRef};";
+                yield return $"public {fieldDeclaration.AttributeReference} {fieldDeclaration.DDB.DataMember.Name} => {fieldDeclaration.NameRef}.Value;";
             }
             else
             {
@@ -54,12 +57,10 @@ public static class AttributeExpressionName
             }
         }
         yield return $"private readonly Lazy<string> {self};";
+        yield return $"private readonly HashSet<KeyValuePair<string, string>> {SetFieldName};";
 
         var yields = dataMembers
-            .Select(static x => x.IsUnknown
-                ? $"if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{AttributeExpressionNameTrackerInterfaceAccessedNames}()) {{ yield return x; }}"
-                : $@"if ({x.NameRef}.IsValueCreated) yield return new ({x.NameRef}.Value, ""{x.DDB.AttributeName}"");"
-            )
+            .SelectMany(YieldSelector)
             .Append($@"if ({self}.IsValueCreated) yield return new ({self}.Value, ""{typeSymbol.Name}"");");
 
         foreach (var s in $"IEnumerable<KeyValuePair<string, string>> {AttributeExpressionNameTrackerInterface}.{AttributeExpressionNameTrackerInterfaceAccessedNames}()".CreateScope(yields))
@@ -67,12 +68,31 @@ public static class AttributeExpressionName
 
         yield return $"public override string ToString() => {self}.Value;";
     }
+
+    private static IEnumerable<string> YieldSelector((bool IsUnknown, DynamoDbDataMember DDB, string IfBranchAlias, string DbRef, string NameRef, string AttributeReference, string AttributeInterfaceName) x)
+    {
+
+        if (x.IsUnknown)
+        {
+            var scope = $@"if (new KeyValuePair<string, string>(""{x.DbRef}"", ""{x.DDB.AttributeName}"") is var {x.IfBranchAlias} && {SetFieldName}.Add({x.IfBranchAlias}))"
+              .CreateScope($"yield return {x.IfBranchAlias};")
+              .Concat($"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{AttributeExpressionNameTrackerInterfaceAccessedNames}())".CreateScope("yield return x;"));
+            return $"if ({x.NameRef}.IsValueCreated)".CreateScope(scope);
+        }
+        else
+        {
+            return $@"if ({x.NameRef}.IsValueCreated && new KeyValuePair<string, string>(""{x.DbRef}"", ""{x.DDB.AttributeName}"") is var {x.IfBranchAlias} && {SetFieldName}.Add({x.IfBranchAlias}))".CreateScope($"yield return {x.IfBranchAlias};");
+        }
+    }
+
     private static CodeFactory CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> fn, MarshallerOptions options)
     {
         var dataMembers = fn(typeSymbol)
             .Select(x => (
                 IsUnknown: !options.IsConvertable(x.DataMember.Type) && x.DataMember.Type.TypeIdentifier() is UnknownType,
                 DDB: x,
+                IfBranchAlias: $"__{x.DataMember.Name}__",
+                DbRef: $"#{x.AttributeName}",
                 NameRef: $"_{x.DataMember.Name}NameRef",
                 AttributeReference: TypeName(x.DataMember.Type),
                 AttributeInterfaceName: AttributeExpressionNameTrackerInterface
@@ -89,6 +109,6 @@ public static class AttributeExpressionName
     internal static (string method, string typeName) RootSignature(ITypeSymbol typeSymbol)
     {
         var typeName = TypeName(typeSymbol);
-        return ($"public {typeName} {AttributeExpressionNameTrackerMethodName}() => new {typeName}(null);", typeName);
+        return ($"public {typeName} {AttributeExpressionNameTrackerMethodName}() => new {typeName}(null, new HashSet<KeyValuePair<string ,string>>());", typeName);
     }
 }
