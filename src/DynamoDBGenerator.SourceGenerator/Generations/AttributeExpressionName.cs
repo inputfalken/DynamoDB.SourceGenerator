@@ -31,7 +31,7 @@ public static class AttributeExpressionName
             {
                 var ternaryExpressionName = $"{ConstructorAttributeName} is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{{ConstructorAttributeName}}}.#{x.DDB.AttributeName}"""}";
                 return x.IsUnknown
-                    ? $"_{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({ternaryExpressionName}));"
+                    ? $"{x.NameRef} = new (() => new {x.AttributeReference}({ternaryExpressionName}));"
                     : $"{x.NameRef} = new (() => {ternaryExpressionName});";
             })
             .Append($@"{self} = new(() => {ConstructorAttributeName} ?? throw new NotImplementedException(""Root element AttributeExpressionName reference.""));");
@@ -43,8 +43,8 @@ public static class AttributeExpressionName
         {
             if (fieldDeclaration.IsUnknown)
             {
-                yield return $"private readonly Lazy<{fieldDeclaration.AttributeReference}> _{fieldDeclaration.DDB.DataMember.Name};";
-                yield return $"public {fieldDeclaration.AttributeReference} {fieldDeclaration.DDB.DataMember.Name} => _{fieldDeclaration.DDB.DataMember.Name}.Value;";
+                yield return $"private readonly Lazy<{fieldDeclaration.AttributeReference}> {fieldDeclaration.NameRef};";
+                yield return $"public {fieldDeclaration.AttributeReference} {fieldDeclaration.DDB.DataMember.Name} => {fieldDeclaration.NameRef}.Value;";
             }
             else
             {
@@ -57,7 +57,7 @@ public static class AttributeExpressionName
 
         var yields = dataMembers
             .Select(static x => x.IsUnknown
-                ? $"if (_{x.DDB.DataMember.Name}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{AttributeExpressionNameTrackerInterfaceAccessedNames}()) {{ yield return x; }}"
+                ? $"if ({x.NameRef}.IsValueCreated) foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{AttributeExpressionNameTrackerInterfaceAccessedNames}()) {{ yield return x; }}"
                 : $@"if ({x.NameRef}.IsValueCreated) yield return new ({x.NameRef}.Value, ""{x.DDB.AttributeName}"");"
             )
             .Append($@"if ({self}.IsValueCreated) yield return new ({self}.Value, ""{typeSymbol.Name}"");");
