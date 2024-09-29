@@ -24,7 +24,7 @@ public static class AttributeExpressionName
     }
     private static IEnumerable<string> TypeContent(
         ITypeSymbol typeSymbol,
-        (bool IsUnknown, DynamoDbDataMember DDB, string DbRef, string NameRef, string AttributeReference, string AttributeInterfaceName)[] dataMembers,
+        (bool IsUnknown, DynamoDbDataMember DDB, string IfBranchAlias, string DbRef, string NameRef, string AttributeReference, string AttributeInterfaceName)[] dataMembers,
         string structName)
     {
         const string self = "_self";
@@ -61,8 +61,8 @@ public static class AttributeExpressionName
 
         var yields = dataMembers
             .Select(static x => x.IsUnknown
-                ? $@"if ({x.NameRef}.IsValueCreated) {{ if (new KeyValuePair<string, string>(""{x.DbRef}"", ""{x.DDB.AttributeName}"") is var self && {SetFieldName}.Add(self)) {{ yield return self; }} foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{AttributeExpressionNameTrackerInterfaceAccessedNames}()) {{ yield return x; }} }}"
-                : $@"if ({x.NameRef}.IsValueCreated) yield return new (""{x.DbRef}"", ""{x.DDB.AttributeName}"");"
+                ? $@"if ({x.NameRef}.IsValueCreated) {{ if (new KeyValuePair<string, string>(""{x.DbRef}"", ""{x.DDB.AttributeName}"") is var {x.IfBranchAlias} && {SetFieldName}.Add({x.IfBranchAlias})) {{ yield return {x.IfBranchAlias}; }} foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{AttributeExpressionNameTrackerInterfaceAccessedNames}()) {{ yield return x; }} }}"
+                : $@"if ({x.NameRef}.IsValueCreated && new KeyValuePair<string, string>(""{x.DbRef}"", ""{x.DDB.AttributeName}"") is var {x.IfBranchAlias} && {SetFieldName}.Add({x.IfBranchAlias})) yield return {x.IfBranchAlias};"
             )
             .Append($@"if ({self}.IsValueCreated) yield return new ({self}.Value, ""{typeSymbol.Name}"");");
 
@@ -77,6 +77,7 @@ public static class AttributeExpressionName
             .Select(x => (
                 IsUnknown: !options.IsConvertable(x.DataMember.Type) && x.DataMember.Type.TypeIdentifier() is UnknownType,
                 DDB: x,
+                IfBranchAlias : $"__{x.DataMember.Name}__",
                 DbRef: $"#{x.AttributeName}",
                 NameRef: $"_{x.DataMember.Name}NameRef",
                 AttributeReference: TypeName(x.DataMember.Type),
