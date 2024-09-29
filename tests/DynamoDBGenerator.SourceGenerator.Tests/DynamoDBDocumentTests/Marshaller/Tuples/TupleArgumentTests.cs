@@ -149,7 +149,8 @@ public partial class TupleArgumentTests
             {
                 {"#Id", "Id"},
                 {"#AdoptionStatus", "AdoptionStatus"},
-                {"#Metadata.#StatusSetAt", "StatusSetAt"}
+                {"#Metadata", "Metadata"},
+                {"#StatusSetAt", "StatusSetAt"}
             });
 
             attributeExpression.Values.Should().BeEquivalentTo(new Dictionary<string, AttributeValue>
