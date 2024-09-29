@@ -74,9 +74,10 @@ public static class AttributeExpressionName
 
         if (x.IsUnknown)
         {
-            return $"if ({x.NameRef}.IsValueCreated)"
-              .CreateScope($@"if (new KeyValuePair<string, string>(""{x.DbRef}"", ""{x.DDB.AttributeName}"") is var {x.IfBranchAlias} && {SetFieldName}.Add({x.IfBranchAlias}))".CreateScope($"yield return {x.IfBranchAlias};"))
+            var scope = $@"if (new KeyValuePair<string, string>(""{x.DbRef}"", ""{x.DDB.AttributeName}"") is var {x.IfBranchAlias} && {SetFieldName}.Add({x.IfBranchAlias}))"
+              .CreateScope($"yield return {x.IfBranchAlias};")
               .Concat($"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{AttributeExpressionNameTrackerInterfaceAccessedNames}())".CreateScope("yield return x;"));
+            return $"if ({x.NameRef}.IsValueCreated)".CreateScope(scope);
         }
         else
         {
