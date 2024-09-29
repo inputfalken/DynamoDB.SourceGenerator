@@ -1,6 +1,7 @@
 using DynamoDBGenerator.Attributes;
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 
+
 [DynamoDBMarshaller(EntityType = typeof(Person), ArgumentType = typeof((string firstName, DateTime timeStamp)), AccessName = "PersonWithTupleArgument")]
 [DynamoDBMarshaller(EntityType = typeof(Person))]
 [DynamoDBMarshaller(EntityType = typeof(SelfReferencingClass))]
@@ -22,12 +23,12 @@ public partial class ExpressionAttributeTrackerTests
     {
         var valueTracker = PersonWithTupleArgument.AttributeExpressionValueTracker();
         var tracker = valueTracker as IAttributeExpressionValueTracker<(string firstName, DateTime timeStamp)>;
-        
+
         var act = () => valueTracker.ToString();
         act.Should().NotThrow();
         tracker.ToString().Should().Be(":p1");
     }
-    
+
     [Fact]
     public void PersonWithTupleArgument_AccessingNestedExpressionAttributeName_ShouldNotThrow()
     {
@@ -38,7 +39,7 @@ public partial class ExpressionAttributeTrackerTests
         act.Should().NotThrow();
         nameTracker.Address.ToString().Should().Be("#Address");
     }
-    
+
     [Fact]
     public void PersonWithTupleArgument_Tuple_CanBeParameterized()
     {
@@ -62,6 +63,24 @@ public partial class ExpressionAttributeTrackerTests
             x.Key.Should().Be(":p2");
             x.Value.S.Should().Be(timeStamp.ToString("O"));
         });
+    }
+
+
+    [Fact]
+    public void SelfReference_AttributeNames_EnsureUniquness()
+    {
+        var nametracker = SelfReferencingClassMarshaller.AttributeExpressionNameTracker();
+        var field1 = nametracker.Self.Self.Self.Self.Field1;
+        var field2 = nametracker.Self.Self.Self.Field2;
+
+        (nametracker as IAttributeExpressionNameTracker)
+          .AccessedNames()
+          .Should()
+          .BeEquivalentTo(new KeyValuePair<string, string>[] {
+              new KeyValuePair<string ,string>("#Self", "Self"),
+              new KeyValuePair<string ,string>("#Field1", "Field1"),
+              new KeyValuePair<string ,string>("#Field2", "Field2")
+          });
     }
 
     [Theory]
@@ -187,7 +206,7 @@ public static class AssertionExtensions
 
 public class InheritedClass : ClassWithOverriddenAttributeName
 {
-    
+
 }
 
 public class ClassWithOverriddenAttributeName
