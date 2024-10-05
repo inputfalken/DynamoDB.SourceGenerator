@@ -33,18 +33,34 @@ public static class NotNullEvaluationExtensions
 
     public static IEnumerable<string> NotNullIfStatement(this ITypeSymbol typeSymbol, string accessPattern, string truthy)
     {
-        return NotNullIfStatement(typeSymbol, accessPattern, new string[] { truthy });
+        return NotNullIfStatement(typeSymbol, accessPattern, obj: truthy);
     }
     public static IEnumerable<string> NotNullIfStatement(this ITypeSymbol typeSymbol, string accessPattern, IEnumerable<string> truthy)
     {
+        return NotNullIfStatement(typeSymbol, accessPattern, obj: truthy);
+    }
+    
+    private static IEnumerable<string> NotNullIfStatement(this ITypeSymbol typeSymbol, string accessPattern, object obj)
+    {
         if (Expression(typeSymbol, accessPattern) is not { } expression)
         {
-            foreach (var x in truthy)
-                yield return x;
+            if(obj is string single)
+              yield return single;
+            else if(obj is IEnumerable<string> truthies) 
+              foreach (var x in truthies)
+                  yield return x;
+            else 
+              throw new NotImplementedException($"Method '{nameof(NotNullIfStatement)}' could not determine type '{obj.GetType().Name}'");
         }
         else
         {
-            var ifClause = $"if ({expression})".CreateScope(truthy);
+            
+            var ifClause = obj switch 
+            {
+              string single => $"if ({expression})".CreateScope(single),
+              IEnumerable<string> multiple => $"if ({expression})".CreateScope(multiple),
+              _ => throw new NotImplementedException($"Method '{nameof(NotNullIfStatement)}' could not determine type '{obj.GetType().Name}'")
+            };
             var enumerable = typeSymbol.NullableAnnotation switch
             {
                 NullableAnnotation.None or NullableAnnotation.Annotated => ifClause,
