@@ -31,18 +31,31 @@ public static class NotNullEvaluationExtensions
         return $"throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}(nameof({accessPattern}));";
     }
 
-    public static string NotNullIfStatement(this ITypeSymbol typeSymbol, in string accessPattern, in string truthy)
+    public static IEnumerable<string> NotNullIfStatement(this ITypeSymbol typeSymbol, string accessPattern, string truthy)
+    {
+        return NotNullIfStatement(typeSymbol, accessPattern, new string[] { truthy });
+    }
+    public static IEnumerable<string> NotNullIfStatement(this ITypeSymbol typeSymbol, string accessPattern, IEnumerable<string> truthy)
     {
         if (Expression(typeSymbol, accessPattern) is not { } expression)
-            return truthy;
-
-        var ifClause = $"if ({expression}) {{ {truthy} }}";
-        return typeSymbol.NullableAnnotation switch
         {
-            NullableAnnotation.None or NullableAnnotation.Annotated => ifClause,
-            NullableAnnotation.NotAnnotated => $"{ifClause} else {{ {CreateException(in accessPattern)} }}",
-            _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
-        };
+            foreach (var x in truthy)
+                yield return x;
+        }
+        else
+        {
+            var ifClause = $"if ({expression})".CreateScope(truthy);
+            var enumerable = typeSymbol.NullableAnnotation switch
+            {
+                NullableAnnotation.None or NullableAnnotation.Annotated => ifClause,
+                NullableAnnotation.NotAnnotated => ifClause.Concat("else".CreateScope(CreateException(in accessPattern))),
+                _ => throw new ArgumentOutOfRangeException(typeSymbol.ToDisplayString())
+            };
+
+            foreach (var element in enumerable)
+                yield return element;
+        }
+
     }
 
 

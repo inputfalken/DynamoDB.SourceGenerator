@@ -58,15 +58,8 @@ public static class AttributeExpressionValue
 
         var yields = enumerable.Concat(
             dataMembers
-                .Select(x =>
-                    {
-                        var accessPattern = $"entity.{x.DDB.DataMember.Name}";
-                        return x.IsUnknown
-                            ? $"if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({accessPattern})) {{ yield return x; }}")}"
-                            : $"if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {Marshaller.InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}", $"\"{x.DDB.DataMember.Name}\"", options, MarshallerOptions.FieldReference)} ?? {AttributeValueUtilityFactory.Null});")}";
-                    }
-                )
-                .Append($"if ({self}.IsValueCreated) yield return new ({self}.Value, {Marshaller.InvokeMarshallerMethod(typeSymbol, "entity", $"\"{structName}\"", options, MarshallerOptions.FieldReference)} ?? {AttributeValueUtilityFactory.Null});")
+            .SelectMany(x => YieldSelector(x, options))
+            .Append($"if ({self}.IsValueCreated) yield return new ({self}.Value, {Marshaller.InvokeMarshallerMethod(typeSymbol, "entity", $"\"{structName}\"", options, MarshallerOptions.FieldReference)} ?? {AttributeValueUtilityFactory.Null});")
         );
 
         foreach (var yield in
@@ -75,6 +68,24 @@ public static class AttributeExpressionValue
             yield return yield;
 
         yield return $"public override string ToString() => {self}.Value;";
+    }
+
+    private static IEnumerable<string> YieldSelector((bool IsUnknown, DynamoDbDataMember DDB, string ValueRef, string AttributeReference, string AttributeInterfaceName) x, MarshallerOptions options)
+    {
+        var accessPattern = $"entity.{x.DDB.DataMember.Name}";
+
+        if (x.IsUnknown)
+        {
+            var @foreach = x.DDB.DataMember.Type.NotNullIfStatement(
+                accessPattern,
+                $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({accessPattern}))".CreateScope("yield return x;")
+              );
+
+            return $"if (_{x.DDB.DataMember.Name}.IsValueCreated)".CreateScope(@foreach);
+        }
+
+        return $"if ({x.ValueRef}.IsValueCreated)".CreateScope(x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {Marshaller.InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}", $"\"{x.DDB.DataMember.Name}\"", options, MarshallerOptions.FieldReference)} ?? {AttributeValueUtilityFactory.Null});"));
+
     }
     internal static IEnumerable<string> CreateExpressionAttributeValue(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
     {
