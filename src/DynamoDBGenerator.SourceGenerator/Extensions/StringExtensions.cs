@@ -2,6 +2,11 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class StringExtensions
 {
+    public static IEnumerable<string> ScopeTo(this IEnumerable<string> content, string header)
+    {
+        return CreateScope(header, content);
+    }
+
     public static IEnumerable<string> CreateScope(this string header, IEnumerable<string> content)
     {
         yield return header;
@@ -22,7 +27,7 @@ public static class StringExtensions
 
         yield return "}";
     }
-    
+
     public static IEnumerable<string> CreateScope(this string header, string content, string second)
     {
         yield return header;

@@ -47,22 +47,20 @@ public static class AttributeExpressionValue
         const string param = "entity";
 
 
-        var enumerable = typeSymbol switch
+        var yields = (typeSymbol switch
         {
             var x when x.IsNullable() => $"if ({param} is null)".CreateScope($"yield return new ({self}.Value, {AttributeValueUtilityFactory.Null});", "yield break;"),
             var x when x.IsReferenceType => $"if ({param} is null)".CreateScope($"throw {ExceptionHelper.NullExceptionMethod}(\"{structName}\");"),
             _ => Enumerable.Empty<string>()
-        };
-
-        var yields = enumerable.Concat(
-            dataMembers
+        })
+        .Concat(dataMembers
             .SelectMany(x => YieldSelector(x, options))
             .Append($"if ({self}.IsValueCreated) yield return new ({self}.Value, {Marshaller.InvokeMarshallerMethod(typeSymbol, "entity", $"\"{structName}\"", options, MarshallerOptions.FieldReference)} ?? {AttributeValueUtilityFactory.Null});")
-        );
+        )
+        .ScopeTo($"IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({typeSymbol.Representation().annotated} entity)");
 
-        foreach (var yield in
-                 $"IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({typeSymbol.Representation().annotated} entity)"
-                     .CreateScope(yields))
+
+        foreach (var yield in yields)
             yield return yield;
 
         yield return $"public override string ToString() => {self}.Value;";
@@ -74,12 +72,11 @@ public static class AttributeExpressionValue
 
         if (x.IsUnknown)
         {
-            var @foreach = x.DDB.DataMember.Type.NotNullIfStatement(
+            return x.DDB.DataMember.Type.NotNullIfStatement(
                 accessPattern,
                 $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({accessPattern}))".CreateScope("yield return x;")
-              );
-
-            return $"if ({x.ValueRef}.IsValueCreated)".CreateScope(@foreach);
+              )
+              .ScopeTo($"if ({x.ValueRef}.IsValueCreated)");
         }
 
         return $"if ({x.ValueRef}.IsValueCreated)".CreateScope(x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {Marshaller.InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}", $"\"{x.DDB.DataMember.Name}\"", options, MarshallerOptions.FieldReference)} ?? {AttributeValueUtilityFactory.Null});"));
