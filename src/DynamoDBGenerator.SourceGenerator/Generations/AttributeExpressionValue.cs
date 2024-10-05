@@ -46,15 +46,13 @@ public static class AttributeExpressionValue
 
         const string param = "entity";
 
-        var enumerable = Enumerable.Empty<string>();
-        if (typeSymbol.IsNullable())
+
+        var enumerable = typeSymbol switch
         {
-            enumerable = $"if ({param} is null)".CreateScope($"yield return new ({self}.Value, {AttributeValueUtilityFactory.Null});", "yield break;");
-        }
-        else if (typeSymbol.IsReferenceType)
-        {
-            enumerable = $"if ({param} is null)".CreateScope($"throw {ExceptionHelper.NullExceptionMethod}(\"{structName}\");");
-        }
+            var x when x.IsNullable() => $"if ({param} is null)".CreateScope($"yield return new ({self}.Value, {AttributeValueUtilityFactory.Null});", "yield break;"),
+            var x when x.IsReferenceType => $"if ({param} is null)".CreateScope($"throw {ExceptionHelper.NullExceptionMethod}(\"{structName}\");"),
+            _ => Enumerable.Empty<string>()
+        };
 
         var yields = enumerable.Concat(
             dataMembers
