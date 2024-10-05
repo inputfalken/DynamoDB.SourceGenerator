@@ -21,7 +21,7 @@ public static class AttributeExpressionValue
         const string self = "_self";
         var constructorFieldAssignments = dataMembers
             .Select(x => x.IsUnknown
-                ? $"_{x.DDB.DataMember.Name} = new (() => new {x.AttributeReference}({ValueProvider}, {MarshallerOptions.ParamReference}));"
+                ? $"{x.ValueRef} = new (() => new {x.AttributeReference}({ValueProvider}, {MarshallerOptions.ParamReference}));"
                 : $"{x.ValueRef} = new ({ValueProvider});")
             .Append($"{self} = new({ValueProvider});")
             .Append($"{MarshallerOptions.FieldReference} = {MarshallerOptions.ParamReference};");
@@ -33,8 +33,8 @@ public static class AttributeExpressionValue
         {
             if (fieldDeclaration.IsUnknown)
             {
-                yield return $"private readonly Lazy<{fieldDeclaration.AttributeReference}> _{fieldDeclaration.DDB.DataMember.Name};";
-                yield return $"public {fieldDeclaration.AttributeReference} {fieldDeclaration.DDB.DataMember.Name} => _{fieldDeclaration.DDB.DataMember.Name}.Value;";
+                yield return $"private readonly Lazy<{fieldDeclaration.AttributeReference}> {fieldDeclaration.ValueRef};";
+                yield return $"public {fieldDeclaration.AttributeReference} {fieldDeclaration.DDB.DataMember.Name} => {fieldDeclaration.ValueRef}.Value;";
             }
             else
             {
@@ -46,35 +46,41 @@ public static class AttributeExpressionValue
 
         const string param = "entity";
 
-        var enumerable = Enumerable.Empty<string>();
-        if (typeSymbol.IsNullable())
-        {
-            enumerable = $"if ({param} is null)".CreateScope($"yield return new ({self}.Value, {AttributeValueUtilityFactory.Null});", "yield break;");
-        }
-        else if (typeSymbol.IsReferenceType)
-        {
-            enumerable = $"if ({param} is null)".CreateScope($"throw {ExceptionHelper.NullExceptionMethod}(\"{structName}\");");
-        }
 
-        var yields = enumerable.Concat(
-            dataMembers
-                .Select(x =>
-                    {
-                        var accessPattern = $"entity.{x.DDB.DataMember.Name}";
-                        return x.IsUnknown
-                            ? $"if (_{x.DDB.DataMember.Name}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({accessPattern})) {{ yield return x; }}")}"
-                            : $"if ({x.ValueRef}.IsValueCreated) {x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {Marshaller.InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}", $"\"{x.DDB.DataMember.Name}\"", options, MarshallerOptions.FieldReference)} ?? {AttributeValueUtilityFactory.Null});")}";
-                    }
-                )
-                .Append($"if ({self}.IsValueCreated) yield return new ({self}.Value, {Marshaller.InvokeMarshallerMethod(typeSymbol, "entity", $"\"{structName}\"", options, MarshallerOptions.FieldReference)} ?? {AttributeValueUtilityFactory.Null});")
-        );
+        var yields = (typeSymbol switch
+        {
+            var x when x.IsNullable() => $"if ({param} is null)".CreateScope($"yield return new ({self}.Value, {AttributeValueUtilityFactory.Null});", "yield break;"),
+            var x when x.IsReferenceType => $"if ({param} is null)".CreateScope($"throw {ExceptionHelper.NullExceptionMethod}(\"{structName}\");"),
+            _ => Enumerable.Empty<string>()
+        })
+        .Concat(dataMembers
+            .SelectMany(x => YieldSelector(x, options))
+            .Append($"if ({self}.IsValueCreated) yield return new ({self}.Value, {Marshaller.InvokeMarshallerMethod(typeSymbol, "entity", $"\"{structName}\"", options, MarshallerOptions.FieldReference)} ?? {AttributeValueUtilityFactory.Null});")
+        )
+        .ScopeTo($"IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({typeSymbol.Representation().annotated} entity)");
 
-        foreach (var yield in
-                 $"IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({typeSymbol.Representation().annotated} entity)"
-                     .CreateScope(yields))
+
+        foreach (var yield in yields)
             yield return yield;
 
         yield return $"public override string ToString() => {self}.Value;";
+    }
+
+    private static IEnumerable<string> YieldSelector((bool IsUnknown, DynamoDbDataMember DDB, string ValueRef, string AttributeReference, string AttributeInterfaceName) x, MarshallerOptions options)
+    {
+        var accessPattern = $"entity.{x.DDB.DataMember.Name}";
+
+        if (x.IsUnknown)
+        {
+            return x.DDB.DataMember.Type.NotNullIfStatement(
+                accessPattern,
+                $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({accessPattern}))".CreateScope("yield return x;")
+              )
+              .ScopeTo($"if ({x.ValueRef}.IsValueCreated)");
+        }
+
+        return $"if ({x.ValueRef}.IsValueCreated)".CreateScope(x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {Marshaller.InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}", $"\"{x.DDB.DataMember.Name}\"", options, MarshallerOptions.FieldReference)} ?? {AttributeValueUtilityFactory.Null});"));
+
     }
     internal static IEnumerable<string> CreateExpressionAttributeValue(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
     {
@@ -95,8 +101,7 @@ public static class AttributeExpressionValue
                     .Select(x =>
                     {
                         return (
-                            IsUnknown: !options.IsConvertable(x.DataMember.Type) &&
-                                       x.DataMember.Type.TypeIdentifier() is UnknownType,
+                            IsUnknown: !options.IsConvertable(x.DataMember.Type) && x.DataMember.Type.TypeIdentifier() is UnknownType,
                             DDB: x,
                             ValueRef: $"_{x.DataMember.Name}ValueRef",
                             AttributeReference: TypeName(x.DataMember.Type),

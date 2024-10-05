@@ -2,37 +2,11 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class StringExtensions
 {
-
-    private static readonly IDictionary<int, string> IndentCache = new Dictionary<int, string>
+    public static IEnumerable<string> ScopeTo(this IEnumerable<string> content, string header)
     {
-        {0, ""},
-        {1, "    "},
-        {2, "        "},
-        {3, "            "},
-        {4, "                "}
-    };
-
-    private static string Indent(int level)
-    {
-        if (IndentCache.TryGetValue(level, out var indent)) return indent;
-
-        indent = new string(' ', level * 4);
-        IndentCache[level] = indent;
-
-        return indent;
+        return CreateScope(header, content);
     }
-    public static IEnumerable<string> CreateScope(this string header, IEnumerable<string> content, int indentLevel)
-    {
-        var indent = Indent(indentLevel);
 
-        yield return $"{indent}{header}";
-        yield return string.Intern($"{indent}{{");
-
-        foreach (var s in content)
-            yield return $"{Indent(indentLevel + 1)}{s}";
-
-        yield return string.Intern($"{indent}}}");
-    }
     public static IEnumerable<string> CreateScope(this string header, IEnumerable<string> content)
     {
         yield return header;
@@ -53,7 +27,7 @@ public static class StringExtensions
 
         yield return "}";
     }
-    
+
     public static IEnumerable<string> CreateScope(this string header, string content, string second)
     {
         yield return header;
