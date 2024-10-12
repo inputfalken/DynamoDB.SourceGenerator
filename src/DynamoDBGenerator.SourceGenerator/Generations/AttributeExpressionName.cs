@@ -24,7 +24,7 @@ public static class AttributeExpressionName
     }
     private static IEnumerable<string> TypeContent(
         ITypeSymbol typeSymbol,
-        (bool IsUnknown, DynamoDbDataMember DDB, string IfBranchAlias, string DbRef, string NameRef, string AttributeReference, string AttributeInterfaceName)[] dataMembers,
+        (bool IsUnknown, DynamoDbDataMember DDB,  string DbRef,  string AttributeReference, string AttributeInterfaceName)[] dataMembers,
         string structName)
     {
         const string self = "_self";
@@ -33,8 +33,8 @@ public static class AttributeExpressionName
             {
                 var ternaryExpressionName = $"{ConstructorAttributeName} is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{{ConstructorAttributeName}}}.#{x.DDB.AttributeName}"""}";
                 return x.IsUnknown
-                    ? $"{x.NameRef} = new (() => new {x.AttributeReference}({ternaryExpressionName}, {ConstructorSetName}));"
-                    : $"{x.NameRef} = new (() => {ternaryExpressionName});";
+                    ? $"{x.DDB.DataMember.PrivateField} = new (() => new {x.AttributeReference}({ternaryExpressionName}, {ConstructorSetName}));"
+                    : $"{x.DDB.DataMember.PrivateField} = new (() => {ternaryExpressionName});";
             })
             .Append($"{SetFieldName} = {ConstructorSetName};")
             .Append($@"{self} = new(() => {ConstructorAttributeName} ?? throw new NotImplementedException(""Root element AttributeExpressionName reference.""));");
@@ -46,13 +46,13 @@ public static class AttributeExpressionName
         {
             if (fieldDeclaration.IsUnknown)
             {
-                yield return $"private readonly Lazy<{fieldDeclaration.AttributeReference}> {fieldDeclaration.NameRef};";
-                yield return $"public {fieldDeclaration.AttributeReference} {fieldDeclaration.DDB.DataMember.Name} => {fieldDeclaration.NameRef}.Value;";
+                yield return $"private readonly Lazy<{fieldDeclaration.AttributeReference}> {fieldDeclaration.DDB.DataMember.PrivateField};";
+                yield return $"public {fieldDeclaration.AttributeReference} {fieldDeclaration.DDB.DataMember.Name} => {fieldDeclaration.DDB.DataMember.PrivateField}.Value;";
             }
             else
             {
-                yield return $"private readonly Lazy<string> {fieldDeclaration.NameRef};";
-                yield return $"public string {fieldDeclaration.DDB.DataMember.Name} => {fieldDeclaration.NameRef}.Value;";
+                yield return $"private readonly Lazy<string> {fieldDeclaration.DDB.DataMember.PrivateField};";
+                yield return $"public string {fieldDeclaration.DDB.DataMember.Name} => {fieldDeclaration.DDB.DataMember.PrivateField}.Value;";
 
             }
         }
@@ -69,19 +69,20 @@ public static class AttributeExpressionName
         yield return $"public override string ToString() => {self}.Value;";
     }
 
-    private static IEnumerable<string> YieldSelector((bool IsUnknown, DynamoDbDataMember DDB, string IfBranchAlias, string DbRef, string NameRef, string AttributeReference, string AttributeInterfaceName) x)
+    private static IEnumerable<string> YieldSelector((bool IsUnknown, DynamoDbDataMember DDB,  string DbRef,  string AttributeReference, string AttributeInterfaceName) x)
     {
 
+        var camelCase = x.DDB.DataMember.CamelCase;
         if (x.IsUnknown)
         {
-            var scope = $@"if (new KeyValuePair<string, string>(""{x.DbRef}"", ""{x.DDB.AttributeName}"") is var {x.IfBranchAlias} && {SetFieldName}.Add({x.IfBranchAlias}))"
-              .CreateScope($"yield return {x.IfBranchAlias};")
+            var scope = $@"if (new KeyValuePair<string, string>(""{x.DbRef}"", ""{x.DDB.AttributeName}"") is var {camelCase} && {SetFieldName}.Add({camelCase}))"
+              .CreateScope($"yield return {camelCase};")
               .Concat($"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{AttributeExpressionNameTrackerInterfaceAccessedNames}())".CreateScope("yield return x;"));
-            return $"if ({x.NameRef}.IsValueCreated)".CreateScope(scope);
+            return $"if ({x.DDB.DataMember.PrivateField}.IsValueCreated)".CreateScope(scope);
         }
         else
         {
-            return $@"if ({x.NameRef}.IsValueCreated && new KeyValuePair<string, string>(""{x.DbRef}"", ""{x.DDB.AttributeName}"") is var {x.IfBranchAlias} && {SetFieldName}.Add({x.IfBranchAlias}))".CreateScope($"yield return {x.IfBranchAlias};");
+            return $@"if ({x.DDB.DataMember.PrivateField}.IsValueCreated && new KeyValuePair<string, string>(""{x.DbRef}"", ""{x.DDB.AttributeName}"") is var {camelCase} && {SetFieldName}.Add({camelCase}))".CreateScope($"yield return {camelCase};");
         }
     }
 
@@ -91,9 +92,7 @@ public static class AttributeExpressionName
             .Select(x => (
                 IsUnknown: !options.IsConvertable(x.DataMember.Type) && x.DataMember.Type.TypeIdentifier() is UnknownType,
                 DDB: x,
-                IfBranchAlias: $"__{x.DataMember.Name}__",
                 DbRef: $"#{x.AttributeName}",
-                NameRef: $"_{x.DataMember.Name}NameRef",
                 AttributeReference: TypeName(x.DataMember.Type),
                 AttributeInterfaceName: AttributeExpressionNameTrackerInterface
             ))

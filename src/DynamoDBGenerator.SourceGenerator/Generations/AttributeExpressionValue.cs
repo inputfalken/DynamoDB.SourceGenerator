@@ -103,7 +103,7 @@ public static class AttributeExpressionValue
                         return (
                             IsUnknown: !options.IsConvertable(x.DataMember.Type) && x.DataMember.Type.TypeIdentifier() is UnknownType,
                             DDB: x,
-                            ValueRef: $"_{x.DataMember.Name}ValueRef",
+                            ValueRef: x.DataMember.Name.ToPrivateFieldFromPascal(),
                             AttributeReference: TypeName(x.DataMember.Type),
                             AttributeInterfaceName:
                             $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{x.DataMember.Type.Representation().annotated}>"
