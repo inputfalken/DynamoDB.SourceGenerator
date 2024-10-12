@@ -12,7 +12,7 @@ public static class AttributeExpressionValue
     private const string ValueProvider = "valueIdProvider";
     private static IEnumerable<string> TypeContents(
         ITypeSymbol typeSymbol,
-        (bool IsUnknown, DynamoDbDataMember DDB, string ValueRef, string AttributeReference, string AttributeInterfaceName)[] dataMembers,
+        (bool IsUnknown, DynamoDbDataMember DDB, string AttributeReference, string AttributeInterfaceName)[] dataMembers,
         string structName,
         string interfaceName,
         MarshallerOptions options
@@ -21,8 +21,8 @@ public static class AttributeExpressionValue
         const string self = "_self";
         var constructorFieldAssignments = dataMembers
             .Select(x => x.IsUnknown
-                ? $"{x.ValueRef} = new (() => new {x.AttributeReference}({ValueProvider}, {MarshallerOptions.ParamReference}));"
-                : $"{x.ValueRef} = new ({ValueProvider});")
+                ? $"{x.DDB.DataMember.PrivateField} = new (() => new {x.AttributeReference}({ValueProvider}, {MarshallerOptions.ParamReference}));"
+                : $"{x.DDB.DataMember.PrivateField} = new ({ValueProvider});")
             .Append($"{self} = new({ValueProvider});")
             .Append($"{MarshallerOptions.FieldReference} = {MarshallerOptions.ParamReference};");
         foreach (var fieldAssignment in $"public {structName}(Func<string> {ValueProvider}, {MarshallerOptions.Name} options)".CreateScope(constructorFieldAssignments))
@@ -33,13 +33,13 @@ public static class AttributeExpressionValue
         {
             if (fieldDeclaration.IsUnknown)
             {
-                yield return $"private readonly Lazy<{fieldDeclaration.AttributeReference}> {fieldDeclaration.ValueRef};";
-                yield return $"public {fieldDeclaration.AttributeReference} {fieldDeclaration.DDB.DataMember.Name} => {fieldDeclaration.ValueRef}.Value;";
+                yield return $"private readonly Lazy<{fieldDeclaration.AttributeReference}> {fieldDeclaration.DDB.DataMember.PrivateField};";
+                yield return $"public {fieldDeclaration.AttributeReference} {fieldDeclaration.DDB.DataMember.Name} => {fieldDeclaration.DDB.DataMember.PrivateField}.Value;";
             }
             else
             {
-                yield return $"private readonly Lazy<string> {fieldDeclaration.ValueRef};";
-                yield return $"public string {fieldDeclaration.DDB.DataMember.Name} => {fieldDeclaration.ValueRef}.Value;";
+                yield return $"private readonly Lazy<string> {fieldDeclaration.DDB.DataMember.PrivateField};";
+                yield return $"public string {fieldDeclaration.DDB.DataMember.Name} => {fieldDeclaration.DDB.DataMember.PrivateField}.Value;";
             }
         }
         yield return $"private readonly Lazy<string> {self};";
@@ -66,7 +66,7 @@ public static class AttributeExpressionValue
         yield return $"public override string ToString() => {self}.Value;";
     }
 
-    private static IEnumerable<string> YieldSelector((bool IsUnknown, DynamoDbDataMember DDB, string ValueRef, string AttributeReference, string AttributeInterfaceName) x, MarshallerOptions options)
+    private static IEnumerable<string> YieldSelector((bool IsUnknown, DynamoDbDataMember DDB, string AttributeReference, string AttributeInterfaceName) x, MarshallerOptions options)
     {
         var accessPattern = $"entity.{x.DDB.DataMember.Name}";
 
@@ -76,10 +76,10 @@ public static class AttributeExpressionValue
                 accessPattern,
                 $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({accessPattern}))".CreateScope("yield return x;")
               )
-              .ScopeTo($"if ({x.ValueRef}.IsValueCreated)");
+              .ScopeTo($"if ({x.DDB.DataMember.PrivateField}.IsValueCreated)");
         }
 
-        return $"if ({x.ValueRef}.IsValueCreated)".CreateScope(x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.ValueRef}.Value, {Marshaller.InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}", $"\"{x.DDB.DataMember.Name}\"", options, MarshallerOptions.FieldReference)} ?? {AttributeValueUtilityFactory.Null});"));
+        return $"if ({x.DDB.DataMember.PrivateField}.IsValueCreated)".CreateScope(x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.DDB.DataMember.PrivateField}.Value, {Marshaller.InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}", $"\"{x.DDB.DataMember.Name}\"", options, MarshallerOptions.FieldReference)} ?? {AttributeValueUtilityFactory.Null});"));
 
     }
     internal static IEnumerable<string> CreateExpressionAttributeValue(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
@@ -95,7 +95,7 @@ public static class AttributeExpressionValue
         var dataMembers =
             options.IsConvertable(typeSymbol)
                 ? Array
-                    .Empty<(bool IsUnknown, DynamoDbDataMember DDB, string ValueRef, string AttributeReference, string
+                    .Empty<(bool IsUnknown, DynamoDbDataMember DDB, string AttributeReference, string
                         AttributeInterfaceName)>()
                 : fn(typeSymbol)
                     .Select(x =>
@@ -103,7 +103,6 @@ public static class AttributeExpressionValue
                         return (
                             IsUnknown: !options.IsConvertable(x.DataMember.Type) && x.DataMember.Type.TypeIdentifier() is UnknownType,
                             DDB: x,
-                            ValueRef: x.DataMember.Name.ToPrivateFieldFromPascal(),
                             AttributeReference: TypeName(x.DataMember.Type),
                             AttributeInterfaceName:
                             $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{x.DataMember.Type.Representation().annotated}>"
