@@ -1,3 +1,4 @@
+using DynamoDBGenerator.SourceGenerator.Extensions;
 using Microsoft.CodeAnalysis;
 
 namespace DynamoDBGenerator.SourceGenerator.Types;
@@ -13,11 +14,14 @@ public readonly struct DataMember
         Type = type;
         BaseSymbol = symbol;
         IsAssignable = isAssignable;
+
+        PrivateField = fieldName.ToPrivateFieldFromPascal();
+        CamelCase = fieldName.ToCamelCaseFromPascal();
     }
 
     public static DataMember FromField(in IFieldSymbol fieldSymbol)
     {
-        var symbol = (ISymbol) fieldSymbol;
+        var symbol = (ISymbol)fieldSymbol;
         var name = fieldSymbol.Name;
         var type = fieldSymbol.Type;
 
@@ -26,7 +30,7 @@ public readonly struct DataMember
 
     public static DataMember FromProperty(in IPropertySymbol property)
     {
-        var symbol = (ISymbol) property;
+        var symbol = (ISymbol)property;
         var name = property.Name;
         var type = property.Type;
 
@@ -42,6 +46,10 @@ public readonly struct DataMember
     ///     The name of the data member.
     /// </summary>
     public string Name { get; }
+
+
+    public string PrivateField { get; }
+    public string CamelCase { get; }
 
     /// <summary>
     ///     The type of the data member.
