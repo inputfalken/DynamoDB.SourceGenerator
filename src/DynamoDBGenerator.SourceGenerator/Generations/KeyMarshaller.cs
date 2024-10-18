@@ -24,7 +24,7 @@ public static class KeyMarshaller
             .Concat($"else if ({keyReference} is null) ".CreateScope($@"throw {ExceptionHelper.KeysArgumentNullExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"");"))
             .Concat("else".CreateScope($@"throw {ExceptionHelper.KeysInvalidConversionExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"", {keyReference}, ""{expectedType}"");"));
 
-        return $"if({validateReference})".CreateScope(innerContent);
+        return $"if ({validateReference})".CreateScope(innerContent);
 
     }
     private static IEnumerable<string> MethodBody(ITypeSymbol typeSymbol, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> fn, MarshallerOptions options)
