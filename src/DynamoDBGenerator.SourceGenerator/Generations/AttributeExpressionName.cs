@@ -27,7 +27,7 @@ public static class AttributeExpressionName
         (bool IsUnknown, DynamoDbDataMember DDB,  string DbRef,  string AttributeReference, string AttributeInterfaceName)[] dataMembers,
         string structName)
     {
-        const string self = "_self";
+        const string self = "_this";
         var constructorFieldAssignments = dataMembers
             .Select(x =>
             {

@@ -18,7 +18,7 @@ public static class AttributeExpressionValue
         MarshallerOptions options
     )
     {
-        const string self = "_self";
+        const string self = "_this";
         var constructorFieldAssignments = dataMembers
             .Select(x => x.IsUnknown
                 ? $"{x.DDB.DataMember.NameAsPrivateField} = new (() => new {x.AttributeReference}({ValueProvider}, {MarshallerOptions.ParamReference}));"
