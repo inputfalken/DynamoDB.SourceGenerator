@@ -15,8 +15,8 @@ public readonly struct DataMember
         BaseSymbol = symbol;
         IsAssignable = isAssignable;
 
-        PrivateField = fieldName.ToPrivateFieldFromPascal();
-        CamelCase = fieldName.ToCamelCaseFromPascal();
+        NameAsPrivateField = fieldName.ToPrivateFieldFromPascal();
+        NameAsCamelCase = fieldName.ToCamelCaseFromPascal();
     }
 
     public static DataMember FromField(in IFieldSymbol fieldSymbol)
@@ -48,8 +48,8 @@ public readonly struct DataMember
     public string Name { get; }
 
 
-    public string PrivateField { get; }
-    public string CamelCase { get; }
+    public string NameAsPrivateField { get; }
+    public string NameAsCamelCase { get; }
 
     /// <summary>
     ///     The type of the data member.

@@ -21,8 +21,8 @@ public static class AttributeExpressionValue
         const string self = "_self";
         var constructorFieldAssignments = dataMembers
             .Select(x => x.IsUnknown
-                ? $"{x.DDB.DataMember.PrivateField} = new (() => new {x.AttributeReference}({ValueProvider}, {MarshallerOptions.ParamReference}));"
-                : $"{x.DDB.DataMember.PrivateField} = new ({ValueProvider});")
+                ? $"{x.DDB.DataMember.NameAsPrivateField} = new (() => new {x.AttributeReference}({ValueProvider}, {MarshallerOptions.ParamReference}));"
+                : $"{x.DDB.DataMember.NameAsPrivateField} = new ({ValueProvider});")
             .Append($"{self} = new({ValueProvider});")
             .Append($"{MarshallerOptions.FieldReference} = {MarshallerOptions.ParamReference};");
         foreach (var fieldAssignment in $"public {structName}(Func<string> {ValueProvider}, {MarshallerOptions.Name} options)".CreateScope(constructorFieldAssignments))
@@ -33,13 +33,13 @@ public static class AttributeExpressionValue
         {
             if (fieldDeclaration.IsUnknown)
             {
-                yield return $"private readonly Lazy<{fieldDeclaration.AttributeReference}> {fieldDeclaration.DDB.DataMember.PrivateField};";
-                yield return $"public {fieldDeclaration.AttributeReference} {fieldDeclaration.DDB.DataMember.Name} => {fieldDeclaration.DDB.DataMember.PrivateField}.Value;";
+                yield return $"private readonly Lazy<{fieldDeclaration.AttributeReference}> {fieldDeclaration.DDB.DataMember.NameAsPrivateField};";
+                yield return $"public {fieldDeclaration.AttributeReference} {fieldDeclaration.DDB.DataMember.Name} => {fieldDeclaration.DDB.DataMember.NameAsPrivateField}.Value;";
             }
             else
             {
-                yield return $"private readonly Lazy<string> {fieldDeclaration.DDB.DataMember.PrivateField};";
-                yield return $"public string {fieldDeclaration.DDB.DataMember.Name} => {fieldDeclaration.DDB.DataMember.PrivateField}.Value;";
+                yield return $"private readonly Lazy<string> {fieldDeclaration.DDB.DataMember.NameAsPrivateField};";
+                yield return $"public string {fieldDeclaration.DDB.DataMember.Name} => {fieldDeclaration.DDB.DataMember.NameAsPrivateField}.Value;";
             }
         }
         yield return $"private readonly Lazy<string> {self};";
@@ -76,10 +76,10 @@ public static class AttributeExpressionValue
                 accessPattern,
                 $"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({accessPattern}))".CreateScope("yield return x;")
               )
-              .ScopeTo($"if ({x.DDB.DataMember.PrivateField}.IsValueCreated)");
+              .ScopeTo($"if ({x.DDB.DataMember.NameAsPrivateField}.IsValueCreated)");
         }
 
-        return $"if ({x.DDB.DataMember.PrivateField}.IsValueCreated)".CreateScope(x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.DDB.DataMember.PrivateField}.Value, {Marshaller.InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}", $"\"{x.DDB.DataMember.Name}\"", options, MarshallerOptions.FieldReference)} ?? {AttributeValueUtilityFactory.Null});"));
+        return $"if ({x.DDB.DataMember.NameAsPrivateField}.IsValueCreated)".CreateScope(x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.DDB.DataMember.NameAsPrivateField}.Value, {Marshaller.InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}", $"\"{x.DDB.DataMember.Name}\"", options, MarshallerOptions.FieldReference)} ?? {AttributeValueUtilityFactory.Null});"));
 
     }
     internal static IEnumerable<string> CreateExpressionAttributeValue(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)

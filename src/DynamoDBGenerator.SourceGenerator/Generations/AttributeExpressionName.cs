@@ -33,8 +33,8 @@ public static class AttributeExpressionName
             {
                 var ternaryExpressionName = $"{ConstructorAttributeName} is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{{ConstructorAttributeName}}}.#{x.DDB.AttributeName}"""}";
                 return x.IsUnknown
-                    ? $"{x.DDB.DataMember.PrivateField} = new (() => new {x.AttributeReference}({ternaryExpressionName}, {ConstructorSetName}));"
-                    : $"{x.DDB.DataMember.PrivateField} = new (() => {ternaryExpressionName});";
+                    ? $"{x.DDB.DataMember.NameAsPrivateField} = new (() => new {x.AttributeReference}({ternaryExpressionName}, {ConstructorSetName}));"
+                    : $"{x.DDB.DataMember.NameAsPrivateField} = new (() => {ternaryExpressionName});";
             })
             .Append($"{SetFieldName} = {ConstructorSetName};")
             .Append($@"{self} = new(() => {ConstructorAttributeName} ?? throw new NotImplementedException(""Root element AttributeExpressionName reference.""));");
@@ -46,13 +46,13 @@ public static class AttributeExpressionName
         {
             if (fieldDeclaration.IsUnknown)
             {
-                yield return $"private readonly Lazy<{fieldDeclaration.AttributeReference}> {fieldDeclaration.DDB.DataMember.PrivateField};";
-                yield return $"public {fieldDeclaration.AttributeReference} {fieldDeclaration.DDB.DataMember.Name} => {fieldDeclaration.DDB.DataMember.PrivateField}.Value;";
+                yield return $"private readonly Lazy<{fieldDeclaration.AttributeReference}> {fieldDeclaration.DDB.DataMember.NameAsPrivateField};";
+                yield return $"public {fieldDeclaration.AttributeReference} {fieldDeclaration.DDB.DataMember.Name} => {fieldDeclaration.DDB.DataMember.NameAsPrivateField}.Value;";
             }
             else
             {
-                yield return $"private readonly Lazy<string> {fieldDeclaration.DDB.DataMember.PrivateField};";
-                yield return $"public string {fieldDeclaration.DDB.DataMember.Name} => {fieldDeclaration.DDB.DataMember.PrivateField}.Value;";
+                yield return $"private readonly Lazy<string> {fieldDeclaration.DDB.DataMember.NameAsPrivateField};";
+                yield return $"public string {fieldDeclaration.DDB.DataMember.Name} => {fieldDeclaration.DDB.DataMember.NameAsPrivateField}.Value;";
 
             }
         }
@@ -72,17 +72,17 @@ public static class AttributeExpressionName
     private static IEnumerable<string> YieldSelector((bool IsUnknown, DynamoDbDataMember DDB,  string DbRef,  string AttributeReference, string AttributeInterfaceName) x)
     {
 
-        var camelCase = x.DDB.DataMember.CamelCase;
+        var camelCase = x.DDB.DataMember.NameAsCamelCase;
         if (x.IsUnknown)
         {
             var scope = $@"if (new KeyValuePair<string, string>(""{x.DbRef}"", ""{x.DDB.AttributeName}"") is var {camelCase} && {SetFieldName}.Add({camelCase}))"
               .CreateScope($"yield return {camelCase};")
               .Concat($"foreach (var x in ({x.DDB.DataMember.Name} as {x.AttributeInterfaceName}).{AttributeExpressionNameTrackerInterfaceAccessedNames}())".CreateScope("yield return x;"));
-            return $"if ({x.DDB.DataMember.PrivateField}.IsValueCreated)".CreateScope(scope);
+            return $"if ({x.DDB.DataMember.NameAsPrivateField}.IsValueCreated)".CreateScope(scope);
         }
         else
         {
-            return $@"if ({x.DDB.DataMember.PrivateField}.IsValueCreated && new KeyValuePair<string, string>(""{x.DbRef}"", ""{x.DDB.AttributeName}"") is var {camelCase} && {SetFieldName}.Add({camelCase}))".CreateScope($"yield return {camelCase};");
+            return $@"if ({x.DDB.DataMember.NameAsPrivateField}.IsValueCreated && new KeyValuePair<string, string>(""{x.DbRef}"", ""{x.DDB.AttributeName}"") is var {camelCase} && {SetFieldName}.Add({camelCase}))".CreateScope($"yield return {camelCase};");
         }
     }
 
