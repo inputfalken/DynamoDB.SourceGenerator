@@ -2,37 +2,56 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class StringExtensions
 {
-
-    private static readonly IDictionary<int, string> IndentCache = new Dictionary<int, string>
+    public static string ToCamelCaseFromPascal(this string str, [System.Runtime.CompilerServices.CallerMemberName] string? memberName = null)
     {
-        {0, ""},
-        {1, "    "},
-        {2, "        "},
-        {3, "            "},
-        {4, "                "}
-    };
-
-    private static string Indent(int level)
-    {
-        if (IndentCache.TryGetValue(level, out var indent)) return indent;
-
-        indent = new string(' ', level * 4);
-        IndentCache[level] = indent;
-
-        return indent;
+        return ToCamelCaseFromPascal(str.AsSpan(), memberName).ToString();
     }
-    public static IEnumerable<string> CreateScope(this string header, IEnumerable<string> content, int indentLevel)
+
+    public static string ToPrivateFieldFromPascal(this string str, [System.Runtime.CompilerServices.CallerMemberName] string? memberName = null)
     {
-        var indent = Indent(indentLevel);
-
-        yield return $"{indent}{header}";
-        yield return string.Intern($"{indent}{{");
-
-        foreach (var s in content)
-            yield return $"{Indent(indentLevel + 1)}{s}";
-
-        yield return string.Intern($"{indent}}}");
+        return ToPrivateFieldFromPascal(str.AsSpan(), memberName).ToString();
     }
+
+    public static ReadOnlySpan<char> ToPrivateFieldFromPascal(this ReadOnlySpan<char> span, [System.Runtime.CompilerServices.CallerMemberName] string? memberName = null)
+    {
+        if (span.Length is 0)
+            throw new ArgumentException($"Null or Empty string was provided from '{memberName}'");
+
+        var array = new char[span.Length + 1];
+
+        array[0] = '_';
+        array[1] = Char.ToLowerInvariant(span[0]);
+
+        // Skip first element since we handled it manually.
+        for (var i = 1; i < span.Length; i++)
+            array[i + 1] = span[i];
+
+        return array;
+    }
+    public static ReadOnlySpan<char> ToCamelCaseFromPascal(this ReadOnlySpan<char> span, [System.Runtime.CompilerServices.CallerMemberName] string? memberName = null)
+    {
+        if (span.Length is 0)
+            throw new ArgumentException($"Null or Empty string was provided from '{memberName}'");
+
+        if (char.IsLower(span[0]))
+            return span;
+
+        var array = new char[span.Length];
+
+        array[0] = Char.ToLowerInvariant(span[0]);
+
+        // Skip first element since we handled it manually.
+        for (var i = 1; i < span.Length; i++)
+            array[i] = span[i];
+
+        return array;
+    }
+
+    public static IEnumerable<string> ScopeTo(this IEnumerable<string> content, string header)
+    {
+        return CreateScope(header, content);
+    }
+
     public static IEnumerable<string> CreateScope(this string header, IEnumerable<string> content)
     {
         yield return header;
@@ -53,7 +72,7 @@ public static class StringExtensions
 
         yield return "}";
     }
-    
+
     public static IEnumerable<string> CreateScope(this string header, string content, string second)
     {
         yield return header;
