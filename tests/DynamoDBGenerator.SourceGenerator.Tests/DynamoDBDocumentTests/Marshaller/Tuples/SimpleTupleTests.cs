@@ -30,9 +30,9 @@ public partial class SimpleTupleTests : MarshalAsserter<(string FirstName, strin
     [InlineData(null, null, null, "FirstName")]
     [InlineData(null, "ABC", null, "FirstName")]
     [InlineData("ABC", null, null, "LastName")]
-    public void Marshall_NullField_Throws(string firstName, string lastName, string? emailAddress, string dataMember)
+    public void Marshall_NullField_Throws(string? firstName, string? lastName, string? emailAddress, string dataMember)
     {
-        var (valueTuple, _) = Av((firstName, lastName, emailAddress));
+        var (valueTuple, _) = Av((firstName!, lastName!, emailAddress));
 
         var act = () => ValueTupleMarshaller.Marshall(valueTuple);
         act.Should().Throw<DynamoDBMarshallingException>().Which.MemberName.Should().Be(dataMember);
@@ -42,9 +42,9 @@ public partial class SimpleTupleTests : MarshalAsserter<(string FirstName, strin
     [InlineData(null, null, null, "FirstName")]
     [InlineData(null, "ABC", null, "FirstName")]
     [InlineData("ABC", null, null, "LastName")]
-    public void Unmarshall_NullField_Throws(string firstName, string lastName, string? emailAddress, string dataMember)
+    public void Unmarshall_NullField_Throws(string? firstName, string? lastName, string? emailAddress, string? dataMember)
     {
-        var (_, _attributeValues) = Av((firstName, lastName, emailAddress));
+        var (_, _attributeValues) = Av((firstName!, lastName!, emailAddress));
 
         var act = () => ValueTupleMarshaller.Unmarshall(_attributeValues);
         act.Should().Throw<DynamoDBMarshallingException>().Which.MemberName.Should().Be(dataMember);

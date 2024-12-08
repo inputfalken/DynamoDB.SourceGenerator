@@ -14,8 +14,8 @@ public partial class NullableAnnotationTests
     [InlineData("1", null, "3")]
     [InlineData(null, null, "3")]
     public void Serialize_NestedGenericWith_NullabilityCheckNotThrows(
-        string disabledNullableReferenceType,
-        string enabledNullableReferenceType,
+        string? disabledNullableReferenceType,
+        string? enabledNullableReferenceType,
         string enabledNoneNullableReferenceType)
     {
         var @class = new NestedNullableAnnotationTestClass
@@ -35,15 +35,15 @@ public partial class NullableAnnotationTests
     [InlineData(null, "2", null)]
     [InlineData(null, null, null)]
     public void Serialize_NestedGenericWith_NullabilityCheckThrows(
-        string disabledNullableReferenceType,
-        string enabledNullableReferenceType,
-        string enabledNoneNullableReferenceType)
+        string? disabledNullableReferenceType,
+        string? enabledNullableReferenceType,
+        string? enabledNoneNullableReferenceType)
     {
         var @class = new NestedNullableAnnotationTestClass
         {
             DisabledNullableReferenceType = (1, disabledNullableReferenceType),
             EnabledNullableReferenceType = (1, enabledNullableReferenceType),
-            EnabledNoneNullableReferenceType = (1, enabledNoneNullableReferenceType)
+            EnabledNoneNullableReferenceType = (1, enabledNoneNullableReferenceType!)
         };
 
         var result = () => NestedNullableAnnotationTestClassMarshaller.Marshall(@class);
@@ -64,9 +64,9 @@ public partial class NullableAnnotationTests
     [InlineData(1, null, null, null, true)]
     public void Serialize_With_NullabilityChecks(
         int? nullableValueType,
-        string disabledNullableReferenceType,
-        string enabledNullableReferenceType,
-        string enabledNoneNullableReferenceType,
+        string? disabledNullableReferenceType,
+        string? enabledNullableReferenceType,
+        string? enabledNoneNullableReferenceType,
         bool shouldThrow)
     {
         var @class = new NullableAnnotationTestClass
@@ -74,7 +74,7 @@ public partial class NullableAnnotationTests
             NullableValueType = nullableValueType,
             DisabledNullableReferenceType = disabledNullableReferenceType,
             EnabledNullableReferenceType = enabledNullableReferenceType,
-            EnabledNoneNullableReferenceType = enabledNoneNullableReferenceType
+            EnabledNoneNullableReferenceType = enabledNoneNullableReferenceType!
         };
 
         var result = () => NullableAnnotationTestClassMarshaller.Marshall(@class);
