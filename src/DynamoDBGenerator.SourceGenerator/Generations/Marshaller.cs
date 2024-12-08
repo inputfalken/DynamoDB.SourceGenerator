@@ -13,11 +13,11 @@ public static class Marshaller
     private static readonly Func<ITypeSymbol, string> GetSerializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_M", SymbolEqualityComparer.IncludeNullability);
     private const string ParamReference = "entity";
 
-    internal static IEnumerable<string> CreateClass(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
+    internal static IEnumerable<string> CreateClass(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, DynamoDbDataMember[]> getDynamoDbProperties, MarshallerOptions options)
     {
         return $"private static class {ClassName}".CreateScope(TypeContent(arguments, getDynamoDbProperties, options));
     }
-    private static CodeFactory CreateDictionaryMethod(ITypeSymbol typeSymbol, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> fn, MarshallerOptions options)
+    private static CodeFactory CreateDictionaryMethod(ITypeSymbol typeSymbol, Func<ITypeSymbol, DynamoDbDataMember[]> fn, MarshallerOptions options)
     {
         var properties = fn(typeSymbol)
             .Select(x =>
@@ -59,7 +59,7 @@ public static class Marshaller
 
     }
 
-    private static IEnumerable<string> TypeContent(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
+    private static IEnumerable<string> TypeContent(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, DynamoDbDataMember[]> getDynamoDbProperties, MarshallerOptions options)
     {
         var hashset = new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability);
 
@@ -72,7 +72,7 @@ public static class Marshaller
                 .Concat(CodeFactory.Create(x.ArgumentType, y => CreateMethod(y, getDynamoDbProperties, options), hashset))
             );
     }
-    private static CodeFactory CreateMethod(ITypeSymbol type, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> fn, MarshallerOptions options)
+    private static CodeFactory CreateMethod(ITypeSymbol type, Func<ITypeSymbol, DynamoDbDataMember[]> fn, MarshallerOptions options)
     {
         if (options.TryWriteConversion(type, ParamReference) is {} conversion)
         {

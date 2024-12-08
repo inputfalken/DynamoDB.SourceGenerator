@@ -44,11 +44,11 @@ public static class UnMarshaller
 
     }
     internal static IEnumerable<string> CreateClass(IEnumerable<DynamoDBMarshallerArguments> arguments,
-        Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
+        Func<ITypeSymbol, DynamoDbDataMember[]> getDynamoDbProperties, MarshallerOptions options)
     {
         return $"private static class {UnMarshallerClass}".CreateScope(CreateTypeContents(arguments, getDynamoDbProperties, options));
     }
-    private static CodeFactory CreateCode(ITypeSymbol type, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> fn, MarshallerOptions options)
+    private static CodeFactory CreateCode(ITypeSymbol type, Func<ITypeSymbol, DynamoDbDataMember[]> fn, MarshallerOptions options)
     {
         var assignments = fn(type)
             .Select(x => (DDB: x, MethodCall: InvokeUnmarshallMethod(x.DataMember.Type, $"{Dict}.GetValueOrDefault(\"{x.AttributeName}\")", $"\"{x.DataMember.Name}\"", options), x.DataMember.Name))
@@ -71,7 +71,7 @@ public static class UnMarshaller
         return new CodeFactory(method, assignments.Select(x => x.DDB.DataMember.Type));
 
     }
-    private static CodeFactory CreateMethod(ITypeSymbol type, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> fn,
+    private static CodeFactory CreateMethod(ITypeSymbol type, Func<ITypeSymbol, DynamoDbDataMember[]> fn,
         MarshallerOptions options)
     {
 
@@ -138,7 +138,7 @@ public static class UnMarshaller
         return $"public static {typeSymbol.Representation().annotated} {GetDeserializationMethodName(typeSymbol)}(AttributeValue? {Value}, {MarshallerOptions.Name} {MarshallerOptions.ParamReference}, string? {DataMember} = null)";
     }
     private static IEnumerable<string> CreateTypeContents(IEnumerable<DynamoDBMarshallerArguments> arguments,
-        Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
+        Func<ITypeSymbol, DynamoDbDataMember[]> getDynamoDbProperties, MarshallerOptions options)
     {
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability);
         return arguments.SelectMany(x =>

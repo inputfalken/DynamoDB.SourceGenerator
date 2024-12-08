@@ -82,7 +82,7 @@ public static class AttributeExpressionValue
         return $"if ({x.DDB.DataMember.NameAsPrivateField}.IsValueCreated)".CreateScope(x.DDB.DataMember.Type.NotNullIfStatement(accessPattern, $"yield return new ({x.DDB.DataMember.NameAsPrivateField}.Value, {Marshaller.InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}", $"\"{x.DDB.DataMember.Name}\"", options, MarshallerOptions.FieldReference)} ?? {AttributeValueUtilityFactory.Null});"));
 
     }
-    internal static IEnumerable<string> CreateExpressionAttributeValue(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
+    internal static IEnumerable<string> CreateExpressionAttributeValue(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, DynamoDbDataMember[]> getDynamoDbProperties, MarshallerOptions options)
     {
         // Using _comparer can double classes when there's a None nullable property mixed with a nullable property
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
@@ -90,7 +90,7 @@ public static class AttributeExpressionValue
         return arguments
             .SelectMany(x => CodeFactory.Create(x.ArgumentType, y => CreateStruct(y, getDynamoDbProperties, options), hashSet));
     }
-    private static CodeFactory CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> fn, MarshallerOptions options)
+    private static CodeFactory CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, DynamoDbDataMember[]> fn, MarshallerOptions options)
     {
         var dataMembers =
             options.IsConvertable(typeSymbol)

@@ -13,7 +13,7 @@ public static class AttributeExpressionName
     private const string SetFieldName = "___set___";
 
     private static readonly Func<ITypeSymbol, string> TypeName = TypeExtensions.SuffixedTypeSymbolNameFactory("Names", SymbolEqualityComparer.Default);
-    internal static IEnumerable<string> CreateClasses(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
+    internal static IEnumerable<string> CreateClasses(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, DynamoDbDataMember[]> getDynamoDbProperties, MarshallerOptions options)
     {
         // Using _comparer can double classes when there's a None nullable property mixed with a nullable property
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
@@ -86,7 +86,7 @@ public static class AttributeExpressionName
         }
     }
 
-    private static CodeFactory CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> fn, MarshallerOptions options)
+    private static CodeFactory CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, DynamoDbDataMember[]> fn, MarshallerOptions options)
     {
         var dataMembers = fn(typeSymbol)
             .Select(x => (

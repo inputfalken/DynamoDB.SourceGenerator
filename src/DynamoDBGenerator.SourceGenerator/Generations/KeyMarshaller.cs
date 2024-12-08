@@ -27,7 +27,7 @@ public static class KeyMarshaller
         return $"if ({validateReference})".CreateScope(innerContent);
 
     }
-    private static IEnumerable<string> MethodBody(ITypeSymbol typeSymbol, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> fn, MarshallerOptions options)
+    private static IEnumerable<string> MethodBody(ITypeSymbol typeSymbol, Func<ITypeSymbol, DynamoDbDataMember[]> fn, MarshallerOptions options)
     {
         var keyStructure = DynamoDbDataMember.GetKeyStructure(fn(typeSymbol));
         if (keyStructure is null)
@@ -57,7 +57,7 @@ public static class KeyMarshaller
             yield return s;
 
     }
-    internal static IEnumerable<string> CreateKeys(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> getDynamoDbProperties, MarshallerOptions options)
+    internal static IEnumerable<string> CreateKeys(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, DynamoDbDataMember[]> getDynamoDbProperties, MarshallerOptions options)
     {
         var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability);
 
@@ -111,7 +111,7 @@ public static class KeyMarshaller
         return
             $"new {KeyMarshallerImplementationTypeName}((pk, rk, ipk, irk, dm) => {MethodName(typeSymbol)}({MarshallerOptions.FieldReference}, pk, rk, ipk, irk, dm))";
     }
-    private static CodeFactory StaticAttributeValueDictionaryKeys(ITypeSymbol typeSymbol, Func<ITypeSymbol, ImmutableArray<DynamoDbDataMember>> fn, MarshallerOptions options)
+    private static CodeFactory StaticAttributeValueDictionaryKeys(ITypeSymbol typeSymbol, Func<ITypeSymbol, DynamoDbDataMember[]> fn, MarshallerOptions options)
     {
 
         var code = $"private static Dictionary<string, AttributeValue> {MethodName(typeSymbol)}({MarshallerOptions.Name} {MarshallerOptions.ParamReference}, object? {PkReference}, object? {RkReference}, bool {EnforcePkReference}, bool {EnforceRkReference}, string? index = null)"

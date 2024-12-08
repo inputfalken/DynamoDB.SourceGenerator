@@ -215,7 +215,7 @@ public static class TypeExtensions
             or SpecialType.System_Single;
     }
 
-    public static ImmutableArray<DynamoDbDataMember> GetDynamoDbProperties(this ITypeSymbol symbol)
+    public static DynamoDbDataMember[] GetDynamoDbProperties(this ITypeSymbol symbol)
     {
         // A special rule when it comes to Tuples.
         // If we remove this we will get duplicated DataMembers when tuples are being used.
@@ -238,9 +238,7 @@ public static class TypeExtensions
                 .Where(x => x is not null)
                 .Select(x => x!.Value);
 
-        var builder = ImmutableArray.CreateBuilder<DynamoDbDataMember>();
-        builder.AddRange(items);
-        return builder.ToImmutableArray();
+        return items.ToArray();
 
         static DynamoDbDataMember? Create(DataMember dataMember)
         {
