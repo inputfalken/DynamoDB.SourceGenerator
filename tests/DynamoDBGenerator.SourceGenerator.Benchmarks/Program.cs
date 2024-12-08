@@ -16,7 +16,6 @@ using DynamoDBGenerator.SourceGenerator.Benchmarks;
 BenchmarkRunner.Run<Marshalling>();
 
 [SimpleJob(RuntimeMoniker.Net80)]
-[SimpleJob(RuntimeMoniker.Net60)]
 [MemoryDiagnoser]
 public class Marshalling
 {
