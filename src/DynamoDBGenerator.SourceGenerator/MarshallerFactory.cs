@@ -38,8 +38,8 @@ public static class MarshallerFactory
             yield return options.TryInstantiate() switch
             {
                 {} arg =>
-                    $"public static {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.Accessname} {{ get; }} = new {argument.ImplementationName}({arg});",
-                null => $"public static {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.Accessname}({MarshallerOptions.Name} options) => new {argument.ImplementationName}(options);"
+                    $"public static {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.AccessName} {{ get; }} = new {argument.ImplementationName}({arg});",
+                null => $"public static {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.AccessName}({MarshallerOptions.Name} options) => new {argument.ImplementationName}(options);"
             };
 
             foreach (var s in classImplementation)
