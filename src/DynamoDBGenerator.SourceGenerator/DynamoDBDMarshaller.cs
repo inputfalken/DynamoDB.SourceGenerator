@@ -64,9 +64,9 @@ using {Constants.DynamoDBGenerator.Namespace.InternalFullName};";
             { IsRecord: true, TypeKind: TypeKind.Class, IsSealed: false } => "partial record",
             { IsRecord: false, TypeKind: TypeKind.Class, IsSealed: true } => "sealed partial class",
             { IsRecord: false, TypeKind: TypeKind.Class, IsSealed: false } => "partial class",
-            { IsRecord: true, TypeKind: TypeKind.Struct or TypeKind.Structure, IsReadOnly: true } => "readonly partial record struct",
-            { IsRecord: false, TypeKind: TypeKind.Struct or TypeKind.Structure, IsReadOnly: true } => "readonly partial struct",
-            { IsRecord: false, TypeKind: TypeKind.Struct or TypeKind.Structure, IsReadOnly: false } => "partial struct",
+            { IsRecord: true, TypeKind: TypeKind.Struct, IsReadOnly: true } => "readonly partial record struct",
+            { IsRecord: false, TypeKind: TypeKind.Struct, IsReadOnly: true } => "readonly partial struct",
+            { IsRecord: false, TypeKind: TypeKind.Struct, IsReadOnly: false } => "partial struct",
             _ => throw new NotImplementedException("Could not determine whether the type is a struct, class or record.")
         };
 
