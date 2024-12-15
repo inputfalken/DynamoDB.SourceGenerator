@@ -2,9 +2,6 @@
 
 This source generator is crafted to simplify DynamoDB integration for your projects. It's designed to effortlessly generate the low-level DynamoDB API tailored to any DTO you provide.
 
-## Note
-This project has not been tested in any real scenario and currently serves as a hobby project.
-
 ## Installation
 
 If you want access to more high level reusable abstractions, utilizing builder patterns from the functionality of this library, check out [Dynatello!](https://github.com/inputfalken/Dynatello)
