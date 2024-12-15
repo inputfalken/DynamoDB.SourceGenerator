@@ -49,7 +49,9 @@ The source generator will look for attributes and implement interfaces that exis
 * Custom Converters: Create converters for your own types or override the [default converters](https://github.com/inputfalken/DynamoDB.SourceGenerator/blob/main/src/DynamoDBGenerator/Options/AttributeValueConverters.cs) built in to the library.
 * `ValueTuple<T>` support: You don't have to declare your own types and could instead use [tuples](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/value-tuples) with custom named fields that will act as if the tuple was a type with with those data members.
 
-## Conversion
+## Default conversion
+
+If you do not override the conversion behaviour the following rules will be applied
 
 ### Primitive Types
 
@@ -105,7 +107,6 @@ Types not listed above will be treated as an object by being assigned to the `M`
 
 ## Reference Tracker
 
-
 As part of the source generation process, two additional types will be mirrored to the provided DTO:
 
 * A reference tracker that serves as attribute references on DynamoDB side.
@@ -131,12 +132,53 @@ public string MyRequiredString { get; set; }
 public string MyUnknownString { get; set; }
 ```
 
-## Code examples
+## Examples
 
-An example DTO class could look like the one below. The following examples will use this sample class.
+### [Type support](./samples/TypeSupport)
+The functionality can be applied to more than classes:
 
 ```csharp
-public class Person
+[DynamoDBMarshaller]
+public partial record Record([property: DynamoDBHashKey] string Id);
+
+[DynamoDBMarshaller]
+public partial class Class
+{
+    [DynamoDBHashKey]
+    public string Id { get; init; }
+}
+
+[DynamoDBMarshaller]
+public partial struct Struct
+{
+    [DynamoDBHashKey]
+    public string Id { get; init; }
+}
+
+[DynamoDBMarshaller]
+public readonly partial struct ReadOnlyStruct
+{
+    [DynamoDBHashKey]
+    public string Id { get; init; }
+}
+
+[DynamoDBMarshaller]
+public readonly partial record struct ReadOnlyRecordStruct([property: DynamoDBHashKey] string Id);
+```
+
+### [DTO sample](./samples/RequestAndResponseObjects/Person.cs)
+
+An example DTO class could look like the one below. 
+
+**The following request examples will reuse this DTO.**
+
+```csharp
+// A typical scenario would be that you would use multiple DynamoDBMarshaller and describe your operations via AccessName.
+// If you do not specify an ArgumentType it will use your main entity Type instead which is typically useful for PUT operations.
+[DynamoDBMarshaller]
+[DynamoDBMarshaller(ArgumentType = typeof((string PersonId, string Firstname)), AccessName = "UpdateFirstName")]
+[DynamoDBMarshaller(ArgumentType = typeof(string), AccessName = "GetById")]
+public partial class Person
 {
     // Will be included as 'PK' in DynamoDB.
     [DynamoDBHashKey("PK")]
@@ -156,69 +198,106 @@ public class Person
     public class Contact
     {
         // Will be included as 'Email' in DynamoDB.
-        public string Email { get; set;}
+        public string Email { get; set; }
     }
 }
 ```
 
 ### Creating request objects
 
-#### UpdateRequest without providing the DTO
+#### [Put request](./samples/RequestAndResponseObjects/Program.cs)
 
 ```csharp
-// A typical scenario would be that you would use multuple DynamoDBMarshaller and describe your operaitons via AccessName.
-// If you do not specify an ArgumentType it will use your main entity Type instead which is typically useful for PUT operations.
-[DynamoDBMarshaller(EntityType = typeof(Person), ArgumentType = typeof((string PersonId, string Firstname)), AccessName = "UpdateFirstName")]
-public partial class Repository { }
-
-internal static class Program
+static PutItemRequest PutPerson()
 {
-    public static void Main()
+    return new PutItemRequest
     {
-        Repository repository = new Repository();
-
-        // Creating an AttributeExpression can be done through string interpolation where the source generator will mimic your DTO types and give you an consistent API to build the attributeExpressions.
-        var attributeExpression = repository.UpdateFirstName.ToAttributeExpression(
-          ("personId", "John"),
-          (dbRef, argRef) => $"{dbRef.Id} = {argRef.PersonId}", // The condition
-          (dbRef, argRef) => $"SET {dbRef.Firstname} = {argRef.FirstName}" // The update operation
-        );
-
-        // the index can be used to retrieve the expressions in the same order as you provide the string interpolations in the method call above.
-        var condition = attributeExpression.Expressions[0];
-        var update = attributeExpression.Expressions[1];
-        var keys = repository.UpdateFirstName.PrimaryKeyMarshaller.PartitionKey("personId");
-
-        var request = new UpdateItemRequest
+        TableName = "MyTable",
+        Item = Person.PersonMarshaller.Marshall(new Person
         {
-            ConditionExpression = condition,
-            UpdateExpression = update,
-            ExpressionAttributeNames = attributeExpression.Names,
-            ExpressionAttributeValues = attributeExpression.Values,
-            Key = keys,
-            TableName = "MyTable"
-        }
-    }
+            Firstname = "John",
+            Id = Guid.NewGuid().ToString(),
+            ContactInfo = new Person.Contact { Email = "john@test.com" }
+        })
+    };
 }
 ```
 
-### Key conversion
+#### [Get Request & Response](./samples/RequestAndResponseObjects/Program.cs)
+
+```csharp
+
+static GetItemRequest CreateGetItemRequest()
+{
+    return new GetItemRequest
+    {
+        Key = Person.GetById.PrimaryKeyMarshaller.PartitionKey("123"),
+        TableName = "MyTable"
+    };
+}
+
+static Person DeserializeResponse(GetItemResponse response)
+{
+    if (response.HttpStatusCode != HttpStatusCode.OK)
+        throw new NotImplementedException();
+    
+    return Person.GetById.Unmarshall(response.Item);
+}
+
+```
+
+#### [Update request without providing the DTO](./samples/RequestAndResponseObjects/Program.cs)
+
+```csharp
+static UpdateItemRequest UpdateFirstName()
+{
+    // Creating an AttributeExpression can be done through string interpolation where the source generator will mimic your DTO types and give you an consistent API to build the attributeExpressions.
+    var attributeExpression = Person.UpdateFirstName.ToAttributeExpression(
+        ("personId", "John"),
+        (dbRef, argRef) => $"{dbRef.Id} = {argRef.PersonId}", // The condition
+        (dbRef, argRef) => $"SET {dbRef.Firstname} = {argRef.Firstname}" // The update operation
+    );
+
+    // the index can be used to retrieve the expressions in the same order as you provide the string interpolations in the method call above.
+    var condition = attributeExpression.Expressions[0];
+    var update = attributeExpression.Expressions[1];
+    var keys = Person.UpdateFirstName.PrimaryKeyMarshaller.PartitionKey("personId");
+
+    return new UpdateItemRequest
+    {
+        ConditionExpression = condition,
+        UpdateExpression = update,
+        ExpressionAttributeNames = attributeExpression.Names,
+        ExpressionAttributeValues = attributeExpression.Values,
+        Key = keys,
+        TableName = "MyTable"
+    };
+}
+```
+
+### [Key conversion](./samples/KeyConversion/Program.cs)
 
 The key marshallers contain three methods based on your intent.
 The source generator will internally validate your object arguments. So if you pass a `int` but the actual key is represented as a `string`, then you will get an `exception`.
 
 * `Keys(object partitionKey, object rangeKey)`
-  * Used when you want convert both a partion key and a range key.
+  * Used when you want convert both a partition key and a range key.
 * `PartionKey(object key)`
-  * Used when you only want to only convert a partiton key without a range key.
+  * Used when you only want to only convert a partition key without a range key.
 * `RangeKey(object key)`
   * Used when you only want to only convert a range key without a partition key.
 
-
 ```csharp
+// PrimaryKeyMarshaller is used to convert the keys obtained from the [DynamoDBHashKey] and [DynamoDBRangeKey] attributes.
+var keyMarshaller = EntityDTO.KeyMarshallerSample.PrimaryKeyMarshaller;
 
-[DynamoDBMarshaller(AccessName = 'KeyMarshallerSample')]
-public class EntityDTO
+// IndexKeyMarshaller requires an argument that is the index name so it can provide you with the correct conversion based on the indexes you may have.
+// It works the same way for both LocalSecondaryIndex and GlobalSecondaryIndex attributes.
+var GSIKeyMarshaller = EntityDTO.KeyMarshallerSample.IndexKeyMarshaller("GSI");
+var LSIKeyMarshaller = EntityDTO.KeyMarshallerSample.IndexKeyMarshaller("LSI");
+
+[DynamoDBMarshaller(AccessName = "KeyMarshallerSample")]
+public partial class EntityDTO
 {
     [DynamoDBHashKey("PK")]
     public string Id { get; set; }
@@ -235,33 +314,32 @@ public class EntityDTO
     [DynamoDBGlobalSecondaryIndexRangeKey("GSI")]
     public string GlobalSecondaryIndexRangeKey { get; set; }
 }
-internal static class Program
-{
-    public static void Main()
-    {
-        // PrimaryKeyMarshaller is used to convert the keys obtained from the [DynamoDBHashKey] and [DynamoDBRangeKey] attributes.
-        var keyMarshaller = EntityDTO.KeyMarshallerSample.PrimaryKeyMarshaller;
-
-        // IndexKeyMarshaller requires an argument that is the index name so it can provide you with the correct conversion based on the indexes you may have.
-        // It works the same way for both LocalSecondaryIndex and GlobalSecondaryIndex attributes.
-        var GSIKeyMarshaller = EntityDTO.KeyMarshallerSample.IndexKeyMarshaller("GSI");
-        var LSIKeyMarshaller = EntityDTO.KeyMarshallerSample.IndexKeyMarshaller("LSI");
-    }
-}
 ```
 
-### Configuring the marshaller
+### Configuring marshalling behaviour
 
-#### Custom converters
+By applying the DynamoDbMarshallerOptions you're able to configure all DynamoDBMarshallers that's declared on the same type.
+
+#### [Custom converters](./samples/Configuration/Program.cs)
 
 ```csharp
-// Implement an converter, there's also an IReferenceTypeConverter available for ReferenceTypes.
+[DynamoDbMarshallerOptions(Converters = typeof(MyCustomConverters))]
+[DynamoDBMarshaller]
+public partial record OverriddenConverter([property: DynamoDBHashKey] string Id, DateTime Timestamp);
+
+// Implement a converter, there's also an IReferenceTypeConverter available for ReferenceTypes.
 public class UnixEpochDateTimeConverter : IValueTypeConverter<DateTime>
 {
+    public UnixEpochDateTimeConverter()
+    {
+    }
+
     // Convert the AttributeValue into a .NET type.
     public DateTime? Read(AttributeValue attributeValue)
     {
-        return long.TryParse(attributeValue.N, out var epoch) ? DateTimeOffset.FromUnixTimeSeconds(epoch).DateTime : null;
+        return long.TryParse(attributeValue.N, out var epoch)
+            ? DateTimeOffset.FromUnixTimeSeconds(epoch).DateTime
+            : null;
     }
 
     // Convert the .NET type into an AttributeValue.
@@ -270,6 +348,7 @@ public class UnixEpochDateTimeConverter : IValueTypeConverter<DateTime>
         return new AttributeValue { N = new DateTimeOffset(element).ToUnixTimeSeconds().ToString() };
     }
 }
+
 // Create a new Converters class
 // You don't have to inherit from AttributeValueConverters if you do not want to use the default converters provided.
 public class MyCustomConverters : AttributeValueConverters
@@ -282,23 +361,15 @@ public class MyCustomConverters : AttributeValueConverters
         DateTimeConverter = new UnixEpochDateTimeConverter();
     }
     // You could add more converter DataMembers as fields or properties to add your own custom conversions.
-
-}
-
-[DynamoDBMarshallerOptions(Converter = typeof(MyCustomConverters))]
-[DynamoDBMarshaller(EntityType = typeof(Person), AccessName = "PersonMarshaller")]
-public partial Repository 
-{
-
 }
 ```
 
-#### Enum conversion
+#### [Enum conversion](./samples/Configuration/EnumBehaviour.cs)
 
 ```csharp
-[DynamoDBMarshallerOptions(EnumConversion = EnumConversion.Name)]
-[DynamoDBMarshaller(EntityType = typeof(Person), AccessName = "PersonMarshaller")]
-public partial class Repository { }
+[DynamoDbMarshallerOptions(EnumConversion = EnumConversion.Name)]
+[DynamoDBMarshaller]
+public partial record EnumBehaviour([property: DynamoDBHashKey] string Id, DayOfWeek Enum);
 ```
 
 ## Project structure
