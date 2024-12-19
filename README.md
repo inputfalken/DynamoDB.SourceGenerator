@@ -1,22 +1,27 @@
 # DynamoDB.SourceGenerator
 
-This source generator is crafted to simplify DynamoDB integration for your projects. It's designed to effortlessly generate the low-level DynamoDB API tailored to any DTO you provide.
+This source generator is crafted to simplify DynamoDB integration for your projects. It's designed to effortlessly
+generate the low-level DynamoDB API tailored to any DTO you provide.
 
 ## Installation
 
-If you want access to more high level reusable abstractions, utilizing builder patterns from the functionality of this library, check out [Dynatello!](https://github.com/inputfalken/Dynatello)
+If you want access to more high level reusable abstractions, utilizing builder patterns from the functionality of this
+library, check out [Dynatello!](https://github.com/inputfalken/Dynatello)
 
 ---
 
 Install the following dependencies:
 
-[![DynamoDBGenerator][1]][2] 
+[![DynamoDBGenerator][1]][2]
 
 [![DynamoDBGenerator.SourceGenerator][3]][4]
 
 [1]: https://img.shields.io/nuget/v/DynamoDBGenerator.svg?label=DynamoDBGenerator
+
 [2]: https://www.nuget.org/packages/DynamoDBGenerator
+
 [3]: https://img.shields.io/nuget/v/DynamoDBGenerator.SourceGenerator.svg?label=DynamoDBGenerator.SourceGenerator
+
 [4]: https://www.nuget.org/packages/DynamoDBGenerator.SourceGenerator
 
 The `DynamoDBGenerator.SourceGenerator` is where the source generator is implemented.
@@ -26,25 +31,31 @@ The source generator will look for attributes and implement interfaces that exis
 
 * Seamless Developer Interaction (DevEx): Experience a hassle-free DynamoDB interaction where the generated code handles
   the heavy lifting, ensuring an intuitive and convenient experience for developers.
-  * Simplify Attribute Expressions: Easily create complex expressions with an intuitive approach.
+    * Simplify Attribute Expressions: Easily create complex expressions with an intuitive approach.
 * Faster performance: Utilize the low-level API that would normally be implemented manually.
-
 
 ## Features:
 
 * Reflection-Free Codebase: The generated code is built without reliance on reflection, ensuring compatibility with
-  Ahead-of-Time ([AOT](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/?tabs=net7%2Cwindows)) compilation: This translates to faster startup times and a more efficient memory footprint.
-* Nullable Reference type support: Embrace modern coding practices with support for [Nullable Reference Types](https://learn.microsoft.com/en-us/dotnet/csharp/nullable-references).
+  Ahead-of-Time ([AOT](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/?tabs=net7%2Cwindows))
+  compilation: This translates to faster startup times and a more efficient memory footprint.
+* Nullable Reference type support: Embrace modern coding practices with support
+  for [Nullable Reference Types](https://learn.microsoft.com/en-us/dotnet/csharp/nullable-references).
   Effortlessly handle optional values and ensure robust error handling.
 * Marshalling: Seamlessly convert your DTO into DynamoDB types.
 * Unmarshalling: Seamlessly convert DynamoDB types into your DTO.
-  * Constructor support: Leverage constructors in your DTOs.
-* Marshalling keys: Seamlessly convert values into DynamoDB key types by decorating your properties with DynamoDbKeysAttributes.
-  * HashKey and RangeKey ✔ 
-  * GlobalSecondaryIndex ✔
-  * LocalSecondaryIndex ✔
-* Custom Converters: Create converters for your own types or override the [default converters](https://github.com/inputfalken/DynamoDB.SourceGenerator/blob/main/src/DynamoDBGenerator/Options/AttributeValueConverters.cs) built in to the library.
-* `ValueTuple<T>` support: You don't have to declare your own types and could instead use [tuples](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/value-tuples) with custom named fields that will act as if the tuple was a type with with those data members.
+    * Constructor support: Leverage constructors in your DTOs.
+* Marshalling keys: Seamlessly convert values into DynamoDB key types by decorating your properties with
+  DynamoDbKeysAttributes.
+    * HashKey and RangeKey ✔
+    * GlobalSecondaryIndex ✔
+    * LocalSecondaryIndex ✔
+* Custom Converters: Create converters for your own types or override
+  the [default converters](https://github.com/inputfalken/DynamoDB.SourceGenerator/blob/main/src/DynamoDBGenerator/Options/AttributeValueConverters.cs)
+  built in to the library.
+* `ValueTuple<T>` support: You don't have to declare your own types and could instead
+  use [tuples](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/value-tuples) with
+  custom named fields that will act as if the tuple was a type with with those data members.
 
 ## Default conversion
 
@@ -69,7 +80,6 @@ If you do not override the conversion behaviour the following rules will be appl
 | Type           | Field |
 |----------------|-------|
 | `MemoryStream` | `B`   |
-
 
 ### Temporal Types
 
@@ -109,8 +119,9 @@ As part of the source generation process, two additional types will be mirrored 
 * A reference tracker that serves as attribute references on DynamoDB side.
 * A reference tracker that functions as attribute references for the arguments you provide to DynamoDB.
 
-These trackers enable you to consistently construct your AttributeExpressions using string interpolation. 
-For an illustrative example, refer to the [tests](tests/DynamoDBGenerator.SourceGenerator.Tests/Extensions/ToAttributeExpressionTests.cs).
+These trackers enable you to consistently construct your AttributeExpressions using string interpolation.
+For an illustrative example, refer to
+the [tests](tests/DynamoDBGenerator.SourceGenerator.Tests/Extensions/ToAttributeExpressionTests.cs).
 
 ## Nullable reference types
 
@@ -129,9 +140,42 @@ public string MyRequiredString { get; set; }
 public string MyUnknownString { get; set; }
 ```
 
-## Examples
+## Code examples
+
+### [Initializers](./samples/Initialisation/Program.cs)
+
+You can instruct the marshaller to use a constructor by applying the `[DynamoDBMarshallerConstructor]` attribute ontop
+of the desired constructor.
+Or use the object Initializer syntax.
+
+```csharp
+_ = new Constructor(id: "123", count: 10);
+_ = new Initializer { Id = "123", Count = 10 };
+
+[DynamoDBMarshaller]
+public partial class Constructor
+{
+    [DynamoDBMarshallerConstructor]
+    public Constructor(string id, int count)
+    {
+        Count = count;
+        Id = id;
+    }
+
+    public int Count { get; }
+    public string Id { get; }
+}
+
+[DynamoDBMarshaller]
+public partial class Initializer
+{
+    public string Id { get; set; }
+    public int Count { get; set; }
+}
+```
 
 ### [Type support](./samples/TypeSupport)
+
 The functionality can be applied to more than classes:
 
 ```csharp
@@ -165,7 +209,7 @@ public readonly partial record struct ReadOnlyRecordStruct([property: DynamoDBHa
 
 ### [DTO sample](./samples/RequestAndResponseObjects/Person.cs)
 
-An example DTO class could look like the one below. 
+An example DTO class could look like the one below.
 
 **The following request examples will reuse this DTO.**
 
@@ -275,14 +319,15 @@ static UpdateItemRequest UpdateFirstName()
 ### [Key conversion](./samples/KeyConversion/Program.cs)
 
 The key marshallers contain three methods based on your intent.
-The source generator will internally validate your object arguments. So if you pass a `int` but the actual key is represented as a `string`, then you will get an `exception`.
+The source generator will internally validate your object arguments. So if you pass a `int` but the actual key is
+represented as a `string`, then you will get an `exception`.
 
 * `Keys(object partitionKey, object rangeKey)`
-  * Used when you want convert both a partition key and a range key.
+    * Used when you want convert both a partition key and a range key.
 * `PartionKey(object key)`
-  * Used when you only want to only convert a partition key without a range key.
+    * Used when you only want to only convert a partition key without a range key.
 * `RangeKey(object key)`
-  * Used when you only want to only convert a range key without a partition key.
+    * Used when you only want to only convert a range key without a partition key.
 
 ```csharp
 // PrimaryKeyMarshaller is used to convert the keys obtained from the [DynamoDBHashKey] and [DynamoDBRangeKey] attributes.
@@ -315,7 +360,8 @@ public partial class EntityDTO
 
 ### Configuring marshalling behaviour
 
-By applying the DynamoDbMarshallerOptions you're able to configure all DynamoDBMarshallers that's declared on the same type.
+By applying the DynamoDbMarshallerOptions you're able to configure all DynamoDBMarshallers that's declared on the same
+type.
 
 #### [Custom converters](./samples/Configuration/Program.cs)
 
@@ -371,5 +417,7 @@ public partial record EnumBehaviour([property: DynamoDBHashKey] string Id, DayOf
 
 ## Project structure
 
-The `DynamoDBGenerator` assembly contains functionality that the `DynamoDBGenerator.SourceGenerator` rely on such as the [attribute](src/DynamoDBGenerator/Attributes/DynamoDBMarshallerAttribute.cs) that will trigger the source generation.
+The `DynamoDBGenerator` assembly contains functionality that the `DynamoDBGenerator.SourceGenerator` rely on such as
+the [attribute](src/DynamoDBGenerator/Attributes/DynamoDBMarshallerAttribute.cs) that will trigger the source
+generation.
 In other words both assemblies needs to be installed in order for the source generator to work as expected.
