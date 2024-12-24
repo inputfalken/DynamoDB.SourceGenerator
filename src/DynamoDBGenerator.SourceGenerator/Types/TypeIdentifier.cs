@@ -7,9 +7,9 @@ public abstract record TypeIdentifier(ITypeSymbol TypeSymbol)
     public ITypeSymbol TypeSymbol { get; } = TypeSymbol;
 }
 
-public record UnknownType(ITypeSymbol TypeSymbol) : TypeIdentifier(TypeSymbol);
+public sealed record UnknownType(ITypeSymbol TypeSymbol) : TypeIdentifier(TypeSymbol);
 
-public record KeyValueGeneric : TypeIdentifier
+public sealed record KeyValueGeneric : TypeIdentifier
 {
 
     public enum SupportedType
@@ -52,7 +52,7 @@ public record KeyValueGeneric : TypeIdentifier
     }
 }
 
-public record SingleGeneric : TypeIdentifier
+public sealed record SingleGeneric : TypeIdentifier
 {
 
     public enum SupportedType
