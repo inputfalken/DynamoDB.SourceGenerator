@@ -3,6 +3,8 @@ using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 using static DynamoDBGenerator.SourceGenerator.Constants.DynamoDBGenerator;
+using Marshaller = DynamoDBGenerator.SourceGenerator.Generations.Marshalling.Marshaller;
+
 namespace DynamoDBGenerator.SourceGenerator.Generations;
 
 public static class AttributeExpressionValue

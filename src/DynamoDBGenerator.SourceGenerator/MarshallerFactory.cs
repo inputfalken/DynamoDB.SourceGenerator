@@ -1,5 +1,6 @@
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Generations;
+using DynamoDBGenerator.SourceGenerator.Generations.Marshalling;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 using static DynamoDBGenerator.SourceGenerator.Constants.DynamoDBGenerator.Marshaller;
@@ -22,14 +23,14 @@ public static class MarshallerFactory
             var argumentTypeName = argument.AnnotatedArgumentType;
 
             var constructor = $"public {argument.ImplementationName}({MarshallerOptions.Name} {MarshallerOptions.ParamReference})"
-                .CreateScope($"{MarshallerOptions.FieldReference} = {MarshallerOptions.ParamReference};", $"{KeyMarshaller.PrimaryKeyMarshallerReference} = {KeyMarshaller.AssignmentRoot(argument.EntityTypeSymbol)};");
+                .CreateScope($"{MarshallerOptions.FieldReference} = {MarshallerOptions.ParamReference};", $"{Marshaller.KeyMarshaller.PrimaryKeyMarshallerReference} = {Marshaller.KeyMarshaller.AssignmentRoot(argument.EntityTypeSymbol)};");
             var interfaceImplementation = constructor
                 .Concat(Marshaller.RootSignature(argument.EntityTypeSymbol, entityTypeName))
                 .Concat(UnMarshaller.RootSignature(argument.EntityTypeSymbol, entityTypeName))
-                .Concat(KeyMarshaller.IndexKeyMarshallerRootSignature(argument.EntityTypeSymbol))
+                .Concat(Marshaller.KeyMarshaller.IndexKeyMarshallerRootSignature(argument.EntityTypeSymbol))
                 .Concat(expressionValueMethod)
                 .Append(expressionMethodName)
-                .Append(KeyMarshaller.PrimaryKeyMarshallerDeclaration)
+                .Append(Marshaller.KeyMarshaller.PrimaryKeyMarshallerDeclaration)
                 .Prepend(MarshallerOptions.FieldDeclaration);
 
             var classImplementation = $"private sealed class {argument.ImplementationName}: {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}>"
@@ -56,8 +57,7 @@ public static class MarshallerFactory
             .Concat(Marshaller.CreateClass(loadedArguments, getDynamoDbProperties, options))
             .Concat(UnMarshaller.CreateClass(loadedArguments, getDynamoDbProperties, options))
             .Concat(AttributeExpressionName.CreateClasses(loadedArguments, getDynamoDbProperties, options))
-            .Concat(AttributeExpressionValue.CreateExpressionAttributeValue(loadedArguments, getDynamoDbProperties, options))
-            .Concat(KeyMarshaller.CreateKeys(loadedArguments, getDynamoDbProperties, options));
+            .Concat(AttributeExpressionValue.CreateExpressionAttributeValue(loadedArguments, getDynamoDbProperties, options));
 
         return code;
     }

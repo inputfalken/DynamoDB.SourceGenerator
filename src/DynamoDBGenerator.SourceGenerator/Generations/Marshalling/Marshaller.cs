@@ -1,11 +1,10 @@
-using System.Collections.Immutable;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 using static DynamoDBGenerator.SourceGenerator.Constants.DynamoDBGenerator;
-namespace DynamoDBGenerator.SourceGenerator.Generations;
+namespace DynamoDBGenerator.SourceGenerator.Generations.Marshalling;
 
-public static class Marshaller
+internal static partial class Marshaller
 {
     private const string ClassName = $"_{Constants.DynamoDBGenerator.Marshaller.MarshallMethodName}_";
     private const string DataMember = "dataMember";
@@ -13,7 +12,7 @@ public static class Marshaller
     private static readonly Func<ITypeSymbol, string> GetSerializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_M", SymbolEqualityComparer.IncludeNullability);
     private const string ParamReference = "entity";
 
-    internal static IEnumerable<string> CreateClass(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, DynamoDbDataMember[]> getDynamoDbProperties, MarshallerOptions options)
+    internal static IEnumerable<string> CreateClass(DynamoDBMarshallerArguments[] arguments, Func<ITypeSymbol, DynamoDbDataMember[]> getDynamoDbProperties, MarshallerOptions options)
     {
         return $"private static class {ClassName}".CreateScope(TypeContent(arguments, getDynamoDbProperties, options));
     }
@@ -59,7 +58,7 @@ public static class Marshaller
 
     }
 
-    private static IEnumerable<string> TypeContent(IEnumerable<DynamoDBMarshallerArguments> arguments, Func<ITypeSymbol, DynamoDbDataMember[]> getDynamoDbProperties, MarshallerOptions options)
+    private static IEnumerable<string> TypeContent(DynamoDBMarshallerArguments[] arguments, Func<ITypeSymbol, DynamoDbDataMember[]> getDynamoDbProperties, MarshallerOptions options)
     {
         var hashset = new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability);
 
@@ -69,8 +68,10 @@ public static class Marshaller
                     y => CreateMethod(y, getDynamoDbProperties, options),
                     hashset
                 )
-                .Concat(CodeFactory.Create(x.ArgumentType, y => CreateMethod(y, getDynamoDbProperties, options), hashset))
-            );
+                .Concat(CodeFactory.Create(x.ArgumentType, y => CreateMethod(y, getDynamoDbProperties, options),
+                    hashset))
+            )
+            .Concat(KeyMarshaller.CreateKeys(arguments, getDynamoDbProperties, options));
     }
     private static CodeFactory CreateMethod(ITypeSymbol type, Func<ITypeSymbol, DynamoDbDataMember[]> fn, MarshallerOptions options)
     {
