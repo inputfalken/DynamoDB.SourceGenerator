@@ -55,7 +55,7 @@ The source generator will look for attributes and implement interfaces that exis
   built in to the library.
 * `ValueTuple<T>` support: You don't have to declare your own types and could instead
   use [tuples](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/value-tuples) with
-  custom named fields that will act as if the tuple was a type with with those data members.
+  custom named fields that will act as if the tuple was a type with those data members.
 
 ## Default conversion
 
