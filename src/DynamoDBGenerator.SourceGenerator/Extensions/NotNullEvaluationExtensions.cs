@@ -13,19 +13,6 @@ public static class NotNullEvaluationExtensions
         return $"({result})";
     }
 
-    public static bool IsNullable(this ITypeSymbol typeSymbol)
-    {
-        return typeSymbol switch
-        {
-            { IsReferenceType: true, NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated } => true,
-            { IsReferenceType: true, NullableAnnotation: NullableAnnotation.NotAnnotated } => false,
-            { IsValueType: true, OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => true,
-            { IsValueType: true } => false,
-            _ => throw new ArgumentOutOfRangeException($"Could not determine nullablity of type '{typeSymbol.ToDisplayString()}'.")
-        };
-    }
-
-
     private static string CreateException(in string accessPattern)
     {
         return $"throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}(nameof({accessPattern}));";
