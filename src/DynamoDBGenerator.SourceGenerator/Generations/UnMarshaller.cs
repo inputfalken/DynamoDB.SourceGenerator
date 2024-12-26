@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Immutable;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
@@ -13,7 +11,7 @@ public static class UnMarshaller
     private const string DataMember = "dataMember";
     private const string Dict = "dict";
     private static readonly Func<ITypeSymbol, string> GetDeserializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_U", SymbolEqualityComparer.IncludeNullability);
-    private const string UnMarshallerClass = $"_{Constants.DynamoDBGenerator.Marshaller.UnmarshalMethodName}_";
+    private const string UnMarshallerClass = $"_{Marshaller.UnmarshalMethodName}_";
     private const string Value = "attributeValue";
     private static IEnumerable<(bool useParentheses, IEnumerable<string> assignments)> Assignments(ITypeSymbol type, (DynamoDbDataMember DDB, string MethodCall, string Name)[] assignments)
     {
@@ -43,10 +41,10 @@ public static class UnMarshaller
         }
 
     }
-    internal static IEnumerable<string> CreateClass(IEnumerable<DynamoDBMarshallerArguments> arguments,
+    internal static IEnumerable<string> CreateClass(DynamoDBMarshallerArguments[] arguments,
         Func<ITypeSymbol, DynamoDbDataMember[]> getDynamoDbProperties, MarshallerOptions options)
     {
-        return $"private static class {UnMarshallerClass}".CreateScope(CreateTypeContents(arguments, getDynamoDbProperties, options));
+        return $"file static class {UnMarshallerClass}".CreateScope(CreateTypeContents(arguments, getDynamoDbProperties, options));
     }
     private static CodeFactory CreateCode(ITypeSymbol type, Func<ITypeSymbol, DynamoDbDataMember[]> fn, MarshallerOptions options)
     {
@@ -66,7 +64,7 @@ public static class UnMarshaller
                         .Prepend(type.IsTupleType ? "return" : $"return new {typeName.annotated.TrimEnd('?')}")
                 );
 
-        var method = $"public static {typeName.annotated} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue>? {Dict}, {MarshallerOptions.Name} {MarshallerOptions.ParamReference}, string? {DataMember} = null)".CreateScope(blockBody);
+        var method = $"public static {typeName.annotated} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue>? {Dict}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)".CreateScope(blockBody);
 
         return new CodeFactory(method, assignments.Select(x => x.DDB.DataMember.Type));
 
@@ -78,18 +76,18 @@ public static class UnMarshaller
         if (options.TryReadConversion(type, Value) is {} conversion)
         {
             if (type.IsNullable())
-                return CreateSignature(type)
+                return CreateSignature(type, options)
                     .CreateScope($"return {Value} is not null ? ({conversion}) : null;")
                     .ToConversion();
 
-            return CreateSignature(type)
+            return CreateSignature(type, options)
                 .CreateScope($"return {Value} is not null && ({conversion}) is {{ }} x ? x : throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
                 .ToConversion();
         }
         
         return type.TypeIdentifier() switch
         {
-            SingleGeneric singleGeneric when CreateSignature(singleGeneric.TypeSymbol) is var signature => singleGeneric.Type switch
+            SingleGeneric singleGeneric when CreateSignature(singleGeneric.TypeSymbol, options) is var signature => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => signature
                     .CreateScope($"return {Value} is not null and {{ NULL: false }} ? {InvokeUnmarshallMethod(singleGeneric.T, Value, DataMember, options)} : null;")
@@ -116,7 +114,7 @@ public static class UnMarshaller
             },
             KeyValueGeneric {TKey.SpecialType: not SpecialType.System_String} keyValueGeneric => throw new ArgumentException("Only strings are supported for for TKey",
                 UncoveredConversionException(keyValueGeneric, nameof(CreateMethod))),
-            KeyValueGeneric keyValueGeneric when CreateSignature(keyValueGeneric.TypeSymbol) is var signature => keyValueGeneric.Type switch
+            KeyValueGeneric keyValueGeneric when CreateSignature(keyValueGeneric.TypeSymbol, options) is var signature => keyValueGeneric.Type switch
             {
                 KeyValueGeneric.SupportedType.Dictionary => signature
                     .CreateScope($"return {Value} is {{ M: {{ }} x }} ? {AttributeValueUtilityFactory.ToDictionary}(x, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "a", "d", options, "o")}) : {Else(keyValueGeneric.TypeSymbol)};")
@@ -133,9 +131,9 @@ public static class UnMarshaller
 
     }
 
-    private static string CreateSignature(ITypeSymbol typeSymbol)
+    private static string CreateSignature(ITypeSymbol typeSymbol, MarshallerOptions options)
     {
-        return $"public static {typeSymbol.Representation().annotated} {GetDeserializationMethodName(typeSymbol)}(AttributeValue? {Value}, {MarshallerOptions.Name} {MarshallerOptions.ParamReference}, string? {DataMember} = null)";
+        return $"public static {typeSymbol.Representation().annotated} {GetDeserializationMethodName(typeSymbol)}(AttributeValue? {Value}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)";
     }
     private static IEnumerable<string> CreateTypeContents(IEnumerable<DynamoDBMarshallerArguments> arguments,
         Func<ITypeSymbol, DynamoDbDataMember[]> getDynamoDbProperties, MarshallerOptions options)
@@ -196,7 +194,7 @@ public static class UnMarshaller
 
     internal static IEnumerable<string> RootSignature(ITypeSymbol typeSymbol, string rootTypeName)
     {
-        return $"public {rootTypeName} {Constants.DynamoDBGenerator.Marshaller.UnmarshalMethodName}(Dictionary<{nameof(String)}, {Constants.AWSSDK_DynamoDBv2.AttributeValue}> entity)".CreateScope(
+        return $"public {rootTypeName} {Marshaller.UnmarshalMethodName}(Dictionary<{nameof(String)}, {Constants.AWSSDK_DynamoDBv2.AttributeValue}> entity)".CreateScope(
             "ArgumentNullException.ThrowIfNull(entity);",
             $"return {UnMarshallerClass}.{GetDeserializationMethodName(typeSymbol)}(entity, {MarshallerOptions.FieldReference});");
     }

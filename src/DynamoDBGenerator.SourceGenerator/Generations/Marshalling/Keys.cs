@@ -152,7 +152,7 @@ internal static partial class Marshaller
             Func<ITypeSymbol, DynamoDbDataMember[]> fn, MarshallerOptions options)
         {
             var code =
-                $"public static Dictionary<string, AttributeValue> {MethodName(typeSymbol)}({MarshallerOptions.Name} {MarshallerOptions.ParamReference}, object? {PkReference}, object? {RkReference}, bool {EnforcePkReference}, bool {EnforceRkReference}, string? index = null)"
+                $"public static Dictionary<string, AttributeValue> {MethodName(typeSymbol)}({options.FullName} {MarshallerOptions.ParamReference}, object? {PkReference}, object? {RkReference}, bool {EnforcePkReference}, bool {EnforceRkReference}, string? index = null)"
                     .CreateScope(MethodBody(typeSymbol, fn, options));
 
             return new CodeFactory(code);
