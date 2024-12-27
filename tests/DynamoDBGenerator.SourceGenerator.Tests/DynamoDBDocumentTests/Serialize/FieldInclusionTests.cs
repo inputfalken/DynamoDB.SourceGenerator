@@ -1,4 +1,5 @@
 using DynamoDBGenerator.Attributes;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
 [DynamoDBMarshaller(EntityType = typeof(EmptyClass))]
@@ -7,11 +8,10 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serializ
 [DynamoDBMarshaller(EntityType = typeof(ClassWithOneDDBField))]
 public partial class FieldInclusionTests
 {
-
     [Fact]
     public void Serialize_ClassWithDDbField_AttributeValueIsEmpty()
     {
-        var @class = new ClassWithOneDDBField {Id = "I should be included"};
+        var @class = new ClassWithOneDDBField { Id = "I should be included" };
 
         ClassWithOneDDBFieldMarshaller
             .Marshall(@class)
@@ -22,7 +22,7 @@ public partial class FieldInclusionTests
     [Fact]
     public void Serialize_ClassWithField_AttributeValueIsEmpty()
     {
-        var @class = new ClassWithOneField {Id = "I should be included"};
+        var @class = new ClassWithOneField { Id = "I should be included" };
 
         ClassWithOneFieldMarshaller
             .Marshall(@class)
@@ -34,13 +34,14 @@ public partial class FieldInclusionTests
     public void Serialize_ClassWithIgnoredField_AttributeValueIsEmpty()
     {
         var @class = new ClassWithIgnoredField
-            {Id = "I should not be exists in attribute values"};
+            { Id = "I should not be exists in attribute values" };
 
         ClassWithIgnoredFieldMarshaller
             .Marshall(@class)
             .Should()
             .BeEmpty();
     }
+
     [Fact]
     public void Serialize_EmptyClass_AttributeValueIsEmpty()
     {

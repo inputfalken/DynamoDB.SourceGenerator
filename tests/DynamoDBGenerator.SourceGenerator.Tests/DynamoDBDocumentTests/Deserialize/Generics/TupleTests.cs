@@ -1,5 +1,6 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Generics;
 
 [DynamoDBMarshaller(EntityType = typeof(TupleClass))]
@@ -12,7 +13,8 @@ public partial class TupleTests
     public void Deserialize_UnnamedTuple_Properties()
     {
         UnnamedTuple
-            .Unmarshall(new Dictionary<string, AttributeValue> {{"Item1", new AttributeValue {N = "1"}}, {"Item2", new AttributeValue {N = "2"}}})
+            .Unmarshall(new Dictionary<string, AttributeValue>
+                { { "Item1", new AttributeValue { N = "1" } }, { "Item2", new AttributeValue { N = "2" } } })
             .Should()
             .Be((1, 2));
     }
@@ -23,14 +25,14 @@ public partial class TupleTests
         NestedXAndYTuple
             .Unmarshall(new Dictionary<string, AttributeValue>
             {
-                {"Id", new AttributeValue {S = "123"}},
+                { "Id", new AttributeValue { S = "123" } },
                 {
                     "Coordinates", new AttributeValue
                     {
-                        M = new Dictionary<string, AttributeValue>()
+                        M = new Dictionary<string, AttributeValue>
                         {
-                            {"X", new AttributeValue {N = "1"}},
-                            {"Y", new AttributeValue {N = "2"}}
+                            { "X", new AttributeValue { N = "1" } },
+                            { "Y", new AttributeValue { N = "2" } }
                         }
                     }
                 }
@@ -38,14 +40,15 @@ public partial class TupleTests
             .Should()
             .Be(("123", (1, 2)));
     }
+
     [Fact]
     public void Deserialize_XAndYTuple_Properties()
     {
         XAndYTuple
             .Unmarshall(new Dictionary<string, AttributeValue>
             {
-                {"X", new AttributeValue {N = "1"}},
-                {"Y", new AttributeValue {N = "2"}}
+                { "X", new AttributeValue { N = "1" } },
+                { "Y", new AttributeValue { N = "2" } }
             })
             .Should()
             .Be((1, 2));
@@ -62,22 +65,19 @@ public partial class TupleTests
                     {
                         M = new Dictionary<string, AttributeValue>
                         {
-
-                            {"X", new AttributeValue {N = "1"}},
-                            {"Y", new AttributeValue {N = "2"}}
+                            { "X", new AttributeValue { N = "1" } },
+                            { "Y", new AttributeValue { N = "2" } }
                         }
                     }
                 },
                 {
                     "XYZCoordinate", new AttributeValue
                     {
-
                         M = new Dictionary<string, AttributeValue>
                         {
-
-                            {"X", new AttributeValue {N = "3"}},
-                            {"Y", new AttributeValue {N = "4"}},
-                            {"Z", new AttributeValue {N = "5"}}
+                            { "X", new AttributeValue { N = "3" } },
+                            { "Y", new AttributeValue { N = "4" } },
+                            { "Z", new AttributeValue { N = "5" } }
                         }
                     }
                 }
@@ -86,6 +86,7 @@ public partial class TupleTests
         result.XYCoordinate.Should().Be((1, 2));
         result.XYZCoordinate.Should().Be((3, 4, 5));
     }
+
     [Fact]
     public void Deserialize_XY_Property()
     {
@@ -97,12 +98,11 @@ public partial class TupleTests
                     {
                         M = new Dictionary<string, AttributeValue>
                         {
-
-                            {"X", new AttributeValue {N = "1"}},
-                            {"Y", new AttributeValue {N = "2"}}
+                            { "X", new AttributeValue { N = "1" } },
+                            { "Y", new AttributeValue { N = "2" } }
                         }
                     }
-                },
+                }
             });
 
         result.XYCoordinate.Should().Be((1, 2));
@@ -118,13 +118,11 @@ public partial class TupleTests
                 {
                     "XYZCoordinate", new AttributeValue
                     {
-
                         M = new Dictionary<string, AttributeValue>
                         {
-
-                            {"X", new AttributeValue {N = "3"}},
-                            {"Y", new AttributeValue {N = "4"}},
-                            {"Z", new AttributeValue {N = "5"}}
+                            { "X", new AttributeValue { N = "3" } },
+                            { "Y", new AttributeValue { N = "4" } },
+                            { "Z", new AttributeValue { N = "5" } }
                         }
                     }
                 }

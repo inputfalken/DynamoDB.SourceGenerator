@@ -11,13 +11,13 @@ public class NamespaceATests
         Container.ContainerMarshaller
             .AttributeExpressionNameTracker()
             .Should()
-            .BeOfType<A.Container.ContainerNames>();
-        
+            .BeOfType<Container.ContainerNames>();
+
         Container.ContainerMarshaller
             .AttributeExpressionNameTracker()
             .PropertyA
             .Should()
-            .BeOfType<A.Container.SampleClassNames>();
+            .BeOfType<Container.SampleClassNames>();
     }
 
     [Fact]
@@ -26,13 +26,13 @@ public class NamespaceATests
         Container.ContainerMarshaller
             .AttributeExpressionValueTracker()
             .Should()
-            .BeOfType<A.Container.ContainerValues>();
-        
+            .BeOfType<Container.ContainerValues>();
+
         Container.ContainerMarshaller
             .AttributeExpressionValueTracker()
             .PropertyA
             .Should()
-            .BeOfType<A.Container.SampleClassValues>();
+            .BeOfType<Container.SampleClassValues>();
     }
 
     [Fact]

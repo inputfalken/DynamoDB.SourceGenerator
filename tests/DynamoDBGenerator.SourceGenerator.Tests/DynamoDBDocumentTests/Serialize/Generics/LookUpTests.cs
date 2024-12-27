@@ -1,4 +1,5 @@
 using DynamoDBGenerator.Attributes;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
 [DynamoDBMarshaller(EntityType = typeof(LookUpClass))]

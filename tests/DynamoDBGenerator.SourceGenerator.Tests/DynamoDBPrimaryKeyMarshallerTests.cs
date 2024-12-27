@@ -1,9 +1,8 @@
-using System;
-using System.Collections.Generic;
 using Amazon.DynamoDBv2.Model;
 using AutoFixture;
 using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.Exceptions;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests;
 
 [DynamoDBMarshaller(EntityType = typeof(TypeWithPartitionKeyOnly), AccessName = "PartitionKeyOnly")]
@@ -136,15 +135,10 @@ public partial class DynamoDBPrimaryKeyMarshallerTests
             .PrimaryKeyMarshaller
             .Keys(keys.Id, keys.RangeKey)
             .Should()
-            .SatisfyRespectively(x =>
-            {
-                x.Key.Should().Be(nameof(keys.Id));
-            }, x =>
-            {
-
-                x.Key.Should().Be(nameof(keys.RangeKey));
-            });
+            .SatisfyRespectively(x => { x.Key.Should().Be(nameof(keys.Id)); },
+                x => { x.Key.Should().Be(nameof(keys.RangeKey)); });
     }
+
     [Theory]
     [InlineData("abc", null)]
     [InlineData(null, "abc")]
@@ -183,11 +177,13 @@ public partial class DynamoDBPrimaryKeyMarshallerTests
         var act = () => PartitionKeyOnly.PrimaryKeyMarshaller.RangeKey(key);
         NoCorrespondingAttributeAssertion(key, act);
     }
+
     private static void NoCorrespondingAttributeAssertion(object key, Func<Dictionary<string, AttributeValue>> act)
     {
         act.Should()
             .Throw<InvalidOperationException>()
-            .WithMessage($"Value '{key}' from argument 'rangeKey' was provided but there's no corresponding DynamoDBKeyAttribute.");
+            .WithMessage(
+                $"Value '{key}' from argument 'rangeKey' was provided but there's no corresponding DynamoDBKeyAttribute.");
     }
 
     [Theory]

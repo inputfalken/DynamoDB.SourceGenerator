@@ -1,5 +1,6 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Exceptions;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 
 public abstract class RecordMarshalAsserter<T> : MarshalAsserter<Container<T>>
@@ -7,22 +8,24 @@ public abstract class RecordMarshalAsserter<T> : MarshalAsserter<Container<T>>
     private readonly IEnumerable<T> _arguments;
     private readonly Func<T, AttributeValue?> _fn;
 
-    protected override IEnumerable<(Container<T> element, Dictionary<string, AttributeValue> attributeValues)> Arguments()
-    {
-        foreach (var argument in _arguments)
-        {
-
-            var container = new Container<T>(argument);
-
-            yield return _fn(argument) is { } attributeValue
-                ? (container, new Dictionary<string, AttributeValue> {{nameof(Container<T>.Element), attributeValue}})
-                : (container, new Dictionary<string, AttributeValue>());
-        }
-    }
     protected RecordMarshalAsserter(IEnumerable<T> arguments, Func<T, AttributeValue?> fn)
     {
         _arguments = arguments;
         _fn = fn;
+    }
+
+    protected override IEnumerable<(Container<T> element, Dictionary<string, AttributeValue> attributeValues)>
+        Arguments()
+    {
+        foreach (var argument in _arguments)
+        {
+            var container = new Container<T>(argument);
+
+            yield return _fn(argument) is { } attributeValue
+                ? (container,
+                    new Dictionary<string, AttributeValue> { { nameof(Container<T>.Element), attributeValue } })
+                : (container, new Dictionary<string, AttributeValue>());
+        }
     }
 
 
@@ -39,8 +42,8 @@ public record Container<T>(T Element);
 
 public abstract class NotNullRecordElementMarshalAsserter<T> : RecordMarshalAsserter<T> where T : class
 {
-
-    protected NotNullRecordElementMarshalAsserter(IEnumerable<T> arguments, Func<T, AttributeValue?> fn) : base(arguments, fn)
+    protected NotNullRecordElementMarshalAsserter(IEnumerable<T> arguments, Func<T, AttributeValue?> fn) : base(
+        arguments, fn)
     {
     }
 
@@ -56,7 +59,7 @@ public abstract class NotNullRecordElementMarshalAsserter<T> : RecordMarshalAsse
     {
         var act = () => UnmarshallImplementation(new Dictionary<string, AttributeValue>
         {
-            {nameof(Container<T>.Element), null!}
+            { nameof(Container<T>.Element), null! }
         });
 
         act.Should().Throw<DynamoDBMarshallingException>().Which.MemberName.Should().Be(nameof(Container<T>.Element));

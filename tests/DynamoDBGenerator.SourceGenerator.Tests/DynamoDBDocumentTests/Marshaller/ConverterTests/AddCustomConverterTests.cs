@@ -10,7 +10,21 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshall
 [DynamoDBMarshaller(EntityType = typeof(Container<Money>))]
 public partial class AddCustomConverterTests : RecordMarshalAsserter<AddCustomConverterTests.Money>
 {
-    
+    public AddCustomConverterTests() : base(new[] { new Money(32932, "SEK"), new Money(3923, "EURO") },
+        MoneyConverter.WriteImplementation)
+    {
+    }
+
+    protected override Container<Money> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+    {
+        return ContainerMarshaller.Unmarshall(attributeValues);
+    }
+
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<Money> element)
+    {
+        return ContainerMarshaller.Marshall(element);
+    }
+
     public class Converter : AttributeValueConverters
     {
         public MoneyConverter MoneyConverter { get; } = new();
@@ -18,11 +32,6 @@ public partial class AddCustomConverterTests : RecordMarshalAsserter<AddCustomCo
 
     public class MoneyConverter : IValueTypeConverter<Money>
     {
-        public static AttributeValue WriteImplementation(Money element)
-        {
-            return new AttributeValue { S = element.ToString() };
-        }
-        
         public Money? Read(AttributeValue attributeValue)
         {
             return Money.Parse(attributeValue.S);
@@ -32,13 +41,18 @@ public partial class AddCustomConverterTests : RecordMarshalAsserter<AddCustomCo
         {
             return WriteImplementation(element);
         }
+
+        public static AttributeValue WriteImplementation(Money element)
+        {
+            return new AttributeValue { S = element.ToString() };
+        }
     }
 
-    
+
     public readonly struct Money
     {
-        public string Currency { get;  }
-        public decimal Value { get;  }
+        public string Currency { get; }
+        public decimal Value { get; }
 
         public Money(decimal value, string currency)
         {
@@ -59,19 +73,5 @@ public partial class AddCustomConverterTests : RecordMarshalAsserter<AddCustomCo
             var value = input[..index];
             return new Money(decimal.Parse(value), currency);
         }
-    }
-
-    public AddCustomConverterTests() : base(new []{new Money(32932, "SEK"), new Money(3923, "EURO")}, MoneyConverter.WriteImplementation)
-    {
-    }
-
-    protected override Container<Money> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
-    {
-        return ContainerMarshaller.Unmarshall(attributeValues);
-    }
-
-    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<Money> element)
-    {
-        return ContainerMarshaller.Marshall(element);
     }
 }

@@ -1,5 +1,6 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Generics;
 
 [DynamoDBMarshaller(EntityType = typeof(DictionaryClass))]
@@ -20,9 +21,8 @@ public partial class DictionaryTests
                                 {
                                     M = new Dictionary<string, AttributeValue>
                                     {
-
-                                        {"Name", new AttributeValue {S = "John"}},
-                                        {"SomethingElse", new AttributeValue {S = "FooBar"}}
+                                        { "Name", new AttributeValue { S = "John" } },
+                                        { "SomethingElse", new AttributeValue { S = "FooBar" } }
                                     }
                                 }
                             },
@@ -31,9 +31,8 @@ public partial class DictionaryTests
                                 {
                                     M = new Dictionary<string, AttributeValue>
                                     {
-
-                                        {"Name", new AttributeValue {S = "John2"}},
-                                        {"SomethingElse", new AttributeValue {S = "FooBar2"}}
+                                        { "Name", new AttributeValue { S = "John2" } },
+                                        { "SomethingElse", new AttributeValue { S = "FooBar2" } }
                                     }
                                 }
                             }
@@ -60,6 +59,7 @@ public partial class DictionaryTests
                 }
             );
     }
+
     [Fact]
     public void Deserialize_Dictionary_ShouldContainCorrectKeyValues()
     {
@@ -70,8 +70,8 @@ public partial class DictionaryTests
                     {
                         M = new Dictionary<string, AttributeValue>
                         {
-                            {"Two", new AttributeValue {N = "2"}},
-                            {"One", new AttributeValue {N = "1"}}
+                            { "Two", new AttributeValue { N = "2" } },
+                            { "One", new AttributeValue { N = "1" } }
                         }
                     }
                 }
@@ -81,7 +81,8 @@ public partial class DictionaryTests
             .BeOfType<Dictionary<string, int>>()
             .Which
             .Should()
-            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("Two", 2)), x => x.Should().Be(new KeyValuePair<string, int>("One", 1)));
+            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("Two", 2)),
+                x => x.Should().Be(new KeyValuePair<string, int>("One", 1)));
     }
 
     [Fact]
@@ -94,8 +95,8 @@ public partial class DictionaryTests
                     {
                         M = new Dictionary<string, AttributeValue>
                         {
-                            {"Two", new AttributeValue {N = "2"}},
-                            {"One", new AttributeValue {N = "1"}}
+                            { "Two", new AttributeValue { N = "2" } },
+                            { "One", new AttributeValue { N = "1" } }
                         }
                     }
                 }
@@ -105,8 +106,10 @@ public partial class DictionaryTests
             .BeOfType<Dictionary<string, int>>()
             .Which
             .Should()
-            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("Two", 2)), x => x.Should().Be(new KeyValuePair<string, int>("One", 1)));
+            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("Two", 2)),
+                x => x.Should().Be(new KeyValuePair<string, int>("One", 1)));
     }
+
     [Fact]
     public void Deserialize_IDictionary_ShouldBeDictionaryAndContainCorrectKeyValues()
     {
@@ -117,8 +120,8 @@ public partial class DictionaryTests
                     {
                         M = new Dictionary<string, AttributeValue>
                         {
-                            {"Two", new AttributeValue {N = "2"}},
-                            {"One", new AttributeValue {N = "1"}}
+                            { "Two", new AttributeValue { N = "2" } },
+                            { "One", new AttributeValue { N = "1" } }
                         }
                     }
                 }
@@ -128,9 +131,9 @@ public partial class DictionaryTests
             .BeOfType<Dictionary<string, int>>()
             .Which
             .Should()
-            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("Two", 2)), x => x.Should().Be(new KeyValuePair<string, int>("One", 1)));
+            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("Two", 2)),
+                x => x.Should().Be(new KeyValuePair<string, int>("One", 1)));
     }
-
 }
 
 public class DictionaryClass

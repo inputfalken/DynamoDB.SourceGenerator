@@ -1,5 +1,6 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize;
 
 [DynamoDBMarshaller(EntityType = typeof(PropertyWithMixedNames))]
@@ -8,17 +9,16 @@ public partial class PropertyRenamingTests
     [Fact]
     public void Serialize_Attributes_ChangesNames()
     {
-
         var propertyAssertion = PropertyWithMixedNamesMarshaller
             .Unmarshall(new Dictionary<string, AttributeValue>
             {
-                {nameof(PropertyWithMixedNames.PlainProperty), new AttributeValue {S = "1"}},
-                {nameof(PropertyWithMixedNames.PropertyWithDdbPropertyAttribute), new AttributeValue {S = "2"}},
-                {"AnotherName", new AttributeValue {S = "3"}},
-                {nameof(PropertyWithMixedNames.PropertyWithDdbHashKeyAttribute), new AttributeValue {S = "4"}},
-                {"AnotherHashKey", new AttributeValue {S = "5"}},
-                {nameof(PropertyWithMixedNames.PropertyWithDdbRangeKeyAttribute), new AttributeValue {S = "6"}},
-                {"AnotherRangeKey", new AttributeValue {S = "7"}}
+                { nameof(PropertyWithMixedNames.PlainProperty), new AttributeValue { S = "1" } },
+                { nameof(PropertyWithMixedNames.PropertyWithDdbPropertyAttribute), new AttributeValue { S = "2" } },
+                { "AnotherName", new AttributeValue { S = "3" } },
+                { nameof(PropertyWithMixedNames.PropertyWithDdbHashKeyAttribute), new AttributeValue { S = "4" } },
+                { "AnotherHashKey", new AttributeValue { S = "5" } },
+                { nameof(PropertyWithMixedNames.PropertyWithDdbRangeKeyAttribute), new AttributeValue { S = "6" } },
+                { "AnotherRangeKey", new AttributeValue { S = "7" } }
             })
             .Should()
             .BeOfType<PropertyWithMixedNames>();

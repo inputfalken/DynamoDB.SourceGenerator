@@ -1,4 +1,5 @@
 using DynamoDBGenerator.Attributes;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
 // TODO these tests are giving warnings due to the return type of Unmarshall does not take nullability into account.

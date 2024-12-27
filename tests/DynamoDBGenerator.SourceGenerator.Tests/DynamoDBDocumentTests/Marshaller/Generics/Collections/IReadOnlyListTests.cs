@@ -2,6 +2,7 @@ using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections.Asserters;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections;
 
 [DynamoDBMarshaller(EntityType = typeof(Container<IReadOnlyList<string>>))]
@@ -11,11 +12,14 @@ public partial class NoneNullableIReadOnlyListElementTests : NoneNullableElement
     public NoneNullableIReadOnlyListElementTests() : base(Strings(), x => x.ToList())
     {
     }
+
     protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<IReadOnlyList<string>> text)
     {
         return ContainerMarshaller.Marshall(text);
     }
-    protected override Container<IReadOnlyList<string>> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+
+    protected override Container<IReadOnlyList<string>> UnmarshallImplementation(
+        Dictionary<string, AttributeValue> attributeValues)
     {
         return ContainerMarshaller.Unmarshall(attributeValues);
     }
@@ -23,7 +27,8 @@ public partial class NoneNullableIReadOnlyListElementTests : NoneNullableElement
     [Fact]
     public void Unmarshall_Implementation_ShouldBeList()
     {
-        Arguments().Should().AllSatisfy(x => ContainerMarshaller.Unmarshall(x.attributeValues).Element.Should().BeOfType<string[]>());
+        Arguments().Should().AllSatisfy(x =>
+            ContainerMarshaller.Unmarshall(x.attributeValues).Element.Should().BeOfType<string[]>());
     }
 }
 
@@ -34,11 +39,14 @@ public partial class NullableIReadOnlyListElementTests : NullableElementAsserter
     public NullableIReadOnlyListElementTests() : base(Strings(), x => x.ToList())
     {
     }
+
     protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<IReadOnlyList<string?>> text)
     {
         return ContainerMarshaller.Marshall(text);
     }
-    protected override Container<IReadOnlyList<string?>> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+
+    protected override Container<IReadOnlyList<string?>> UnmarshallImplementation(
+        Dictionary<string, AttributeValue> attributeValues)
     {
         return ContainerMarshaller.Unmarshall(attributeValues);
     }
@@ -46,6 +54,7 @@ public partial class NullableIReadOnlyListElementTests : NullableElementAsserter
     [Fact]
     public void Unmarshall_Implementation_ShouldBeList()
     {
-        Arguments().Should().AllSatisfy(x => ContainerMarshaller.Unmarshall(x.attributeValues).Element.Should().BeOfType<string?[]>());
+        Arguments().Should().AllSatisfy(x =>
+            ContainerMarshaller.Unmarshall(x.attributeValues).Element.Should().BeOfType<string?[]>());
     }
 }

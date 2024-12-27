@@ -1,4 +1,5 @@
 using DynamoDBGenerator.Attributes;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
 [DynamoDBMarshaller(EntityType = typeof(EmptyClass))]
@@ -7,11 +8,10 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serializ
 [DynamoDBMarshaller(EntityType = typeof(ClassWithOneDDBProperty))]
 public partial class PropertyInclusionTests
 {
-
     [Fact]
     public void Serialize_ClassWithDDbProperty_AttributeValueIsEmpty()
     {
-        var @class = new ClassWithOneDDBProperty {Id = "I should be included"};
+        var @class = new ClassWithOneDDBProperty { Id = "I should be included" };
 
         ClassWithOneDDBPropertyMarshaller
             .Marshall(@class)
@@ -23,7 +23,7 @@ public partial class PropertyInclusionTests
     public void Serialize_ClassWithIgnoredProperty_AttributeValueIsEmpty()
     {
         var @class = new ClassWithIgnoredProperty
-            {Id = "I should not be exists in attribute values"};
+            { Id = "I should not be exists in attribute values" };
 
         ClassWithIgnoredPropertyMarshaller
             .Marshall(@class)
@@ -34,13 +34,14 @@ public partial class PropertyInclusionTests
     [Fact]
     public void Serialize_ClassWithProperty_AttributeValueIsEmpty()
     {
-        var @class = new ClassWithOneProperty {Id = "I should be included"};
+        var @class = new ClassWithOneProperty { Id = "I should be included" };
 
         ClassWithOnePropertyMarshaller
             .Marshall(@class)
             .Should()
             .ContainKey(nameof(ClassWithOneProperty.Id));
     }
+
     [Fact]
     public void Serialize_EmptyClass_AttributeValueIsEmpty()
     {

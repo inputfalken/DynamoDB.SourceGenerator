@@ -1,8 +1,9 @@
 using DynamoDBGenerator.Attributes;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 
-
-[DynamoDBMarshaller(EntityType = typeof(Person), ArgumentType = typeof((string firstName, DateTime timeStamp)), AccessName = "PersonWithTupleArgument")]
+[DynamoDBMarshaller(EntityType = typeof(Person), ArgumentType = typeof((string firstName, DateTime timeStamp)),
+    AccessName = "PersonWithTupleArgument")]
 [DynamoDBMarshaller(EntityType = typeof(Person))]
 [DynamoDBMarshaller(EntityType = typeof(SelfReferencingClass))]
 [DynamoDBMarshaller(EntityType = typeof(ClassWithOverriddenAttributeName))]
@@ -19,6 +20,7 @@ public partial class ExpressionAttributeTrackerTests
 
         act.Should().Throw<NotImplementedException>();
     }
+
     [Fact]
     public void PersonWithTupleArgument_AccessingRootExpressionAttributeValue_ShouldNotThrow()
     {
@@ -75,17 +77,19 @@ public partial class ExpressionAttributeTrackerTests
         var field2 = nametracker.Self.Self.Self.Field2;
 
         (nametracker as IAttributeExpressionNameTracker)
-          .AccessedNames()
-          .Should()
-          .BeEquivalentTo(new KeyValuePair<string, string>[] {
-              new KeyValuePair<string ,string>("#Self", "Self"),
-              new KeyValuePair<string ,string>("#Field1", "Field1"),
-              new KeyValuePair<string ,string>("#Field2", "Field2")
-          });
+            .AccessedNames()
+            .Should()
+            .BeEquivalentTo(new[]
+            {
+                new KeyValuePair<string, string>("#Self", "Self"),
+                new KeyValuePair<string, string>("#Field1", "Field1"),
+                new KeyValuePair<string, string>("#Field2", "Field2")
+            });
 
         field1.Should().Be("#Self.#Self.#Self.#Self.#Field1");
         field2.Should().Be("#Self.#Self.#Self.#Field2");
     }
+
     [Fact]
     public void DuplicatedNavigationProperties_AttributeNames_EnsureUniquness()
     {
@@ -96,16 +100,17 @@ public partial class ExpressionAttributeTrackerTests
         var field4 = nametracker.Person2.Address.Street.Name;
 
         (nametracker as IAttributeExpressionNameTracker)
-          .AccessedNames()
-          .Should()
-          .BeEquivalentTo(new KeyValuePair<string, string>[] {
-              new KeyValuePair<string ,string>("#CreatedAt", "CreatedAt"),
-              new KeyValuePair<string ,string>("#Person1", "Person1"),
-              new KeyValuePair<string ,string>("#Person2", "Person2"),
-              new KeyValuePair<string ,string>("#Address", "Address"),
-              new KeyValuePair<string ,string>("#Name", "Name"),
-              new KeyValuePair<string ,string>("#Street", "Street")
-          });
+            .AccessedNames()
+            .Should()
+            .BeEquivalentTo(new[]
+            {
+                new KeyValuePair<string, string>("#CreatedAt", "CreatedAt"),
+                new KeyValuePair<string, string>("#Person1", "Person1"),
+                new KeyValuePair<string, string>("#Person2", "Person2"),
+                new KeyValuePair<string, string>("#Address", "Address"),
+                new KeyValuePair<string, string>("#Name", "Name"),
+                new KeyValuePair<string, string>("#Street", "Street")
+            });
 
         field1.Should().Be("#Person1.#CreatedAt");
         field2.Should().Be("#Person2.#CreatedAt");
@@ -147,8 +152,8 @@ public partial class ExpressionAttributeTrackerTests
 
         nameTracker.Foo.Should().Be("#SomethingElse");
         valueTracker.Foo.Should().Be(":p1");
-
     }
+
     [Fact]
     public void InheritiedClassWithOverriddenAttributeName_AttributeReferences_ShouldChangeNameValue()
     {
@@ -157,8 +162,8 @@ public partial class ExpressionAttributeTrackerTests
 
         nameTracker.Foo.Should().Be("#SomethingElse");
         valueTracker.Foo.Should().Be(":p1");
-
     }
+
     [Fact]
     public void Person_AttributeReferences_ShouldBeCorrectlySet()
     {
@@ -201,8 +206,8 @@ public partial class ExpressionAttributeTrackerTests
 
 public static class AssertionExtensions
 {
-
-    public static IEnumerable<T4> TraverseByValueTracker<T, T2, T3, T4>(this IDynamoDBMarshaller<T, T2, T3, T4> source, Func<T4, T4> recursiveSelector, int count)
+    public static IEnumerable<T4> TraverseByValueTracker<T, T2, T3, T4>(this IDynamoDBMarshaller<T, T2, T3, T4> source,
+        Func<T4, T4> recursiveSelector, int count)
         where T3 : IAttributeExpressionNameTracker
         where T4 : IAttributeExpressionValueTracker<T2>
     {
@@ -215,6 +220,7 @@ public static class AssertionExtensions
             attributeReferences = recursiveSelector(attributeReferences);
         }
     }
+
     public static IEnumerable<T3> TraverseByNameTracker<T, T2, T3, T4>(
         this IDynamoDBMarshaller<T, T2, T3, T4> source,
         Func<T3, T3> recursiveSelector,
@@ -236,7 +242,6 @@ public static class AssertionExtensions
 
 public class InheritedClass : ClassWithOverriddenAttributeName
 {
-
 }
 
 public class ClassWithOverriddenAttributeName
@@ -245,12 +250,12 @@ public class ClassWithOverriddenAttributeName
     public string Foo { get; set; } = null!;
 }
 
-
 public class DuplicatedNavigationProperties
 {
     public Person Person1 { get; set; } = null!;
     public Person Person2 { get; set; } = null!;
 }
+
 public class SelfReferencingClass
 {
     public string Field1 { get; set; } = null!;

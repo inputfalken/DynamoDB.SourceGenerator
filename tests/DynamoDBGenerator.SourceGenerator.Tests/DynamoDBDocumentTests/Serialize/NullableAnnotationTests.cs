@@ -1,13 +1,12 @@
-using System;
 using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.Exceptions;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize;
 
 [DynamoDBMarshaller(EntityType = typeof(NestedNullableAnnotationTestClass))]
 [DynamoDBMarshaller(EntityType = typeof(NullableAnnotationTestClass))]
 public partial class NullableAnnotationTests
 {
-
     [Theory]
     [InlineData("1", "2", "3")]
     [InlineData(null, "2", "3")]
@@ -53,6 +52,7 @@ public partial class NullableAnnotationTests
             .WithMessage(
                 "The data member is not supposed to be null, to allow this; make the data member nullable. (Data member 'EnabledNoneNullableValue')");
     }
+
     [Theory]
     [InlineData(1, "1", "2", "3", false)]
     [InlineData(null, "1", "2", "3", false)]

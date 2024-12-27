@@ -1,11 +1,13 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 
-public partial class OptionalEntityTypeTests : MarshalAsserter<OptionalEnitityTypeDTO>
+public class OptionalEntityTypeTests : MarshalAsserter<OptionalEnitityTypeDTO>
 {
-    protected override IEnumerable<(OptionalEnitityTypeDTO element, Dictionary<string, AttributeValue> attributeValues)> Arguments()
+    protected override IEnumerable<(OptionalEnitityTypeDTO element, Dictionary<string, AttributeValue> attributeValues)>
+        Arguments()
     {
         var element1 = new OptionalEnitityTypeDTO { SampleField = "Hello" };
         yield return (element1, ToDict(element1));
@@ -14,8 +16,9 @@ public partial class OptionalEntityTypeTests : MarshalAsserter<OptionalEnitityTy
 
         static Dictionary<string, AttributeValue> ToDict(OptionalEnitityTypeDTO element)
         {
-            return new Dictionary<string, AttributeValue> {
-              {nameof(element.SampleField), new AttributeValue{S = element.SampleField}}
+            return new Dictionary<string, AttributeValue>
+            {
+                { nameof(element.SampleField), new AttributeValue { S = element.SampleField } }
             };
         }
     }
@@ -25,7 +28,8 @@ public partial class OptionalEntityTypeTests : MarshalAsserter<OptionalEnitityTy
         return OptionalEnitityTypeDTO.OptionalEnitityTypeDTOMarshaller.Marshall(element);
     }
 
-    protected override OptionalEnitityTypeDTO UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
+    protected override OptionalEnitityTypeDTO UnmarshallImplementation(
+        Dictionary<string, AttributeValue> attributeValues)
     {
         return OptionalEnitityTypeDTO.OptionalEnitityTypeDTOMarshaller.Unmarshall(attributeValues);
     }
@@ -34,6 +38,5 @@ public partial class OptionalEntityTypeTests : MarshalAsserter<OptionalEnitityTy
 [DynamoDBMarshaller]
 public partial record OptionalEnitityTypeDTO
 {
-
     public string? SampleField { get; set; }
 }

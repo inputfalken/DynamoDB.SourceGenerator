@@ -1,16 +1,16 @@
 using DynamoDBGenerator.Attributes;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
 [DynamoDBMarshaller(EntityType = typeof(CollectionClass))]
 public partial class CollectionTests
 {
-
     [Fact]
     public void Serialize_CollectionWithValues_IsIncluded()
     {
         var @class = new CollectionClass
         {
-            Collection = new[] {"1", "2", "3"}
+            Collection = new[] { "1", "2", "3" }
         };
 
         CollectionClassMarshaller
@@ -83,12 +83,13 @@ public partial class CollectionTests
             .And
             .ContainSingle(x => x.Value.L.Count == 0);
     }
+
     [Fact]
     public void Serialize_ArrayWithValues_IsIncluded()
     {
         var @class = new CollectionClass
         {
-            Array = new[] {"1", "2", "3"}
+            Array = new[] { "1", "2", "3" }
         };
 
         CollectionClassMarshaller
@@ -107,7 +108,7 @@ public partial class CollectionTests
                 )
             );
     }
-    
+
     [Fact]
     public void Serialize_EmptyList_IsIncluded()
     {
@@ -125,6 +126,7 @@ public partial class CollectionTests
             .And
             .ContainSingle(x => x.Value.L.Count == 0);
     }
+
     [Fact]
     public void Serialize_EmptyReadOnlyList_IsIncluded()
     {
@@ -148,7 +150,7 @@ public partial class CollectionTests
     {
         var @class = new CollectionClass
         {
-            Enumerable = new[] {"1", "2", "3"}
+            Enumerable = new[] { "1", "2", "3" }
         };
 
         CollectionClassMarshaller
@@ -173,7 +175,7 @@ public partial class CollectionTests
     {
         var @class = new CollectionClass
         {
-            KeyValuePairs = new[] {new KeyValuePair<string, int>("2", 1), new KeyValuePair<string, int>("1", 1)}
+            KeyValuePairs = new[] { new KeyValuePair<string, int>("2", 1), new KeyValuePair<string, int>("1", 1) }
         };
 
         CollectionClassMarshaller
@@ -219,7 +221,7 @@ public partial class CollectionTests
     {
         var @class = new CollectionClass
         {
-            List = new[] {"1", "2", "3"}
+            List = new[] { "1", "2", "3" }
         };
 
         CollectionClassMarshaller
@@ -244,7 +246,7 @@ public partial class CollectionTests
     {
         var @class = new CollectionClass
         {
-            ReadOnlyList = new[] {"1", "2", "3"}
+            ReadOnlyList = new[] { "1", "2", "3" }
         };
 
         CollectionClassMarshaller
@@ -281,6 +283,6 @@ public class CollectionClass
 
     [DynamoDBProperty]
     public IReadOnlyList<KeyValuePair<string, int>>? KeyValuePairs { get; set; }
-    
+
     public string[]? Array { get; set; }
 }

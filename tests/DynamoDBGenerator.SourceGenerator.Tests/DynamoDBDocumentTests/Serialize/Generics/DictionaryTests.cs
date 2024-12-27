@@ -1,10 +1,10 @@
 using DynamoDBGenerator.Attributes;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
 [DynamoDBMarshaller(EntityType = typeof(DictionaryClass))]
 public partial class DictionaryTests
 {
-
     [Fact]
     public void Serialize_DictionaryWithValues_IsIncluded()
     {
@@ -12,8 +12,8 @@ public partial class DictionaryTests
         {
             DictionaryImplementation = new Dictionary<string, int>
             {
-                {"two", 2},
-                {"one", 1}
+                { "two", 2 },
+                { "one", 1 }
             }
         };
 
@@ -32,12 +32,12 @@ public partial class DictionaryTests
                     ((string)y.Value.N).Should().Be("2");
                 }, y =>
                 {
-
                     ((string)y.Key).Should().Be("one");
                     ((string)y.Value.N).Should().Be("1");
                 });
             });
     }
+
     [Fact]
     public void Serialize_EmptyDictionary_IsIncluded()
     {

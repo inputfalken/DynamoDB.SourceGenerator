@@ -1,5 +1,6 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize;
 
 [DynamoDBMarshaller(EntityType = typeof(ConstructorOnlyClass))]
@@ -9,17 +10,17 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserial
 [DynamoDBMarshaller(EntityType = typeof(InlinedRecord))]
 [DynamoDBMarshaller(EntityType = typeof(ExplicitConstructorRecord))]
 [DynamoDBMarshaller(EntityType = typeof(InlineRecordWithNestedRecord))]
-[DynamoDBMarshaller(EntityType = typeof(ClassWithConstructorThatObjectInitializerShouldOnlyBeUsed), AccessName = "InitializerOnly")]
+[DynamoDBMarshaller(EntityType = typeof(ClassWithConstructorThatObjectInitializerShouldOnlyBeUsed),
+    AccessName = "InitializerOnly")]
 [DynamoDBMarshaller(EntityType = typeof(ClassWithConstructorThatShouldOnlyBeUsed), AccessName = "ConstructorOnly")]
 public partial class InitializationTests
 {
-
     [Fact]
     public void ClassWithConstructorThatObjectInitializerShouldOnlyBeUsed_Deserialize_ShouldNotThrow()
     {
         var act = () => InitializerOnly.Unmarshall(new Dictionary<string, AttributeValue>
         {
-            {"First", new AttributeValue {S = "ABC"}}
+            { "First", new AttributeValue { S = "ABC" } }
         });
 
         act.Should().NotThrow();
@@ -30,12 +31,12 @@ public partial class InitializationTests
     {
         var act = () => ConstructorOnly.Unmarshall(new Dictionary<string, AttributeValue>
         {
-            {"First", new AttributeValue {S = "ABC"}}
+            { "First", new AttributeValue { S = "ABC" } }
         });
 
         act.Should().NotThrow();
     }
-    
+
     [Fact]
     public void ConstructorOnlyClass_FindCorrespondingDataMember_ShouldSucceed()
     {
@@ -43,7 +44,7 @@ public partial class InitializationTests
             new Dictionary<string, AttributeValue>
             {
                 {
-                    "Prop1", new AttributeValue {S = "Hello"}
+                    "Prop1", new AttributeValue { S = "Hello" }
                 }
             }
         );
@@ -55,7 +56,7 @@ public partial class InitializationTests
     [Fact]
     public void ObjectInitializerOnlyClass_FindCorrespondingDataMember_ShouldSucceed()
     {
-        var @class = new ObjectInitializerOnlyClass {Prop2 = "Hello"};
+        var @class = new ObjectInitializerOnlyClass { Prop2 = "Hello" };
         var serializedClass = ObjectInitializerOnlyClassMarshaller.Marshall(@class);
         var deserializeClass = ObjectInitializerOnlyClassMarshaller.Unmarshall(serializedClass);
 
@@ -66,12 +67,12 @@ public partial class InitializationTests
     [Fact]
     public void ObjectInitializerMixedWithConstructorClass_FindCorrespondingDataMember_ShouldSucceed()
     {
-        var deserializeClass = ObjectInitializerMixedWithConstructorClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
-        {
-            {"Prop3", new AttributeValue {S = "Hello"}},
-            {"Prop4", new AttributeValue {S = "Hello2"}}
-
-        });
+        var deserializeClass = ObjectInitializerMixedWithConstructorClassMarshaller.Unmarshall(
+            new Dictionary<string, AttributeValue>
+            {
+                { "Prop3", new AttributeValue { S = "Hello" } },
+                { "Prop4", new AttributeValue { S = "Hello2" } }
+            });
 
         deserializeClass.Should().NotBeNull();
         deserializeClass.Prop3.Should().Be("Hello");
@@ -83,30 +84,32 @@ public partial class InitializationTests
     {
         var result = ConstructorClassWithMixedNameMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
-            {"SomethingElse", new AttributeValue {S = "Hello"}}
+            { "SomethingElse", new AttributeValue { S = "Hello" } }
         });
 
         result.SomethingElse.Should().Be("Hello");
     }
+
     [Fact]
     public void InlineRecord_FindingCorrespondingDataMembers_ShouldSucceed()
     {
         var inlinedRecord = InlinedRecordMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
-            {"FirstProperty", new AttributeValue {S = "Hello"}},
-            {"SecondProperty", new AttributeValue {S = "World"}}
+            { "FirstProperty", new AttributeValue { S = "Hello" } },
+            { "SecondProperty", new AttributeValue { S = "World" } }
         });
 
         inlinedRecord.FirstProperty.Should().Be("Hello");
         inlinedRecord.SecondProperty.Should().Be("World");
     }
+
     [Fact]
     public void ExplicitConstructorRecord_FindingCorrespondingDataMembers_ShouldSucceed()
     {
         var inlinedRecord = ExplicitConstructorRecordMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
-            {"FirstProperty", new AttributeValue {S = "Hello"}},
-            {"SecondProperty", new AttributeValue {S = "World"}}
+            { "FirstProperty", new AttributeValue { S = "Hello" } },
+            { "SecondProperty", new AttributeValue { S = "World" } }
         });
 
         inlinedRecord.FirstProperty.Should().Be("Hello");
@@ -153,13 +156,13 @@ public class ClassWithConstructorThatShouldOnlyBeUsed
 
 public record ExplicitConstructorRecord
 {
-
     [DynamoDBMarshallerConstructor]
     public ExplicitConstructorRecord(string first, string second)
     {
         FirstProperty = first;
         SecondProperty = second;
     }
+
     public string FirstProperty { get; }
     public string SecondProperty { get; }
 }
@@ -171,6 +174,7 @@ public class ConstructorOnlyClass
     {
         Prop1 = prop1;
     }
+
     public string Prop1 { get; }
 }
 
@@ -196,8 +200,8 @@ public class ConstructorClassWithMixedName
     [DynamoDBMarshallerConstructor]
     public ConstructorClassWithMixedName(string something)
     {
-
         SomethingElse = something;
     }
+
     public string SomethingElse { get; }
 }

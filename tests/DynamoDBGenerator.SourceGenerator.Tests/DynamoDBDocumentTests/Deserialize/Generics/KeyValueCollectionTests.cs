@@ -1,11 +1,11 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Generics;
 
 [DynamoDBMarshaller(EntityType = typeof(KeyValueCollectionClass))]
 public partial class KeyValueCollectionTests
 {
-
     [Fact]
     public void Deserialize_ICollection_ShouldBeListWithCorrectElements()
     {
@@ -21,17 +21,16 @@ public partial class KeyValueCollectionTests
                             {
                                 M = new Dictionary<string, AttributeValue>
                                 {
-                                    {"Key", new AttributeValue {S = "ABC"}},
-                                    {"Value", new AttributeValue {N = "1"}}
+                                    { "Key", new AttributeValue { S = "ABC" } },
+                                    { "Value", new AttributeValue { N = "1" } }
                                 }
                             },
                             new()
                             {
-
                                 M = new Dictionary<string, AttributeValue>
                                 {
-                                    {"Key", new AttributeValue {S = "Foo"}},
-                                    {"Value", new AttributeValue {N = "2"}}
+                                    { "Key", new AttributeValue { S = "Foo" } },
+                                    { "Value", new AttributeValue { N = "2" } }
                                 }
                             }
                         }
@@ -43,7 +42,8 @@ public partial class KeyValueCollectionTests
             .BeOfType<List<KeyValuePair<string, int>>>()
             .Which
             .Should()
-            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("ABC", 1)), x => x.Should().Be(new KeyValuePair<string, int>("Foo", 2)));
+            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("ABC", 1)),
+                x => x.Should().Be(new KeyValuePair<string, int>("Foo", 2)));
     }
 
     [Fact]
@@ -61,17 +61,16 @@ public partial class KeyValueCollectionTests
                             {
                                 M = new Dictionary<string, AttributeValue>
                                 {
-                                    {"Key", new AttributeValue {S = "ABC"}},
-                                    {"Value", new AttributeValue {N = "1"}}
+                                    { "Key", new AttributeValue { S = "ABC" } },
+                                    { "Value", new AttributeValue { N = "1" } }
                                 }
                             },
                             new()
                             {
-
                                 M = new Dictionary<string, AttributeValue>
                                 {
-                                    {"Key", new AttributeValue {S = "Foo"}},
-                                    {"Value", new AttributeValue {N = "2"}}
+                                    { "Key", new AttributeValue { S = "Foo" } },
+                                    { "Value", new AttributeValue { N = "2" } }
                                 }
                             }
                         }
@@ -83,7 +82,8 @@ public partial class KeyValueCollectionTests
             .BeOfType<KeyValuePair<string, int>[]>()
             .Which
             .Should()
-            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("ABC", 1)), x => x.Should().Be(new KeyValuePair<string, int>("Foo", 2)));
+            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("ABC", 1)),
+                x => x.Should().Be(new KeyValuePair<string, int>("Foo", 2)));
     }
 
     [Fact]
@@ -101,17 +101,16 @@ public partial class KeyValueCollectionTests
                             {
                                 M = new Dictionary<string, AttributeValue>
                                 {
-                                    {"Key", new AttributeValue {S = "ABC"}},
-                                    {"Value", new AttributeValue {N = "1"}}
+                                    { "Key", new AttributeValue { S = "ABC" } },
+                                    { "Value", new AttributeValue { N = "1" } }
                                 }
                             },
                             new()
                             {
-
                                 M = new Dictionary<string, AttributeValue>
                                 {
-                                    {"Key", new AttributeValue {S = "Foo"}},
-                                    {"Value", new AttributeValue {N = "2"}}
+                                    { "Key", new AttributeValue { S = "Foo" } },
+                                    { "Value", new AttributeValue { N = "2" } }
                                 }
                             }
                         }
@@ -123,7 +122,8 @@ public partial class KeyValueCollectionTests
             .BeOfType<List<KeyValuePair<string, int>>>()
             .Which
             .Should()
-            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("ABC", 1)), x => x.Should().Be(new KeyValuePair<string, int>("Foo", 2)));
+            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("ABC", 1)),
+                x => x.Should().Be(new KeyValuePair<string, int>("Foo", 2)));
     }
 
     [Fact]
@@ -141,17 +141,16 @@ public partial class KeyValueCollectionTests
                             {
                                 M = new Dictionary<string, AttributeValue>
                                 {
-                                    {"Key", new AttributeValue {S = "ABC"}},
-                                    {"Value", new AttributeValue {N = "1"}}
+                                    { "Key", new AttributeValue { S = "ABC" } },
+                                    { "Value", new AttributeValue { N = "1" } }
                                 }
                             },
                             new()
                             {
-
                                 M = new Dictionary<string, AttributeValue>
                                 {
-                                    {"Key", new AttributeValue {S = "Foo"}},
-                                    {"Value", new AttributeValue {N = "2"}}
+                                    { "Key", new AttributeValue { S = "Foo" } },
+                                    { "Value", new AttributeValue { N = "2" } }
                                 }
                             }
                         }
@@ -163,7 +162,8 @@ public partial class KeyValueCollectionTests
             .BeOfType<KeyValuePair<string, int>[]>()
             .Which
             .Should()
-            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("ABC", 1)), x => x.Should().Be(new KeyValuePair<string, int>("Foo", 2)));
+            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("ABC", 1)),
+                x => x.Should().Be(new KeyValuePair<string, int>("Foo", 2)));
     }
 
     [Fact]
@@ -181,17 +181,16 @@ public partial class KeyValueCollectionTests
                             {
                                 M = new Dictionary<string, AttributeValue>
                                 {
-                                    {"Key", new AttributeValue {S = "ABC"}},
-                                    {"Value", new AttributeValue {N = "1"}}
+                                    { "Key", new AttributeValue { S = "ABC" } },
+                                    { "Value", new AttributeValue { N = "1" } }
                                 }
                             },
                             new()
                             {
-
                                 M = new Dictionary<string, AttributeValue>
                                 {
-                                    {"Key", new AttributeValue {S = "Foo"}},
-                                    {"Value", new AttributeValue {N = "2"}}
+                                    { "Key", new AttributeValue { S = "Foo" } },
+                                    { "Value", new AttributeValue { N = "2" } }
                                 }
                             }
                         }
@@ -203,7 +202,8 @@ public partial class KeyValueCollectionTests
             .BeOfType<List<KeyValuePair<string, int>>>()
             .Which
             .Should()
-            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("ABC", 1)), x => x.Should().Be(new KeyValuePair<string, int>("Foo", 2)));
+            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("ABC", 1)),
+                x => x.Should().Be(new KeyValuePair<string, int>("Foo", 2)));
     }
 
     [Fact]
@@ -221,17 +221,16 @@ public partial class KeyValueCollectionTests
                             {
                                 M = new Dictionary<string, AttributeValue>
                                 {
-                                    {"Key", new AttributeValue {S = "ABC"}},
-                                    {"Value", new AttributeValue {N = "1"}}
+                                    { "Key", new AttributeValue { S = "ABC" } },
+                                    { "Value", new AttributeValue { N = "1" } }
                                 }
                             },
                             new()
                             {
-
                                 M = new Dictionary<string, AttributeValue>
                                 {
-                                    {"Key", new AttributeValue {S = "Foo"}},
-                                    {"Value", new AttributeValue {N = "2"}}
+                                    { "Key", new AttributeValue { S = "Foo" } },
+                                    { "Value", new AttributeValue { N = "2" } }
                                 }
                             }
                         }
@@ -243,9 +242,10 @@ public partial class KeyValueCollectionTests
             .BeOfType<KeyValuePair<string, int>[]>()
             .Which
             .Should()
-            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("ABC", 1)), x => x.Should().Be(new KeyValuePair<string, int>("Foo", 2)));
+            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("ABC", 1)),
+                x => x.Should().Be(new KeyValuePair<string, int>("Foo", 2)));
     }
-    
+
     [Fact]
     public void Deserialize_IEnumerable_ShouldContainCorrectValues()
     {
@@ -261,17 +261,16 @@ public partial class KeyValueCollectionTests
                             {
                                 M = new Dictionary<string, AttributeValue>
                                 {
-                                    {"Key", new AttributeValue {S = "ABC"}},
-                                    {"Value", new AttributeValue {N = "1"}}
+                                    { "Key", new AttributeValue { S = "ABC" } },
+                                    { "Value", new AttributeValue { N = "1" } }
                                 }
                             },
                             new()
                             {
-
                                 M = new Dictionary<string, AttributeValue>
                                 {
-                                    {"Key", new AttributeValue {S = "Foo"}},
-                                    {"Value", new AttributeValue {N = "2"}}
+                                    { "Key", new AttributeValue { S = "Foo" } },
+                                    { "Value", new AttributeValue { N = "2" } }
                                 }
                             }
                         }
@@ -280,9 +279,9 @@ public partial class KeyValueCollectionTests
             })
             .EnumerableInterface
             .Should()
-            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("ABC", 1)), x => x.Should().Be(new KeyValuePair<string, int>("Foo", 2)));
+            .SatisfyRespectively(x => x.Should().Be(new KeyValuePair<string, int>("ABC", 1)),
+                x => x.Should().Be(new KeyValuePair<string, int>("Foo", 2)));
     }
-
 }
 
 public class KeyValueCollectionClass
@@ -294,5 +293,4 @@ public class KeyValueCollectionClass
     public IReadOnlyList<KeyValuePair<string, int>>? ReadOnlyListInterface { get; set; }
     public ICollection<KeyValuePair<string, int>>? CollectionInterface { get; set; }
     public IReadOnlyCollection<KeyValuePair<string, int>>? ReadOnlyCollectionInterface { get; set; }
-
 }

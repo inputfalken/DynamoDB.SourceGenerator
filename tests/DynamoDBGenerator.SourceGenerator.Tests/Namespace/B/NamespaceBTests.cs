@@ -5,20 +5,19 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.Namespace.B;
 
 public class NamespaceBTests
 {
-    
     [Fact]
     public void Verify_Correct_NameType()
     {
         Container.ContainerMarshaller
             .AttributeExpressionNameTracker()
             .Should()
-            .BeOfType<B.Container.ContainerNames>();
-        
+            .BeOfType<Container.ContainerNames>();
+
         Container.ContainerMarshaller
             .AttributeExpressionNameTracker()
             .PropertyB
             .Should()
-            .BeOfType<B.Container.SampleClassNames>();
+            .BeOfType<Container.SampleClassNames>();
     }
 
     [Fact]
@@ -27,13 +26,13 @@ public class NamespaceBTests
         Container.ContainerMarshaller
             .AttributeExpressionValueTracker()
             .Should()
-            .BeOfType<B.Container.ContainerValues>();
-        
+            .BeOfType<Container.ContainerValues>();
+
         Container.ContainerMarshaller
             .AttributeExpressionValueTracker()
             .PropertyB
             .Should()
-            .BeOfType<B.Container.SampleClassValues>();
+            .BeOfType<Container.SampleClassValues>();
     }
 
     [Fact]

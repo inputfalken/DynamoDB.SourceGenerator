@@ -1,5 +1,6 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.CustomObjects;
 
 [DynamoDBMarshaller(EntityType = typeof(ParentClass))]
@@ -10,20 +11,22 @@ public partial class ChildClassTests
     {
         var result = ParentClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
-            {nameof(ParentClass.Id), new AttributeValue {S = "I am the root"}},
+            { nameof(ParentClass.Id), new AttributeValue { S = "I am the root" } },
             {
                 nameof(ParentClass.CustomClass), new AttributeValue
                 {
                     M = new Dictionary<string, AttributeValue>
                     {
-
-                        {nameof(ParentClass.CustomClass.PropertyId), new AttributeValue {S = "I am the property"}},
+                        { nameof(ParentClass.CustomClass.PropertyId), new AttributeValue { S = "I am the property" } },
                         {
                             nameof(ParentClass.CustomClass.GrandChild), new AttributeValue
                             {
                                 M = new Dictionary<string, AttributeValue>
                                 {
-                                    {nameof(ParentClass.ChildClass.GrandChildClass.GrandChildId), new AttributeValue {S = "I am the grandchild id"}}
+                                    {
+                                        nameof(ParentClass.ChildClass.GrandChildClass.GrandChildId),
+                                        new AttributeValue { S = "I am the grandchild id" }
+                                    }
                                 }
                             }
                         }
@@ -44,7 +47,7 @@ public partial class ChildClassTests
     {
         var result = ParentClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
-            {nameof(ParentClass.Id), new AttributeValue {S = "I am the root"}},
+            { nameof(ParentClass.Id), new AttributeValue { S = "I am the root" } }
         });
 
         result.Id.Should().Be("I am the root");
@@ -56,7 +59,7 @@ public partial class ChildClassTests
     {
         var result = ParentClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
-            {nameof(ParentClass.Id), new AttributeValue {S = "I am the root"}},
+            { nameof(ParentClass.Id), new AttributeValue { S = "I am the root" } },
             {
                 nameof(ParentClass.CustomClass), new AttributeValue
                 {
@@ -76,14 +79,13 @@ public partial class ChildClassTests
     {
         var result = ParentClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
-            {nameof(ParentClass.Id), new AttributeValue {S = "I am the root"}},
+            { nameof(ParentClass.Id), new AttributeValue { S = "I am the root" } },
             {
                 nameof(ParentClass.CustomClass), new AttributeValue
                 {
                     M = new Dictionary<string, AttributeValue>
                     {
-
-                        {nameof(ParentClass.CustomClass.PropertyId), new AttributeValue {S = "I am the property"}}
+                        { nameof(ParentClass.CustomClass.PropertyId), new AttributeValue { S = "I am the property" } }
                     }
                 }
             }
@@ -100,14 +102,13 @@ public partial class ChildClassTests
     {
         var result = ParentClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
-            {nameof(ParentClass.Id), new AttributeValue {S = "I am the root"}},
+            { nameof(ParentClass.Id), new AttributeValue { S = "I am the root" } },
             {
                 nameof(ParentClass.CustomClass), new AttributeValue
                 {
                     M = new Dictionary<string, AttributeValue>
                     {
-
-                        {nameof(ParentClass.CustomClass.PropertyId), new AttributeValue {S = "I am the property"}},
+                        { nameof(ParentClass.CustomClass.PropertyId), new AttributeValue { S = "I am the property" } },
                         {
                             nameof(ParentClass.CustomClass.GrandChild), new AttributeValue()
                         }

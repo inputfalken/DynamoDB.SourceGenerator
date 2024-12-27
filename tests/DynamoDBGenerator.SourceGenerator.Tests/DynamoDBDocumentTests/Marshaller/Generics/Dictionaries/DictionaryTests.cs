@@ -1,7 +1,6 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
-using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Collections.Asserters;
 
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Dictionaries;
 
@@ -15,8 +14,8 @@ public partial class DictionaryTests : RecordMarshalAsserter<Dictionary<string, 
     {
         new Dictionary<string, Entity>
         {
-            { Element1,new Entity("hey", "ho") },
-            { Element2, new ("hey1", "ho1") }
+            { Element1, new Entity("hey", "ho") },
+            { Element2, new Entity("hey1", "ho1") }
         },
         new Dictionary<string, Entity>
         {

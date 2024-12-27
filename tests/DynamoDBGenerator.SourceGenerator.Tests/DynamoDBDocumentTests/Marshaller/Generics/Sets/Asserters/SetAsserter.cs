@@ -1,26 +1,35 @@
-using System.ComponentModel;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Exceptions;
 using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Asserters;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets.Asserters;
 
 public abstract class SetAsserter<TSet, TElement> : MarshalAsserter<Container<TSet>> where TSet : IEnumerable<TElement>
 {
-    private readonly IEnumerable<TElement> _seed;
-    private readonly Func<IEnumerable<TElement>, TSet> _fn;
     private static readonly bool IsStringSet = typeof(TElement) == typeof(string);
+    private readonly Func<IEnumerable<TElement>, TSet> _fn;
+    private readonly IEnumerable<TElement> _seed;
+
+    protected SetAsserter(IEnumerable<TElement> seed, Func<IEnumerable<TElement>, TSet> fn)
+    {
+        _seed = seed;
+        _fn = fn;
+    }
 
 
-    protected override IEnumerable<(Container<TSet> element, Dictionary<string, AttributeValue> attributeValues)> Arguments()
+    protected override IEnumerable<(Container<TSet> element, Dictionary<string, AttributeValue> attributeValues)>
+        Arguments()
     {
         yield return CreateArguments(_seed);
     }
 
-    protected (Container<TSet> element, Dictionary<string, AttributeValue> attributeValues) CreateArguments(IEnumerable<TElement> arg)
+    protected (Container<TSet> element, Dictionary<string, AttributeValue> attributeValues) CreateArguments(
+        IEnumerable<TElement> arg)
     {
         var res = _fn(arg);
         if (res is not IReadOnlySet<TElement> or not ISet<TElement>)
-            throw new InvalidOperationException($"The type '{nameof(TSet)}' must either one of  'ISet<{nameof(TElement)}>, 'IReadonlySet<{nameof(TElement)}>'.");
+            throw new InvalidOperationException(
+                $"The type '{nameof(TSet)}' must either one of  'ISet<{nameof(TElement)}>, 'IReadonlySet<{nameof(TElement)}>'.");
 
         return (
             new Container<TSet>(res),
@@ -29,17 +38,11 @@ public abstract class SetAsserter<TSet, TElement> : MarshalAsserter<Container<TS
                 {
                     nameof(Container<TSet>.Element),
                     IsStringSet
-                        ? new AttributeValue {SS = res.Select(x => x?.ToString()).ToList()}
-                        : new AttributeValue {NS = res.Select(x => x?.ToString()).ToList()}
+                        ? new AttributeValue { SS = res.Select(x => x?.ToString()).ToList() }
+                        : new AttributeValue { NS = res.Select(x => x?.ToString()).ToList() }
                 }
             }
         );
-    }
-
-    protected SetAsserter(IEnumerable<TElement> seed, Func<IEnumerable<TElement>, TSet> fn)
-    {
-        _seed = seed;
-        _fn = fn;
     }
 
     [Fact]
@@ -61,7 +64,8 @@ public abstract class SetAsserter<TSet, TElement> : MarshalAsserter<Container<TS
     {
         var act = () => UnmarshallImplementation(new Dictionary<string, AttributeValue>());
 
-        act.Should().Throw<DynamoDBMarshallingException>().Which.MemberName.Should().Be(nameof(Container<TSet>.Element));
+        act.Should().Throw<DynamoDBMarshallingException>().Which.MemberName.Should()
+            .Be(nameof(Container<TSet>.Element));
     }
 
     [Fact]
@@ -81,8 +85,6 @@ public abstract class SetAsserter<TSet, TElement> : MarshalAsserter<Container<TS
                 else
                     x.Value.NS.Should().OnlyHaveUniqueItems();
             });
-
         });
     }
-
 }

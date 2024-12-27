@@ -1,6 +1,7 @@
 using AutoFixture;
 using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.Extensions;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.Extensions;
 
 [DynamoDBMarshaller(EntityType = typeof(OrderAttributeExpressionTests))]
@@ -27,7 +28,6 @@ public partial class ToAttributeExpressionTests
                         y.Value.S.Should().Be(order.UserEntity.Id);
                     }, y =>
                     {
-
                         y.Key.Should().Be(nameof(OrderAttributeExpressionTests.UserEntity.DisplayName));
                         y.Value.S.Should().Be(order.UserEntity.DisplayName);
                     });
@@ -46,7 +46,8 @@ public partial class ToAttributeExpressionTests
     {
         var order = _fixture.Create<OrderAttributeExpressionTests>();
         var result = OrderAttributeExpressionTestsMarshaller
-            .ToAttributeExpression(order, (x, y) => $"SET {x.UserEntity} = {y.UserEntity}", (x, y) => $"{x.Id} = {y.Id}");
+            .ToAttributeExpression(order, (x, y) => $"SET {x.UserEntity} = {y.UserEntity}",
+                (x, y) => $"{x.Id} = {y.Id}");
 
         // Order of Values and Names do not match the access pattern in the expression.
         // Their order is based on the the order of the yield returns of AccessedValues and AccessedNames.
@@ -68,7 +69,6 @@ public partial class ToAttributeExpressionTests
                             y.Value.S.Should().Be(order.UserEntity.Id);
                         }, y =>
                         {
-
                             y.Key.Should().Be(nameof(OrderAttributeExpressionTests.UserEntity.DisplayName));
                             y.Value.S.Should().Be(order.UserEntity.DisplayName);
                         });
@@ -89,7 +89,8 @@ public partial class ToAttributeExpressionTests
                     x.Value.Should().Be("User");
                 }
             );
-        result.Expressions.Should().SatisfyRespectively(x => x.Should().Be("SET #User = :p1"), x => x.Should().Be("#Id = :p2"));
+        result.Expressions.Should()
+            .SatisfyRespectively(x => x.Should().Be("SET #User = :p1"), x => x.Should().Be("#Id = :p2"));
     }
 
     [Fact]
@@ -168,5 +169,4 @@ public class OrderAttributeExpressionTests
         public string Id { get; set; } = null!;
         public string DisplayName { get; set; } = null!;
     }
-
 }

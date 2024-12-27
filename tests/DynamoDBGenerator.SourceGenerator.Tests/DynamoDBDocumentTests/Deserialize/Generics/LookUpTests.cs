@@ -1,5 +1,6 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.Generics;
 
 [DynamoDBMarshaller(EntityType = typeof(LookUpClass))]
@@ -9,7 +10,8 @@ public partial class LookUpTests
     public void Deserialize_EmptyLookup_IsIncluded()
     {
         LookUpClassMarshaller
-            .Unmarshall(new Dictionary<string, AttributeValue> {{nameof(LookUpClass.Lookup), new AttributeValue {M = new Dictionary<string, AttributeValue>()}}})
+            .Unmarshall(new Dictionary<string, AttributeValue>
+                { { nameof(LookUpClass.Lookup), new AttributeValue { M = new Dictionary<string, AttributeValue>() } } })
             .Should()
             .BeOfType<LookUpClass>()
             .Which
@@ -29,8 +31,16 @@ public partial class LookUpTests
                     {
                         M = new Dictionary<string, AttributeValue>
                         {
-                            {"first", new AttributeValue {L = new List<AttributeValue> {new() {N = "1"}, new() {N = "2"}}}},
-                            {"second", new AttributeValue {L = new List<AttributeValue> {new() {N = "3"}, new() {N = "4"}}}}
+                            {
+                                "first",
+                                new AttributeValue
+                                    { L = new List<AttributeValue> { new() { N = "1" }, new() { N = "2" } } }
+                            },
+                            {
+                                "second",
+                                new AttributeValue
+                                    { L = new List<AttributeValue> { new() { N = "3" }, new() { N = "4" } } }
+                            }
                         }
                     }
                 }
@@ -46,7 +56,6 @@ public partial class LookUpTests
                 x.Should().SatisfyRespectively(y => y.Should().Be(1), y => y.Should().Be(2));
             }, x =>
             {
-
                 x.Key.Should().Be("second");
                 x.Should().SatisfyRespectively(y => y.Should().Be(3), y => y.Should().Be(4));
             });

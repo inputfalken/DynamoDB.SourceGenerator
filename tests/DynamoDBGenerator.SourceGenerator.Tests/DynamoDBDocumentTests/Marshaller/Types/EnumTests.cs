@@ -197,7 +197,8 @@ public partial class DefaultNullableEnumTests : RecordMarshalAsserter<DayOfWeek?
 [DynamoDBMarshaller(EntityType = typeof(Container<DayOfWeek>))]
 public partial class UpperCaseEnumTests : RecordMarshalAsserter<DayOfWeek>
 {
-    public UpperCaseEnumTests() : base(Enum.GetValues<DayOfWeek>(), x =>  new AttributeValue { S = x.ToString().ToUpperInvariant() })
+    public UpperCaseEnumTests() : base(Enum.GetValues<DayOfWeek>(),
+        x => new AttributeValue { S = x.ToString().ToUpperInvariant() })
     {
     }
 
@@ -238,7 +239,8 @@ public partial class NullableUpperCaseEnumTests : RecordMarshalAsserter<DayOfWee
 [DynamoDBMarshaller(EntityType = typeof(Container<DayOfWeek>))]
 public partial class LowerCaseEnumTests : RecordMarshalAsserter<DayOfWeek>
 {
-    public LowerCaseEnumTests() : base(Enum.GetValues<DayOfWeek>(), x =>  new AttributeValue { S = x.ToString().ToLowerInvariant() })
+    public LowerCaseEnumTests() : base(Enum.GetValues<DayOfWeek>(),
+        x => new AttributeValue { S = x.ToString().ToLowerInvariant() })
     {
     }
 

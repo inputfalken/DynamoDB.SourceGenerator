@@ -1,5 +1,6 @@
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Deserialize.CustomObjects;
 
 [DynamoDBMarshaller(EntityType = typeof(SiblingClassOne))]
@@ -10,22 +11,22 @@ public partial class SiblingClassTests
     {
         var result = SiblingClassOneMarshaller
             .Unmarshall(new Dictionary<string, AttributeValue>
-        {
-            {nameof(SiblingClassOne.Id), new AttributeValue {S = "I am the root"}},
-
             {
-                nameof(SiblingClassOne.CustomClass), new AttributeValue
+                { nameof(SiblingClassOne.Id), new AttributeValue { S = "I am the root" } },
+
                 {
-                    M = new Dictionary<string, AttributeValue>
+                    nameof(SiblingClassOne.CustomClass), new AttributeValue
                     {
+                        M = new Dictionary<string, AttributeValue>
                         {
-                            nameof(SiblingClassOne.CustomClass.PropertyId), new AttributeValue
-                                {S = "I am the property"}
+                            {
+                                nameof(SiblingClassOne.CustomClass.PropertyId), new AttributeValue
+                                    { S = "I am the property" }
+                            }
                         }
                     }
                 }
-            }
-        });
+            });
 
         result.Id.Should().Be("I am the root");
         result.CustomClass.Should().NotBeNull();
@@ -35,11 +36,9 @@ public partial class SiblingClassTests
     [Fact]
     public void Serialize_CustomProperty_NotIncluded()
     {
-
         var result = SiblingClassOneMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
-            {nameof(SiblingClassOne.Id), new AttributeValue {S = "I am the root"}}
-
+            { nameof(SiblingClassOne.Id), new AttributeValue { S = "I am the root" } }
         });
 
         result.Id.Should().Be("I am the root");
@@ -49,10 +48,9 @@ public partial class SiblingClassTests
     [Fact]
     public void Serialize_CustomPropertyField_NotIncluded()
     {
-
         var result = SiblingClassOneMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
         {
-            {nameof(SiblingClassOne.Id), new AttributeValue {S = "I am the root"}},
+            { nameof(SiblingClassOne.Id), new AttributeValue { S = "I am the root" } },
 
             {
                 nameof(SiblingClassOne.CustomClass), new AttributeValue

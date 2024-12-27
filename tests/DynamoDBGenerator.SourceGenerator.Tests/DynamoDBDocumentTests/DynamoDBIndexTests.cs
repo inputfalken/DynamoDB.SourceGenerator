@@ -1,10 +1,10 @@
 using DynamoDBGenerator.Attributes;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 
 [DynamoDBMarshaller(EntityType = typeof(ReverseAccessIndexSetup))]
 public partial class DynamoDBIndexTests
 {
-
     [Fact]
     public void PartitionKey_Primary_KeyAccess()
     {
@@ -91,7 +91,6 @@ public partial class DynamoDBIndexTests
             .SatisfyRespectively(
                 x =>
                 {
-
                     x.Key.Should().Be(nameof(ReverseAccessIndexSetup.LsiRangeKeyAndGSiHash));
                     x.Value.S.Should().Be("I AM LSI RANGE KEY");
                 }
@@ -152,7 +151,6 @@ public partial class DynamoDBIndexTests
                 },
                 x =>
                 {
-
                     x.Key.Should().Be(nameof(ReverseAccessIndexSetup.LsiRangeKeyAndGSiHash));
                     x.Value.S.Should().Be("I AM LSI RANGE KEY");
                 }
@@ -173,7 +171,6 @@ public partial class DynamoDBIndexTests
                 }
             );
     }
-
 }
 
 public class ReverseAccessIndexSetup
@@ -204,6 +201,4 @@ public class ReverseAccessIndexSetup
     [DynamoDBLocalSecondaryIndexRangeKey(Lsi)]
     [DynamoDBGlobalSecondaryIndexHashKey(PartitionGsiOnly)]
     public string LsiRangeKeyAndGSiHash { get; set; } = null!;
-
-
 }

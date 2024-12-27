@@ -2,14 +2,17 @@ using Amazon.DynamoDBv2.Model;
 using AutoFixture;
 using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.Extensions;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Tuples;
 
-[DynamoDBMarshaller(EntityType = typeof(Animal), ArgumentType = typeof((string Id, Animal.Status Status, DateTime TimeStamp)), AccessName = "SetStatus")]
-[DynamoDBMarshaller(EntityType = typeof(Animal), AccessName = "SaveAnimal", ArgumentType = typeof((Animal animal, Animal.Status adopted, Animal.Status pending)))]
+[DynamoDBMarshaller(EntityType = typeof(Animal),
+    ArgumentType = typeof((string Id, Animal.Status Status, DateTime TimeStamp)), AccessName = "SetStatus")]
+[DynamoDBMarshaller(EntityType = typeof(Animal), AccessName = "SaveAnimal",
+    ArgumentType = typeof((Animal animal, Animal.Status adopted, Animal.Status pending)))]
 public partial class TupleArgumentTests
 {
-
     private static readonly Fixture Fixture;
+
     static TupleArgumentTests()
     {
         var fixture = new Fixture();
@@ -23,31 +26,40 @@ public partial class TupleArgumentTests
     {
         return new Dictionary<string, AttributeValue>
         {
-            {nameof(Animal.Id), new AttributeValue {S = animal.Id}},
-            {nameof(Animal.Name), new AttributeValue {S = animal.Name}},
-            {nameof(Animal.Siblings), new AttributeValue {L = animal.Siblings.Select(x => new AttributeValue {M = MapToAttributeValue(x)}).ToList()}},
+            { nameof(Animal.Id), new AttributeValue { S = animal.Id } },
+            { nameof(Animal.Name), new AttributeValue { S = animal.Name } },
+            {
+                nameof(Animal.Siblings),
+                new AttributeValue
+                    { L = animal.Siblings.Select(x => new AttributeValue { M = MapToAttributeValue(x) }).ToList() }
+            },
             {
                 nameof(Animal.From), new AttributeValue
                 {
                     M = new Dictionary<string, AttributeValue>
                     {
-                        {nameof(Animal.From.Country), new AttributeValue {S = animal.From.Country}}
+                        { nameof(Animal.From.Country), new AttributeValue { S = animal.From.Country } }
                     }
                 }
             },
-            {nameof(Animal.AdoptionStatus), new AttributeValue {N = ((int)animal.AdoptionStatus).ToString()}},
+            { nameof(Animal.AdoptionStatus), new AttributeValue { N = ((int)animal.AdoptionStatus).ToString() } },
             {
                 nameof(Animal.Metadata), new AttributeValue
                 {
                     M = new Dictionary<string, AttributeValue>
                     {
-                        {nameof(animal.Metadata.StatusSetAt), new AttributeValue {S = animal.Metadata.StatusSetAt?.ToString("O")}},
-                        {nameof(animal.Metadata.CreatedAt), new AttributeValue {S = animal.Metadata.CreatedAt.ToString("O")}}
+                        {
+                            nameof(animal.Metadata.StatusSetAt),
+                            new AttributeValue { S = animal.Metadata.StatusSetAt?.ToString("O") }
+                        },
+                        {
+                            nameof(animal.Metadata.CreatedAt),
+                            new AttributeValue { S = animal.Metadata.CreatedAt.ToString("O") }
+                        }
                     }
                 }
             }
         };
-
     }
 
     [Fact]
@@ -55,7 +67,8 @@ public partial class TupleArgumentTests
     {
         var animalBuilder = Fixture.Build<Animal>();
         var animal = animalBuilder
-            .With(x => x.Siblings, new[] {animalBuilder.Create(), animalBuilder.Create(), animalBuilder.Create()}).Create();
+            .With(x => x.Siblings, new[] { animalBuilder.Create(), animalBuilder.Create(), animalBuilder.Create() })
+            .Create();
 
         SaveAnimal
             .Marshall(animal)
@@ -69,7 +82,8 @@ public partial class TupleArgumentTests
     {
         var animalBuilder = Fixture.Build<Animal>();
         var animal = animalBuilder
-            .With(x => x.Siblings, new[] {animalBuilder.Create(), animalBuilder.Create(), animalBuilder.Create()}).Create();
+            .With(x => x.Siblings, new[] { animalBuilder.Create(), animalBuilder.Create(), animalBuilder.Create() })
+            .Create();
 
         SetStatus
             .Marshall(animal)
@@ -83,26 +97,27 @@ public partial class TupleArgumentTests
     {
         var animalBuilder = Fixture.Build<Animal>();
         var animal = animalBuilder
-            .With(x => x.Siblings, new[] {animalBuilder.Create(), animalBuilder.Create(), animalBuilder.Create()}).Create();
+            .With(x => x.Siblings, new[] { animalBuilder.Create(), animalBuilder.Create(), animalBuilder.Create() })
+            .Create();
 
         SetStatus
             .Unmarshall(MapToAttributeValue(animal))
             .Should()
             .BeEquivalentTo(animal);
-
     }
+
     [Fact]
     public void UnMarshall_SaveAnimal()
     {
         var animalBuilder = Fixture.Build<Animal>();
         var animal = animalBuilder
-            .With(x => x.Siblings, new[] {animalBuilder.Create(), animalBuilder.Create(), animalBuilder.Create()}).Create();
+            .With(x => x.Siblings, new[] { animalBuilder.Create(), animalBuilder.Create(), animalBuilder.Create() })
+            .Create();
 
         SaveAnimal
             .Unmarshall(MapToAttributeValue(animal))
             .Should()
             .BeEquivalentTo(animal);
-
     }
 
     [Fact]
@@ -110,7 +125,8 @@ public partial class TupleArgumentTests
     {
         var animalBuilder = Fixture.Build<Animal>();
         var animal = animalBuilder
-            .With(x => x.Siblings, new[] {animalBuilder.Create(), animalBuilder.Create(), animalBuilder.Create()}).Create();
+            .With(x => x.Siblings, new[] { animalBuilder.Create(), animalBuilder.Create(), animalBuilder.Create() })
+            .Create();
 
         SetStatus.Unmarshall(SetStatus.Marshall(animal)).Should().BeEquivalentTo(animal);
     }
@@ -120,7 +136,8 @@ public partial class TupleArgumentTests
     {
         var animalBuilder = Fixture.Build<Animal>();
         var animal = animalBuilder
-            .With(x => x.Siblings, new[] {animalBuilder.Create(), animalBuilder.Create(), animalBuilder.Create()}).Create();
+            .With(x => x.Siblings, new[] { animalBuilder.Create(), animalBuilder.Create(), animalBuilder.Create() })
+            .Create();
 
         SaveAnimal.Unmarshall(SaveAnimal.Marshall(animal)).Should().BeEquivalentTo(animal);
     }
@@ -143,54 +160,57 @@ public partial class TupleArgumentTests
         {
             var (attributeExpression, expectedId, status) = o;
 
-            attributeExpression.Expressions.Should().BeEquivalentTo("#Id = :p1 AND #AdoptionStatus <> :p2", "SET #AdoptionStatus = :p2, #Metadata.#StatusSetAt = :p3");
+            attributeExpression.Expressions.Should().BeEquivalentTo("#Id = :p1 AND #AdoptionStatus <> :p2",
+                "SET #AdoptionStatus = :p2, #Metadata.#StatusSetAt = :p3");
 
             attributeExpression.Names.Should().BeEquivalentTo(new Dictionary<string, string>
             {
-                {"#Id", "Id"},
-                {"#AdoptionStatus", "AdoptionStatus"},
-                {"#Metadata", "Metadata"},
-                {"#StatusSetAt", "StatusSetAt"}
+                { "#Id", "Id" },
+                { "#AdoptionStatus", "AdoptionStatus" },
+                { "#Metadata", "Metadata" },
+                { "#StatusSetAt", "StatusSetAt" }
             });
 
             attributeExpression.Values.Should().BeEquivalentTo(new Dictionary<string, AttributeValue>
             {
-                {":p1", new AttributeValue {S = expectedId}},
-                {":p2", new AttributeValue {N = ((int)status).ToString()}},
-                {":p3", new AttributeValue {S = timeStamp.ToString("O")}}
+                { ":p1", new AttributeValue { S = expectedId } },
+                { ":p2", new AttributeValue { N = ((int)status).ToString() } },
+                { ":p3", new AttributeValue { S = timeStamp.ToString("O") } }
             });
         });
-
     }
-    
+
     [Fact]
     public void ToAttributeExpression_SaveAnimal()
     {
         var animal = Fixture.Create<Animal>();
-        var @case = SaveAnimal.ToAttributeExpression((animal, Animal.Status.Adopted, Animal.Status.Pending), (x, y) => $"{x.Id} = {y.animal.Id} AND ({x.AdoptionStatus} <> {y.adopted} OR {x.AdoptionStatus} <> {y.pending})");
+        var @case = SaveAnimal.ToAttributeExpression((animal, Animal.Status.Adopted, Animal.Status.Pending),
+            (x, y) =>
+                $"{x.Id} = {y.animal.Id} AND ({x.AdoptionStatus} <> {y.adopted} OR {x.AdoptionStatus} <> {y.pending})");
 
         @case.Expressions.Should().BeEquivalentTo("#Id = :p1 AND (#AdoptionStatus <> :p2 OR #AdoptionStatus <> :p3)");
         @case.Names.Should().BeEquivalentTo(new Dictionary<string, string>
         {
-            {"#Id", "Id"},
-            {"#AdoptionStatus", "AdoptionStatus"}
+            { "#Id", "Id" },
+            { "#AdoptionStatus", "AdoptionStatus" }
         });
 
         @case.Values.Should().BeEquivalentTo(new Dictionary<string, AttributeValue>
         {
-            {":p1", new AttributeValue{S = animal.Id}},
-            {":p2", new AttributeValue{N = ((int)Animal.Status.Adopted).ToString()}},
-            {":p3", new AttributeValue{N = ((int)Animal.Status.Pending).ToString()}},
+            { ":p1", new AttributeValue { S = animal.Id } },
+            { ":p2", new AttributeValue { N = ((int)Animal.Status.Adopted).ToString() } },
+            { ":p3", new AttributeValue { N = ((int)Animal.Status.Pending).ToString() } }
         });
-
     }
 
-    public record Animal(string Id, string Name, IReadOnlyList<Animal> Siblings, Animal.Origin From, Animal.Status AdoptionStatus, Animal.MetaData Metadata)
+    public record Animal(
+        string Id,
+        string Name,
+        IReadOnlyList<Animal> Siblings,
+        Animal.Origin From,
+        Animal.Status AdoptionStatus,
+        Animal.MetaData Metadata)
     {
-        public record Origin(string Country);
-
-        public record MetaData(DateTime? StatusSetAt, DateTime CreatedAt);
-
         public enum Status
         {
             Adopted = 1,
@@ -198,5 +218,9 @@ public partial class TupleArgumentTests
             Denied = 3,
             None = 4
         }
+
+        public record Origin(string Country);
+
+        public record MetaData(DateTime? StatusSetAt, DateTime CreatedAt);
     }
 }

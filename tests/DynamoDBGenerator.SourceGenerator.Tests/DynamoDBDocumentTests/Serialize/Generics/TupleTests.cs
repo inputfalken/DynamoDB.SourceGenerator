@@ -1,4 +1,5 @@
 using DynamoDBGenerator.Attributes;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.Generics;
 
 [DynamoDBMarshaller(EntityType = typeof(TupleClass))]
@@ -18,12 +19,10 @@ public partial class TupleTests
                     x.Value.N.Should().Be("1");
                 }, x =>
                 {
-
                     x.Key.Should().Be("Item2");
                     x.Value.N.Should().Be("2");
                 }
             );
-
     }
 
     [Fact]
@@ -53,6 +52,7 @@ public partial class TupleTests
                 }
             );
     }
+
     [Fact]
     public void Serialize_XAndYTuple_Properties()
     {
@@ -122,6 +122,7 @@ public partial class TupleTests
                 }
             );
     }
+
     [Fact]
     public void Serialize_XY_Property()
     {

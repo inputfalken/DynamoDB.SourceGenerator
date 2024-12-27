@@ -11,7 +11,8 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshall
 public partial class OverrideDefaultConverterWithParamTests : RecordMarshalAsserter<DateTime>
 {
     public OverrideDefaultConverterWithParamTests() :
-        base(new[] { new DateTime(2023, 12, 31), new DateTime(2023, 12, 30) }, UnixEpochDateTimeConverter.WriteImplementation)
+        base(new[] { new DateTime(2023, 12, 31), new DateTime(2023, 12, 30) },
+            UnixEpochDateTimeConverter.WriteImplementation)
     {
     }
 
@@ -37,11 +38,6 @@ public partial class OverrideDefaultConverterWithParamTests : RecordMarshalAsser
 
     public class UnixEpochDateTimeConverter : IValueTypeConverter<DateTime>
     {
-        public static AttributeValue WriteImplementation(DateTime element)
-        {
-            return new AttributeValue { N = new DateTimeOffset(element).ToUnixTimeSeconds().ToString() };
-        }
-
         public DateTime? Read(AttributeValue attributeValue)
         {
             return long.TryParse(attributeValue.N, out var epoch)
@@ -52,6 +48,11 @@ public partial class OverrideDefaultConverterWithParamTests : RecordMarshalAsser
         public AttributeValue Write(DateTime element)
         {
             return WriteImplementation(element);
+        }
+
+        public static AttributeValue WriteImplementation(DateTime element)
+        {
+            return new AttributeValue { N = new DateTimeOffset(element).ToUnixTimeSeconds().ToString() };
         }
     }
 }

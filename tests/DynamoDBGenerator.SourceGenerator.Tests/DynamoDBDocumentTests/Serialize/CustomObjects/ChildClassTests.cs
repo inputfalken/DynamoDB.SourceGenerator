@@ -1,4 +1,5 @@
 using DynamoDBGenerator.Attributes;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Serialize.CustomObjects;
 
 [DynamoDBMarshaller(EntityType = typeof(ParentClass))]
@@ -41,7 +42,8 @@ public partial class ChildClassTests
                             ((string)y.Key).Should().Be(nameof(ParentClass.ChildClass.GrandChild));
                             y.Value.M.Should().SatisfyRespectively(z =>
                             {
-                                ((string)z.Key).Should().Be(nameof(ParentClass.ChildClass.GrandChildClass.GrandChildId));
+                                ((string)z.Key).Should()
+                                    .Be(nameof(ParentClass.ChildClass.GrandChildClass.GrandChildId));
                                 ((string)z.Value.S).Should().Be("I am the grandchild id");
                             });
                         }

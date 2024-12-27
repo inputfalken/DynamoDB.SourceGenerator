@@ -7,8 +7,6 @@ namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshall
 [DynamoDBMarshaller(EntityType = typeof(Container<ILookup<string, Entity>>))]
 public partial class ILookupTests : RecordMarshalAsserter<ILookup<string, ILookupTests.Entity>>
 {
-    public record Entity(string Foo, string Bar);
-
     public ILookupTests() : base(new[]
     {
         new List<string>
@@ -65,6 +63,8 @@ public partial class ILookupTests : RecordMarshalAsserter<ILookup<string, ILooku
     {
         return ContainerMarshaller.Marshall(element);
     }
+
+    public record Entity(string Foo, string Bar);
 }
 
 //[DynamoDBMarshaller(EntityType = typeof(Container<ILookup<string, Entity?>>))]

@@ -1,4 +1,5 @@
 using DynamoDBGenerator.Attributes;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 
 [DynamoDBMarshaller(EntityType = typeof(LsiHashAndRangeKey))]
@@ -21,6 +22,7 @@ public partial class DynamoDBLsiKeyMarshallerTests
             .Should()
             .Be(LsiHashAndRangeKey.IndexName);
     }
+
     [Fact]
     public void PartitionKey_MissMatchedIndexName_ShouldThrow()
     {
@@ -79,7 +81,6 @@ public partial class DynamoDBLsiKeyMarshallerTests
             .Should()
             .SatisfyRespectively(x =>
                 {
-
                     x.Key.Should().Be(nameof(LsiHashAndRangeKey.Email));
                     x.Value.S.Should().Be("something@domain.com");
                 },
@@ -87,11 +88,9 @@ public partial class DynamoDBLsiKeyMarshallerTests
                 {
                     x.Key.Should().Be(nameof(LsiHashAndRangeKey.EmailRanking));
                     x.Value.N.Should().Be("1");
-
                 }
             );
     }
-
 }
 
 public class LsiHashAndRangeKey

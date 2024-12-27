@@ -1,4 +1,5 @@
 using DynamoDBGenerator.Attributes;
+
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests;
 
 [DynamoDBMarshaller(EntityType = typeof(GsiHashAndRangeKey))]
@@ -80,7 +81,6 @@ public partial class DynamoDBGsiKeyMarshallerTests
             .Should()
             .SatisfyRespectively(x =>
                 {
-
                     x.Key.Should().Be(nameof(GsiHashAndRangeKey.Email));
                     x.Value.S.Should().Be("something@domain.com");
                 },
@@ -88,7 +88,6 @@ public partial class DynamoDBGsiKeyMarshallerTests
                 {
                     x.Key.Should().Be(nameof(GsiHashAndRangeKey.EmailRanking));
                     x.Value.N.Should().Be("1");
-
                 }
             );
     }
