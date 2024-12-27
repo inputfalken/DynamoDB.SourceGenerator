@@ -8,29 +8,36 @@ public readonly struct MarshallerOptions
 {
     private readonly INamedTypeSymbol _convertersType;
     private readonly int _enumStrategy;
-    public const string Name = "MarshallerOptions";
+    // TODO name needs to take namespace etc into account in order to make it accessible from the outside.
+    private const string TypeName = "MarshallerOptions";
     public const string FieldReference = "_options";
     public const string ParamReference = "options";
     private const string ConvertersProperty = "Converters";
-    public const string FieldDeclaration = $"private readonly {Name} {FieldReference};";
     private readonly string _converterFullPath;
+    public string FullName { get; }
+    public string FieldDeclaration { get; }
 
-    private MarshallerOptions(INamedTypeSymbol convertersType,
-        IEnumerable<KeyValuePair<string, ITypeSymbol>> converters, int enumStrategy)
+    
+    private MarshallerOptions(
+        INamedTypeSymbol originalType,
+        INamedTypeSymbol convertersType,
+        IEnumerable<KeyValuePair<string, ITypeSymbol>> converters,
+        int enumStrategy
+    )
     {
         Converters = converters.ToDictionary(x => x.Value, x => x, SymbolEqualityComparer.Default);
         _convertersType = convertersType;
         _enumStrategy = enumStrategy;
         _converterFullPath = _convertersType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        FullName = $"{originalType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{TypeName}";
+        FieldDeclaration = $"private readonly {FullName} {FieldReference};";
     }
 
     public string? TryInstantiate()
     {
         if (_convertersType.InstanceConstructors.Length is 0 ||
             _convertersType.InstanceConstructors.All(x => x.Parameters.Length is 0))
-        {
-            return $"new {Name}(new {_converterFullPath}())";
-        }
+            return $"new {FullName}(new {_converterFullPath}())";
 
         return null;
     }
@@ -92,23 +99,23 @@ public readonly struct MarshallerOptions
     {
         get
         {
-            var body = $"public {Name} ({_converterFullPath} converters)"
+            var body = $"public {TypeName} ({_converterFullPath} converters)"
                 .CreateScope($"{ConvertersProperty} = converters;")
                 .Append($"public {_converterFullPath} {ConvertersProperty} {{ get; }}");
 
-            return $"public sealed class {Name}".CreateScope(body);
+            return $"public sealed class {TypeName}".CreateScope(body);
         }
     }
 
-    public static MarshallerOptions Create(INamedTypeSymbol typeSymbol, int enumStrategy)
+    public static MarshallerOptions Create(INamedTypeSymbol orignalType,INamedTypeSymbol converterTypeSymbol, int enumStrategy)
     {
-        var keyValuePairs = typeSymbol
+        var keyValuePairs = converterTypeSymbol
             .GetMembersToObject()
             .Select(ConverterDataMemberOrNull)
             .Where(x => x.HasValue)
             .Select(x => x!.Value);
 
-        return new MarshallerOptions(typeSymbol, keyValuePairs, enumStrategy);
+        return new MarshallerOptions(orignalType, converterTypeSymbol, keyValuePairs, enumStrategy);
     }
 
     private static KeyValuePair<string, ITypeSymbol>? ConverterDataMemberOrNull(ISymbol symbol)

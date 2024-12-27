@@ -1,64 +1,100 @@
+using System.Diagnostics;
 using DynamoDBGenerator.SourceGenerator.Extensions;
 using DynamoDBGenerator.SourceGenerator.Generations;
-using DynamoDBGenerator.SourceGenerator.Generations.Marshalling;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 using static DynamoDBGenerator.SourceGenerator.Constants.DynamoDBGenerator.Marshaller;
+using static DynamoDBGenerator.SourceGenerator.Generations.Marshalling.Marshaller;
+
 namespace DynamoDBGenerator.SourceGenerator;
 
 public static class MarshallerFactory
 {
-    private static IEnumerable<string> CreateImplementations(IEnumerable<DynamoDBMarshallerArguments> arguments,
+    private static IEnumerable<string> CreateImplementations(
+        ITypeSymbol parentType,
+        DynamoDBMarshallerArguments[] arguments,
         MarshallerOptions options)
     {
-        foreach (var s in options.ClassDeclaration)
-            yield return s;
-
         foreach (var argument in arguments)
         {
-            var (expressionValueMethod, valueTrackerTypeName) = AttributeExpressionValue.RootSignature(argument.ArgumentType);
-            var (expressionMethodName, nameTrackerTypeName) = AttributeExpressionName.RootSignature(argument.EntityTypeSymbol);
-
-            var entityTypeName = argument.AnnotatedEntityType;
-            var argumentTypeName = argument.AnnotatedArgumentType;
-
-            var constructor = $"public {argument.ImplementationName}({MarshallerOptions.Name} {MarshallerOptions.ParamReference})"
-                .CreateScope($"{MarshallerOptions.FieldReference} = {MarshallerOptions.ParamReference};", $"{Marshaller.KeyMarshaller.PrimaryKeyMarshallerReference} = {Marshaller.KeyMarshaller.AssignmentRoot(argument.EntityTypeSymbol)};");
-            var interfaceImplementation = constructor
-                .Concat(Marshaller.RootSignature(argument.EntityTypeSymbol, entityTypeName))
-                .Concat(UnMarshaller.RootSignature(argument.EntityTypeSymbol, entityTypeName))
-                .Concat(Marshaller.KeyMarshaller.IndexKeyMarshallerRootSignature(argument.EntityTypeSymbol))
+            var (expressionValueMethod, valueTrackerTypeName) = AttributeExpressionValue.RootSignature(parentType, argument.ArgumentType);
+            var (expressionMethodName, nameTrackerTypeName) = AttributeExpressionName.RootSignature(parentType, argument.EntityTypeSymbol);
+            var constructor =
+                $"public {argument.ImplementationName}({options.FullName} {MarshallerOptions.ParamReference})"
+                    .CreateScope($"{MarshallerOptions.FieldReference} = {MarshallerOptions.ParamReference};",
+                        $"{KeyMarshaller.PrimaryKeyMarshallerReference} = {KeyMarshaller.AssignmentRoot(argument.EntityTypeSymbol)};");
+            
+            var implementation = constructor
+                .Concat(RootSignature(argument.EntityTypeSymbol, argument.AnnotatedEntityType))
+                .Concat(UnMarshaller.RootSignature(argument.EntityTypeSymbol, argument.AnnotatedEntityType))
+                .Concat(KeyMarshaller.IndexKeyMarshallerRootSignature(argument.EntityTypeSymbol))
                 .Concat(expressionValueMethod)
                 .Append(expressionMethodName)
-                .Append(Marshaller.KeyMarshaller.PrimaryKeyMarshallerDeclaration)
-                .Prepend(MarshallerOptions.FieldDeclaration);
+                .Append(KeyMarshaller.PrimaryKeyMarshallerDeclaration)
+                .Prepend(options.FieldDeclaration)
+                .ScopeTo($"file sealed class {argument.ImplementationName}: {Interface}<{argument.AnnotatedEntityType}, {argument.AnnotatedArgumentType}, {nameTrackerTypeName}, {valueTrackerTypeName}>");
 
-            var classImplementation = $"private sealed class {argument.ImplementationName}: {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}>"
-                .CreateScope(interfaceImplementation);
-
-            yield return options.TryInstantiate() switch
-            {
-                {} arg =>
-                    $"public static {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.AccessName} {{ get; }} = new {argument.ImplementationName}({arg});",
-                null => $"public static {Interface}<{entityTypeName}, {argumentTypeName}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.AccessName}({MarshallerOptions.Name} options) => new {argument.ImplementationName}(options);"
-            };
-
-            foreach (var s in classImplementation)
-                yield return s;
+            foreach (var row in implementation)
+                yield return row;
         }
     }
 
-
-    public static IEnumerable<string> CreateRepository(IEnumerable<DynamoDBMarshallerArguments> arguments, MarshallerOptions options)
+    private static IEnumerable<string> PublicProperties(ITypeSymbol parentType, DynamoDBMarshallerArguments[] arguments,
+        MarshallerOptions options)
     {
-        var loadedArguments = arguments.ToArray();
-        var getDynamoDbProperties = TypeExtensions.CacheFactory(SymbolEqualityComparer.IncludeNullability, TypeExtensions.GetDynamoDbProperties);
-        var code = CreateImplementations(loadedArguments, options)
-            .Concat(Marshaller.CreateClass(loadedArguments, getDynamoDbProperties, options))
-            .Concat(UnMarshaller.CreateClass(loadedArguments, getDynamoDbProperties, options))
-            .Concat(AttributeExpressionName.CreateClasses(loadedArguments, getDynamoDbProperties, options))
-            .Concat(AttributeExpressionValue.CreateExpressionAttributeValue(loadedArguments, getDynamoDbProperties, options));
+        foreach (var argument in arguments)
+        {
+            var valueTrackerTypeName = AttributeExpressionValue.GloballyAccessibleName(parentType, argument.ArgumentType);
+            var nameTrackerTypeName = AttributeExpressionName.GloballyAccessibleName(parentType, argument.EntityTypeSymbol);
+            yield return options.TryInstantiate() switch
+            {
+                { } arg => $"public static {Interface}<{argument.AnnotatedEntityType}, {argument.AnnotatedArgumentType}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.AccessName} {{ get; }} = new {argument.ImplementationName}({arg});",
+                null => $"public static {Interface}<{argument.AnnotatedEntityType}, {argument.AnnotatedArgumentType}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.AccessName}({options.FullName} options) => new {argument.ImplementationName}(options);"
+            };
+        }
+    }
 
-        return code;
+    public static IEnumerable<string> Create(
+        INamedTypeSymbol originatingType,
+        DynamoDBMarshallerArguments[] arguments,
+        MarshallerOptions options
+    )
+    {
+        var timestamp = Stopwatch.GetTimestamp();
+        yield return $@"// <auto-generated | TimeStamp: {DateTime.Now:yyyy-MM-dd HH:mm:ss}>
+#nullable enable
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using {Constants.AWSSDK_DynamoDBv2.Namespace.ModelFullName};
+using {Constants.DynamoDBGenerator.Namespace.Root};
+using {Constants.DynamoDBGenerator.Namespace.AttributesFullName};
+using {Constants.DynamoDBGenerator.Namespace.ExceptionsFullName};
+using {Constants.DynamoDBGenerator.Namespace.InternalFullName};";
+
+        var dynamoDbProperties = TypeExtensions.CacheFactory(
+            SymbolEqualityComparer.IncludeNullability,
+            TypeExtensions.GetDynamoDbProperties
+        );
+
+        var partialClassCode = PublicProperties(originatingType, arguments, options)
+            .Concat(options.ClassDeclaration)
+            .Concat(AttributeExpressionName.CreateClasses(arguments, dynamoDbProperties, options))
+            .Concat(AttributeExpressionValue.CreateClasses(arguments, dynamoDbProperties, options));
+
+        var code = originatingType.NamespaceDeclaration(
+            originatingType
+                .TypeDeclaration()
+                .CreateScope(partialClassCode)
+                .Concat(CreateImplementations(originatingType, arguments, options))
+                .Concat(CreateClass(arguments, dynamoDbProperties, options))
+                .Concat(UnMarshaller.CreateClass(arguments, dynamoDbProperties, options))
+        );
+
+        foreach (var line in code)
+            yield return line;
+
+        yield return $"// <auto-generated | Duration {TimeSpan.FromTicks(Stopwatch.GetTimestamp() - timestamp)}>";
     }
 }

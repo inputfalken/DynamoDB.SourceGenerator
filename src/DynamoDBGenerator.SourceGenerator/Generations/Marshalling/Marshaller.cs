@@ -14,7 +14,7 @@ internal static partial class Marshaller
 
     internal static IEnumerable<string> CreateClass(DynamoDBMarshallerArguments[] arguments, Func<ITypeSymbol, DynamoDbDataMember[]> getDynamoDbProperties, MarshallerOptions options)
     {
-        return $"private static class {ClassName}".CreateScope(TypeContent(arguments, getDynamoDbProperties, options));
+        return $"file static class {ClassName}".CreateScope(TypeContent(arguments, getDynamoDbProperties, options));
     }
     private static CodeFactory CreateDictionaryMethod(ITypeSymbol typeSymbol, Func<ITypeSymbol, DynamoDbDataMember[]> fn, MarshallerOptions options)
     {
@@ -51,7 +51,7 @@ internal static partial class Marshaller
                 .Append($"return {DictionaryReference};"));
 
         var code =
-            $"public static Dictionary<string, AttributeValue>{(isNullable ? '?' : null)} {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, {MarshallerOptions.Name} {MarshallerOptions.ParamReference}, string? {DataMember} = null)"
+            $"public static Dictionary<string, AttributeValue>{(isNullable ? '?' : null)} {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)"
                 .CreateScope(body);
 
         return new CodeFactory(code, properties.Select(y => y.Type));
@@ -81,19 +81,19 @@ internal static partial class Marshaller
             {
                 { IsValueType: true } => type switch
                 {
-                    { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => CreateSignature(type)
+                    { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => CreateSignature(type, options)
                         .CreateScope($"return {ParamReference} is not null ? {conversion} : null;")
                         .ToConversion(),
-                    _ => CreateSignature(type)
+                    _ => CreateSignature(type, options)
                         .CreateScope($"return {conversion};")
                         .ToConversion()
                 },
                 { IsReferenceType: true } => type switch
                 {
-                    { NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated } => CreateSignature(type)
+                    { NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated } => CreateSignature(type, options)
                         .CreateScope($"return {ParamReference} is not null ? {conversion} : null;")
                         .ToConversion(),
-                    _ => CreateSignature(type)
+                    _ => CreateSignature(type, options)
                         .CreateScope($"return {ParamReference} is not null ? {conversion} : throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
                         .ToConversion()
                 },
@@ -103,7 +103,7 @@ internal static partial class Marshaller
 
         return type.TypeIdentifier() switch
         {
-            SingleGeneric singleGeneric when CreateSignature(singleGeneric.TypeSymbol) is var signature => singleGeneric.Type switch
+            SingleGeneric singleGeneric when CreateSignature(singleGeneric.TypeSymbol, options) is var signature => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => signature
                     .CreateScope($"return {ParamReference} is not null ? {InvokeMarshallerMethod(singleGeneric.T, $"{ParamReference}.Value", DataMember, options)} : null;")
@@ -133,7 +133,7 @@ internal static partial class Marshaller
             },
             KeyValueGeneric {TKey.SpecialType: not SpecialType.System_String} keyValueGeneric => throw new ArgumentException("Only strings are supported for for TKey",
                 UncoveredConversionException(keyValueGeneric, nameof(CreateMethod))),
-            KeyValueGeneric keyValueGeneric when CreateSignature(keyValueGeneric.TypeSymbol) is var signature => keyValueGeneric.Type switch
+            KeyValueGeneric keyValueGeneric when CreateSignature(keyValueGeneric.TypeSymbol, options) is var signature => keyValueGeneric.Type switch
             {
                 KeyValueGeneric.SupportedType.Dictionary => signature
                     .CreateScope($"return {ParamReference} is not null ? {AttributeValueUtilityFactory.FromDictionary}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(keyValueGeneric.TValue, "a", "d", options, "o")}{(keyValueGeneric.TValue.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)}) : {Else(keyValueGeneric)};")
@@ -149,11 +149,11 @@ internal static partial class Marshaller
         };
 
     }
-    private static string CreateSignature(ITypeSymbol typeSymbol)
+    private static string CreateSignature(ITypeSymbol typeSymbol, MarshallerOptions options)
     {
         return typeSymbol.IsNullable()
-            ? $"public static AttributeValue? {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, {MarshallerOptions.Name} {MarshallerOptions.ParamReference}, string? {DataMember} = null)"
-            : $"public static AttributeValue {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, {MarshallerOptions.Name} {MarshallerOptions.ParamReference}, string? {DataMember} = null)";
+            ? $"public static AttributeValue? {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)"
+            : $"public static AttributeValue {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)";
     }
 
     private static string Else(TypeIdentifier typeIdentifier)
