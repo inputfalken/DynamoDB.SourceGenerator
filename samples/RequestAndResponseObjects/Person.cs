@@ -31,5 +31,3 @@ public partial class Person
         public string Email { get; set; }
     }
 }
-
-
