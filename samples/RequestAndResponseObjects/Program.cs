@@ -2,8 +2,8 @@
 
 using System.Net;
 using Amazon.DynamoDBv2.Model;
-using Dto;
 using DynamoDBGenerator.Extensions;
+using RequestAndResponseObjects;
 
 static GetItemRequest CreateGetItemRequest()
 {

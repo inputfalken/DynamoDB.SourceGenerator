@@ -1,7 +1,7 @@
 using Amazon.DynamoDBv2.DataModel;
 using DynamoDBGenerator.Attributes;
 
-namespace Dto;
+namespace RequestAndResponseObjects;
 
 // A typical scenario would be that you would use multiple DynamoDBMarshaller and describe your operations via AccessName.
 // If you do not specify an ArgumentType it will use your main entity Type instead which is typically useful for PUT operations.
