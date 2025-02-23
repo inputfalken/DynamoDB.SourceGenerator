@@ -90,7 +90,7 @@ public static class UnMarshaller
             SingleGeneric singleGeneric when CreateSignature(singleGeneric.TypeSymbol, options) is var signature => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => signature
-                    .CreateScope($"return {Value} is not null and {{ NULL: false }} ? {InvokeUnmarshallMethod(singleGeneric.T, Value, DataMember, options)} : null;")
+                    .CreateScope($"return {Value} is not null ? {InvokeUnmarshallMethod(singleGeneric.T, Value, DataMember, options)} : null;")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.List or SingleGeneric.SupportedType.ICollection => signature
                     .CreateScope($"return {Value} is {{ L: {{ }} x }} ? {AttributeValueUtilityFactory.ToList}(x, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeUnmarshallMethod(singleGeneric.T, "a", "d", options, "o")}) : {Else(singleGeneric.TypeSymbol)};")
