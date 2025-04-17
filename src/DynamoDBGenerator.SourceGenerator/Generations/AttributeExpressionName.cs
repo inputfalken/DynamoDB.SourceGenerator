@@ -40,7 +40,7 @@ public static class AttributeExpressionName
                 var ternaryExpressionName =
                     $"{ConstructorAttributeName} is null ? {@$"""#{x.DDB.AttributeName}"""}: {@$"$""{{{ConstructorAttributeName}}}.#{x.DDB.AttributeName}"""}";
                 return x.IsUnknown
-                    ? $"{x.DDB.DataMember.NameAsPrivateField} = new (() => new {x.AttributeReference}({ternaryExpressionName}, {ConstructorSetName}));"
+                    ? $"{x.DDB.DataMember.NameAsPrivateField} = new (() => new ({ternaryExpressionName}, {ConstructorSetName}));"
                     : $"{x.DDB.DataMember.NameAsPrivateField} = new (() => {ternaryExpressionName});";
             })
             .Append($"{SetFieldName} = {ConstructorSetName};")

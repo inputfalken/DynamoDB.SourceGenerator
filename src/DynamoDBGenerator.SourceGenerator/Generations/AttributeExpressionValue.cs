@@ -31,7 +31,7 @@ public static class AttributeExpressionValue
         const string self = "_this";
         var constructorFieldAssignments = dataMembers
             .Select(x => x.IsUnknown
-                ? $"{x.DDB.DataMember.NameAsPrivateField} = new (() => new {x.AttributeReference}({ValueProvider}, {MarshallerOptions.ParamReference}));"
+                ? $"{x.DDB.DataMember.NameAsPrivateField} = new (() => new ({ValueProvider}, {MarshallerOptions.ParamReference}));"
                 : $"{x.DDB.DataMember.NameAsPrivateField} = new ({ValueProvider});")
             .Append($"{self} = new({ValueProvider});")
             .Append($"{MarshallerOptions.FieldReference} = {MarshallerOptions.ParamReference};");
