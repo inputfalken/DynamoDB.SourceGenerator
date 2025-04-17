@@ -71,8 +71,12 @@ public static class AttributeExpressionValue
             })
             .Concat(dataMembers
                 .SelectMany(x => YieldSelector(x, options))
-                .Append(
-                    $"if ({self}.IsValueCreated) yield return new ({self}.Value, {Marshaller.InvokeMarshallerMethod(typeSymbol, "entity", $"\"{structName}\"", options, MarshallerOptions.FieldReference)}{HandeNullability(typeSymbol)});")
+                .Concat(
+                    $"if ({self}.IsValueCreated)"
+                        .CreateScope(
+                            $"yield return new ({self}.Value, {Marshaller.InvokeMarshallerMethod(typeSymbol, "entity", $"\"{structName}\"", options, MarshallerOptions.FieldReference)}{HandeNullability(typeSymbol)});"
+                        )
+                )
             )
             .ScopeTo(
                 $"IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({typeSymbol.Representation().annotated} entity)");
@@ -84,7 +88,8 @@ public static class AttributeExpressionValue
         yield return $"public override string ToString() => {self}.Value;";
     }
 
-    private static string? HandeNullability(ITypeSymbol typeSymbol) => typeSymbol.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null;
+    private static string? HandeNullability(ITypeSymbol typeSymbol) =>
+        typeSymbol.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null;
 
     private static IEnumerable<string> YieldSelector(
         (bool IsUnknown, DynamoDbDataMember DDB, string AttributeReference, string AttributeInterfaceName) x,
