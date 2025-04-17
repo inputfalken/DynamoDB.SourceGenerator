@@ -100,9 +100,12 @@ public static class AttributeExpressionValue
                 .ScopeTo($"if ({x.DDB.DataMember.NameAsPrivateField}.IsValueCreated)");
         }
 
+
         return $"if ({x.DDB.DataMember.NameAsPrivateField}.IsValueCreated)".CreateScope(
-            x.DDB.DataMember.Type.NotNullIfStatement(accessPattern,
-                $"yield return new ({x.DDB.DataMember.NameAsPrivateField}.Value, {Marshaller.InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}", $"\"{x.DDB.DataMember.Name}\"", options, MarshallerOptions.FieldReference)} ?? {AttributeValueUtilityFactory.Null});"));
+            x.DDB.DataMember.Type.NotNullIfStatement(
+                accessPattern,
+                $"yield return new ({x.DDB.DataMember.NameAsPrivateField}.Value, {Marshaller.InvokeMarshallerMethod(x.DDB.DataMember.Type, $"entity.{x.DDB.DataMember.Name}", $"\"{x.DDB.DataMember.Name}\"", options, MarshallerOptions.FieldReference)}{(x.DDB.DataMember.Type.IsNullable()?$" ?? {AttributeValueUtilityFactory.Null}" : null)});"
+            ));
     }
 
     internal static IEnumerable<string> CreateClasses(DynamoDBMarshallerArguments[] arguments,
