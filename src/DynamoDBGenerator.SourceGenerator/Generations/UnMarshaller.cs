@@ -77,11 +77,11 @@ public static class UnMarshaller
         {
             if (type.IsNullable())
                 return CreateSignature(type, options)
-                    .CreateScope($"return {Value} is not null ? ({conversion}) : null;")
+                    .CreateScope($"return {Value} is not null ? {conversion} : null;")
                     .ToConversion();
 
             return CreateSignature(type, options)
-                .CreateScope($"return {Value} is not null && ({conversion}) is {{ }} x ? x : throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
+                .CreateScope($"return {Value} is not null && {conversion} is {{ }} x ? x : throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
                 .ToConversion();
         }
         
