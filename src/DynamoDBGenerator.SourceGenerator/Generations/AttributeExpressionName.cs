@@ -74,7 +74,7 @@ public static class AttributeExpressionName
 
         var yields = dataMembers
             .SelectMany(YieldSelector)
-            .Append($@"if ({self}.IsValueCreated) yield return new ({self}.Value, ""{typeSymbol.Name}"");");
+            .Concat($"if ({self}.IsValueCreated)".CreateScope(@$"yield return new ({self}.Value, ""{typeSymbol.Name}"");"));
 
         foreach (var s in
                  $"IEnumerable<KeyValuePair<string, string>> {AttributeExpressionNameTrackerInterface}.{AttributeExpressionNameTrackerInterfaceAccessedNames}()"
