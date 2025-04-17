@@ -8,7 +8,6 @@ public abstract class MarshalAsserter<T>
     protected abstract T UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues);
     protected abstract Dictionary<string, AttributeValue> MarshallImplementation(T element);
 
-
     [Fact]
     public void Marshall()
     {

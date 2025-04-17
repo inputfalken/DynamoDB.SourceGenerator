@@ -29,11 +29,11 @@ public partial class DictionaryTests
                 x.Value.M.Should().SatisfyRespectively(y =>
                 {
                     y.Key.Should().Be("two");
-                    ((string)y.Value.N).Should().Be("2");
+                    y.Value.N.Should().Be("2");
                 }, y =>
                 {
-                    ((string)y.Key).Should().Be("one");
-                    ((string)y.Value.N).Should().Be("1");
+                    y.Key.Should().Be("one");
+                    y.Value.N.Should().Be("1");
                 });
             });
     }
@@ -46,14 +46,15 @@ public partial class DictionaryTests
             DictionaryImplementation = new Dictionary<string, int>()
         };
 
-        DictionaryClassMarshaller
-            .Marshall(@class)
+        var result = DictionaryClassMarshaller.Marshall(@class);
+        result
             .Should()
             .NotBeEmpty()
             .And
-            .ContainKey(nameof(DictionaryClass.DictionaryImplementation))
-            .And
-            .ContainSingle(x => x.Value.L.Count == 0);
+            .ContainKey(nameof(DictionaryClass.DictionaryImplementation));
+
+        result[nameof(DictionaryClass.DictionaryImplementation)].M.Should().BeEmpty();
+
     }
 }
 

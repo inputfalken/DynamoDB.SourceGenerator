@@ -1,3 +1,4 @@
+using Amazon;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
 
@@ -120,8 +121,7 @@ public partial class ChildClassTests
         result.Id.Should().Be("I am the root");
         result.CustomClass.Should().NotBeNull();
         result.CustomClass!.PropertyId.Should().Be("I am the property");
-        result.CustomClass.GrandChild.Should().NotBeNull();
-        result.CustomClass.GrandChild!.GrandChildId.Should().BeNull();
+        result.CustomClass.GrandChild.Should().BeNull();
     }
 }
 

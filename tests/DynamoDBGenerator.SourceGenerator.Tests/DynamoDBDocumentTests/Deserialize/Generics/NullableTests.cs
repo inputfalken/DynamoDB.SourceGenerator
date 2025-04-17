@@ -1,3 +1,4 @@
+using Amazon;
 using Amazon.DynamoDBv2.Model;
 using DynamoDBGenerator.Attributes;
 using DynamoDBGenerator.Exceptions;
@@ -26,12 +27,13 @@ public partial class NullableTests
     [Fact]
     public void Deserialize_KeyValueProvided_ShouldNotThrow()
     {
-        OptionalIntegerClassMarshaller
+        var result = OptionalIntegerClassMarshaller
             .Unmarshall(new Dictionary<string, AttributeValue>
-                { { "OptionalProperty", new AttributeValue { N = "2" } } })
-            .OptionalProperty
-            .Should()
-            .Be(2);
+                {
+                    { nameof(OptionalIntegerClass.OptionalProperty), new AttributeValue { N = "2" } }
+                }
+            );
+        result.OptionalProperty.Should().Be(2);
     }
 }
 
