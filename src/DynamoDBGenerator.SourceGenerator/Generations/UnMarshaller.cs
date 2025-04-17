@@ -10,7 +10,7 @@ public static class UnMarshaller
 {
     private const string DataMember = "dataMember";
     private const string Dict = "dict";
-    private static readonly Func<ITypeSymbol, string> GetDeserializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory("_U", SymbolEqualityComparer.IncludeNullability);
+    private static readonly Func<ITypeSymbol, string> GetDeserializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory(null, SymbolEqualityComparer.IncludeNullability);
     private const string UnMarshallerClass = $"_{Marshaller.UnmarshalMethodName}_";
     private const string Value = "attributeValue";
     private static IEnumerable<(bool useParentheses, IEnumerable<string> assignments)> Assignments(ITypeSymbol type, (DynamoDbDataMember DDB, string MethodCall, string Name)[] assignments)

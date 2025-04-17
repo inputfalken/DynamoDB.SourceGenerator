@@ -14,7 +14,7 @@ internal static partial class Marshaller
         private const string EnforceRkReference = "isRangeKey";
 
         private static readonly Func<ITypeSymbol, string> MethodName =
-            TypeExtensions.SuffixedTypeSymbolNameFactory("Keys", SymbolEqualityComparer.IncludeNullability);
+            TypeExtensions.SuffixedTypeSymbolNameFactory(null, SymbolEqualityComparer.IncludeNullability);
 
         private const string PkReference = "partitionKey";
         private const string RkReference = "rangeKey";
