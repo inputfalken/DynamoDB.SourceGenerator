@@ -183,8 +183,8 @@ internal static partial class Marshaller
 
         if (typeSymbol.TypeIdentifier() is UnknownType)
             return typeSymbol.IsNullable()
-                ? $"{invocation} switch {{ {{ }} x => new AttributeValue {{ M = x }}, null => null }}"
-                : $"new AttributeValue {{ M = {invocation} }}";
+                ? $"{invocation} switch {{ {{ }} x => new {Constants.AWSSDK_DynamoDBv2.AttributeValue} {{ M = x }}, null => null }}"
+                : $"new {Constants.AWSSDK_DynamoDBv2.AttributeValue} {{ M = {invocation} }}";
 
         return invocation;
     }
