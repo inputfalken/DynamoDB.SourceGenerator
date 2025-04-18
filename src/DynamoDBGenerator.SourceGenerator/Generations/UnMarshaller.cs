@@ -98,24 +98,46 @@ public static class UnMarshaller
             SingleGeneric singleGeneric when CreateSignature(singleGeneric.TypeSymbol, options) is var signature => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => signature
-                    .CreateScope($"return {Value} is not null and {{ NULL: false }} ? {InvokeUnmarshallMethod(singleGeneric.T, Value, DataMember, options)} : null;")
+                    .CreateScope(
+                        $"if ({Value} is null || {Value}.NULL is true)"
+                            .CreateScope(IsNull(singleGeneric.T))
+                            .Append($"return {InvokeUnmarshallMethod(singleGeneric.T, Value, DataMember, options)};" )
+                        )
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.List or SingleGeneric.SupportedType.ICollection => signature
-                    .CreateScope($"return {Value} is {{ L: {{ }} x }} ? {AttributeValueUtilityFactory.ToList}(x, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeUnmarshallMethod(singleGeneric.T, "a", "d", options, "o")}) : {Else(singleGeneric.TypeSymbol)};")
+                    .CreateScope(
+                        $"if ({Value} is null || {Value}.L is null)"
+                            .CreateScope(IsNull(singleGeneric.T))
+                            .Append($"{AttributeValueUtilityFactory.ToList}({Value}.L, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeUnmarshallMethod(singleGeneric.T, "a", "d", options, "o")})")
+                        )
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Array or SingleGeneric.SupportedType.IReadOnlyCollection => signature
-                    .CreateScope($"return {Value} is {{ L: {{ }} x }} ? {AttributeValueUtilityFactory.ToArray}(x, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeUnmarshallMethod(singleGeneric.T, "a", "d", options, "o")}) : {Else(singleGeneric.TypeSymbol)};")
+                    .CreateScope(
+                        $"if ({Value} is null || {Value}.L is null)"
+                            .CreateScope(IsNull(singleGeneric.T))
+                            .Append($"return {AttributeValueUtilityFactory.ToArray}(x.L, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeUnmarshallMethod(singleGeneric.T, "a", "d", options, "o")});")
+                        )
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.IEnumerable => signature
-                    .CreateScope($"return {Value} is {{ L: {{ }} x }} ? {AttributeValueUtilityFactory.ToEnumerable}(x, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeUnmarshallMethod(singleGeneric.T, "a", "d", options, "o")}) : {Else(singleGeneric.TypeSymbol)};")
+                    .CreateScope(
+                        $"if ({Value} is null || {Value}.L is null)"
+                            .CreateScope(IsNull(singleGeneric.T))
+                            .Append($"return {AttributeValueUtilityFactory.ToEnumerable}(x.L, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeUnmarshallMethod(singleGeneric.T, "a", "d", options, "o")});")
+                        )
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.SpecialType is SpecialType.System_String => signature
                     .CreateScope(
-                        $"return {Value} is {{ SS : {{ }} x }} ? new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{(singleGeneric.T.IsNullable() ? "string?" : "string")}>" : null)}({(singleGeneric.T.IsNullable() ? "x" : $"x.Select((y,i) => y ?? throw {ExceptionHelper.NullExceptionMethod}($\"{{{DataMember}}}[UNKNOWN]\")")})) : {Else(singleGeneric.TypeSymbol)};")
+                        $"if ({Value} is null || {Value}.SS is null)"
+                            .CreateScope(IsNull(singleGeneric.T))
+                            .Append($"return new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{(singleGeneric.T.IsNullable() ? "string?" : "string")}>" : null)}({(singleGeneric.T.IsNullable() ? $"{Value}.SS" : $"{Value}.SS.Select((y,i) => y ?? throw {ExceptionHelper.NullExceptionMethod}($\"{{{DataMember}}}[UNKNOWN]\")")}));")
+                        )
                     .ToConversion(),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.IsNumeric() => signature
                     .CreateScope(
-                        $"return {Value} is {{ NS : {{ }} x }} ? new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{singleGeneric.T.Representation().original}>" : null)}(x.Select(y => {singleGeneric.T.Representation().original}.Parse(y))) : {Else(singleGeneric.TypeSymbol)};")
+                        $"if ({Value} is null || {Value}.NS is null)"
+                            .CreateScope(IsNull(singleGeneric.T))
+                            .Append($"new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{singleGeneric.T.Representation().original}>" : null)}({Value}.NS.Select(y => {singleGeneric.T.Representation().original}.Parse(y)))")
+                        )
                     .ToConversion(singleGeneric.TypeSymbol),
                 SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(CreateMethod))),
                 _ => throw UncoveredConversionException(singleGeneric, nameof(CreateMethod))
@@ -125,10 +147,18 @@ public static class UnMarshaller
             KeyValueGeneric keyValueGeneric when CreateSignature(keyValueGeneric.TypeSymbol, options) is var signature => keyValueGeneric.Type switch
             {
                 KeyValueGeneric.SupportedType.Dictionary => signature
-                    .CreateScope($"return {Value} is {{ M: {{ }} x }} ? {AttributeValueUtilityFactory.ToDictionary}(x, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "a", "d", options, "o")}) : {Else(keyValueGeneric.TypeSymbol)};")
+                    .CreateScope(
+                        $"if ({Value} is null || {Value}.M is null)"
+                            .CreateScope(IsNull(keyValueGeneric.TypeSymbol))
+                            .Append($"return {AttributeValueUtilityFactory.ToDictionary}({Value}.M, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "a", "d", options, "o")});")
+                        )
                     .ToConversion(keyValueGeneric.TValue),
                 KeyValueGeneric.SupportedType.LookUp => signature
-                    .CreateScope($"return {Value} is {{ M: {{ }} x }} ? {AttributeValueUtilityFactory.ToLookup}(x, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "a", "d", options, "o")}) : {Else(keyValueGeneric.TypeSymbol)};")
+                    .CreateScope(
+                        $"if ({Value} is null || {Value}.M is null)"
+                            .CreateScope(IsNull(keyValueGeneric.TypeSymbol))
+                            .Append($"return {AttributeValueUtilityFactory.ToLookup}({Value}.M, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeUnmarshallMethod(keyValueGeneric.TValue, "a", "d", options, "o")});")
+                        )
                     .ToConversion(keyValueGeneric.TValue),
                 _ => throw UncoveredConversionException(keyValueGeneric, nameof(CreateMethod))
 
@@ -155,11 +185,7 @@ public static class UnMarshaller
             )
         );
     }
-    private static string Else(ITypeSymbol typeSymbol)
-    {
-        return typeSymbol.IsNullable() ? "null" : $"throw {ExceptionHelper.NullExceptionMethod}({DataMember})";
-    }
-
+    
     private static string InvokeUnmarshallMethod(ITypeSymbol typeSymbol, string paramReference, string dataMember, MarshallerOptions options, string marshallerOptionsReference = MarshallerOptions.ParamReference)
     {
         if (options.IsConvertable(typeSymbol))
@@ -199,6 +225,10 @@ public static class UnMarshaller
         }
 
     }
+
+    private static string IsNull(ITypeSymbol typeSymbol) => typeSymbol.IsNullable() 
+            ? "return null;" 
+            : $"throw {ExceptionHelper.NullExceptionMethod}({DataMember});";
 
     internal static IEnumerable<string> RootSignature(ITypeSymbol typeSymbol, string rootTypeName)
     {
