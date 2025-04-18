@@ -55,10 +55,6 @@ public static class TypeExtensions
     private static readonly Dictionary<ITypeSymbol, TypeIdentifier> TypeIdentifierDictionary =
         new(SymbolEqualityComparer.IncludeNullability);
 
-    public static string ReturnNullOrThrow(this ITypeSymbol typeSymbol, string dataMember) => typeSymbol.IsNullable()
-        ? "return null;"
-        : $"throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}({dataMember});";
-
     public static bool IsNullable(this ITypeSymbol typeSymbol) => typeSymbol switch
     {
         { IsReferenceType: true, NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated } => true,
