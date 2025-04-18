@@ -75,12 +75,12 @@ public readonly struct MarshallerOptions
             var original = typeSymbol.Representation().original;
             return _enumStrategy switch 
             {
-                ConversionStrategy.Integer => $"Int32.TryParse({attributeValueParam}.N, out var @enum) ? ({original}?)@enum : null",
-                ConversionStrategy.Name => $"Enum.TryParse<{original}>({attributeValueParam}.S, false, out var @enum) ? ({original}?)@enum : null",
+                ConversionStrategy.Integer => $"(Int32.TryParse({attributeValueParam}.N, out var e) ? ({original}?) e : null)",
+                ConversionStrategy.Name => $"(Enum.TryParse<{original}>({attributeValueParam}.S, false, out var e) ? ({original}?) e : null)",
                 ConversionStrategy.NameCI 
                     or ConversionStrategy.LowerCase 
                     or ConversionStrategy.UpperCase 
-                    => $"Enum.TryParse<{original}>({attributeValueParam}.S, true, out var @enum) ? ({original}?)@enum : null",
+                    => $"(Enum.TryParse<{original}>({attributeValueParam}.S, true, out var e) ? ({original}?) e : null)",
                 _ => throw new ArgumentException($"Could not resolve enum conversion strategy from value '{_enumStrategy}'.")
             };
         }
