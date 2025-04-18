@@ -116,7 +116,7 @@ internal static partial class Marshaller
                 SingleGeneric.SupportedType.Nullable => signature
                     .CreateScope(
                         $"if ({ParamReference} is null)"
-                            .CreateScope("return null;")
+                            .CreateScope(IsNull(singleGeneric))
                             .Append($"return {InvokeMarshallerMethod(singleGeneric.T, $"{ParamReference}.Value", DataMember, options)};")
                     ).ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Array => signature
