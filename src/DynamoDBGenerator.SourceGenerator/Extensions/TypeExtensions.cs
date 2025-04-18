@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.Runtime.InteropServices;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
@@ -55,13 +56,14 @@ public static class TypeExtensions
         new(SymbolEqualityComparer.IncludeNullability);
 
     public static bool IsNullable(this ITypeSymbol typeSymbol) => typeSymbol switch
-        {
-            { IsReferenceType: true, NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated } => true,
-            { IsReferenceType: true, NullableAnnotation: NullableAnnotation.NotAnnotated } => false,
-            { IsValueType: true, OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => true,
-            { IsValueType: true } => false,
-            _ => throw new ArgumentOutOfRangeException($"Could not determine nullablity of type '{typeSymbol.ToDisplayString()}'.")
-        };
+    {
+        { IsReferenceType: true, NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated } => true,
+        { IsReferenceType: true, NullableAnnotation: NullableAnnotation.NotAnnotated } => false,
+        { IsValueType: true, OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => true,
+        { IsValueType: true } => false,
+        _ => throw new ArgumentOutOfRangeException(
+            $"Could not determine nullablity of type '{typeSymbol.ToDisplayString()}'.")
+    };
 
     public static TypeIdentifier TypeIdentifier(this ITypeSymbol type)
     {
@@ -179,6 +181,7 @@ public static class TypeExtensions
             return ((h1 << 5) + h1) ^ h2;
         }
     }
+
     public static Func<ITypeSymbol, ITypeSymbol, string> SuffixedFullyQualifiedTypeName(string suffix,
         IEqualityComparer<ISymbol?> comparer)
     {
@@ -187,7 +190,7 @@ public static class TypeExtensions
         if (Equals(comparer, SymbolEqualityComparer.Default))
         {
             return (x, y) => dict.GetOrAdd(
-                (x,y),
+                (x, y),
                 tuple =>
                 {
                     var (p, c) = tuple;
@@ -201,6 +204,10 @@ public static class TypeExtensions
             $"Method {nameof(SuffixedFullyQualifiedTypeName)} does not implement equality comparer '{comparer.GetType().Name}"
         );
     }
+
+    private static readonly SymbolDisplayFormat DisplayFormat = new(
+        genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters
+    );
 
     public static Func<ITypeSymbol, string> SuffixedTypeSymbolNameFactory(string? suffix,
         IEqualityComparer<ISymbol?> comparer)
@@ -217,8 +224,8 @@ public static class TypeExtensions
             return x => dict.GetOrAdd(x,
                 y => y is IArrayTypeSymbol
                     ? $"{y.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}_{y.BaseType!.ToDisplayString()}"
-                    : y.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()
-            );
+                    : y.ToDisplayString(
+                        DisplayFormat).ToAlphaNumericMethodName());
 
         return x => dict.GetOrAdd(x,
             y => y is IArrayTypeSymbol
@@ -267,11 +274,11 @@ public static class TypeExtensions
                         _ => throw new NotImplementedException(ExceptionMessage(single))
                     },
                 { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated } =>
-                    $"NN_{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
+                    $"NN_{x.ToDisplayString(DisplayFormat).ToAlphaNumericMethodName()}",
                 { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None } =>
-                    $"{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
+                    $"{x.ToDisplayString(DisplayFormat).ToAlphaNumericMethodName()}",
                 { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated } =>
-                    $"N_{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
+                    $"N_{x.ToDisplayString(DisplayFormat).ToAlphaNumericMethodName()}",
                 _ => throw new NotImplementedException(ExceptionMessage(x))
             };
 
