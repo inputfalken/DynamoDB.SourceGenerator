@@ -114,27 +114,27 @@ internal static partial class Marshaller
             SingleGeneric singleGeneric when CreateSignature(singleGeneric.TypeSymbol, options) is var signature => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => signature
-                    .CreateScope($"return {ParamReference} is not null ? {InvokeMarshallerMethod(singleGeneric.T, $"{ParamReference}.Value", DataMember, options)} : null;")
+                    .CreateScope($"return {ParamReference} is null ? null : {InvokeMarshallerMethod(singleGeneric.T, $"{ParamReference}.Value", DataMember, options)};")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Array => signature
-                    .CreateScope($"return {ParamReference} is not null ? {AttributeValueUtilityFactory.FromArray}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(singleGeneric.T, "a", "d", options, "o")}{(singleGeneric.T.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)}) : {Else(singleGeneric)};")
+                    .CreateScope($"return {ParamReference} is null ? {IsNull(singleGeneric)} : {AttributeValueUtilityFactory.FromArray}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(singleGeneric.T, "a", "d", options, "o")}{(singleGeneric.T.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)});")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.List => signature
-                    .CreateScope($"return {ParamReference} is not null ? {AttributeValueUtilityFactory.FromList}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(singleGeneric.T, "a", "d", options, "o")}{(singleGeneric.T.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)}) : {Else(singleGeneric)};")
+                    .CreateScope($"return {ParamReference} is null ? {IsNull(singleGeneric)} : {AttributeValueUtilityFactory.FromList}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(singleGeneric.T, "a", "d", options, "o")}{(singleGeneric.T.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)});")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.IReadOnlyCollection
                     or SingleGeneric.SupportedType.IEnumerable
                     or SingleGeneric.SupportedType.ICollection => signature
-                    .CreateScope($"return {ParamReference} is not null ? {AttributeValueUtilityFactory.FromEnumerable}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(singleGeneric.T, "a", "d", options, "o")}{(singleGeneric.T.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)}) : {Else(singleGeneric)};")
+                    .CreateScope($"return {ParamReference} is null ? {IsNull(singleGeneric)} : {AttributeValueUtilityFactory.FromEnumerable}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(singleGeneric.T, "a", "d", options, "o")}{(singleGeneric.T.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)});")
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.SpecialType is SpecialType.System_String
                     => signature
                         .CreateScope(
-                            $"return {ParamReference} is not null ? new AttributeValue {{ SS = new List<{(singleGeneric.T.IsNullable() ? "string?" : "string")}>({(singleGeneric.T.IsNullable() ? ParamReference : $"{ParamReference}.Select((y,i) => y ?? throw {ExceptionHelper.NullExceptionMethod}($\"{{{DataMember}}}[UNKNOWN]\"))")})}} : {Else(singleGeneric)};")
+                            $"return {ParamReference} is null ? {IsNull(singleGeneric)} : new AttributeValue {{ SS = new List<{(singleGeneric.T.IsNullable() ? "string?" : "string")}>({(singleGeneric.T.IsNullable() ? ParamReference : $"{ParamReference}.Select((y,i) => y ?? throw {ExceptionHelper.NullExceptionMethod}($\"{{{DataMember}}}[UNKNOWN]\"))")})}};")
                         .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.IsNumeric()
                     => signature
-                        .CreateScope($"return {ParamReference} is not null ? new AttributeValue {{ NS = new List<string>({ParamReference}.Select(y => y.ToString())) }} : {Else(singleGeneric)};")
+                        .CreateScope($"return {ParamReference} is null ? {IsNull(singleGeneric)} : new AttributeValue {{ NS = new List<string>({ParamReference}.Select(y => y.ToString())) }};")
                         .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(CreateMethod))),
                 _ => throw UncoveredConversionException(singleGeneric, nameof(CreateMethod))
@@ -144,10 +144,10 @@ internal static partial class Marshaller
             KeyValueGeneric keyValueGeneric when CreateSignature(keyValueGeneric.TypeSymbol, options) is var signature => keyValueGeneric.Type switch
             {
                 KeyValueGeneric.SupportedType.Dictionary => signature
-                    .CreateScope($"return {ParamReference} is not null ? {AttributeValueUtilityFactory.FromDictionary}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(keyValueGeneric.TValue, "a", "d", options, "o")}{(keyValueGeneric.TValue.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)}) : {Else(keyValueGeneric)};")
+                    .CreateScope($"return {ParamReference} is null ? {IsNull(keyValueGeneric)} : {AttributeValueUtilityFactory.FromDictionary}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(keyValueGeneric.TValue, "a", "d", options, "o")}{(keyValueGeneric.TValue.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)});")
                     .ToConversion(keyValueGeneric.TValue),
                 KeyValueGeneric.SupportedType.LookUp => signature
-                    .CreateScope($"return {ParamReference} is not null ? {AttributeValueUtilityFactory.FromLookup}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(keyValueGeneric.TValue, "a", "d", options, "o")}{(keyValueGeneric.TValue.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)}) : {Else(keyValueGeneric)};")
+                    .CreateScope($"return {ParamReference} is null ? {IsNull(keyValueGeneric)} : {AttributeValueUtilityFactory.FromLookup}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(keyValueGeneric.TValue, "a", "d", options, "o")}{(keyValueGeneric.TValue.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)});")
                     .ToConversion(keyValueGeneric.TValue),
                 _ => throw UncoveredConversionException(keyValueGeneric, nameof(CreateMethod))
             },
@@ -164,7 +164,7 @@ internal static partial class Marshaller
             : $"public static AttributeValue {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)";
     }
 
-    private static string Else(TypeIdentifier typeIdentifier)
+    private static string IsNull(TypeIdentifier typeIdentifier)
     {
         return typeIdentifier.TypeSymbol.IsNullable() ? "null" : $"throw {ExceptionHelper.NullExceptionMethod}({DataMember})";
     }
