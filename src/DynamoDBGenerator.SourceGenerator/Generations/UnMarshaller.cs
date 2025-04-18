@@ -100,43 +100,43 @@ public static class UnMarshaller
                 SingleGeneric.SupportedType.Nullable => signature
                     .CreateScope(
                         $"if ({Value} is null || {Value}.NULL is true)"
-                            .CreateScope(singleGeneric.T.ReturnNullOrThrow(DataMember))
+                            .CreateScope(singleGeneric.TypeSymbol.ReturnNullOrThrow(DataMember))
                             .Append($"return {InvokeUnmarshallMethod(singleGeneric.T, Value, DataMember, options)};" )
                         )
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.List or SingleGeneric.SupportedType.ICollection => signature
                     .CreateScope(
                         $"if ({Value} is null || {Value}.L is null)"
-                            .CreateScope(singleGeneric.T.ReturnNullOrThrow(DataMember))
+                            .CreateScope(singleGeneric.TypeSymbol.ReturnNullOrThrow(DataMember))
                             .Append($"return {AttributeValueUtilityFactory.ToList}({Value}.L, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeUnmarshallMethod(singleGeneric.T, "a", "d", options, "o")});")
                         )
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Array or SingleGeneric.SupportedType.IReadOnlyCollection => signature
                     .CreateScope(
                         $"if ({Value} is null || {Value}.L is null)"
-                            .CreateScope(singleGeneric.T.ReturnNullOrThrow(DataMember))
+                            .CreateScope(singleGeneric.TypeSymbol.ReturnNullOrThrow(DataMember))
                             .Append($"return {AttributeValueUtilityFactory.ToArray}({Value}.L, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeUnmarshallMethod(singleGeneric.T, "a", "d", options, "o")});")
                         )
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.IEnumerable => signature
                     .CreateScope(
                         $"if ({Value} is null || {Value}.L is null)"
-                            .CreateScope(singleGeneric.T.ReturnNullOrThrow(DataMember))
+                            .CreateScope(singleGeneric.TypeSymbol.ReturnNullOrThrow(DataMember))
                             .Append($"return {AttributeValueUtilityFactory.ToEnumerable}({Value}.L, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeUnmarshallMethod(singleGeneric.T, "a", "d", options, "o")});")
                         )
                     .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.SpecialType is SpecialType.System_String => signature
                     .CreateScope(
                         $"if ({Value} is null || {Value}.SS is null)"
-                            .CreateScope(singleGeneric.T.ReturnNullOrThrow(DataMember))
+                            .CreateScope(singleGeneric.TypeSymbol.ReturnNullOrThrow(DataMember))
                             .Append($"return new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{(singleGeneric.T.IsNullable() ? "string?" : "string")}>" : null)}({(singleGeneric.T.IsNullable() ? $"{Value}.SS" : $"{Value}.SS.Select((y,i) => y ?? throw {ExceptionHelper.NullExceptionMethod}($\"{{{DataMember}}}[UNKNOWN]\")")}));")
                         )
                     .ToConversion(),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.IsNumeric() => signature
                     .CreateScope(
                         $"if ({Value} is null || {Value}.NS is null)"
-                            .CreateScope(singleGeneric.T.ReturnNullOrThrow(DataMember))
-                            .Append($"return new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{singleGeneric.T.Representation().original}>" : null)}({Value}.NS.Select(y => {singleGeneric.T.Representation().original}.Parse(y)))")
+                            .CreateScope(singleGeneric.TypeSymbol.ReturnNullOrThrow(DataMember))
+                            .Append($"return new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{singleGeneric.T.Representation().original}>" : null)}({Value}.NS.Select(y => {singleGeneric.T.Representation().original}.Parse(y)));")
                         )
                     .ToConversion(singleGeneric.TypeSymbol),
                 SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(CreateMethod))),
