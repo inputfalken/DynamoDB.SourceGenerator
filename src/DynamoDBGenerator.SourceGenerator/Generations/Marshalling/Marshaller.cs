@@ -114,27 +114,46 @@ internal static partial class Marshaller
             SingleGeneric singleGeneric when CreateSignature(singleGeneric.TypeSymbol, options) is var signature => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => signature
-                    .CreateScope($"return {ParamReference} is null ? null : {InvokeMarshallerMethod(singleGeneric.T, $"{ParamReference}.Value", DataMember, options)};")
-                    .ToConversion(singleGeneric.T),
+                    .CreateScope(
+                        $"if ({ParamReference} is null)"
+                            .CreateScope("return null;")
+                            .Append($"return {InvokeMarshallerMethod(singleGeneric.T, $"{ParamReference}.Value", DataMember, options)};")
+                    ).ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Array => signature
-                    .CreateScope($"return {ParamReference} is null ? {IsNull(singleGeneric)} : {AttributeValueUtilityFactory.FromArray}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(singleGeneric.T, "a", "d", options, "o")}{(singleGeneric.T.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)});")
-                    .ToConversion(singleGeneric.T),
+                    .CreateScope(
+                        $"if ({ParamReference} is null)"
+                            .CreateScope($"return {IsNull(singleGeneric)};")
+                            .Append($"return {AttributeValueUtilityFactory.FromArray}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(singleGeneric.T, "a", "d", options, "o")}{(singleGeneric.T.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)});")
+                    ).ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.List => signature
-                    .CreateScope($"return {ParamReference} is null ? {IsNull(singleGeneric)} : {AttributeValueUtilityFactory.FromList}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(singleGeneric.T, "a", "d", options, "o")}{(singleGeneric.T.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)});")
-                    .ToConversion(singleGeneric.T),
+                    .CreateScope(
+                        $"if ({ParamReference} is null)"
+                            .CreateScope($"return {IsNull(singleGeneric)};")
+                            .Append($"return {AttributeValueUtilityFactory.FromList}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(singleGeneric.T, "a", "d", options, "o")}{(singleGeneric.T.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)});")
+                    ).ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.IReadOnlyCollection
                     or SingleGeneric.SupportedType.IEnumerable
                     or SingleGeneric.SupportedType.ICollection => signature
-                    .CreateScope($"return {ParamReference} is null ? {IsNull(singleGeneric)} : {AttributeValueUtilityFactory.FromEnumerable}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(singleGeneric.T, "a", "d", options, "o")}{(singleGeneric.T.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)});")
-                    .ToConversion(singleGeneric.T),
+                        .CreateScope(
+                            $"if ({ParamReference} is null)"
+                                .CreateScope($"return {IsNull(singleGeneric)};")
+                                .Append($"return {AttributeValueUtilityFactory.FromEnumerable}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(singleGeneric.T, "a", "d", options, "o")}{(singleGeneric.T.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)});")
+                        ).ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.SpecialType is SpecialType.System_String
                     => signature
                         .CreateScope(
-                            $"return {ParamReference} is null ? {IsNull(singleGeneric)} : new AttributeValue {{ SS = new List<{(singleGeneric.T.IsNullable() ? "string?" : "string")}>({(singleGeneric.T.IsNullable() ? ParamReference : $"{ParamReference}.Select((y,i) => y ?? throw {ExceptionHelper.NullExceptionMethod}($\"{{{DataMember}}}[UNKNOWN]\"))")})}};")
+                            $"if ({ParamReference} is null)"
+                                .CreateScope($"return {IsNull(singleGeneric)};")
+                                .Append($"return new {Constants.AWSSDK_DynamoDBv2.AttributeValue} {{ SS = new List<{(singleGeneric.T.IsNullable() ? "string?" : "string")}>({(singleGeneric.T.IsNullable() ? ParamReference : $"{ParamReference}.Select((y,i) => y ?? throw {ExceptionHelper.NullExceptionMethod}($\"{{{DataMember}}}[UNKNOWN]\"))")})}};")
+                        )
                         .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.IsNumeric()
                     => signature
-                        .CreateScope($"return {ParamReference} is null ? {IsNull(singleGeneric)} : new AttributeValue {{ NS = new List<string>({ParamReference}.Select(y => y.ToString())) }};")
+                        .CreateScope(
+                            $"if ({ParamReference} is null)"
+                                .CreateScope($"return {IsNull(singleGeneric)};")
+                                .Append($"return new {Constants.AWSSDK_DynamoDBv2.AttributeValue} {{ NS = new List<string>({ParamReference}.Select(y => y.ToString())) }};")
+                        )
                         .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(CreateMethod))),
                 _ => throw UncoveredConversionException(singleGeneric, nameof(CreateMethod))
@@ -144,10 +163,18 @@ internal static partial class Marshaller
             KeyValueGeneric keyValueGeneric when CreateSignature(keyValueGeneric.TypeSymbol, options) is var signature => keyValueGeneric.Type switch
             {
                 KeyValueGeneric.SupportedType.Dictionary => signature
-                    .CreateScope($"return {ParamReference} is null ? {IsNull(keyValueGeneric)} : {AttributeValueUtilityFactory.FromDictionary}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(keyValueGeneric.TValue, "a", "d", options, "o")}{(keyValueGeneric.TValue.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)});")
+                    .CreateScope(
+                        $"if ({ParamReference} is null)"
+                            .CreateScope($"return {IsNull(keyValueGeneric)};")
+                            .Append($"return {AttributeValueUtilityFactory.FromDictionary}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(keyValueGeneric.TValue, "a", "d", options, "o")}{(keyValueGeneric.TValue.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)});")
+                    )
                     .ToConversion(keyValueGeneric.TValue),
                 KeyValueGeneric.SupportedType.LookUp => signature
-                    .CreateScope($"return {ParamReference} is null ? {IsNull(keyValueGeneric)} : {AttributeValueUtilityFactory.FromLookup}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(keyValueGeneric.TValue, "a", "d", options, "o")}{(keyValueGeneric.TValue.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)});")
+                    .CreateScope(
+                        $"if ({ParamReference} is null)"
+                            .CreateScope($"return {IsNull(keyValueGeneric)};")
+                            .Append($"return {AttributeValueUtilityFactory.FromLookup}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(keyValueGeneric.TValue, "a", "d", options, "o")}{(keyValueGeneric.TValue.IsNullable() ? $" ?? {AttributeValueUtilityFactory.Null}" : null)});")
+                    )
                     .ToConversion(keyValueGeneric.TValue),
                 _ => throw UncoveredConversionException(keyValueGeneric, nameof(CreateMethod))
             },
@@ -160,8 +187,8 @@ internal static partial class Marshaller
     private static string CreateSignature(ITypeSymbol typeSymbol, MarshallerOptions options)
     {
         return typeSymbol.IsNullable()
-            ? $"public static AttributeValue? {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)"
-            : $"public static AttributeValue {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)";
+            ? $"public static {Constants.AWSSDK_DynamoDBv2.AttributeValue}? {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)"
+            : $"public static {Constants.AWSSDK_DynamoDBv2.AttributeValue} {GetSerializationMethodName(typeSymbol)}({typeSymbol.Representation().annotated} {ParamReference}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)";
     }
 
     private static string IsNull(TypeIdentifier typeIdentifier)
@@ -173,12 +200,12 @@ internal static partial class Marshaller
         var capacityCalculation = string.Join(" + ", capacityCalculations);
         if (capacityCalculation is "")
         {
-            yield return $"var {DictionaryReference} = new Dictionary<string, AttributeValue>(0);";
+            yield return $"var {DictionaryReference} = new Dictionary<string, {Constants.AWSSDK_DynamoDBv2.AttributeValue}>(0);";
         }
         else
         {
             yield return $"var capacity = {capacityCalculation};";
-            yield return $"var {DictionaryReference} = new Dictionary<string, AttributeValue>(capacity);";
+            yield return $"var {DictionaryReference} = new Dictionary<string, {Constants.AWSSDK_DynamoDBv2.AttributeValue}>(capacity);";
         }
     }
 
