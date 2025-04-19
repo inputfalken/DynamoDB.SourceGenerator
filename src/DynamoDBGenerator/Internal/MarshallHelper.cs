@@ -17,6 +17,9 @@ public static class MarshallHelper
 #pragma warning disable CS1591
     public static AttributeValue Null { get; } = new() { NULL = true };
 
+    public static AttributeValue? ToAttributeValue(Dictionary<string, AttributeValue>? dict) => dict is null 
+        ? null 
+        : new AttributeValue { M = dict };
 
     public static AttributeValue FromDictionary<T, TArgument>(
         IEnumerable<KeyValuePair<string, T>> dictionary,
