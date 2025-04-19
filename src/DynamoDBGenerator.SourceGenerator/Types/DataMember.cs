@@ -11,17 +11,16 @@ public readonly struct DataMember
     private DataMember(in ISymbol symbol, in string fieldName, in ITypeSymbol type, in bool isAssignable)
     {
         Name = fieldName;
-        Type = type;
         BaseSymbol = symbol;
         IsAssignable = isAssignable;
-
         NameAsPrivateField = fieldName.ToPrivateFieldFromPascal();
         NameAsCamelCase = fieldName.ToCamelCaseFromPascal();
+        TypeIdentifier = type.TypeIdentifier();
     }
 
     public static DataMember FromField(in IFieldSymbol fieldSymbol)
     {
-        var symbol = (ISymbol)fieldSymbol;
+        ISymbol symbol = fieldSymbol;
         var name = fieldSymbol.Name;
         var type = fieldSymbol.Type;
 
@@ -30,7 +29,7 @@ public readonly struct DataMember
 
     public static DataMember FromProperty(in IPropertySymbol property)
     {
-        var symbol = (ISymbol)property;
+        ISymbol symbol = property;
         var name = property.Name;
         var type = property.Type;
 
@@ -47,13 +46,8 @@ public readonly struct DataMember
     /// </summary>
     public string Name { get; }
 
-
+    public TypeIdentifier TypeIdentifier { get; }
     public string NameAsPrivateField { get; }
     public string NameAsCamelCase { get; }
-
-    /// <summary>
-    ///     The type of the data member.
-    /// </summary>
-    public ITypeSymbol Type { get; }
     public bool IsAssignable { get; }
 }

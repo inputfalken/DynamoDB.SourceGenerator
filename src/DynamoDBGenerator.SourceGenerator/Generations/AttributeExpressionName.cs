@@ -21,7 +21,7 @@ public static class AttributeExpressionName
         Func<ITypeSymbol, DynamoDbDataMember[]> getDynamoDbProperties, MarshallerOptions options)
     {
         // Using _comparer can double classes when there's a None nullable property mixed with a nullable property
-        var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
+        var hashSet = new HashSet<TypeIdentifier>(TypeIdentifier.Default);
 
         return arguments
             .SelectMany(x =>
@@ -105,26 +105,25 @@ public static class AttributeExpressionName
                 .CreateScope($"yield return {camelCase};");
     }
 
-    private static CodeFactory CreateStruct(ITypeSymbol typeSymbol, Func<ITypeSymbol, DynamoDbDataMember[]> fn,
+    private static CodeFactory CreateStruct(TypeIdentifier typeIdentifier, Func<ITypeSymbol, DynamoDbDataMember[]> fn,
         MarshallerOptions options)
     {
-        var dataMembers = fn(typeSymbol)
+        var dataMembers = fn(typeIdentifier.TypeSymbol)
             .Select(x => (
-                IsUnknown: !options.IsConvertable(x.DataMember.Type) &&
-                           x.DataMember.Type.TypeIdentifier() is UnknownType,
+                IsUnknown: options.IsUnknown(x.DataMember.TypeIdentifier),
                 DDB: x,
                 DbRef: $"#{x.AttributeName}",
-                AttributeReference: TypeName(x.DataMember.Type),
+                AttributeReference: TypeName(x.DataMember.TypeIdentifier.TypeSymbol),
                 AttributeInterfaceName: AttributeExpressionNameTrackerInterface
             ))
             .ToArray();
 
-        var structName = TypeName(typeSymbol);
+        var structName = TypeName(typeIdentifier.TypeSymbol);
 
         var @class =
             $"public readonly struct {structName} : {AttributeExpressionNameTrackerInterface}".CreateScope(
-                TypeContent(typeSymbol, dataMembers, structName));
-        return new CodeFactory(@class, dataMembers.Where(x => x.IsUnknown).Select(x => x.DDB.DataMember.Type));
+                TypeContent(typeIdentifier.TypeSymbol, dataMembers, structName));
+        return new CodeFactory(@class, dataMembers.Where(x => x.IsUnknown).Select(x => x.DDB.DataMember.TypeIdentifier));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

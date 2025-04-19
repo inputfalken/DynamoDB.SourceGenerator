@@ -13,9 +13,10 @@ public static class UnMarshaller
     private static readonly Func<ITypeSymbol, string> GetDeserializationMethodName = TypeExtensions.SuffixedTypeSymbolNameFactory(null, SymbolEqualityComparer.IncludeNullability);
     private const string UnMarshallerClass = $"_{Marshaller.UnmarshalMethodName}_";
     private const string Value = "attributeValue";
-    private static IEnumerable<(bool useParentheses, IEnumerable<string> assignments)> Assignments(ITypeSymbol type, (DynamoDbDataMember DDB, string MethodCall, string Name)[] assignments)
+    private static IEnumerable<(bool useParentheses, IEnumerable<string> assignments)> Assignments(TypeIdentifier typeIdentifier, (DynamoDbDataMember DDB, string MethodCall, string Name)[] assignments)
     {
         const string indent = "    ";
+        var type = typeIdentifier.TypeSymbol;
         if (type.IsTupleType)
             yield return (true, assignments.Select(x => $"{indent}{x.DDB.DataMember.Name}: {x.MethodCall}"));
         else
@@ -46,47 +47,45 @@ public static class UnMarshaller
     {
         return $"file static class {UnMarshallerClass}".CreateScope(CreateTypeContents(arguments, getDynamoDbProperties, options));
     }
-    private static CodeFactory CreateCode(ITypeSymbol type, Func<ITypeSymbol, DynamoDbDataMember[]> fn, MarshallerOptions options)
+    private static CodeFactory CreateCode(TypeIdentifier typeIdentifier, Func<ITypeSymbol, DynamoDbDataMember[]> fn, MarshallerOptions options)
     {
-        var assignments = fn(type)
-            .Select(x => (DDB: x, MethodCall: InvokeUnmarshallMethod(x.DataMember.Type, $"{Dict}.GetValueOrDefault(\"{x.AttributeName}\")", $"\"{x.DataMember.Name}\"", options), x.DataMember.Name))
+        var assignments = fn(typeIdentifier.TypeSymbol)
+            .Select(x => (DDB: x, MethodCall: InvokeUnmarshallMethod(x.DataMember.TypeIdentifier, $"{Dict}.GetValueOrDefault(\"{x.AttributeName}\")", $"\"{x.DataMember.Name}\"", options), x.DataMember.Name))
             .ToArray();
 
-        var typeName = type.Representation();
         var blockBody =
             $"if ({Dict} is null)"
-                .CreateScope(type.IsNullable() ? "return null;" : $"throw {ExceptionHelper.NullExceptionMethod}({DataMember});").Concat(
-                    Assignments(type, assignments)
+                .CreateScope(typeIdentifier.IsNullable ? "return null;" : $"throw {ExceptionHelper.NullExceptionMethod}({DataMember});").Concat(
+                    Assignments(typeIdentifier, assignments)
                         .AllAndLast(x => ObjectAssignmentBlock(x.useParentheses, x.assignments, false), x => ObjectAssignmentBlock(x.useParentheses, x.assignments, true))
                         .SelectMany(x => x)
                         .DefaultIfEmpty("();")
                         // Is needed in order to not perform new entity? where '?' is not allowed in the end of the string.
-                        .Prepend(type.IsTupleType ? "return" : $"return new {typeName.annotated.TrimEnd('?')}")
+                        .Prepend(typeIdentifier.TypeSymbol.IsTupleType ? "return" : $"return new {typeIdentifier.AnnotatedRepresenation.TrimEnd('?')}")
                 );
 
-        var method = $"public static {typeName.annotated} {GetDeserializationMethodName(type)}(Dictionary<string, AttributeValue>? {Dict}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)".CreateScope(blockBody);
+        var method = $"public static {typeIdentifier.AnnotatedRepresenation} {GetDeserializationMethodName(typeIdentifier.TypeSymbol)}(Dictionary<string, AttributeValue>? {Dict}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)".CreateScope(blockBody);
 
-        return new CodeFactory(method, assignments.Select(x => x.DDB.DataMember.Type));
+        return new CodeFactory(method, assignments.Select(x => x.DDB.DataMember.TypeIdentifier));
 
     }
-    private static CodeFactory CreateMethod(ITypeSymbol type, Func<ITypeSymbol, DynamoDbDataMember[]> fn,
+    private static CodeFactory CreateMethod(TypeIdentifier typeIdentifier, Func<ITypeSymbol, DynamoDbDataMember[]> fn,
         MarshallerOptions options)
     {
-
-        if (options.TryReadConversion(type, Value) is {} conversion)
+        if (options.TryReadConversion(typeIdentifier, Value) is {} conversion)
         {
-            return type switch
+            return typeIdentifier.TypeSymbol switch
             {
-                { IsValueType: true } => type switch
+                { IsValueType: true } => typeIdentifier.TypeSymbol switch
                 {
-                    { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => CreateSignature(type, options)
+                    { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => CreateSignature(typeIdentifier, options)
                         .CreateScope(
                             $"if ({Value} is null)"
                                 .CreateScope("return null;")
                                 .Append($"return {conversion};")
                         )
                         .ToConversion(),
-                    _ => CreateSignature(type, options)
+                    _ => CreateSignature(typeIdentifier, options)
                         .CreateScope(
                             $"if ({Value} is null)"
                                 .CreateScope($"throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
@@ -100,16 +99,16 @@ public static class UnMarshaller
                         .ToConversion()
 
                 },
-                { IsReferenceType: true } => type switch
+                { IsReferenceType: true } => typeIdentifier.TypeSymbol switch
                 {
                     { NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated } => CreateSignature(
-                            type, options)
+                            typeIdentifier, options)
                         .CreateScope(
                             $"if ({Value} is null)"
                                 .CreateScope("return null;")
                                 .Append($"return {conversion};")
                         ).ToConversion(),
-                    _ => CreateSignature(type, options)
+                    _ => CreateSignature(typeIdentifier, options)
                         .CreateScope(
                             $"if ({Value} is null)"
                                 .CreateScope($"throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
@@ -125,14 +124,14 @@ public static class UnMarshaller
 
                 },
                 _ => throw new ArgumentException(
-                    $"Neither ValueType or ReferenceType could be resolved for conversion. type '{type.ToDisplayString()}'."
+                    $"Neither ValueType or ReferenceType could be resolved for conversion. type '{typeIdentifier.TypeSymbol.ToDisplayString()}'."
                 )
             };
         }
         
-        return type.TypeIdentifier() switch
+        return typeIdentifier switch
         {
-            SingleGeneric singleGeneric when CreateSignature(singleGeneric.TypeSymbol, options) is var signature => singleGeneric.Type switch
+            SingleGeneric singleGeneric when CreateSignature(singleGeneric, options) is var signature => singleGeneric.Type switch
             {
                 SingleGeneric.SupportedType.Nullable => signature
                     .CreateScope(
@@ -162,26 +161,26 @@ public static class UnMarshaller
                             .Append($"return {AttributeValueUtilityFactory.ToEnumerable}({Value}.L, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeUnmarshallMethod(singleGeneric.T, "a", "d", options, "o")});")
                         )
                     .ToConversion(singleGeneric.T),
-                SingleGeneric.SupportedType.Set when singleGeneric.T.SpecialType is SpecialType.System_String => signature
+                SingleGeneric.SupportedType.Set when singleGeneric.T.TypeSymbol.SpecialType is SpecialType.System_String => signature
                     .CreateScope(
                         $"if ({Value} is null || {Value}.SS is null)"
                             .CreateScope(singleGeneric.ReturnNullOrThrow(DataMember))
-                            .Append($"return new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{(singleGeneric.T.IsNullable() ? "string?" : "string")}>" : null)}({(singleGeneric.T.IsNullable() ? $"{Value}.SS" : $"{Value}.SS.Select((y,i) => y ?? throw {ExceptionHelper.NullExceptionMethod}($\"{{{DataMember}}}[UNKNOWN]\")")}));")
+                            .Append($"return new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{(singleGeneric.T.IsNullable ? "string?" : "string")}>" : null)}({(singleGeneric.T.IsNullable ? $"{Value}.SS" : $"{Value}.SS.Select((y,i) => y ?? throw {ExceptionHelper.NullExceptionMethod}($\"{{{DataMember}}}[UNKNOWN]\")")}));")
                         )
                     .ToConversion(),
-                SingleGeneric.SupportedType.Set when singleGeneric.T.IsNumeric() => signature
+                SingleGeneric.SupportedType.Set when singleGeneric.T.IsNumeric => signature
                     .CreateScope(
                         $"if ({Value} is null || {Value}.NS is null)"
                             .CreateScope(singleGeneric.ReturnNullOrThrow(DataMember))
-                            .Append($"return new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{singleGeneric.T.Representation().original}>" : null)}({Value}.NS.Select(y => {singleGeneric.T.Representation().original}.Parse(y)));")
+                            .Append($"return new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{singleGeneric.T.OriginalRepresenation}>" : null)}({Value}.NS.Select(y => {singleGeneric.T.OriginalRepresenation}.Parse(y)));")
                         )
-                    .ToConversion(singleGeneric.TypeSymbol),
+                    .ToConversion(singleGeneric),
                 SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(CreateMethod))),
                 _ => throw UncoveredConversionException(singleGeneric, nameof(CreateMethod))
             },
             KeyValueGeneric {TKey.SpecialType: not SpecialType.System_String} keyValueGeneric => throw new ArgumentException("Only strings are supported for for TKey",
                 UncoveredConversionException(keyValueGeneric, nameof(CreateMethod))),
-            KeyValueGeneric keyValueGeneric when CreateSignature(keyValueGeneric.TypeSymbol, options) is var signature => keyValueGeneric.Type switch
+            KeyValueGeneric keyValueGeneric when CreateSignature(keyValueGeneric, options) is var signature => keyValueGeneric.Type switch
             {
                 KeyValueGeneric.SupportedType.Dictionary => signature
                     .CreateScope(
@@ -200,21 +199,21 @@ public static class UnMarshaller
                 _ => throw UncoveredConversionException(keyValueGeneric, nameof(CreateMethod))
 
             },
-            UnknownType => CreateCode(type, fn, options),
-            var typeIdentifier => throw UncoveredConversionException(typeIdentifier, nameof(CreateMethod))
+            UnknownType => CreateCode(typeIdentifier, fn, options),
+            _ => throw UncoveredConversionException(typeIdentifier, nameof(CreateMethod))
         };
 
     }
 
-    private static string CreateSignature(ITypeSymbol typeSymbol, MarshallerOptions options)
+    private static string CreateSignature(TypeIdentifier typeIdentifier, MarshallerOptions options)
     {
-        return $"public static {typeSymbol.Representation().annotated} {GetDeserializationMethodName(typeSymbol)}(AttributeValue? {Value}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)";
+        return $"public static {typeIdentifier.AnnotatedRepresenation} {GetDeserializationMethodName(typeIdentifier.TypeSymbol)}(AttributeValue? {Value}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)";
     }
     
     private static IEnumerable<string> CreateTypeContents(IEnumerable<DynamoDBMarshallerArguments> arguments,
         Func<ITypeSymbol, DynamoDbDataMember[]> getDynamoDbProperties, MarshallerOptions options)
     {
-        var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability);
+        var hashSet = new HashSet<TypeIdentifier>(TypeIdentifier.Nullable);
         return arguments.SelectMany(x =>
             CodeFactory.Create(
                 x.EntityTypeSymbol,
@@ -224,14 +223,14 @@ public static class UnMarshaller
         );
     }
     
-    private static string InvokeUnmarshallMethod(ITypeSymbol typeSymbol, string paramReference, string dataMember, MarshallerOptions options, string marshallerOptionsReference = MarshallerOptions.ParamReference)
+    private static string InvokeUnmarshallMethod(TypeIdentifier typeIdentifier, string paramReference, string dataMember, MarshallerOptions options, string marshallerOptionsReference = MarshallerOptions.ParamReference)
     {
-        if (options.IsConvertable(typeSymbol))
-            return $"{GetDeserializationMethodName(typeSymbol)}({paramReference}, {marshallerOptionsReference}, {dataMember})";
+        if (options.IsConvertable(typeIdentifier.TypeSymbol))
+            return $"{GetDeserializationMethodName(typeIdentifier.TypeSymbol)}({paramReference}, {marshallerOptionsReference}, {dataMember})";
         
-        return typeSymbol.TypeIdentifier() is UnknownType
-            ? $"{GetDeserializationMethodName(typeSymbol)}({paramReference}?.M, {marshallerOptionsReference}, {dataMember})"
-            : $"{GetDeserializationMethodName(typeSymbol)}({paramReference}, {marshallerOptionsReference}, {dataMember})";
+        return typeIdentifier is UnknownType
+            ? $"{GetDeserializationMethodName(typeIdentifier.TypeSymbol)}({paramReference}?.M, {marshallerOptionsReference}, {dataMember})"
+            : $"{GetDeserializationMethodName(typeIdentifier.TypeSymbol)}({paramReference}, {marshallerOptionsReference}, {dataMember})";
 
     }
     private static IEnumerable<string> ObjectAssignmentBlock(bool useParentheses, IEnumerable<string> assignments, bool applySemiColon)

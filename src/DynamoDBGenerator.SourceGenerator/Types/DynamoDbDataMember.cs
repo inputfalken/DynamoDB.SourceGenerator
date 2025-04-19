@@ -96,7 +96,7 @@ public readonly struct DynamoDbDataMember
                     when GetStringArrayFromConstructor(x.Attribute).FirstOrDefault() is { } index => index,
                 Constants.AWSSDK_DynamoDBv2.Attribute.DynamoDBGlobalSecondaryIndexRangeKey
                     when GetStringArrayFromConstructor(x.Attribute).FirstOrDefault() is { } index => index,
-                _ => throw new NotSupportedException(x.DataMember.DataMember.Type.ToDisplayString())
+                _ => throw new NotSupportedException(x.DataMember.DataMember.TypeIdentifier.TypeSymbol.ToDisplayString())
             })
             .Select(x =>
             {

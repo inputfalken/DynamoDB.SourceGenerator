@@ -17,7 +17,10 @@ public readonly struct MarshallerOptions
     public string FullName { get; }
     public string FieldDeclaration { get; }
 
-    
+    public bool IsUnknown(TypeIdentifier typeSymbol) =>
+        typeSymbol is UnknownType && !IsConvertable(typeSymbol.TypeSymbol);
+
+
     private MarshallerOptions(
         INamedTypeSymbol originalType,
         INamedTypeSymbol convertersType,
@@ -64,23 +67,22 @@ public readonly struct MarshallerOptions
         
         return null;
     }
-    public string? TryReadConversion(ITypeSymbol typeSymbol, string attributeValueParam)
+    public string? TryReadConversion(TypeIdentifier typeIdentifier, string attributeValueParam)
     {
         // Converters comes first so that you your customized converters are always prioritized.
-        if (Converters.TryGetValue(typeSymbol, out var match))
+        if (Converters.TryGetValue(typeIdentifier.TypeSymbol, out var match))
             return $"{ParamReference}.{ConvertersProperty}.{match.Key}.Read({attributeValueParam})";
 
-        if (typeSymbol.TypeKind is TypeKind.Enum)
+        if (typeIdentifier.TypeSymbol.TypeKind is TypeKind.Enum)
         {
-            var original = typeSymbol.Representation().original;
             return _enumStrategy switch 
             {
-                ConversionStrategy.Integer => $"(Int32.TryParse({attributeValueParam}.N, out var e) ? ({original}?) e : null)",
-                ConversionStrategy.Name => $"(Enum.TryParse<{original}>({attributeValueParam}.S, false, out var e) ? ({original}?) e : null)",
+                ConversionStrategy.Integer => $"(Int32.TryParse({attributeValueParam}.N, out var e) ? ({typeIdentifier.OriginalRepresenation}?) e : null)",
+                ConversionStrategy.Name => $"(Enum.TryParse<{typeIdentifier.OriginalRepresenation}>({attributeValueParam}.S, false, out var e) ? ({typeIdentifier.OriginalRepresenation}?) e : null)",
                 ConversionStrategy.NameCI 
                     or ConversionStrategy.LowerCase 
                     or ConversionStrategy.UpperCase 
-                    => $"(Enum.TryParse<{original}>({attributeValueParam}.S, true, out var e) ? ({original}?) e : null)",
+                    => $"(Enum.TryParse<{typeIdentifier.OriginalRepresenation}>({attributeValueParam}.S, true, out var e) ? ({typeIdentifier.OriginalRepresenation}?) e : null)",
                 _ => throw new ArgumentException($"Could not resolve enum conversion strategy from value '{_enumStrategy}'.")
             };
         }

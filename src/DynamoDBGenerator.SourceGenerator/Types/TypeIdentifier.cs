@@ -3,9 +3,74 @@ using Microsoft.CodeAnalysis;
 
 namespace DynamoDBGenerator.SourceGenerator.Types;
 
-public abstract record TypeIdentifier(ITypeSymbol TypeSymbol)
+public abstract record TypeIdentifier
 {
-    private bool IsNullable { get; } = TypeSymbol.IsNullable();
+    protected TypeIdentifier(ITypeSymbol typeSymbol)
+    {
+        IsNullable = typeSymbol switch
+        {
+            { IsReferenceType: true, NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated } => true,
+            { IsReferenceType: true, NullableAnnotation: NullableAnnotation.NotAnnotated } => false,
+            { IsValueType: true, OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => true,
+            { IsValueType: true } => false,
+            _ => throw new ArgumentOutOfRangeException(
+                $"Could not determine nullablity of type '{typeSymbol.ToDisplayString()}'.")
+        };
+        
+        TypeSymbol = typeSymbol;
+        var (annotated, original) = typeSymbol.Representation();
+        OriginalRepresenation = original;
+        AnnotatedRepresenation = annotated;
+        IsNumeric = IsNumericMethod(typeSymbol);
+    }
+
+    internal static readonly IEqualityComparer<TypeIdentifier> Default =
+        new TypeSymbolDelegator(SymbolEqualityComparer.Default);
+
+    internal static readonly IEqualityComparer<TypeIdentifier> Nullable =
+        new TypeSymbolDelegator(SymbolEqualityComparer.IncludeNullability);
+
+    private class TypeSymbolDelegator : IEqualityComparer<TypeIdentifier>
+    {
+        private readonly IEqualityComparer<ITypeSymbol> _comparer;
+
+        public TypeSymbolDelegator(IEqualityComparer<ITypeSymbol> comparer)
+        {
+            _comparer = comparer;
+        }
+
+        public bool Equals(TypeIdentifier? x, TypeIdentifier? y)
+        {
+            return ReferenceEquals(x, y) || x switch
+            {
+                null => false,
+                _ => y is not null && _comparer.Equals(x.TypeSymbol, y.TypeSymbol)
+            };
+        }
+
+        public int GetHashCode(TypeIdentifier obj) => _comparer.GetHashCode(obj.TypeSymbol);
+    }
+
+    private static bool IsNumericMethod(ITypeSymbol typeSymbol)
+    {
+        return typeSymbol.SpecialType
+            is SpecialType.System_Int16
+            or SpecialType.System_Byte
+            or SpecialType.System_Int32
+            or SpecialType.System_Int64
+            or SpecialType.System_SByte
+            or SpecialType.System_UInt16
+            or SpecialType.System_UInt32
+            or SpecialType.System_UInt64
+            or SpecialType.System_Decimal
+            or SpecialType.System_Double
+            or SpecialType.System_Single;
+    }
+
+    public bool IsNullable { get; }
+    public bool IsNumeric { get; }
+    public string AnnotatedRepresenation { get; }
+    public string OriginalRepresenation { get; }
 
     public string ReturnNullOrThrow(string dataMember)
     {
@@ -14,7 +79,7 @@ public abstract record TypeIdentifier(ITypeSymbol TypeSymbol)
             : $"throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}({dataMember});";
     }
 
-    public ITypeSymbol TypeSymbol { get; } = TypeSymbol;
+    public ITypeSymbol TypeSymbol { get; }
 }
 
 public sealed record UnknownType(ITypeSymbol TypeSymbol) : TypeIdentifier(TypeSymbol);
@@ -32,7 +97,7 @@ public sealed record KeyValueGeneric : TypeIdentifier
     {
         Type = supportedType;
         TKey = tKey;
-        TValue = tValue;
+        TValue = tValue.TypeIdentifier();
     }
 
     public SupportedType Type { get; }
@@ -41,7 +106,7 @@ public sealed record KeyValueGeneric : TypeIdentifier
     public ITypeSymbol TKey { get; }
 
     // ReSharper disable once InconsistentNaming
-    public ITypeSymbol TValue { get; }
+    public TypeIdentifier TValue { get; }
 
     public static KeyValueGeneric? CreateInstance(in ITypeSymbol typeSymbol)
     {
@@ -80,12 +145,11 @@ public sealed record SingleGeneric : TypeIdentifier
 
     {
         Type = supportedType;
-        T = innerType;
+        T = innerType.TypeIdentifier();
     }
 
     public SupportedType Type { get; }
-    public ITypeSymbol T { get; }
-
+    public TypeIdentifier T { get; }
 
     public static SingleGeneric? CreateInstance(in ITypeSymbol typeSymbol)
     {

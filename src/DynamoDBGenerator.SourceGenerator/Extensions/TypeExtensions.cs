@@ -1,7 +1,4 @@
-using System.Collections;
 using System.Collections.Concurrent;
-using System.Collections.Immutable;
-using System.Runtime.InteropServices;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
@@ -54,16 +51,6 @@ public static class TypeExtensions
 
     private static readonly Dictionary<ITypeSymbol, TypeIdentifier> TypeIdentifierDictionary =
         new(SymbolEqualityComparer.IncludeNullability);
-
-    public static bool IsNullable(this ITypeSymbol typeSymbol) => typeSymbol switch
-    {
-        { IsReferenceType: true, NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated } => true,
-        { IsReferenceType: true, NullableAnnotation: NullableAnnotation.NotAnnotated } => false,
-        { IsValueType: true, OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => true,
-        { IsValueType: true } => false,
-        _ => throw new ArgumentOutOfRangeException(
-            $"Could not determine nullablity of type '{typeSymbol.ToDisplayString()}'.")
-    };
 
     public static TypeIdentifier TypeIdentifier(this ITypeSymbol type)
     {
@@ -292,9 +279,9 @@ public static class TypeExtensions
         return new CodeFactory(enumerable);
     }
 
-    public static CodeFactory ToConversion(this IEnumerable<string> enumerable, ITypeSymbol typeSymbol)
+    public static CodeFactory ToConversion(this IEnumerable<string> enumerable, TypeIdentifier typeIdentifier)
     {
-        return new CodeFactory(enumerable, new[] { typeSymbol });
+        return new CodeFactory(enumerable, new[] { typeIdentifier });
     }
 
     public static INamedTypeSymbol? TryGetNullableValueType(this ITypeSymbol type)
@@ -305,22 +292,6 @@ public static class TypeExtensions
         } symbol
             ? symbol
             : null;
-    }
-
-    public static bool IsNumeric(this ITypeSymbol typeSymbol)
-    {
-        return typeSymbol.SpecialType
-            is SpecialType.System_Int16
-            or SpecialType.System_Byte
-            or SpecialType.System_Int32
-            or SpecialType.System_Int64
-            or SpecialType.System_SByte
-            or SpecialType.System_UInt16
-            or SpecialType.System_UInt32
-            or SpecialType.System_UInt64
-            or SpecialType.System_Decimal
-            or SpecialType.System_Double
-            or SpecialType.System_Single;
     }
 
     public static DynamoDbDataMember[] GetDynamoDbProperties(this ITypeSymbol symbol)
