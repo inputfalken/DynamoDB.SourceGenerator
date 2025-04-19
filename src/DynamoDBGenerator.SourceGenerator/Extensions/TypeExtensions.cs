@@ -6,6 +6,13 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class TypeExtensions
 {
+    private static readonly Dictionary<ITypeSymbol, TypeIdentifier> TypeIdentifierDictionary =
+        new(SymbolEqualityComparer.IncludeNullability);
+
+    private static readonly SymbolDisplayFormat DisplayFormat = new(
+        genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters
+    );
+
     public static IEnumerable<string> NamespaceDeclaration(this INamedTypeSymbol type, IEnumerable<string> content)
     {
         return type.ContainingNamespace.IsGlobalNamespace
@@ -48,10 +55,6 @@ public static class TypeExtensions
         return x => cache.TryGetValue(x, out var value) ? value : cache[x] = selector(x);
     }
 
-
-    private static readonly Dictionary<ITypeSymbol, TypeIdentifier> TypeIdentifierDictionary =
-        new(SymbolEqualityComparer.IncludeNullability);
-
     public static TypeIdentifier TypeIdentifier(this ITypeSymbol type)
     {
         if (TypeIdentifierDictionary.TryGetValue(type, out var typeIdentifier))
@@ -71,43 +74,12 @@ public static class TypeExtensions
         }
     }
 
-
-
-    //Source: https://referencesource.microsoft.com/#mscorlib/system/tuple.cs,49b112811bc359fd,references
-    private class TupleComparer : IEqualityComparer<(ITypeSymbol, ITypeSymbol)>
-    {
-        private readonly IEqualityComparer<ITypeSymbol> _comparer;
-
-        public TupleComparer(IEqualityComparer<ITypeSymbol> comparer)
-        {
-            _comparer = comparer;
-        }
-
-        public bool Equals((ITypeSymbol, ITypeSymbol) x, (ITypeSymbol, ITypeSymbol) y)
-        {
-            return _comparer.Equals(x.Item1, y.Item1) && _comparer.Equals(x.Item2, y.Item2);
-        }
-
-        public int GetHashCode((ITypeSymbol, ITypeSymbol) obj)
-        {
-            var hashCode1 = obj.Item1 is null ? 0 : _comparer.GetHashCode(obj.Item1);
-            var hashCode2 = obj.Item2 is null ? 0 : _comparer.GetHashCode(obj.Item2);
-            return CombineHashCodes(hashCode1, hashCode2);
-        }
-
-        private static int CombineHashCodes(int h1, int h2)
-        {
-            return ((h1 << 5) + h1) ^ h2;
-        }
-    }
-
     public static Func<ITypeSymbol, ITypeSymbol, string> SuffixedFullyQualifiedTypeName(string suffix,
         IEqualityComparer<ISymbol?> comparer)
     {
         IEqualityComparer<(ITypeSymbol, ITypeSymbol)> tupleComparer = new TupleComparer(comparer);
         var dict = new ConcurrentDictionary<(ITypeSymbol, ITypeSymbol), string>(tupleComparer);
         if (Equals(comparer, SymbolEqualityComparer.Default))
-        {
             return (x, y) => dict.GetOrAdd(
                 (x, y),
                 tuple =>
@@ -117,16 +89,11 @@ public static class TypeExtensions
                         ? $"{p.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{c.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}_{c.BaseType!.ToDisplayString()}{suffix}"
                         : $"{p.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{c.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}{suffix}";
                 });
-        }
 
         throw new NotSupportedException(
             $"Method {nameof(SuffixedFullyQualifiedTypeName)} does not implement equality comparer '{comparer.GetType().Name}"
         );
     }
-
-    private static readonly SymbolDisplayFormat DisplayFormat = new(
-        genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters
-    );
 
     public static Func<ITypeSymbol, string> SuffixedTypeSymbolNameFactory(string? suffix,
         IEqualityComparer<ISymbol?> comparer)
@@ -201,8 +168,10 @@ public static class TypeExtensions
                 _ => throw new NotImplementedException(ExceptionMessage(x))
             };
 
-            static string ExceptionMessage(ITypeSymbol typeSymbol) =>
-                $"Could not apply naming suffix on type: {typeSymbol.ToDisplayString()}";
+            static string ExceptionMessage(ITypeSymbol typeSymbol)
+            {
+                return $"Could not apply naming suffix on type: {typeSymbol.ToDisplayString()}";
+            }
         }
     }
 
@@ -280,6 +249,35 @@ public static class TypeExtensions
 
                 namedTypeSymbol = namedTypeSymbol.BaseType;
             } while (namedTypeSymbol is { SpecialType: not SpecialType.System_Object });
+        }
+    }
+
+
+    //Source: https://referencesource.microsoft.com/#mscorlib/system/tuple.cs,49b112811bc359fd,references
+    private class TupleComparer : IEqualityComparer<(ITypeSymbol, ITypeSymbol)>
+    {
+        private readonly IEqualityComparer<ITypeSymbol> _comparer;
+
+        public TupleComparer(IEqualityComparer<ITypeSymbol> comparer)
+        {
+            _comparer = comparer;
+        }
+
+        public bool Equals((ITypeSymbol, ITypeSymbol) x, (ITypeSymbol, ITypeSymbol) y)
+        {
+            return _comparer.Equals(x.Item1, y.Item1) && _comparer.Equals(x.Item2, y.Item2);
+        }
+
+        public int GetHashCode((ITypeSymbol, ITypeSymbol) obj)
+        {
+            var hashCode1 = obj.Item1 is null ? 0 : _comparer.GetHashCode(obj.Item1);
+            var hashCode2 = obj.Item2 is null ? 0 : _comparer.GetHashCode(obj.Item2);
+            return CombineHashCodes(hashCode1, hashCode2);
+        }
+
+        private static int CombineHashCodes(int h1, int h2)
+        {
+            return ((h1 << 5) + h1) ^ h2;
         }
     }
 }

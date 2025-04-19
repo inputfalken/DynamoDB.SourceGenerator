@@ -1,13 +1,13 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 // Great source:  https://github.com/dotnet/runtime/blob/main/src/tools/illink/src/ILLink.RoslynAnalyzer/CompilationExtensions.cs
 public static class CompilationExtensions
 {
-    public static ReadOnlySpan<INamedTypeSymbol> GetTypeSymbols(this Compilation compilation, ImmutableArray<SyntaxNode> classDeclarations)
+    public static ReadOnlySpan<INamedTypeSymbol> GetTypeSymbols(this Compilation compilation,
+        ImmutableArray<SyntaxNode> classDeclarations)
     {
         var span = classDeclarations.AsSpan();
         var symbols = new INamedTypeSymbol[classDeclarations.Length];
@@ -19,7 +19,8 @@ public static class CompilationExtensions
                     .GetSemanticModel(classDeclarationSyntax.SyntaxTree)
                     .GetDeclaredSymbol(classDeclarationSyntax)
                 is not INamedTypeSymbol typeSymbol)
-                throw new ArgumentException($"Could not convert the '{classDeclarationSyntax.ToFullString()}' into a '{nameof(ITypeSymbol)}'.");
+                throw new ArgumentException(
+                    $"Could not convert the '{classDeclarationSyntax.ToFullString()}' into a '{nameof(ITypeSymbol)}'.");
 
             symbols[i] = typeSymbol;
         }

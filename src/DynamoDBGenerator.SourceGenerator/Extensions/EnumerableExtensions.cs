@@ -16,12 +16,11 @@ public static class EnumerableExtensions
             buffer = item;
         }
 
-        if (isBuffered)
-        {
-            yield return buffer!;
-        }
+        if (isBuffered) yield return buffer!;
     }
-    public static IEnumerable<TResult> AllAndLast<T, TResult>(this IEnumerable<T> enumerable, Func<T, TResult> @default, Func<T, TResult> onLast)
+
+    public static IEnumerable<TResult> AllAndLast<T, TResult>(this IEnumerable<T> enumerable, Func<T, TResult> @default,
+        Func<T, TResult> onLast)
     {
         var buffer = default(T);
         var isBuffered = false;
@@ -35,10 +34,6 @@ public static class EnumerableExtensions
             buffer = item;
         }
 
-        if (isBuffered)
-        {
-            yield return onLast(buffer!);
-        }
+        if (isBuffered) yield return onLast(buffer!);
     }
-
 }
