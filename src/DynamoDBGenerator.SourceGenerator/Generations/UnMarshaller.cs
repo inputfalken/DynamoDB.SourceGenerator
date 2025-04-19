@@ -75,22 +75,59 @@ public static class UnMarshaller
 
         if (options.TryReadConversion(type, Value) is {} conversion)
         {
-            if (type.IsNullable())
-                return CreateSignature(type, options)
-                    .CreateScope(
-                        $"if ({Value} is null)"
-                            .CreateScope("return null;")
-                            .Append($"return {conversion};")
-                    )
-                    .ToConversion();
+            return type switch
+            {
+                { IsValueType: true } => type switch
+                {
+                    { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => CreateSignature(type, options)
+                        .CreateScope(
+                            $"if ({Value} is null)"
+                                .CreateScope("return null;")
+                                .Append($"return {conversion}.Value;")
+                        )
+                        .ToConversion(),
+                    _ => CreateSignature(type, options)
+                        .CreateScope(
+                            $"if ({Value} is null)"
+                                .CreateScope($"throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
+                                .Append($"var result = {conversion};")
+                                .Concat(
+                                    "if (result is null)"
+                                    .CreateScope($"throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
+                                )
+                                .Append("return result.Value;")
+                        )
+                        .ToConversion()
 
-            return CreateSignature(type, options)
-                .CreateScope(
-                    $"if ({Value} is null || {conversion} is not {{ }} x)"
-                        .CreateScope($"throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
-                        .Append("return x;")
+                },
+                { IsReferenceType: true } => type switch
+                {
+                    { NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated } => CreateSignature(
+                            type, options)
+                        .CreateScope(
+                            $"if ({Value} is null)"
+                                .CreateScope("return null;")
+                                .Append($"return {conversion};")
+                        ).ToConversion(),
+                    _ => CreateSignature(type, options)
+                        .CreateScope(
+                            $"if ({Value} is null)"
+                                .CreateScope($"throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
+                                .Append($"var result = {conversion};")
+                                .Concat(
+                                    "if (result is null)"
+                                    .CreateScope($"throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
+                                    )
+                                .Append("return result;")
+                        )
+                        .ToConversion()
+
+
+                },
+                _ => throw new ArgumentException(
+                    $"Neither ValueType or ReferenceType could be resolved for conversion. type '{type.ToDisplayString()}'."
                 )
-                .ToConversion();
+            };
         }
         
         return type.TypeIdentifier() switch
