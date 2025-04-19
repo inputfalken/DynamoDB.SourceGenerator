@@ -83,7 +83,7 @@ public static class UnMarshaller
                         .CreateScope(
                             $"if ({Value} is null)"
                                 .CreateScope("return null;")
-                                .Append($"return {conversion}.Value;")
+                                .Append($"return {conversion};")
                         )
                         .ToConversion(),
                     _ => CreateSignature(type, options)
