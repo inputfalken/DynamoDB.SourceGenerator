@@ -28,12 +28,6 @@ public readonly struct CodeFactory
     private readonly IEnumerable<TypeIdentifier> _dependantTypes;
 
     public static IEnumerable<string> Create(
-        ITypeSymbol typeSymbol,
-        Func<TypeIdentifier, CodeFactory> codeSelector,
-        ISet<TypeIdentifier> handledTypes
-    ) => Execute(typeSymbol.TypeIdentifier(), codeSelector, handledTypes);
-
-    private static IEnumerable<string> Execute(
         TypeIdentifier typeSymbol,
         Func<TypeIdentifier, CodeFactory> codeSelector,
         ISet<TypeIdentifier> handledTypes
@@ -49,7 +43,8 @@ public readonly struct CodeFactory
             yield return s;
 
         foreach (var nestedTypeSymbol in code._dependantTypes)
-        foreach (var nestedCode in Execute(nestedTypeSymbol, codeSelector, handledTypes))
+        foreach (var nestedCode in Create(nestedTypeSymbol, codeSelector, handledTypes))
             yield return nestedCode;
     }
+
 }

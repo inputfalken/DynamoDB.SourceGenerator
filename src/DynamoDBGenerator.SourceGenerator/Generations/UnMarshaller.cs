@@ -61,10 +61,10 @@ public static class UnMarshaller
                         .SelectMany(x => x)
                         .DefaultIfEmpty("();")
                         // Is needed in order to not perform new entity? where '?' is not allowed in the end of the string.
-                        .Prepend(typeIdentifier.TypeSymbol.IsTupleType ? "return" : $"return new {typeIdentifier.AnnotatedRepresenation.TrimEnd('?')}")
+                        .Prepend(typeIdentifier.TypeSymbol.IsTupleType ? "return" : $"return new {typeIdentifier.AnnotatedString.TrimEnd('?')}")
                 );
 
-        var method = $"public static {typeIdentifier.AnnotatedRepresenation} {GetDeserializationMethodName(typeIdentifier.TypeSymbol)}(Dictionary<string, AttributeValue>? {Dict}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)".CreateScope(blockBody);
+        var method = $"public static {typeIdentifier.AnnotatedString} {GetDeserializationMethodName(typeIdentifier.TypeSymbol)}(Dictionary<string, AttributeValue>? {Dict}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)".CreateScope(blockBody);
 
         return new CodeFactory(method, assignments.Select(x => x.DDB.DataMember.TypeIdentifier));
 
@@ -172,7 +172,7 @@ public static class UnMarshaller
                     .CreateScope(
                         $"if ({Value} is null || {Value}.NS is null)"
                             .CreateScope(singleGeneric.ReturnNullOrThrow(DataMember))
-                            .Append($"return new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{singleGeneric.T.OriginalRepresenation}>" : null)}({Value}.NS.Select(y => {singleGeneric.T.OriginalRepresenation}.Parse(y)));")
+                            .Append($"return new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{singleGeneric.T.UnannotatedString}>" : null)}({Value}.NS.Select(y => {singleGeneric.T.UnannotatedString}.Parse(y)));")
                         )
                     .ToConversion(singleGeneric),
                 SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(CreateMethod))),
@@ -207,7 +207,7 @@ public static class UnMarshaller
 
     private static string CreateSignature(TypeIdentifier typeIdentifier, MarshallerOptions options)
     {
-        return $"public static {typeIdentifier.AnnotatedRepresenation} {GetDeserializationMethodName(typeIdentifier.TypeSymbol)}(AttributeValue? {Value}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)";
+        return $"public static {typeIdentifier.AnnotatedString} {GetDeserializationMethodName(typeIdentifier.TypeSymbol)}(AttributeValue? {Value}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)";
     }
     
     private static IEnumerable<string> CreateTypeContents(IEnumerable<DynamoDBMarshallerArguments> arguments,
@@ -264,11 +264,11 @@ public static class UnMarshaller
     }
 
 
-    internal static IEnumerable<string> RootSignature(ITypeSymbol typeSymbol, string rootTypeName)
+    internal static IEnumerable<string> RootSignature(TypeIdentifier typeIdentifier)
     {
-        return $"public {rootTypeName} {Marshaller.UnmarshalMethodName}(Dictionary<{nameof(String)}, {Constants.AWSSDK_DynamoDBv2.AttributeValue}> entity)".CreateScope(
+        return $"public {typeIdentifier.AnnotatedString} {Marshaller.UnmarshalMethodName}(Dictionary<{nameof(String)}, {Constants.AWSSDK_DynamoDBv2.AttributeValue}> entity)".CreateScope(
             "ArgumentNullException.ThrowIfNull(entity);",
-            $"return {UnMarshallerClass}.{GetDeserializationMethodName(typeSymbol)}(entity, {MarshallerOptions.FieldReference});");
+            $"return {UnMarshallerClass}.{GetDeserializationMethodName(typeIdentifier.TypeSymbol)}(entity, {MarshallerOptions.FieldReference});");
     }
     private static IEnumerable<(string DataMember, string ParameterName)> TryGetMatchedConstructorArguments(ITypeSymbol typeSymbol)
     {

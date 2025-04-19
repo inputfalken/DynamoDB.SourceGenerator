@@ -51,7 +51,7 @@ internal static partial class Marshaller
                 .Append($"return {DictionaryReference};"));
 
         var code =
-            $"public static Dictionary<string, AttributeValue>{(typeIdentifier.IsNullable ? '?' : null)} {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({typeIdentifier.AnnotatedRepresenation} {ParamReference}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)"
+            $"public static Dictionary<string, AttributeValue>{(typeIdentifier.IsNullable ? '?' : null)} {GetSerializationMethodName(typeIdentifier.TypeSymbol)}({typeIdentifier.AnnotatedString} {ParamReference}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)"
                 .CreateScope(body);
 
         return new CodeFactory(code, properties.Select(y => y.DataMember.TypeIdentifier));
@@ -187,8 +187,8 @@ internal static partial class Marshaller
     {
         var typeSymbol = typeIdentifier.TypeSymbol;
         return typeIdentifier.IsNullable 
-            ? $"public static {Constants.AWSSDK_DynamoDBv2.AttributeValue}? {GetSerializationMethodName(typeSymbol)}({typeIdentifier.AnnotatedRepresenation} {ParamReference}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)"
-            : $"public static {Constants.AWSSDK_DynamoDBv2.AttributeValue} {GetSerializationMethodName(typeSymbol)}({typeIdentifier.AnnotatedRepresenation} {ParamReference}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)";
+            ? $"public static {Constants.AWSSDK_DynamoDBv2.AttributeValue}? {GetSerializationMethodName(typeSymbol)}({typeIdentifier.AnnotatedString} {ParamReference}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)"
+            : $"public static {Constants.AWSSDK_DynamoDBv2.AttributeValue} {GetSerializationMethodName(typeSymbol)}({typeIdentifier.AnnotatedString} {ParamReference}, {options.FullName} {MarshallerOptions.ParamReference}, string? {DataMember} = null)";
     }
 
     private static IEnumerable<string> InitializeDictionary(IEnumerable<string> capacityCalculations)
@@ -217,13 +217,13 @@ internal static partial class Marshaller
             : invocation;
     }
 
-    internal static IEnumerable<string> RootSignature(ITypeSymbol typeSymbol, string rootTypeName)
+    internal static IEnumerable<string> RootSignature(TypeIdentifier typeIdentifier)
     {
 
-        return $"public Dictionary<{nameof(String)}, {Constants.AWSSDK_DynamoDBv2.AttributeValue}> {Constants.DynamoDBGenerator.Marshaller.MarshallMethodName}({rootTypeName} {ParamReference})"
+        return $"public Dictionary<{nameof(String)}, {Constants.AWSSDK_DynamoDBv2.AttributeValue}> {Constants.DynamoDBGenerator.Marshaller.MarshallMethodName}({typeIdentifier.AnnotatedString} {ParamReference})"
             .CreateScope(
                 $"ArgumentNullException.ThrowIfNull({ParamReference});",
-                $"return {ClassName}.{GetSerializationMethodName(typeSymbol)}({ParamReference}, {MarshallerOptions.FieldReference});"
+                $"return {ClassName}.{GetSerializationMethodName(typeIdentifier.TypeSymbol)}({ParamReference}, {MarshallerOptions.FieldReference});"
             );
     }
 

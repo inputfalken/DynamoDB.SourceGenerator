@@ -79,7 +79,7 @@ public static class AttributeExpressionValue
                 )
             )
             .ScopeTo(
-                $"IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({typeIdentifier.AnnotatedRepresenation} entity)");
+                $"IEnumerable<KeyValuePair<string, AttributeValue>> {interfaceName}.{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerAccessedValues}({typeIdentifier.AnnotatedString} entity)");
 
 
         foreach (var yield in yields)
@@ -140,13 +140,13 @@ public static class AttributeExpressionValue
                         DDB: x,
                         AttributeReference: TypeName(x.DataMember.TypeIdentifier.TypeSymbol),
                         AttributeInterfaceName:
-                        $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{x.DataMember.TypeIdentifier.AnnotatedRepresenation}>"
+                        $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{x.DataMember.TypeIdentifier.AnnotatedString}>"
                     ))
                     .ToArray();
 
         var structName = TypeName(typeIdentifier.TypeSymbol);
         var interfaceName =
-            $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{typeIdentifier.AnnotatedRepresenation}>";
+            $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{typeIdentifier.AnnotatedString}>";
 
         var @struct =
             $"public readonly struct {structName} : {interfaceName}".CreateScope(TypeContents(typeIdentifier, dataMembers,

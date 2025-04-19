@@ -23,7 +23,7 @@ internal static partial class Marshaller
             DynamoDbDataMember dataMember, MarshallerOptions options)
         {
             const string reference = "value";
-            var expression = $"{keyReference} is {dataMember.DataMember.TypeIdentifier.OriginalRepresenation} {{ }} {reference}";
+            var expression = $"{keyReference} is {dataMember.DataMember.TypeIdentifier.UnannotatedString} {{ }} {reference}";
 
             var innerContent = $"if ({expression}) "
                 .CreateScope(
@@ -31,7 +31,7 @@ internal static partial class Marshaller
                 .Concat($"else if ({keyReference} is null) ".CreateScope(
                     $@"throw {ExceptionHelper.KeysArgumentNullExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"");"))
                 .Concat("else".CreateScope(
-                    $@"throw {ExceptionHelper.KeysInvalidConversionExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"", {keyReference}, ""{dataMember.DataMember.TypeIdentifier.OriginalRepresenation}"");"));
+                    $@"throw {ExceptionHelper.KeysInvalidConversionExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"", {keyReference}, ""{dataMember.DataMember.TypeIdentifier.UnannotatedString}"");"));
 
             return $"if ({validateReference})".CreateScope(innerContent);
         }

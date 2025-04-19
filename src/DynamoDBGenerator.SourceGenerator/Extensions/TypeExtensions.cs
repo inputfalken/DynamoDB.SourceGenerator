@@ -71,75 +71,7 @@ public static class TypeExtensions
         }
     }
 
-    private static readonly ConcurrentDictionary<ITypeSymbol, (string, string)> RepresentationDictionary =
-        new(SymbolEqualityComparer.IncludeNullability);
 
-    public static (string annotated, string original) Representation(this ITypeSymbol typeSymbol)
-    {
-        return RepresentationDictionary.GetOrAdd(typeSymbol, x =>
-        {
-            var displayString = x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            return RepresentationDictionary[typeSymbol] = (ToString(typeSymbol, displayString), displayString);
-        });
-
-        static string ToString(ITypeSymbol x, string displayString)
-        {
-            if (x is IArrayTypeSymbol arrayTypeSymbol)
-            {
-                var result = ToString(arrayTypeSymbol.ElementType,
-                    arrayTypeSymbol.ElementType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
-
-                return x.NullableAnnotation switch
-                {
-                    NullableAnnotation.Annotated or NullableAnnotation.None => $"{result}[]?",
-                    NullableAnnotation.NotAnnotated => $"{result}[]",
-                    _ => throw new ArgumentException(ExceptionMessage(x))
-                };
-            }
-
-            if (x is not INamedTypeSymbol namedTypeSymbol || namedTypeSymbol.TypeArguments.Length is 0)
-            {
-                return x.NullableAnnotation switch
-                {
-                    // Having `Annotated` and `None` produce append '?' is fine as long as `SuffixedTypeSymbolNameFactory` is giving them different names. Otherwise we could create broken signatures due to duplication.
-                    NullableAnnotation.Annotated or NullableAnnotation.None => $"{displayString}?",
-                    NullableAnnotation.NotAnnotated => displayString,
-                    _ => throw new ArgumentException(ExceptionMessage(x))
-                };
-            }
-
-            if (namedTypeSymbol.OriginalDefinition.SpecialType is SpecialType.System_Nullable_T)
-                return displayString;
-
-            if (namedTypeSymbol.IsTupleType)
-            {
-                var tupleElements = namedTypeSymbol.TupleElements
-                    .Select(y =>
-                        $"{ToString(y.Type, $"{y.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}")} {y.Name}");
-                return $"({string.Join(", ", tupleElements)})";
-            }
-
-            var index = displayString.AsSpan().IndexOf('<');
-            if (index == -1)
-                return displayString;
-
-            var typeWithoutGenericParameters = displayString.Substring(0, index);
-            var typeParameters = string.Join(", ",
-                namedTypeSymbol.TypeArguments.Select(y =>
-                    ToString(y, y.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))));
-            return namedTypeSymbol.NullableAnnotation switch
-            {
-                // Having `Annotated` and `None` produce append '?' is fine as long as `SuffixedTypeSymbolNameFactory` is giving them different names. Otherwise we could create broken signatures due to duplication.
-                NullableAnnotation.Annotated or NullableAnnotation.None =>
-                    $"{typeWithoutGenericParameters}<{typeParameters}>?",
-                NullableAnnotation.NotAnnotated => $"{typeWithoutGenericParameters}<{typeParameters}>",
-                _ => throw new ArgumentException(ExceptionMessage(namedTypeSymbol))
-            };
-
-            static string ExceptionMessage(ISymbol typeSymbol) =>
-                $"Could nullable annotation on type: {typeSymbol.ToDisplayString()}";
-        }
-    }
 
     //Source: https://referencesource.microsoft.com/#mscorlib/system/tuple.cs,49b112811bc359fd,references
     private class TupleComparer : IEqualityComparer<(ITypeSymbol, ITypeSymbol)>
