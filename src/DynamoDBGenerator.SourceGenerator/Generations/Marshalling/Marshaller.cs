@@ -25,10 +25,12 @@ internal static partial class Marshaller
                 var isNullable = x.DataMember.Type.IsNullable();
 
                 var marshallerInvocation = InvokeMarshallerMethod(x.DataMember.Type, accessPattern, $"\"{x.DataMember.Name}\"", options);
+
                 var assignment = isNullable
-                    ? $"if ({marshallerInvocation} is {{ }} {x.DataMember.Name})"
-                        .CreateScope($"{DictionaryReference}[\"{x.AttributeName}\"] = {x.DataMember.Name};")
-                    : new[] { $"{DictionaryReference}[\"{x.AttributeName}\"] = {marshallerInvocation};"};
+                    ? $"if ({x.DataMember.NameAsCamelCase} is not null)"
+                        .CreateScope($"{DictionaryReference}[\"{x.AttributeName}\"] = {x.DataMember.NameAsCamelCase};")
+                        .Prepend($"var {x.DataMember.NameAsCamelCase} = {marshallerInvocation};")
+                    : new[] { $"{DictionaryReference}[\"{x.AttributeName}\"] = {marshallerInvocation};" };
                 
                 return (
                     dictionaryAssignment: assignment,
