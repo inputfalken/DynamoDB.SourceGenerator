@@ -89,12 +89,7 @@ public static class UnMarshaller
                         .CreateScope(
                             $"if ({Value} is null)"
                                 .CreateScope($"throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
-                                .Append($"var result = {conversion};")
-                                .Concat(
-                                    "if (result is null)"
-                                    .CreateScope($"throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
-                                )
-                                .Append("return result.Value;")
+                                .Append($"return {conversion} ?? throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
                         )
                         .ToConversion()
 
@@ -112,12 +107,7 @@ public static class UnMarshaller
                         .CreateScope(
                             $"if ({Value} is null)"
                                 .CreateScope($"throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
-                                .Append($"var result = {conversion};")
-                                .Concat(
-                                    "if (result is null)"
-                                    .CreateScope($"throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
-                                    )
-                                .Append("return result;")
+                                .Append($"return {conversion} ?? throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
                         )
                         .ToConversion()
 
