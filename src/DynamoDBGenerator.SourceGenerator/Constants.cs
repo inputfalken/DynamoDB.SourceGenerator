@@ -81,6 +81,7 @@ public static class Constants
         public static class AttributeValueUtilityFactory
         {
             private const string ClassName = "MarshallHelper";
+            public const string ToAttributeValue = $"{ClassName}.ToAttributeValue";
             public const string Null = $"{ClassName}.Null";
             public const string ToList = $"{ClassName}.ToList";
             public const string ToArray = $"{ClassName}.ToArray";

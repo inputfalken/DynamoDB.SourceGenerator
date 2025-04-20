@@ -17,22 +17,22 @@ public static class MarshallerFactory
     {
         foreach (var argument in arguments)
         {
-            var (expressionValueMethod, valueTrackerTypeName) = AttributeExpressionValue.RootSignature(parentType, argument.ArgumentType);
-            var (expressionMethodName, nameTrackerTypeName) = AttributeExpressionName.RootSignature(parentType, argument.EntityTypeSymbol);
+            var (expressionValueMethod, valueTrackerTypeName) = AttributeExpressionValue.RootSignature(parentType, argument.ArgumentType.TypeSymbol);
+            var (expressionMethodName, nameTrackerTypeName) = AttributeExpressionName.RootSignature(parentType, argument.EntityTypeSymbol.TypeSymbol);
             var constructor =
                 $"public {argument.ImplementationName}({options.FullName} {MarshallerOptions.ParamReference})"
                     .CreateScope($"{MarshallerOptions.FieldReference} = {MarshallerOptions.ParamReference};",
-                        $"{KeyMarshaller.PrimaryKeyMarshallerReference} = {KeyMarshaller.AssignmentRoot(argument.EntityTypeSymbol)};");
+                        $"{KeyMarshaller.PrimaryKeyMarshallerReference} = {KeyMarshaller.AssignmentRoot(argument.EntityTypeSymbol.TypeSymbol)};");
             
             var implementation = constructor
-                .Concat(RootSignature(argument.EntityTypeSymbol, argument.AnnotatedEntityType))
-                .Concat(UnMarshaller.RootSignature(argument.EntityTypeSymbol, argument.AnnotatedEntityType))
-                .Concat(KeyMarshaller.IndexKeyMarshallerRootSignature(argument.EntityTypeSymbol))
+                .Concat(RootSignature(argument.EntityTypeSymbol))
+                .Concat(UnMarshaller.RootSignature(argument.EntityTypeSymbol))
+                .Concat(KeyMarshaller.IndexKeyMarshallerRootSignature(argument.EntityTypeSymbol.TypeSymbol))
                 .Concat(expressionValueMethod)
                 .Append(expressionMethodName)
                 .Append(KeyMarshaller.PrimaryKeyMarshallerDeclaration)
                 .Prepend(options.FieldDeclaration)
-                .ScopeTo($"file sealed class {argument.ImplementationName}: {Interface}<{argument.AnnotatedEntityType}, {argument.AnnotatedArgumentType}, {nameTrackerTypeName}, {valueTrackerTypeName}>");
+                .ScopeTo($"file sealed class {argument.ImplementationName}: {Interface}<{argument.EntityTypeSymbol.AnnotatedString}, {argument.ArgumentType.AnnotatedString}, {nameTrackerTypeName}, {valueTrackerTypeName}>");
 
             foreach (var row in implementation)
                 yield return row;
@@ -44,12 +44,12 @@ public static class MarshallerFactory
     {
         foreach (var argument in arguments)
         {
-            var valueTrackerTypeName = AttributeExpressionValue.GloballyAccessibleName(parentType, argument.ArgumentType);
-            var nameTrackerTypeName = AttributeExpressionName.GloballyAccessibleName(parentType, argument.EntityTypeSymbol);
+            var valueTrackerTypeName = AttributeExpressionValue.GloballyAccessibleName(parentType, argument.ArgumentType.TypeSymbol);
+            var nameTrackerTypeName = AttributeExpressionName.GloballyAccessibleName(parentType, argument.EntityTypeSymbol.TypeSymbol);
             yield return options.TryInstantiate() switch
             {
-                { } arg => $"public static {Interface}<{argument.AnnotatedEntityType}, {argument.AnnotatedArgumentType}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.AccessName} {{ get; }} = new {argument.ImplementationName}({arg});",
-                null => $"public static {Interface}<{argument.AnnotatedEntityType}, {argument.AnnotatedArgumentType}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.AccessName}({options.FullName} options) => new {argument.ImplementationName}(options);"
+                { } arg => $"public static {Interface}<{argument.EntityTypeSymbol.AnnotatedString}, {argument.ArgumentType.AnnotatedString}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.AccessName} {{ get; }} = new {argument.ImplementationName}({arg});",
+                null => $"public static {Interface}<{argument.EntityTypeSymbol.AnnotatedString}, {argument.ArgumentType.AnnotatedString}, {nameTrackerTypeName}, {valueTrackerTypeName}> {argument.AccessName}({options.FullName} options) => new {argument.ImplementationName}(options);"
             };
         }
     }

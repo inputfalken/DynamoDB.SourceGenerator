@@ -14,7 +14,7 @@ internal static partial class Marshaller
         private const string EnforceRkReference = "isRangeKey";
 
         private static readonly Func<ITypeSymbol, string> MethodName =
-            TypeExtensions.SuffixedTypeSymbolNameFactory("Keys", SymbolEqualityComparer.IncludeNullability);
+            TypeExtensions.SuffixedTypeSymbolNameFactory(null, SymbolEqualityComparer.IncludeNullability);
 
         private const string PkReference = "partitionKey";
         private const string RkReference = "rangeKey";
@@ -23,16 +23,15 @@ internal static partial class Marshaller
             DynamoDbDataMember dataMember, MarshallerOptions options)
         {
             const string reference = "value";
-            var expectedType = dataMember.DataMember.Type.Representation().original;
-            var expression = $"{keyReference} is {expectedType} {{ }} {reference}";
+            var expression = $"{keyReference} is {dataMember.DataMember.TypeIdentifier.UnannotatedString} {{ }} {reference}";
 
             var innerContent = $"if ({expression}) "
                 .CreateScope(
-                    $@"{DictionaryName}.Add(""{dataMember.AttributeName}"", {InvokeMarshallerMethod(dataMember.DataMember.Type, reference, $"nameof({keyReference})", options)});")
+                    $@"{DictionaryName}.Add(""{dataMember.AttributeName}"", {InvokeMarshallerMethod(dataMember.DataMember.TypeIdentifier, reference, $"nameof({keyReference})", options)});")
                 .Concat($"else if ({keyReference} is null) ".CreateScope(
                     $@"throw {ExceptionHelper.KeysArgumentNullExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"");"))
                 .Concat("else".CreateScope(
-                    $@"throw {ExceptionHelper.KeysInvalidConversionExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"", {keyReference}, ""{expectedType}"");"));
+                    $@"throw {ExceptionHelper.KeysInvalidConversionExceptionMethod}(""{dataMember.DataMember.Name}"", ""{keyReference}"", {keyReference}, ""{dataMember.DataMember.TypeIdentifier.UnannotatedString}"");"));
 
             return $"if ({validateReference})".CreateScope(innerContent);
         }
@@ -76,7 +75,7 @@ internal static partial class Marshaller
         internal static IEnumerable<string> CreateKeys(IEnumerable<DynamoDBMarshallerArguments> arguments,
             Func<ITypeSymbol, DynamoDbDataMember[]> getDynamoDbProperties, MarshallerOptions options)
         {
-            var hashSet = new HashSet<ITypeSymbol>(SymbolEqualityComparer.IncludeNullability);
+            var hashSet = new HashSet<TypeIdentifier>(TypeIdentifier.Nullable);
 
             return arguments
                 .SelectMany(x => CodeFactory.Create(x.EntityTypeSymbol,
@@ -148,12 +147,12 @@ internal static partial class Marshaller
                 $"new {KeyMarshallerImplementationTypeName}((pk, rk, ipk, irk, dm) => {ClassName}.{MethodName(typeSymbol)}({MarshallerOptions.FieldReference}, pk, rk, ipk, irk, dm))";
         }
 
-        private static CodeFactory StaticAttributeValueDictionaryKeys(ITypeSymbol typeSymbol,
+        private static CodeFactory StaticAttributeValueDictionaryKeys(TypeIdentifier typeIdentifier,
             Func<ITypeSymbol, DynamoDbDataMember[]> fn, MarshallerOptions options)
         {
             var code =
-                $"public static Dictionary<string, AttributeValue> {MethodName(typeSymbol)}({options.FullName} {MarshallerOptions.ParamReference}, object? {PkReference}, object? {RkReference}, bool {EnforcePkReference}, bool {EnforceRkReference}, string? index = null)"
-                    .CreateScope(MethodBody(typeSymbol, fn, options));
+                $"public static Dictionary<string, AttributeValue> {MethodName(typeIdentifier.TypeSymbol)}({options.FullName} {MarshallerOptions.ParamReference}, object? {PkReference}, object? {RkReference}, bool {EnforcePkReference}, bool {EnforceRkReference}, string? index = null)"
+                    .CreateScope(MethodBody(typeIdentifier.TypeSymbol, fn, options));
 
             return new CodeFactory(code);
         }
