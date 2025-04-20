@@ -225,12 +225,11 @@ public static class UnMarshaller
     
     private static string InvokeUnmarshallMethod(TypeIdentifier typeIdentifier, string paramReference, string dataMember, MarshallerOptions options, string marshallerOptionsReference = MarshallerOptions.ParamReference)
     {
-        if (options.IsConvertable(typeIdentifier.TypeSymbol))
+        if (options.IsUnknown(typeIdentifier) is false) 
             return $"{GetDeserializationMethodName(typeIdentifier.TypeSymbol)}({paramReference}, {marshallerOptionsReference}, {dataMember})";
-        
-        return typeIdentifier is UnknownType
-            ? $"{GetDeserializationMethodName(typeIdentifier.TypeSymbol)}({paramReference}?.M, {marshallerOptionsReference}, {dataMember})"
-            : $"{GetDeserializationMethodName(typeIdentifier.TypeSymbol)}({paramReference}, {marshallerOptionsReference}, {dataMember})";
+
+        return
+            $"{GetDeserializationMethodName(typeIdentifier.TypeSymbol)}({paramReference}?.M, {marshallerOptionsReference}, {dataMember})";
 
     }
     private static IEnumerable<string> ObjectAssignmentBlock(bool useParentheses, IEnumerable<string> assignments, bool applySemiColon)

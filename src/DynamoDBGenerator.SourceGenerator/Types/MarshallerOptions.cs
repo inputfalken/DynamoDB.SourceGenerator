@@ -18,7 +18,7 @@ public readonly struct MarshallerOptions
     public string FieldDeclaration { get; }
 
     public bool IsUnknown(TypeIdentifier typeSymbol) =>
-        typeSymbol is UnknownType && !IsConvertable(typeSymbol.TypeSymbol);
+        typeSymbol is UnknownType && IsConvertable(typeSymbol.TypeSymbol) is false;
 
 
     private MarshallerOptions(

@@ -209,12 +209,9 @@ internal static partial class Marshaller
     {
         var invocation = $"{ClassName}.{GetSerializationMethodName(typeIdentifier.TypeSymbol)}({parameterReference}, {optionParam}, {dataMember})";
 
-        if (options.IsConvertable(typeIdentifier.TypeSymbol))
-            return invocation;
-
-        return typeIdentifier is UnknownType 
-            ? $"{AttributeValueUtilityFactory.ToAttributeValue}({invocation})" 
-            : invocation;
+        return options.IsUnknown(typeIdentifier) is false
+            ? invocation
+            : $"{AttributeValueUtilityFactory.ToAttributeValue}({invocation})";
     }
 
     internal static IEnumerable<string> RootSignature(TypeIdentifier typeIdentifier)
