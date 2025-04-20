@@ -17,9 +17,8 @@ public readonly struct MarshallerOptions
     public string FullName { get; }
     public string FieldDeclaration { get; }
 
-    public bool IsUnknown(TypeIdentifier typeSymbol) =>
-        typeSymbol is UnknownType && IsConvertable(typeSymbol.TypeSymbol) is false;
-
+    public bool IsUnknown(TypeIdentifier typeIdentifier) => typeIdentifier is UnknownType && IsConvertable(typeIdentifier) is false;
+    public bool IsConvertable(TypeIdentifier typeIdentifier) => typeIdentifier.TypeSymbol.TypeKind is TypeKind.Enum || Converters.ContainsKey(typeIdentifier.TypeSymbol);
 
     private MarshallerOptions(
         INamedTypeSymbol originalType,
@@ -90,10 +89,6 @@ public readonly struct MarshallerOptions
         return null;
     }
 
-    public bool IsConvertable(ITypeSymbol typeSymbol)
-    {
-        return typeSymbol.TypeKind is TypeKind.Enum || Converters.ContainsKey(typeSymbol);
-    }
 
     private Dictionary<ISymbol?, KeyValuePair<string, ITypeSymbol>> Converters { get; }
 

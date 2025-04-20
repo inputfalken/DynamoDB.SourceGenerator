@@ -63,7 +63,7 @@ public static class AttributeExpressionValue
 
         var yields = (typeIdentifier switch
             {
-                {IsNullable:true}  => $"if ({param} is null)".CreateScope(
+                { IsNullable: true } => $"if ({param} is null)".CreateScope(
                     $"yield return new ({self}.Value, {AttributeValueUtilityFactory.Null});", "yield break;"),
                 { TypeSymbol.IsReferenceType: true } => $"if ({param} is null)".CreateScope(
                     $"throw {ExceptionHelper.NullExceptionMethod}(\"{structName}\");"),
@@ -129,30 +129,29 @@ public static class AttributeExpressionValue
     private static CodeFactory CreateStruct(TypeIdentifier typeIdentifier, Func<ITypeSymbol, DynamoDbDataMember[]> fn,
         MarshallerOptions options)
     {
-        var dataMembers =
-            options.IsConvertable(typeIdentifier.TypeSymbol)
-                ? Array
-                    .Empty<(bool IsUnknown, DynamoDbDataMember DDB, string AttributeReference, string
-                        AttributeInterfaceName)>()
-                : fn(typeIdentifier.TypeSymbol)
-                    .Select(x => (
-                        IsUnknown: options.IsUnknown(x.DataMember.TypeIdentifier),
-                        DDB: x,
-                        AttributeReference: TypeName(x.DataMember.TypeIdentifier.TypeSymbol),
-                        AttributeInterfaceName:
-                        $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{x.DataMember.TypeIdentifier.AnnotatedString}>"
-                    ))
-                    .ToArray();
+        var dataMembers = options.IsConvertable(typeIdentifier)
+            ? Array.Empty<(bool IsUnknown, DynamoDbDataMember DDB, string AttributeReference, string AttributeInterfaceName)>()
+            : fn(typeIdentifier.TypeSymbol)
+                .Select(x => (
+                    IsUnknown: options.IsUnknown(x.DataMember.TypeIdentifier),
+                    DDB: x,
+                    AttributeReference: TypeName(x.DataMember.TypeIdentifier.TypeSymbol),
+                    AttributeInterfaceName:
+                    $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{x.DataMember.TypeIdentifier.AnnotatedString}>"
+                ))
+                .ToArray();
 
         var structName = TypeName(typeIdentifier.TypeSymbol);
         var interfaceName =
             $"{Constants.DynamoDBGenerator.Marshaller.AttributeExpressionValueTrackerInterface}<{typeIdentifier.AnnotatedString}>";
 
         var @struct =
-            $"public readonly struct {structName} : {interfaceName}".CreateScope(TypeContents(typeIdentifier, dataMembers,
+            $"public readonly struct {structName} : {interfaceName}".CreateScope(TypeContents(typeIdentifier,
+                dataMembers,
                 structName, interfaceName, options));
 
-        return new CodeFactory(@struct, dataMembers.Where(x => x.IsUnknown).Select(x => x.DDB.DataMember.TypeIdentifier));
+        return new CodeFactory(@struct,
+            dataMembers.Where(x => x.IsUnknown).Select(x => x.DDB.DataMember.TypeIdentifier));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
