@@ -19,9 +19,7 @@ public abstract record TypeIdentifier
     {
         IsNullable = typeSymbol switch
         {
-            {
-                IsReferenceType: true, NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated
-            } => true,
+            { IsReferenceType: true, NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated } => true,
             { IsReferenceType: true, NullableAnnotation: NullableAnnotation.NotAnnotated } => false,
             { IsValueType: true, OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => true,
             { IsValueType: true } => false,
@@ -34,8 +32,16 @@ public abstract record TypeIdentifier
         UnannotatedString = original;
         AnnotatedString = annotated;
         IsNumeric = IsNumericMethod(typeSymbol);
+        CanBeNull = typeSymbol is { IsReferenceType: true } or { IsValueType: true, OriginalDefinition.SpecialType: SpecialType.System_Nullable_T };
     }
 
+    /// <summary>
+    /// Represents whether it can even be null.
+    /// </summary>
+    public bool CanBeNull { get;  }
+    /// <summary>
+    /// Represents whether the type is intended to be nullable
+    /// </summary>
     public bool IsNullable { get; }
     public bool IsNumeric { get; }
     public string AnnotatedString { get; }

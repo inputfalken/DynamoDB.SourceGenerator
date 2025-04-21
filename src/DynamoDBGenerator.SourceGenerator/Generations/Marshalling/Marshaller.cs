@@ -77,35 +77,17 @@ internal static partial class Marshaller
     {
         if (options.TryWriteConversion(typeIdentifier.TypeSymbol, ParamReference) is {} conversion)
         {
-            return typeIdentifier.TypeSymbol switch
-            {
-                { IsValueType: true } => typeIdentifier.TypeSymbol switch
-                {
-                    { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => CreateSignature(typeIdentifier, options)
-                        .CreateScope($"if ({ParamReference} is null)"
-                            .CreateScope("return null;")
-                            .Append($"return {conversion};")
+            var signature = CreateSignature(typeIdentifier, options);
+            return typeIdentifier.CanBeNull is false
+                ? signature.CreateScope($"return {conversion};").ToConversion()
+                : signature.CreateScope($"if ({ParamReference} is null)"
+                        .CreateScope(typeIdentifier.IsNullable
+                            ? "return null;"
+                            : $"throw {ExceptionHelper.NullExceptionMethod}({DataMember});"
                         )
-                        .ToConversion(),
-                    _ => CreateSignature(typeIdentifier, options)
-                        .CreateScope($"return {conversion};")
-                        .ToConversion()
-                },
-                { IsReferenceType: true } => typeIdentifier.TypeSymbol switch
-                {
-                    { NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated } => CreateSignature(typeIdentifier, options)
-                        .CreateScope($"if ({ParamReference} is null)".CreateScope("return null;")
-                            .Append($"return {conversion};"))
-                        .ToConversion(),
-                    _ => CreateSignature(typeIdentifier, options)
-                        .CreateScope(
-                            $"if ({ParamReference} is null)".CreateScope($"throw {ExceptionHelper.NullExceptionMethod}({DataMember});").Append($"return {conversion};")
-                            )
-                        .ToConversion()
-                },
-                _ => throw new ArgumentException(
-                    $"Neither ValueType or ReferenceType could be resolved for conversion. type '{typeIdentifier.TypeSymbol.ToDisplayString()}'.")
-            };
+                        .Append($"return {conversion};")
+                    )
+                    .ToConversion();
         }
 
         return typeIdentifier switch

@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -140,6 +141,7 @@ public static class MarshallHelper
         foreach (var (element, i) in enumerable.Select((x, y) => (x, y)))
             attributeValues.Add(resultSelector(element, argument, $"{dataMember}[{i}]"));
 
+        
         return new AttributeValue { L = attributeValues };
     }
 
