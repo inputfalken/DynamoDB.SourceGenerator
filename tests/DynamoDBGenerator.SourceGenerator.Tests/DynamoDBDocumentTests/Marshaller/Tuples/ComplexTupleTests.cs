@@ -108,21 +108,36 @@ public partial class ComplexTupleTests : MarshalAsserter<(string FirstName, int 
         static AttributeValue BuildPhoneAndMail(
             ((string Address, string? ZipCode) Address, (string Email, string Phone)? Mediums) valueTuple)
         {
-            var attributeValue = new AttributeValue();
-
-            attributeValue.M.Add(nameof(valueTuple.Address), new AttributeValue
+            var attributeValue = new AttributeValue
             {
-                M = valueTuple.Address.ZipCode is null
-                    ? new Dictionary<string, AttributeValue>
+                M = new Dictionary<string, AttributeValue>
+                {
                     {
-                        { nameof(valueTuple.Address.Address), new AttributeValue { S = valueTuple.Address.Address } }
+                        nameof(valueTuple.Address), new AttributeValue
+                        {
+                            M = valueTuple.Address.ZipCode is null
+                                ? new Dictionary<string, AttributeValue>
+                                {
+                                    {
+                                        nameof(valueTuple.Address.Address),
+                                        new AttributeValue { S = valueTuple.Address.Address }
+                                    }
+                                }
+                                : new Dictionary<string, AttributeValue>
+                                {
+                                    {
+                                        nameof(valueTuple.Address.Address),
+                                        new AttributeValue { S = valueTuple.Address.Address }
+                                    },
+                                    {
+                                        nameof(valueTuple.Address.ZipCode),
+                                        new AttributeValue { S = valueTuple.Address.ZipCode }
+                                    }
+                                }
+                        }
                     }
-                    : new Dictionary<string, AttributeValue>
-                    {
-                        { nameof(valueTuple.Address.Address), new AttributeValue { S = valueTuple.Address.Address } },
-                        { nameof(valueTuple.Address.ZipCode), new AttributeValue { S = valueTuple.Address.ZipCode } }
-                    }
-            });
+                }
+            };
 
             if (valueTuple.Mediums is { } mediums)
                 attributeValue.M.Add(nameof(valueTuple.Mediums), new AttributeValue
