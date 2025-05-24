@@ -75,23 +75,25 @@ public static class UnMarshaller
         if (options.TryReadConversion(typeIdentifier, Value) is {} conversion)
         {
             var signature = CreateSignature(typeIdentifier, options);
-            return typeIdentifier.CanBeNull || typeIdentifier.IsSupposedToBeNull is false
-                ? signature
-                    .CreateScope(
-                        $"if ({Value} is null)"
-                            .CreateScope($"throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
-                            .Append(
-                                $"return {conversion} ?? throw {ExceptionHelper.NullExceptionMethod}({DataMember});"
-                            )
-                    )
-                    .ToConversion()
-                : signature
+
+            if (typeIdentifier.IsSupposedToBeNull)
+                return signature
                     .CreateScope(
                         $"if ({Value} is null)"
                             .CreateScope("return null;")
                             .Append($"return {conversion};")
                     )
                     .ToConversion();
+
+            return signature
+                .CreateScope(
+                    $"if ({Value} is null)"
+                        .CreateScope($"throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
+                        .Append(
+                            $"return {conversion} ?? throw {ExceptionHelper.NullExceptionMethod}({DataMember});"
+                        )
+                )
+                .ToConversion();
         }
         
         return typeIdentifier switch
