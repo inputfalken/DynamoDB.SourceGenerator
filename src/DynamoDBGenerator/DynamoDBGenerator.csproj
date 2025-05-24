@@ -19,6 +19,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AWSSDK.DynamoDBv2" Version="4.0.0-preview.13" />
+        <PackageReference Include="AWSSDK.DynamoDBv2" Version="4.0.1" />
     </ItemGroup>
 </Project>
