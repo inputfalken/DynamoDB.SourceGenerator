@@ -17,7 +17,9 @@ public readonly struct MarshallerOptions
     public string FullName { get; }
     public string FieldDeclaration { get; }
 
-    
+    public bool IsUnknown(TypeIdentifier typeIdentifier) => typeIdentifier is UnknownType && IsConvertable(typeIdentifier) is false;
+    public bool IsConvertable(TypeIdentifier typeIdentifier) => typeIdentifier.TypeSymbol.TypeKind is TypeKind.Enum || Converters.ContainsKey(typeIdentifier.TypeSymbol);
+
     private MarshallerOptions(
         INamedTypeSymbol originalType,
         INamedTypeSymbol convertersType,
@@ -64,23 +66,22 @@ public readonly struct MarshallerOptions
         
         return null;
     }
-    public string? TryReadConversion(ITypeSymbol typeSymbol, string attributeValueParam)
+    public string? TryReadConversion(TypeIdentifier typeIdentifier, string attributeValueParam)
     {
         // Converters comes first so that you your customized converters are always prioritized.
-        if (Converters.TryGetValue(typeSymbol, out var match))
+        if (Converters.TryGetValue(typeIdentifier.TypeSymbol, out var match))
             return $"{ParamReference}.{ConvertersProperty}.{match.Key}.Read({attributeValueParam})";
 
-        if (typeSymbol.TypeKind is TypeKind.Enum)
+        if (typeIdentifier.TypeSymbol.TypeKind is TypeKind.Enum)
         {
-            var original = typeSymbol.Representation().original;
             return _enumStrategy switch 
             {
-                ConversionStrategy.Integer => $"Int32.TryParse({attributeValueParam}.N, out var @enum) ? ({original}?)@enum : null",
-                ConversionStrategy.Name => $"Enum.TryParse<{original}>({attributeValueParam}.S, false, out var @enum) ? ({original}?)@enum : null",
+                ConversionStrategy.Integer => $"(Int32.TryParse({attributeValueParam}.N, out var e) ? ({typeIdentifier.UnannotatedString}?) e : null)",
+                ConversionStrategy.Name => $"(Enum.TryParse<{typeIdentifier.UnannotatedString}>({attributeValueParam}.S, false, out var e) ? ({typeIdentifier.UnannotatedString}?) e : null)",
                 ConversionStrategy.NameCI 
                     or ConversionStrategy.LowerCase 
                     or ConversionStrategy.UpperCase 
-                    => $"Enum.TryParse<{original}>({attributeValueParam}.S, true, out var @enum) ? ({original}?)@enum : null",
+                    => $"(Enum.TryParse<{typeIdentifier.UnannotatedString}>({attributeValueParam}.S, true, out var e) ? ({typeIdentifier.UnannotatedString}?) e : null)",
                 _ => throw new ArgumentException($"Could not resolve enum conversion strategy from value '{_enumStrategy}'.")
             };
         }
@@ -88,10 +89,6 @@ public readonly struct MarshallerOptions
         return null;
     }
 
-    public bool IsConvertable(ITypeSymbol typeSymbol)
-    {
-        return typeSymbol.TypeKind is TypeKind.Enum || Converters.ContainsKey(typeSymbol);
-    }
 
     private Dictionary<ISymbol?, KeyValuePair<string, ITypeSymbol>> Converters { get; }
 

@@ -1,6 +1,4 @@
-using System.Collections;
 using System.Collections.Concurrent;
-using System.Collections.Immutable;
 using DynamoDBGenerator.SourceGenerator.Types;
 using Microsoft.CodeAnalysis;
 
@@ -8,6 +6,13 @@ namespace DynamoDBGenerator.SourceGenerator.Extensions;
 
 public static class TypeExtensions
 {
+    private static readonly Dictionary<ITypeSymbol, TypeIdentifier> TypeIdentifierDictionary =
+        new(SymbolEqualityComparer.IncludeNullability);
+
+    private static readonly SymbolDisplayFormat DisplayFormat = new(
+        genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters
+    );
+
     public static IEnumerable<string> NamespaceDeclaration(this INamedTypeSymbol type, IEnumerable<string> content)
     {
         return type.ContainingNamespace.IsGlobalNamespace
@@ -50,25 +55,6 @@ public static class TypeExtensions
         return x => cache.TryGetValue(x, out var value) ? value : cache[x] = selector(x);
     }
 
-
-    private static readonly Dictionary<ITypeSymbol, TypeIdentifier> TypeIdentifierDictionary =
-        new(SymbolEqualityComparer.IncludeNullability);
-
-    public static bool IsNullable(this ITypeSymbol typeSymbol)
-    {
-        return typeSymbol switch
-        {
-            {
-                IsReferenceType: true, NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated
-            } => true,
-            { IsReferenceType: true, NullableAnnotation: NullableAnnotation.NotAnnotated } => false,
-            { IsValueType: true, OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => true,
-            { IsValueType: true } => false,
-            _ => throw new ArgumentOutOfRangeException(
-                $"Could not determine nullablity of type '{typeSymbol.ToDisplayString()}'.")
-        };
-    }
-
     public static TypeIdentifier TypeIdentifier(this ITypeSymbol type)
     {
         if (TypeIdentifierDictionary.TryGetValue(type, out var typeIdentifier))
@@ -88,112 +74,14 @@ public static class TypeExtensions
         }
     }
 
-    private static readonly ConcurrentDictionary<ITypeSymbol, (string, string)> RepresentationDictionary =
-        new(SymbolEqualityComparer.IncludeNullability);
-
-    public static (string annotated, string original) Representation(this ITypeSymbol typeSymbol)
-    {
-        return RepresentationDictionary.GetOrAdd(typeSymbol, x =>
-        {
-            var displayString = x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            return RepresentationDictionary[typeSymbol] = (ToString(typeSymbol, displayString), displayString);
-        });
-
-        static string ToString(ITypeSymbol x, string displayString)
-        {
-            if (x is IArrayTypeSymbol arrayTypeSymbol)
-            {
-                var result = ToString(arrayTypeSymbol.ElementType,
-                    arrayTypeSymbol.ElementType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
-
-                return x.NullableAnnotation switch
-                {
-                    NullableAnnotation.Annotated or NullableAnnotation.None => $"{result}[]?",
-                    NullableAnnotation.NotAnnotated => $"{result}[]",
-                    _ => throw new ArgumentException(ExceptionMessage(x))
-                };
-            }
-
-            if (x is not INamedTypeSymbol namedTypeSymbol || namedTypeSymbol.TypeArguments.Length is 0)
-            {
-                return x.NullableAnnotation switch
-                {
-                    // Having `Annotated` and `None` produce append '?' is fine as long as `SuffixedTypeSymbolNameFactory` is giving them different names. Otherwise we could create broken signatures due to duplication.
-                    NullableAnnotation.Annotated or NullableAnnotation.None => $"{displayString}?",
-                    NullableAnnotation.NotAnnotated => displayString,
-                    _ => throw new ArgumentException(ExceptionMessage(x))
-                };
-            }
-
-            if (namedTypeSymbol.OriginalDefinition.SpecialType is SpecialType.System_Nullable_T)
-                return displayString;
-
-            if (namedTypeSymbol.IsTupleType)
-            {
-                var tupleElements = namedTypeSymbol.TupleElements
-                    .Select(y =>
-                        $"{ToString(y.Type, $"{y.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}")} {y.Name}");
-                return $"({string.Join(", ", tupleElements)})";
-            }
-
-            var index = displayString.AsSpan().IndexOf('<');
-            if (index == -1)
-                return displayString;
-
-            var typeWithoutGenericParameters = displayString.Substring(0, index);
-            var typeParameters = string.Join(", ",
-                namedTypeSymbol.TypeArguments.Select(y =>
-                    ToString(y, y.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))));
-            return namedTypeSymbol.NullableAnnotation switch
-            {
-                // Having `Annotated` and `None` produce append '?' is fine as long as `SuffixedTypeSymbolNameFactory` is giving them different names. Otherwise we could create broken signatures due to duplication.
-                NullableAnnotation.Annotated or NullableAnnotation.None =>
-                    $"{typeWithoutGenericParameters}<{typeParameters}>?",
-                NullableAnnotation.NotAnnotated => $"{typeWithoutGenericParameters}<{typeParameters}>",
-                _ => throw new ArgumentException(ExceptionMessage(namedTypeSymbol))
-            };
-
-            static string ExceptionMessage(ISymbol typeSymbol) =>
-                $"Could nullable annotation on type: {typeSymbol.ToDisplayString()}";
-        }
-    }
-
-    //Source: https://referencesource.microsoft.com/#mscorlib/system/tuple.cs,49b112811bc359fd,references
-    private class TupleComparer : IEqualityComparer<(ITypeSymbol, ITypeSymbol)>
-    {
-        private readonly IEqualityComparer<ITypeSymbol> _comparer;
-
-        public TupleComparer(IEqualityComparer<ITypeSymbol> comparer)
-        {
-            _comparer = comparer;
-        }
-
-        public bool Equals((ITypeSymbol, ITypeSymbol) x, (ITypeSymbol, ITypeSymbol) y)
-        {
-            return _comparer.Equals(x.Item1, y.Item1) && _comparer.Equals(x.Item2, y.Item2);
-        }
-
-        public int GetHashCode((ITypeSymbol, ITypeSymbol) obj)
-        {
-            var hashCode1 = obj.Item1 is null ? 0 : _comparer.GetHashCode(obj.Item1);
-            var hashCode2 = obj.Item2 is null ? 0 : _comparer.GetHashCode(obj.Item2);
-            return CombineHashCodes(hashCode1, hashCode2);
-        }
-
-        private static int CombineHashCodes(int h1, int h2)
-        {
-            return ((h1 << 5) + h1) ^ h2;
-        }
-    }
     public static Func<ITypeSymbol, ITypeSymbol, string> SuffixedFullyQualifiedTypeName(string suffix,
         IEqualityComparer<ISymbol?> comparer)
     {
         IEqualityComparer<(ITypeSymbol, ITypeSymbol)> tupleComparer = new TupleComparer(comparer);
         var dict = new ConcurrentDictionary<(ITypeSymbol, ITypeSymbol), string>(tupleComparer);
         if (Equals(comparer, SymbolEqualityComparer.Default))
-        {
             return (x, y) => dict.GetOrAdd(
-                (x,y),
+                (x, y),
                 tuple =>
                 {
                     var (p, c) = tuple;
@@ -201,7 +89,6 @@ public static class TypeExtensions
                         ? $"{p.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{c.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}_{c.BaseType!.ToDisplayString()}{suffix}"
                         : $"{p.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{c.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}{suffix}";
                 });
-        }
 
         throw new NotSupportedException(
             $"Method {nameof(SuffixedFullyQualifiedTypeName)} does not implement equality comparer '{comparer.GetType().Name}"
@@ -223,8 +110,8 @@ public static class TypeExtensions
             return x => dict.GetOrAdd(x,
                 y => y is IArrayTypeSymbol
                     ? $"{y.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}_{y.BaseType!.ToDisplayString()}"
-                    : y.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()
-            );
+                    : y.ToDisplayString(
+                        DisplayFormat).ToAlphaNumericMethodName());
 
         return x => dict.GetOrAdd(x,
             y => y is IArrayTypeSymbol
@@ -273,16 +160,18 @@ public static class TypeExtensions
                         _ => throw new NotImplementedException(ExceptionMessage(single))
                     },
                 { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.NotAnnotated } =>
-                    $"NN_{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
+                    $"NN_{x.ToDisplayString(DisplayFormat).ToAlphaNumericMethodName()}",
                 { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.None } =>
-                    $"{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
+                    $"{x.ToDisplayString(DisplayFormat).ToAlphaNumericMethodName()}",
                 { NullableAnnotation: Microsoft.CodeAnalysis.NullableAnnotation.Annotated } =>
-                    $"N_{x.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).ToAlphaNumericMethodName()}",
+                    $"N_{x.ToDisplayString(DisplayFormat).ToAlphaNumericMethodName()}",
                 _ => throw new NotImplementedException(ExceptionMessage(x))
             };
 
-            static string ExceptionMessage(ITypeSymbol typeSymbol) =>
-                $"Could not apply naming suffix on type: {typeSymbol.ToDisplayString()}";
+            static string ExceptionMessage(ITypeSymbol typeSymbol)
+            {
+                return $"Could not apply naming suffix on type: {typeSymbol.ToDisplayString()}";
+            }
         }
     }
 
@@ -291,9 +180,9 @@ public static class TypeExtensions
         return new CodeFactory(enumerable);
     }
 
-    public static CodeFactory ToConversion(this IEnumerable<string> enumerable, ITypeSymbol typeSymbol)
+    public static CodeFactory ToConversion(this IEnumerable<string> enumerable, TypeIdentifier typeIdentifier)
     {
-        return new CodeFactory(enumerable, new[] { typeSymbol });
+        return new CodeFactory(enumerable, new[] { typeIdentifier });
     }
 
     public static INamedTypeSymbol? TryGetNullableValueType(this ITypeSymbol type)
@@ -304,22 +193,6 @@ public static class TypeExtensions
         } symbol
             ? symbol
             : null;
-    }
-
-    public static bool IsNumeric(this ITypeSymbol typeSymbol)
-    {
-        return typeSymbol.SpecialType
-            is SpecialType.System_Int16
-            or SpecialType.System_Byte
-            or SpecialType.System_Int32
-            or SpecialType.System_Int64
-            or SpecialType.System_SByte
-            or SpecialType.System_UInt16
-            or SpecialType.System_UInt32
-            or SpecialType.System_UInt64
-            or SpecialType.System_Decimal
-            or SpecialType.System_Double
-            or SpecialType.System_Single;
     }
 
     public static DynamoDbDataMember[] GetDynamoDbProperties(this ITypeSymbol symbol)
@@ -376,6 +249,35 @@ public static class TypeExtensions
 
                 namedTypeSymbol = namedTypeSymbol.BaseType;
             } while (namedTypeSymbol is { SpecialType: not SpecialType.System_Object });
+        }
+    }
+
+
+    //Source: https://referencesource.microsoft.com/#mscorlib/system/tuple.cs,49b112811bc359fd,references
+    private sealed class TupleComparer : IEqualityComparer<(ITypeSymbol, ITypeSymbol)>
+    {
+        private readonly IEqualityComparer<ITypeSymbol> _comparer;
+
+        public TupleComparer(IEqualityComparer<ITypeSymbol> comparer)
+        {
+            _comparer = comparer;
+        }
+
+        public bool Equals((ITypeSymbol, ITypeSymbol) x, (ITypeSymbol, ITypeSymbol) y)
+        {
+            return _comparer.Equals(x.Item1, y.Item1) && _comparer.Equals(x.Item2, y.Item2);
+        }
+
+        public int GetHashCode((ITypeSymbol, ITypeSymbol) obj)
+        {
+            var hashCode1 = obj.Item1 is null ? 0 : _comparer.GetHashCode(obj.Item1);
+            var hashCode2 = obj.Item2 is null ? 0 : _comparer.GetHashCode(obj.Item2);
+            return CombineHashCodes(hashCode1, hashCode2);
+        }
+
+        private static int CombineHashCodes(int h1, int h2)
+        {
+            return ((h1 << 5) + h1) ^ h2;
         }
     }
 }

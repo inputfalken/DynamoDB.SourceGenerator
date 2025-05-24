@@ -1,5 +1,7 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Amazon.DynamoDBv2.Model;
 using static System.Runtime.InteropServices.CollectionsMarshal;
@@ -17,6 +19,12 @@ public static class MarshallHelper
 #pragma warning disable CS1591
     public static AttributeValue Null { get; } = new() { NULL = true };
 
+    [return: NotNullIfNotNull(nameof(dict))]
+    public static AttributeValue? ToAttributeValue(
+        [NotNullIfNotNull(nameof(dict))] Dictionary<string, AttributeValue>? dict
+    ) => dict is null
+        ? null
+        : new AttributeValue { M = dict };
 
     public static AttributeValue FromDictionary<T, TArgument>(
         IEnumerable<KeyValuePair<string, T>> dictionary,
@@ -133,6 +141,7 @@ public static class MarshallHelper
         foreach (var (element, i) in enumerable.Select((x, y) => (x, y)))
             attributeValues.Add(resultSelector(element, argument, $"{dataMember}[{i}]"));
 
+        
         return new AttributeValue { L = attributeValues };
     }
 
