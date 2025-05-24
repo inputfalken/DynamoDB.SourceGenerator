@@ -254,7 +254,7 @@ public static class TypeExtensions
 
 
     //Source: https://referencesource.microsoft.com/#mscorlib/system/tuple.cs,49b112811bc359fd,references
-    private class TupleComparer : IEqualityComparer<(ITypeSymbol, ITypeSymbol)>
+    private sealed class TupleComparer : IEqualityComparer<(ITypeSymbol, ITypeSymbol)>
     {
         private readonly IEqualityComparer<ITypeSymbol> _comparer;
 

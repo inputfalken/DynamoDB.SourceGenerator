@@ -154,7 +154,7 @@ internal static partial class Marshaller
                 $"public static Dictionary<string, AttributeValue> {MethodName(typeIdentifier.TypeSymbol)}({options.FullName} {MarshallerOptions.ParamReference}, object? {PkReference}, object? {RkReference}, bool {EnforcePkReference}, bool {EnforceRkReference}, string? index = null)"
                     .CreateScope(MethodBody(typeIdentifier.TypeSymbol, fn, options));
 
-            return new CodeFactory(code);
+            return code.ToConversion();
         }
     }
 }

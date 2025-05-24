@@ -52,21 +52,13 @@ public static class StringExtensions
         return array;
     }
 
-    public static IEnumerable<string> ScopeTo(this IEnumerable<string> content, string header)
-    {
-        return CreateScope(header, content);
-    }
+    public static IEnumerable<string> ScopeTo(this IEnumerable<string> content, string header) => CreateScope(header, content);
 
-    public static IEnumerable<string> CreateScope(this string header, IEnumerable<string> content)
-    {
-        yield return header;
-        yield return "{";
-
-        foreach (var s in content)
-            yield return $"    {s}";
-
-        yield return "}";
-    }
+    public static IEnumerable<string> CreateScope(this string header, IEnumerable<string> content) => content
+        .Select(x => $"    {x}")
+        .Prepend("{")
+        .Prepend(header)
+        .Append("}");
 
     public static IEnumerable<string> CreateScope(this string header, string content)
     {

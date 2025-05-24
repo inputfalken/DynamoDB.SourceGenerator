@@ -78,47 +78,48 @@ public class DynamoDBDMarshaller : IIncrementalGenerator
 
         return (MarshallerOptions.Create(type, converter, enumStrategy), Arguments(attributes, type));
 
-        static IEnumerable<DynamoDBMarshallerArguments> Arguments(ImmutableArray<AttributeData> attributes, ISymbol type)
+        static IEnumerable<DynamoDBMarshallerArguments> Arguments(
+            ImmutableArray<AttributeData> attributes,
+            ISymbol type)
         {
-            var marshallerAttributes = attributes
+            return attributes
                 .Where(attributeData => attributeData.AttributeClass is
                 {
                     ContainingNamespace.Name: Constants.DynamoDBGenerator.Namespace.Attributes,
                     Name: Constants.DynamoDBGenerator.Attribute.DynamoDBMarshaller,
                     ContainingAssembly.Name: Constants.DynamoDBGenerator.AssemblyName
-                });
-
-            foreach (var attributeData in marshallerAttributes)
-            {
-                var entityType = attributeData.NamedArguments
-                    .Where(x => x.Key is EntityType)
-                    .Cast<KeyValuePair<string, TypedConstant>?>()
-                    .FirstOrDefault() is { } entityType1
-                    ? entityType1.Value is { Value: INamedTypeSymbol et }
-                        ? et
-                        : throw new ArgumentException(
-                            $"Could not determine type conversion from argument '{entityType1.Key}'.")
-                    : type;
-
-                if (entityType is not INamedTypeSymbol entityTypeSymbol)
-                    throw new ArgumentException("Could not determine type conversion from attribute constructor.");
-
-                var propertyName = attributeData.NamedArguments.FirstOrDefault(x => x.Key is AccessName).Value;
-
-                yield return new DynamoDBMarshallerArguments(
-                    entityTypeSymbol,
-                    attributeData.NamedArguments
-                        .Where(x => x.Key is ArgumentType)
+                })
+                .Select(x =>
+                {
+                    var entityType = x.NamedArguments
+                        .Where(x => x.Key is EntityType)
                         .Cast<KeyValuePair<string, TypedConstant>?>()
-                        .FirstOrDefault() is { } argumentType
-                        ? argumentType.Value is { Value: INamedTypeSymbol namedTypeSymbol }
-                            ? namedTypeSymbol
+                        .FirstOrDefault() is { } entityType1
+                        ? entityType1.Value is { Value: INamedTypeSymbol et }
+                            ? et
                             : throw new ArgumentException(
-                                $"Could not determine type conversion from argument '{argumentType.Key}'.")
-                        : null,
-                    propertyName.Value?.ToString()
-                );
-            }
+                                $"Could not determine type conversion from argument '{entityType1.Key}'.")
+                        : type;
+
+                    if (entityType is not INamedTypeSymbol entityTypeSymbol)
+                        throw new ArgumentException("Could not determine type conversion from attribute constructor.");
+
+                    var propertyName = x.NamedArguments.FirstOrDefault(y => y.Key is AccessName).Value;
+
+                    return new DynamoDBMarshallerArguments(
+                        entityTypeSymbol,
+                        x.NamedArguments
+                            .Where(x => x.Key is ArgumentType)
+                            .Cast<KeyValuePair<string, TypedConstant>?>()
+                            .FirstOrDefault() is { } argumentType
+                            ? argumentType.Value is { Value: INamedTypeSymbol namedTypeSymbol }
+                                ? namedTypeSymbol
+                                : throw new ArgumentException(
+                                    $"Could not determine type conversion from argument '{argumentType.Key}'.")
+                            : null,
+                        propertyName.Value?.ToString()
+                    );
+                });
         }
     }
 }

@@ -139,7 +139,7 @@ public abstract record TypeIdentifier
             : $"throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}({dataMember});";
     }
 
-    private class TypeSymbolDelegator : IEqualityComparer<TypeIdentifier>
+    private sealed class TypeSymbolDelegator : IEqualityComparer<TypeIdentifier>
     {
         private readonly IEqualityComparer<ITypeSymbol> _comparer;
 
