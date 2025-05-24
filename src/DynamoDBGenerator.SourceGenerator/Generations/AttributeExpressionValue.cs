@@ -63,7 +63,7 @@ public static class AttributeExpressionValue
 
         var yields = (typeIdentifier switch
             {
-                { IsNullable: true } => $"if ({param} is null)".CreateScope(
+                { IsSupposedToBeNull: true } => $"if ({param} is null)".CreateScope(
                     $"yield return new ({self}.Value, {AttributeValueUtilityFactory.Null});", "yield break;"),
                 { TypeSymbol.IsReferenceType: true } => $"if ({param} is null)".CreateScope(
                     $"throw {ExceptionHelper.NullExceptionMethod}(\"{structName}\");"),
@@ -89,7 +89,7 @@ public static class AttributeExpressionValue
     }
 
     private static string? HandeNullability(TypeIdentifier typeSymbol) =>
-        typeSymbol.IsNullable ? $" ?? {AttributeValueUtilityFactory.Null}" : null;
+        typeSymbol.IsSupposedToBeNull ? $" ?? {AttributeValueUtilityFactory.Null}" : null;
 
     private static IEnumerable<string> YieldSelector(
         (bool IsUnknown, DynamoDbDataMember DDB, string AttributeReference, string AttributeInterfaceName) x,

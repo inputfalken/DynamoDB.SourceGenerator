@@ -17,7 +17,7 @@ public abstract record TypeIdentifier
 
     protected TypeIdentifier(ITypeSymbol typeSymbol)
     {
-        IsNullable = typeSymbol switch
+        IsSupposedToBeNull = typeSymbol switch
         {
             { IsReferenceType: true, NullableAnnotation: NullableAnnotation.None or NullableAnnotation.Annotated } => true,
             { IsReferenceType: true, NullableAnnotation: NullableAnnotation.NotAnnotated } => false,
@@ -42,7 +42,7 @@ public abstract record TypeIdentifier
     /// <summary>
     /// Represents whether the type is intended to be nullable
     /// </summary>
-    public bool IsNullable { get; }
+    public bool IsSupposedToBeNull { get; }
     public bool IsNumeric { get; }
     public string AnnotatedString { get; }
     public string UnannotatedString { get; }
@@ -134,7 +134,7 @@ public abstract record TypeIdentifier
 
     public string ReturnNullOrThrow(string dataMember)
     {
-        return IsNullable
+        return IsSupposedToBeNull
             ? "return null;"
             : $"throw {Constants.DynamoDBGenerator.ExceptionHelper.NullExceptionMethod}({dataMember});";
     }
