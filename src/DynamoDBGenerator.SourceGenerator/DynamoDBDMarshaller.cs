@@ -109,7 +109,7 @@ public class DynamoDBDMarshaller : IIncrementalGenerator
                     return new DynamoDBMarshallerArguments(
                         entityTypeSymbol,
                         x.NamedArguments
-                            .Where(x => x.Key is ArgumentType)
+                            .Where(y => y.Key is ArgumentType)
                             .Cast<KeyValuePair<string, TypedConstant>?>()
                             .FirstOrDefault() is { } argumentType
                             ? argumentType.Value is { Value: INamedTypeSymbol namedTypeSymbol }
