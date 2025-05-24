@@ -102,7 +102,7 @@ public static class UnMarshaller
             {
                 SingleGeneric.SupportedType.Nullable => signature
                     .CreateScope(
-                        $"if ({Value} is null)"
+                        $"if ({Value} is null || {Value}.NULL is true)"
                             .CreateScope(singleGeneric.ReturnNullOrThrow(DataMember))
                             .Append($"return {InvokeUnmarshallMethod(singleGeneric.T, Value, DataMember, options)};" )
                         )
