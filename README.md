@@ -34,6 +34,17 @@ The source generator will look for attributes and implement interfaces that exis
     * Simplify Attribute Expressions: Easily create complex expressions with an intuitive approach.
 * Faster performance: Utilize the low-level API that would normally be implemented manually.
 
+## [Benchmarks](tests/DynamoDBGenerator.SourceGenerator.Benchmarks): 
+
+Here's a quick summary about how this library performs with a quick example of marshalling and unmarshalling a simple DTO object.
+
+| Method                      | Mean       | Error    | StdDev   | Gen0   | Gen1   | Allocated |
+|---------------------------- |-----------:|---------:|---------:|-------:|-------:|----------:|
+| Marshall_AWS_Reflection     | 2,467.8 ns | 48.87 ns | 68.51 ns | 0.5112 | 0.0038 |    6450 B |
+| Marshall_Source_Generated   |   234.0 ns |  2.92 ns |  2.73 ns | 0.1421 | 0.0010 |    1784 B |
+| Unmarshall_AWS_Reflection   | 2,397.0 ns | 36.13 ns | 30.17 ns | 0.5188 | 0.0038 |    6544 B |
+| Unmarshall_Source_Generated |   131.6 ns |  0.82 ns |  0.77 ns | 0.0126 |      - |     160 B |
+
 ## Features:
 
 * Reflection-Free Codebase: The generated code is built without reliance on reflection, ensuring compatibility with

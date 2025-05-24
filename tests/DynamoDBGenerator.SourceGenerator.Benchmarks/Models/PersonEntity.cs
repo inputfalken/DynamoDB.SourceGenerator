@@ -4,7 +4,7 @@ namespace DynamoDBGenerator.SourceGenerator.Benchmarks.Models;
 
 
 [DynamoDBMarshaller(EntityType = typeof(PersonEntity))]
-public partial class PersonEntity
+public partial record PersonEntity
 {
     [DynamoDBHashKey]
     public string Id { get; set; } = null!;
