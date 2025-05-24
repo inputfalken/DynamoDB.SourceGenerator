@@ -1,6 +1,6 @@
 namespace DynamoDBGenerator.SourceGenerator.Benchmarks.Models;
 
-public class Address
+public sealed record Address
 {
     public string Id { get; set; } = null!;
 
