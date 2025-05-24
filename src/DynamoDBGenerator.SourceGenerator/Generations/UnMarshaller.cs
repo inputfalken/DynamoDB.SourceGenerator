@@ -55,7 +55,7 @@ public static class UnMarshaller
 
         var blockBody =
             $"if ({Dict} is null)"
-                .CreateScope(typeIdentifier.IsNullable ? "return null;" : $"throw {ExceptionHelper.NullExceptionMethod}({DataMember});").Concat(
+                .CreateScope(typeIdentifier.IsSupposedToBeNull ? "return null;" : $"throw {ExceptionHelper.NullExceptionMethod}({DataMember});").Concat(
                     Assignments(typeIdentifier, assignments)
                         .AllAndLast(x => ObjectAssignmentBlock(x.useParentheses, x.assignments, false), x => ObjectAssignmentBlock(x.useParentheses, x.assignments, true))
                         .SelectMany(x => x)
@@ -75,23 +75,25 @@ public static class UnMarshaller
         if (options.TryReadConversion(typeIdentifier, Value) is {} conversion)
         {
             var signature = CreateSignature(typeIdentifier, options);
-            return typeIdentifier.CanBeNull || typeIdentifier.IsNullable is false
-                ? signature
-                    .CreateScope(
-                        $"if ({Value} is null)"
-                            .CreateScope($"throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
-                            .Append(
-                                $"return {conversion} ?? throw {ExceptionHelper.NullExceptionMethod}({DataMember});"
-                            )
-                    )
-                    .ToConversion()
-                : signature
+
+            if (typeIdentifier.IsSupposedToBeNull)
+                return signature
                     .CreateScope(
                         $"if ({Value} is null)"
                             .CreateScope("return null;")
                             .Append($"return {conversion};")
                     )
                     .ToConversion();
+
+            return signature
+                .CreateScope(
+                    $"if ({Value} is null)"
+                        .CreateScope($"throw {ExceptionHelper.NullExceptionMethod}({DataMember});")
+                        .Append(
+                            $"return {conversion} ?? throw {ExceptionHelper.NullExceptionMethod}({DataMember});"
+                        )
+                )
+                .ToConversion();
         }
         
         return typeIdentifier switch
@@ -130,7 +132,7 @@ public static class UnMarshaller
                     .CreateScope(
                         $"if ({Value} is null || {Value}.SS is null)"
                             .CreateScope(singleGeneric.ReturnNullOrThrow(DataMember))
-                            .Append($"return new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{(singleGeneric.T.IsNullable ? "string?" : "string")}>" : null)}({(singleGeneric.T.IsNullable ? $"{Value}.SS" : $"{Value}.SS.Select((y,i) => y ?? throw {ExceptionHelper.NullExceptionMethod}($\"{{{DataMember}}}[UNKNOWN]\")")}));")
+                            .Append($"return new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{(singleGeneric.T.IsSupposedToBeNull ? "string?" : "string")}>" : null)}({(singleGeneric.T.IsSupposedToBeNull ? $"{Value}.SS" : $"{Value}.SS.Select((y,i) => y ?? throw {ExceptionHelper.NullExceptionMethod}($\"{{{DataMember}}}[UNKNOWN]\")")}));")
                         )
                     .ToConversion(),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.IsNumeric => signature

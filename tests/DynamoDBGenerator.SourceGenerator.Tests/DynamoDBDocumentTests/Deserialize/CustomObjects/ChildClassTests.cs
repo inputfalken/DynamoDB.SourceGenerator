@@ -58,7 +58,7 @@ public partial class ChildClassTests
     [Fact]
     public void Deserialize_ChildClassField_NotIncluded()
     {
-        var result = ParentClassMarshaller.Unmarshall(new Dictionary<string, AttributeValue>
+        var attributeValues = new Dictionary<string, AttributeValue>
         {
             { nameof(ParentClass.Id), new AttributeValue { S = "I am the root" } },
             {
@@ -67,8 +67,8 @@ public partial class ChildClassTests
                     M = new Dictionary<string, AttributeValue>()
                 }
             }
-        });
-
+        };
+        ParentClass result = ParentClassMarshaller.Unmarshall(attributeValues);
         result.Id.Should().Be("I am the root");
         result.CustomClass.Should().NotBeNull();
         result.CustomClass!.PropertyId.Should().BeNull();
