@@ -4,7 +4,7 @@ using Amazon.DynamoDBv2.Model;
 
 namespace DynamoDBGenerator.Converters.Internal;
 
-internal sealed class ISO8601TimeSpanConveter : IValueTypeConverter<TimeSpan>
+internal sealed class ISO8601TimeSpanConverter : IValueTypeConverter<TimeSpan>
 {
     public TimeSpan? Read(AttributeValue attributeValue)
     {

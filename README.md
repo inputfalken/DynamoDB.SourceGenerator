@@ -111,7 +111,7 @@ If you do not override the conversion behaviour the following rules will be appl
 | `IDictonary<string, TValue>`         | `M`   | Will treat the `Dictionary` as a **Key-Value** store. |
 | `IEnumerable<T>`                     | `L`   |                                                       |
 | `IReadOnlyList<T>`                   | `L`   |                                                       |
-| `IRedonlyDictionary<string, TValue>` | `M`   | Will treat the `Dictionary` as a **Key-Value** store. |
+| `IReadonlyDictionary<string, TValue>` | `M`   | Will treat the `Dictionary` as a **Key-Value** store. |
 | `ILookup<string, TValue>`            | `M`   | Will treat the `ILookup` as a **Key-Values** store.   |
 | `ISet<int>`                          | `NS`  |                                                       |
 | `ISet<long>`                         | `NS`  |                                                       |
