@@ -109,7 +109,7 @@ public class AttributeValueConverters
     /// <summary>
     /// The <see cref="TimeSpan"/> converter.
     /// </summary>
-    public IValueTypeConverter<TimeSpan> TimeSpanConverter { get; protected init;} = new ISO8601TimeSpanConveter();
+    public IValueTypeConverter<TimeSpan> TimeSpanConverter { get; protected init;} = new ISO8601TimeSpanConverter();
     
     /// <summary>
     /// The <see cref="Guid"/> converter.

@@ -111,7 +111,7 @@ If you do not override the conversion behaviour the following rules will be appl
 | `IDictonary<string, TValue>`         | `M`   | Will treat the `Dictionary` as a **Key-Value** store. |
 | `IEnumerable<T>`                     | `L`   |                                                       |
 | `IReadOnlyList<T>`                   | `L`   |                                                       |
-| `IRedonlyDictionary<string, TValue>` | `M`   | Will treat the `Dictionary` as a **Key-Value** store. |
+| `IReadonlyDictionary<string, TValue>` | `M`   | Will treat the `Dictionary` as a **Key-Value** store. |
 | `ILookup<string, TValue>`            | `M`   | Will treat the `ILookup` as a **Key-Values** store.   |
 | `ISet<int>`                          | `NS`  |                                                       |
 | `ISet<long>`                         | `NS`  |                                                       |
@@ -336,7 +336,7 @@ represented as a `string`, then you will get an `exception`.
 
 * `Keys(object partitionKey, object rangeKey)`
     * Used when you want convert both a partition key and a range key.
-* `PartionKey(object key)`
+* `PartitionKey(object key)`
     * Used when you only want to only convert a partition key without a range key.
 * `RangeKey(object key)`
     * Used when you only want to only convert a range key without a partition key.
