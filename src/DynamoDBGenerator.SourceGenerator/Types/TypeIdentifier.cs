@@ -24,7 +24,7 @@ public abstract record TypeIdentifier
             { IsValueType: true, OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } => true,
             { IsValueType: true } => false,
             _ => throw new ArgumentOutOfRangeException(
-                $"Could not determine nullablity of type '{typeSymbol.ToDisplayString()}'.")
+                $"Could not determine nullability of type '{typeSymbol.ToDisplayString()}'.")
         };
 
         TypeSymbol = typeSymbol;
