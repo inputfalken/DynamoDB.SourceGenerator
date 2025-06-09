@@ -336,7 +336,7 @@ represented as a `string`, then you will get an `exception`.
 
 * `Keys(object partitionKey, object rangeKey)`
     * Used when you want convert both a partition key and a range key.
-* `PartionKey(object key)`
+* `PartitionKey(object key)`
     * Used when you only want to only convert a partition key without a range key.
 * `RangeKey(object key)`
     * Used when you only want to only convert a range key without a partition key.
