@@ -50,7 +50,7 @@ public partial class ToAttributeExpressionTests
                 (x, y) => $"{x.Id} = {y.Id}");
 
         // Order of Values and Names do not match the access pattern in the expression.
-        // Their order is based on the the order of the yield returns of AccessedValues and AccessedNames.
+        // Their order is based on the order of the yield returns of AccessedValues and AccessedNames.
         result.Values
             .Should()
             .SatisfyRespectively(
