@@ -40,10 +40,10 @@ Here's a quick summary about how this library performs with a quick example of m
 
 | Method                      | Mean       | Error    | StdDev   | Gen0   | Gen1   | Allocated |
 |---------------------------- |-----------:|---------:|---------:|-------:|-------:|----------:|
-| Marshall_AWS_Reflection     | 2,467.8 ns | 48.87 ns | 68.51 ns | 0.5112 | 0.0038 |    6450 B |
-| Marshall_Source_Generated   |   234.0 ns |  2.92 ns |  2.73 ns | 0.1421 | 0.0010 |    1784 B |
-| Unmarshall_AWS_Reflection   | 2,397.0 ns | 36.13 ns | 30.17 ns | 0.5188 | 0.0038 |    6544 B |
-| Unmarshall_Source_Generated |   131.6 ns |  0.82 ns |  0.77 ns | 0.0126 |      - |     160 B |
+| Marshall_AWS_Reflection     | 5,351.9 ns | 74.57 ns | 69.75 ns | 0.8545 |      - |   10875 B |
+| Marshall_Source_Generated   |   488.9 ns |  8.21 ns |  7.68 ns | 0.2375 | 0.0019 |    2984 B |
+| Unmarshall_AWS_Reflection   | 5,447.3 ns | 68.30 ns | 63.89 ns | 0.8545 |      - |   10922 B |
+| Unmarshall_Source_Generated |   923.6 ns | 10.92 ns | 10.21 ns | 0.0610 |      - |     768 B |
 
 ## Features:
 
