@@ -121,20 +121,20 @@ public class AttributeValueConverters
     /// <summary>
     /// The <see cref="ISet{T}"/> converter for <see cref="string"/> sets.
     /// </summary>
-    public IReferenceTypeConverter<ISet<string>> ISetConverter { get; protected init; } = Singleton.Static<StringSetConverter>();
+    public IReferenceTypeConverter<ISet<string>> NoneNullableStringISetConverter { get; protected init; } = Singleton.Static<NoneNullableStringSetConverter>();
 
     /// <summary>
     /// The <see cref="IReadOnlySet{T}"/> converter for <see cref="string"/> sets.
     /// </summary>
-    public IReferenceTypeConverter<IReadOnlySet<string>> IReadOnlySetConverter { get; protected init; } = Singleton.Static<StringSetConverter>();
+    public IReferenceTypeConverter<IReadOnlySet<string>> NoneNullableStringIReadOnlySetConverter { get; protected init; } = Singleton.Static<NoneNullableStringSetConverter>();
 
     /// <summary>
     /// The <see cref="HashSet{T}"/> converter for <see cref="string"/> sets.
     /// </summary>
-    public IReferenceTypeConverter<HashSet<string>> HashSetConverter { get; protected init; } = Singleton.Static<StringSetConverter>();
+    public IReferenceTypeConverter<HashSet<string>> NoneNullableStringHashSetConverter { get; protected init; } = Singleton.Static<NoneNullableStringSetConverter>();
 
     /// <summary>
     /// The <see cref="SortedSet{T}"/> converter for <see cref="string"/> sets.
     /// </summary>
-    public IReferenceTypeConverter<SortedSet<string>> SortedSetConverter { get; protected init; } = Singleton.Static<StringSetConverter>();
+    public IReferenceTypeConverter<SortedSet<string>> NoneNullableStringSortedSetConverter { get; protected init; } = Singleton.Static<NoneNullableStringSetConverter>();
 }
