@@ -4,29 +4,25 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.A
 
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets.Asserters;
 
-public abstract class SetAsserter<TSet, TElement> : MarshalAsserter<Container<TSet>> where TSet : IEnumerable<TElement>
+public abstract class SetAsserter<TSet, TElement>(
+    IEnumerable<TElement> seed,
+    Func<IEnumerable<TElement>, TSet> fn
+) : MarshalAsserter<Container<TSet>>
+    where TSet : IEnumerable<TElement>
 {
     private static readonly bool IsStringSet = typeof(TElement) == typeof(string);
-    private readonly Func<IEnumerable<TElement>, TSet> _fn;
-    private readonly IEnumerable<TElement> _seed;
-
-    protected SetAsserter(IEnumerable<TElement> seed, Func<IEnumerable<TElement>, TSet> fn)
-    {
-        _seed = seed;
-        _fn = fn;
-    }
 
 
     protected override IEnumerable<(Container<TSet> element, Dictionary<string, AttributeValue> attributeValues)>
         Arguments()
     {
-        yield return CreateArguments(_seed);
+        yield return CreateArguments(seed);
     }
 
     protected (Container<TSet> element, Dictionary<string, AttributeValue> attributeValues) CreateArguments(
         IEnumerable<TElement> arg)
     {
-        var res = _fn(arg);
+        var res = fn(arg);
         if (res is not IReadOnlySet<TElement> or not ISet<TElement>)
             throw new InvalidOperationException(
                 $"The type '{nameof(TSet)}' must either one of  'ISet<{nameof(TElement)}>, 'IReadonlySet<{nameof(TElement)}>'.");

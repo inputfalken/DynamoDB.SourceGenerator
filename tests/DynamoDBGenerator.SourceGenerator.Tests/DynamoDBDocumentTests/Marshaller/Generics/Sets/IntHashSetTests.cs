@@ -6,12 +6,8 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.G
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets;
 
 [DynamoDBMarshaller(EntityType = typeof(Container<HashSet<int>>))]
-public partial class IntHashSetTests : SetAsserter<HashSet<int>, int>
+public partial class IntHashSetTests() : SetAsserter<HashSet<int>, int>([2, 3, 4, 5], x => new HashSet<int>(x))
 {
-    public IntHashSetTests() : base(new[] { 2, 3, 4, 5 }, x => new HashSet<int>(x))
-    {
-    }
-
     protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<HashSet<int>> element)
     {
         return ContainerMarshaller.Marshall(element);
@@ -23,6 +19,22 @@ public partial class IntHashSetTests : SetAsserter<HashSet<int>, int>
         return ContainerMarshaller.Unmarshall(attributeValues);
     }
 }
+
+// TODO Support
+//[DynamoDBMarshaller(EntityType = typeof(Container<HashSet<int?>>))]
+//public partial class NUllableIntHashSetTests() : SetAsserter<HashSet<int?>, int?>([2, 3, 4, 5], x => new HashSet<int?>(x))
+//{
+//    protected override Container<HashSet<int?>> UnmarshallImplementation(
+//        Dictionary<string, AttributeValue> attributeValues)
+//    {
+//        return ContainerMarshaller.Unmarshall(attributeValues);
+//    }
+//
+//    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<HashSet<int?>> element)
+//    {
+//        return ContainerMarshaller.Marshall(element);
+//    }
+//}
 
 [DynamoDBMarshaller(EntityType = typeof(Container<HashSet<decimal>>))]
 public partial class DecimalHashSetTests : SetAsserter<HashSet<decimal>, decimal>
