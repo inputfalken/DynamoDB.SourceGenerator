@@ -1,9 +1,10 @@
 using System;
 using Amazon.DynamoDBv2.Model;
+using DynamoDBGenerator.Internal;
 
 namespace DynamoDBGenerator.Converters.Internal;
 
-internal sealed class ISO8601DateOnlyConverter : IValueTypeConverter<DateOnly>
+internal sealed class ISO8601DateOnlyConverter : IValueTypeConverter<DateOnly>, IStaticSingleton<ISO8601DateOnlyConverter>
 {
     public DateOnly? Read(AttributeValue attributeValue)
     {

@@ -1,8 +1,9 @@
 using Amazon.DynamoDBv2.Model;
+using DynamoDBGenerator.Internal;
 
 namespace DynamoDBGenerator.Converters.Internal;
 
-internal sealed class ByteConverter : IValueTypeConverter<byte>
+internal sealed class ByteConverter : IValueTypeConverter<byte>, IStaticSingleton<ByteConverter>
 {
     public byte? Read(AttributeValue attributeValue)
     {

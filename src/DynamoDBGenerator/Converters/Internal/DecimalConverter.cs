@@ -1,9 +1,10 @@
 using System.Globalization;
 using Amazon.DynamoDBv2.Model;
+using DynamoDBGenerator.Internal;
 
 namespace DynamoDBGenerator.Converters.Internal;
 
-internal sealed class DecimalConverter : IValueTypeConverter<decimal>
+internal sealed class DecimalConverter : IValueTypeConverter<decimal>, IStaticSingleton<DecimalConverter>
 {
     public decimal? Read(AttributeValue attributeValue)
     {

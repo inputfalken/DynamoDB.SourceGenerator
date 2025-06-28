@@ -1,10 +1,11 @@
 using System;
 using System.Globalization;
 using Amazon.DynamoDBv2.Model;
+using DynamoDBGenerator.Internal;
 
 namespace DynamoDBGenerator.Converters.Internal;
 
-internal sealed class DoubleConverter : IValueTypeConverter<double>
+internal sealed class DoubleConverter : IValueTypeConverter<double>, IStaticSingleton<DoubleConverter>
 {
     public double? Read(AttributeValue attributeValue)
     {

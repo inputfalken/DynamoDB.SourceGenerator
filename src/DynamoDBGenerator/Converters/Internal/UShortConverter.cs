@@ -1,8 +1,10 @@
+using System.Reflection.Metadata;
 using Amazon.DynamoDBv2.Model;
+using DynamoDBGenerator.Internal;
 
 namespace DynamoDBGenerator.Converters.Internal;
 
-internal sealed class UShortConverter : IValueTypeConverter<ushort>
+internal sealed class UShortConverter : IValueTypeConverter<ushort>, IStaticSingleton<UShortConverter>
 {
     public ushort? Read(AttributeValue attributeValue)
     {

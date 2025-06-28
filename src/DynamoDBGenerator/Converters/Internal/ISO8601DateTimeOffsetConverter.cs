@@ -1,9 +1,10 @@
 using System;
 using Amazon.DynamoDBv2.Model;
+using DynamoDBGenerator.Internal;
 
 namespace DynamoDBGenerator.Converters.Internal;
 
-internal sealed class ISO8601DateTimeOffsetConverter : IValueTypeConverter<DateTimeOffset>
+internal sealed class ISO8601DateTimeOffsetConverter : IValueTypeConverter<DateTimeOffset>, IStaticSingleton<ISO8601DateTimeOffsetConverter>
 {
     public DateTimeOffset? Read(AttributeValue attributeValue)
     {

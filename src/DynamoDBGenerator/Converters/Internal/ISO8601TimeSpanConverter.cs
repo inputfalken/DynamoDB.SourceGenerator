@@ -1,10 +1,11 @@
 using System;
 using System.Xml;
 using Amazon.DynamoDBv2.Model;
+using DynamoDBGenerator.Internal;
 
 namespace DynamoDBGenerator.Converters.Internal;
 
-internal sealed class ISO8601TimeSpanConverter : IValueTypeConverter<TimeSpan>
+internal sealed class ISO8601TimeSpanConverter : IValueTypeConverter<TimeSpan>, IStaticSingleton<ISO8601TimeSpanConverter>
 {
     public TimeSpan? Read(AttributeValue attributeValue)
     {
