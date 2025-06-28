@@ -120,14 +120,6 @@ internal static partial class Marshaller
                                 .CreateScope(singleGeneric.ReturnNullOrThrow(DataMember))
                                 .Append($"return {AttributeValueUtilityFactory.FromEnumerable}({ParamReference}, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeMarshallerMethod(singleGeneric.T, "a", "d", options, "o")}{(singleGeneric.T.IsSupposedToBeNull ? $" ?? {AttributeValueUtilityFactory.Null}" : null)});")
                         ).ToConversion(singleGeneric.T),
-                SingleGeneric.SupportedType.Set when singleGeneric.T.TypeSymbol.SpecialType is SpecialType.System_String
-                    => signature
-                        .CreateScope(
-                            $"if ({ParamReference} is null)"
-                                .CreateScope(singleGeneric.ReturnNullOrThrow(DataMember))
-                                .Append($"return new {Constants.AWSSDK_DynamoDBv2.AttributeValue} {{ SS = new List<{(singleGeneric.T.IsSupposedToBeNull ? "string?" : "string")}>({(singleGeneric.T.IsSupposedToBeNull ? ParamReference : $"{ParamReference}.Select((y,i) => y ?? throw {ExceptionHelper.NullExceptionMethod}($\"{{{DataMember}}}[UNKNOWN]\"))")})}};")
-                        )
-                        .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.IsNumeric
                     => signature
                         .CreateScope(

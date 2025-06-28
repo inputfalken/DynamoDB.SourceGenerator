@@ -128,13 +128,6 @@ public static class UnMarshaller
                             .Append($"return {AttributeValueUtilityFactory.ToEnumerable}({Value}.L, {MarshallerOptions.ParamReference}, {DataMember}, static (a, o, d) => {InvokeUnmarshallMethod(singleGeneric.T, "a", "d", options, "o")});")
                         )
                     .ToConversion(singleGeneric.T),
-                SingleGeneric.SupportedType.Set when singleGeneric.T.TypeSymbol.SpecialType is SpecialType.System_String => signature
-                    .CreateScope(
-                        $"if ({Value} is null || {Value}.SS is null)"
-                            .CreateScope(singleGeneric.ReturnNullOrThrow(DataMember))
-                            .Append($"return new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{(singleGeneric.T.IsSupposedToBeNull ? "string?" : "string")}>" : null)}({(singleGeneric.T.IsSupposedToBeNull ? $"{Value}.SS" : $"{Value}.SS.Select((y,i) => y ?? throw {ExceptionHelper.NullExceptionMethod}($\"{{{DataMember}}}[UNKNOWN]\")")}));")
-                        )
-                    .ToConversion(),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.IsNumeric => signature
                     .CreateScope(
                         $"if ({Value} is null || {Value}.NS is null)"

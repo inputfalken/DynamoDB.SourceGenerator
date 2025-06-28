@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using DynamoDBGenerator.Converters;
 using DynamoDBGenerator.Converters.Internal;
+using DynamoDBGenerator.Internal;
 
 namespace DynamoDBGenerator.Options;
 
@@ -115,5 +117,24 @@ public class AttributeValueConverters
     /// The <see cref="Guid"/> converter.
     /// </summary>
     public IValueTypeConverter<Guid> GuidConverter { get; protected init;} = new GuidConverter();
+    
+    /// <summary>
+    /// The <see cref="ISet{T}"/> converter for <see cref="string"/> sets.
+    /// </summary>
+    public IReferenceTypeConverter<ISet<string>> ISetConverter { get; protected init; } = Singleton.Static<StringSetConverter>();
 
+    /// <summary>
+    /// The <see cref="IReadOnlySet{T}"/> converter for <see cref="string"/> sets.
+    /// </summary>
+    public IReferenceTypeConverter<IReadOnlySet<string>> IReadOnlySetConverter { get; protected init; } = Singleton.Static<StringSetConverter>();
+
+    /// <summary>
+    /// The <see cref="HashSet{T}"/> converter for <see cref="string"/> sets.
+    /// </summary>
+    public IReferenceTypeConverter<HashSet<string>> HashSetConverter { get; protected init; } = Singleton.Static<StringSetConverter>();
+
+    /// <summary>
+    /// The <see cref="SortedSet{T}"/> converter for <see cref="string"/> sets.
+    /// </summary>
+    public IReferenceTypeConverter<SortedSet<string>> SortedSetConverter { get; protected init; } = Singleton.Static<StringSetConverter>();
 }
