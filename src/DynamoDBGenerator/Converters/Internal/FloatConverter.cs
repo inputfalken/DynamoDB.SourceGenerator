@@ -1,9 +1,10 @@
 using System.Globalization;
 using Amazon.DynamoDBv2.Model;
+using DynamoDBGenerator.Internal;
 
 namespace DynamoDBGenerator.Converters.Internal;
 
-internal sealed class FloatConverter : IValueTypeConverter<float>
+internal sealed class FloatConverter : IValueTypeConverter<float>, IStaticSingleton<FloatConverter>
 {
     public float? Read(AttributeValue attributeValue)
     {

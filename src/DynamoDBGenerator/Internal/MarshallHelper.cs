@@ -1,8 +1,8 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Amazon.DynamoDBv2.Model;
 using static System.Runtime.InteropServices.CollectionsMarshal;
 
@@ -114,6 +114,69 @@ public static class MarshallHelper
         return new AttributeValue { L = attributeValues };
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static TSet? ToStringSet<TSet>(
+        AttributeValue attributeValue,
+        Func<int, TSet> factory
+    ) where TSet : class, ICollection<string>
+    {
+        if (attributeValue.IsSSSet is false)
+            return null;
+
+        var span = AsSpan(attributeValue.SS);
+        var set = factory(span.Length);
+        foreach (var item in span)
+        {
+            if (item is null) // TODO need DataMember
+                throw ExceptionHelper.NotNull(null);
+
+            set.Add(item);
+        }
+
+        return set;
+    }
+
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static TSet? ToSet<TSet, TElement>(
+        AttributeValue attributeValue,
+        Func<int, TSet> factory
+    ) where TElement : IParsable<TElement> where TSet : class, ICollection<TElement>
+    {
+        if (attributeValue.IsSSSet is false)
+            return null;
+
+        var span = AsSpan(attributeValue.SS);
+        var set = factory(span.Length);
+        foreach (var item in span)
+        {
+            if (item is null) // TODO need DataMember
+                throw ExceptionHelper.NotNull(null);
+
+            set.Add(TElement.Parse(item, null));
+        }
+
+        return set;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static AttributeValue FromStringSet(IEnumerable<string> enumerable)
+    {
+        var list = enumerable.TryGetNonEnumeratedCount(out var count)
+            ? new List<string>(capacity: count)
+            : [];
+
+        foreach (var item in enumerable)
+        {
+            if (item is null) // TODO need datamember
+                throw ExceptionHelper.NotNull(null);
+
+            list.Add(item);
+        }
+
+        return new AttributeValue { SS = list };
+    }
+
     public static AttributeValue FromList<T, TArgument>(
         List<T> list,
         TArgument argument,
@@ -141,7 +204,7 @@ public static class MarshallHelper
         foreach (var (element, i) in enumerable.Select((x, y) => (x, y)))
             attributeValues.Add(resultSelector(element, argument, $"{dataMember}[{i}]"));
 
-        
+
         return new AttributeValue { L = attributeValues };
     }
 

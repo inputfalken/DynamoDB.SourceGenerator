@@ -16,107 +16,107 @@ public class AttributeValueConverters
     /// <summary>
     /// The <see cref="string"/> converter.
     /// </summary>
-    public IReferenceTypeConverter<string> StringConverter { get; protected init; } = new StringConverter();
+    public IReferenceTypeConverter<string> StringConverter { get; protected init; } = Singleton.Static<StringConverter>();
 
     /// <summary>
     /// The <see cref="DateTime"/> converter.
     /// </summary>
-    public IValueTypeConverter<DateTime> DateTimeConverter { get; protected init;} = new ISO8601DateTimeConverter();
+    public IValueTypeConverter<DateTime> DateTimeConverter { get; protected init;} = Singleton.Static<ISO8601DateTimeConverter>();
 
     /// <summary>
     /// The <see cref="DateTimeOffsetConverter"/> converter.
     /// </summary>
-    public IValueTypeConverter<DateTimeOffset> DateTimeOffsetConverter { get; protected init;} = new ISO8601DateTimeOffsetConverter();
+    public IValueTypeConverter<DateTimeOffset> DateTimeOffsetConverter { get; protected init;} = Singleton.Static<ISO8601DateTimeOffsetConverter>();
 
     /// <summary>
     /// The <see cref="bool"/> converter.
     /// </summary>
-    public IValueTypeConverter<bool> BoolConverter { get; protected init;} = new BoolConverter();
+    public IValueTypeConverter<bool> BoolConverter { get; protected init;} = Singleton.Static<BoolConverter>();
 
     /// <summary>
     /// The <see cref="char"/> converter.
     /// </summary>
-    public IValueTypeConverter<char> CharConverter { get; protected init;} = new CharConverter();
+    public IValueTypeConverter<char> CharConverter { get; protected init;} = Singleton.Static<CharConverter>();
 
     /// <summary>
     /// The <see cref="MemoryStream"/> converter.
     /// </summary>
-    public IReferenceTypeConverter<MemoryStream> MemoryStreamConverter { get; protected init;} = new MemoryStreamConverter();
+    public IReferenceTypeConverter<MemoryStream> MemoryStreamConverter { get; protected init;} = Singleton.Static<MemoryStreamConverter>();
 
     /// <summary>
     /// The <see cref="int"/> converter.
     /// </summary>
-    public IValueTypeConverter<int> Int32Converter { get; protected init; } = new Int32Converter();
+    public IValueTypeConverter<int> Int32Converter { get; protected init; } = Singleton.Static<Int32Converter>();
 
     /// <summary>
     /// The <see cref="decimal"/> converter.
     /// </summary>
-    public IValueTypeConverter<decimal> DecimalConverter { get; protected init;} = new DecimalConverter();
+    public IValueTypeConverter<decimal> DecimalConverter { get; protected init;} = Singleton.Static<DecimalConverter>();
 
     /// <summary>
     /// The <see cref="double"/> converter.
     /// </summary>
-    public IValueTypeConverter<double> DoubleConverter { get; protected init;} = new DoubleConverter();
+    public IValueTypeConverter<double> DoubleConverter { get; protected init;} = Singleton.Static<DoubleConverter>();
 
     /// <summary>
     /// The <see cref="float"/> converter.
     /// </summary>
-    public IValueTypeConverter<float> FloatConverter { get; protected init;} = new FloatConverter();
+    public IValueTypeConverter<float> FloatConverter { get; protected init;} = Singleton.Static<FloatConverter>();
 
     /// <summary>
     /// The <see cref="long"/> converter.
     /// </summary>
-    public IValueTypeConverter<long> LongConverter { get; protected init;} = new LongConverter();
+    public IValueTypeConverter<long> LongConverter { get; protected init;} = Singleton.Static<LongConverter>();
 
     /// <summary>
     /// The <see cref="ulong"/> converter.
     /// </summary>
-    public IValueTypeConverter<ulong> ULongConverter { get; protected init;} = new ULongConverter();
+    public IValueTypeConverter<ulong> ULongConverter { get; protected init;} = Singleton.Static<ULongConverter>();
     
     /// <summary>
     /// The <see cref="uint"/> converter.
     /// </summary>
-    public IValueTypeConverter<uint> UIntConverter { get; protected init;} = new UIntConverter();
-    
+    public IValueTypeConverter<uint> UIntConverter { get; protected init;} = Singleton.Static<UIntConverter>();
+
     /// <summary>
     /// The <see cref="sbyte"/> converter.
     /// </summary>
-    public IValueTypeConverter<sbyte> SbyteConverter { get; protected init;} = new SByteConverter();
+    public IValueTypeConverter<sbyte> SbyteConverter { get; protected init; } = Singleton.Static<SByteConverter>();
     
     /// <summary>
     /// The <see cref="short"/> converter.
     /// </summary>
-    public IValueTypeConverter<short> ShortConverter { get; protected init;} = new ShortConverter();
+    public IValueTypeConverter<short> ShortConverter { get; protected init;} = Singleton.Static<ShortConverter>();
     
     /// <summary>
     /// The <see cref="byte"/> converter.
     /// </summary>
-    public IValueTypeConverter<byte> ByteConverter { get; protected init;} = new ByteConverter();
+    public IValueTypeConverter<byte> ByteConverter { get; protected init;} = Singleton.Static<ByteConverter>();
     
     /// <summary>
     /// The <see cref="ushort"/> converter.
     /// </summary>
-    public IValueTypeConverter<ushort> UShortConverter { get; protected init;} = new UShortConverter();
+    public IValueTypeConverter<ushort> UShortConverter { get; protected init;} = Singleton.Static<UShortConverter>();
     
     /// <summary>
     /// The <see cref="DateOnly"/> converter.
     /// </summary>
-    public IValueTypeConverter<DateOnly> DateOnlyConverter { get; protected init; } = new ISO8601DateOnlyConverter();
-    
+    public IValueTypeConverter<DateOnly> DateOnlyConverter { get; protected init; } = Singleton.Static<ISO8601DateOnlyConverter>();
+
     /// <summary>
     /// The <see cref="TimeOnly"/> converter.
     /// </summary>
-    public IValueTypeConverter<TimeOnly> TimeOnlyConverter { get; protected init; } = new ISO8601TimeOnlyConverter();
+    public IValueTypeConverter<TimeOnly> TimeOnlyConverter { get; protected init; } = Singleton.Static<ISO8601TimeOnlyConverter>();
 
     /// <summary>
     /// The <see cref="TimeSpan"/> converter.
     /// </summary>
-    public IValueTypeConverter<TimeSpan> TimeSpanConverter { get; protected init;} = new ISO8601TimeSpanConverter();
-    
+    public IValueTypeConverter<TimeSpan> TimeSpanConverter { get; protected init; } = Singleton.Static<ISO8601TimeSpanConverter>();
+
     /// <summary>
     /// The <see cref="Guid"/> converter.
     /// </summary>
-    public IValueTypeConverter<Guid> GuidConverter { get; protected init;} = new GuidConverter();
+    public IValueTypeConverter<Guid> GuidConverter { get; protected init; } = Singleton.Static<GuidConverter>();
     
     /// <summary>
     /// The <see cref="ISet{T}"/> converter for <see cref="string"/> sets.
