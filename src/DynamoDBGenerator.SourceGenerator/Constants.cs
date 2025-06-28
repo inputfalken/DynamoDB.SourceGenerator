@@ -80,7 +80,7 @@ public static class Constants
         
         public static class AttributeValueUtilityFactory
         {
-            private const string ClassName = "MarshallHelper";
+            public const string ClassName = "MarshallHelper";
             public const string ToAttributeValue = $"{ClassName}.ToAttributeValue";
             public const string Null = $"{ClassName}.Null";
             public const string ToList = $"{ClassName}.ToList";
@@ -93,6 +93,10 @@ public static class Constants
             public const string ToDictionary = $"{ClassName}.ToDictionary";
             public const string ToLookup = $"{ClassName}.ToLookup";
             public const string FromLookup = $"{ClassName}.FromLookup";
+            public const string FromStringSet = $"{ClassName}.FromStringSet";
+            public const string FromNullableStringSet = $"{ClassName}.FromNullableStringSet";
+            public const string FromNumberSet = $"{ClassName}.FromNumberSet";
+            public const string FromNullableNumberSet = $"{ClassName}.FromNullableNumberSet";
         }
         public static class ExceptionHelper
         {

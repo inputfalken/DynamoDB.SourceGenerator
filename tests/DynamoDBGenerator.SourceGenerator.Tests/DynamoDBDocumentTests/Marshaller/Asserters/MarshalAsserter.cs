@@ -33,8 +33,11 @@ public abstract class MarshalAsserter<T>
     public void UnMarshall_IsEquivalentTo_MarshallResult()
     {
         Arguments().Should().AllSatisfy(x =>
-            MarshallImplementation(UnmarshallImplementation(x.attributeValues)).Should()
-                .BeEquivalentTo(x.attributeValues));
+        {
+            var unmarshallImplementation = UnmarshallImplementation(x.attributeValues);
+            var marshallImplementation = MarshallImplementation(unmarshallImplementation);
+            marshallImplementation.Should().BeEquivalentTo(x.attributeValues);
+        });
     }
 
     [Fact]

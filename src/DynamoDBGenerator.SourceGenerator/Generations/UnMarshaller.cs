@@ -139,7 +139,7 @@ public static class UnMarshaller
                     .CreateScope(
                         $"if ({Value} is null || {Value}.NS is null)"
                             .CreateScope(singleGeneric.ReturnNullOrThrow(DataMember))
-                            .Append($"return new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{singleGeneric.T.UnannotatedString}>" : null)}({Value}.NS.Select(y => {singleGeneric.T.UnannotatedString}.Parse(y)));")
+                            .Append($"return {AttributeValueUtilityFactory.ClassName}.{(singleGeneric.T.IsSupposedToBeNull ? $"ToNullableNumber{typeIdentifier.TypeSymbol.Name}" : $"ToNumber{typeIdentifier.TypeSymbol.Name}")}<{singleGeneric.T.UnannotatedString}>({Value}.NS, {DataMember});")
                         )
                     .ToConversion(singleGeneric),
                 SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(CreateMethod))),

@@ -5,17 +5,15 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.G
 
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets;
 
-[DynamoDBMarshaller(EntityType = typeof(Container<IReadOnlySet<string>>))]
-public partial class IReadOnlySetTests()
-    : NoneNullableElementAsserter<IReadOnlySet<string>, string>(Strings(), x => new SortedSet<string>(x))
+[DynamoDBMarshaller(EntityType = typeof(Container<ISet<string>>))]
+public partial class StringISetTests() : NoneNullableElementAsserter<ISet<string>, string>(Strings(), x => new HashSet<string>(x))
 {
-    protected override Dictionary<string, AttributeValue> MarshallImplementation(
-        Container<IReadOnlySet<string>> element)
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<ISet<string>> element)
     {
         return ContainerMarshaller.Marshall(element);
     }
 
-    protected override Container<IReadOnlySet<string>> UnmarshallImplementation(
+    protected override Container<ISet<string>> UnmarshallImplementation(
         Dictionary<string, AttributeValue> attributeValues)
     {
         return ContainerMarshaller.Unmarshall(attributeValues);

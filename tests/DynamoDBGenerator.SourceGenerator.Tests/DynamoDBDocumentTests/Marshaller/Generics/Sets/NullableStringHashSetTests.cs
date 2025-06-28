@@ -5,16 +5,15 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.G
 
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets;
 
-[DynamoDBMarshaller(EntityType = typeof(Container<SortedSet<string?>>))]
-public partial class NullableSortedSetTests() : NullableElementAsserter<SortedSet<string?>, string>(Strings(), x => new SortedSet<string?>(x))
+[DynamoDBMarshaller(EntityType = typeof(Container<HashSet<string?>>))]
+public partial class NullableStringHashSetTests() : NullableElementAsserter<HashSet<string?>, string>(Strings(), x => new HashSet<string?>(x))
 {
-    protected override Container<SortedSet<string?>> UnmarshallImplementation(
-        Dictionary<string, AttributeValue> attributeValues)
+    protected override Container<HashSet<string?>> UnmarshallImplementation(Dictionary<string, AttributeValue> attributeValues)
     {
         return ContainerMarshaller.Unmarshall(attributeValues);
     }
 
-    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<SortedSet<string?>> element)
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<HashSet<string?>> element)
     {
         return ContainerMarshaller.Marshall(element);
     }

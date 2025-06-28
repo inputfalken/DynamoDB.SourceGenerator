@@ -6,7 +6,7 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.G
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets;
 
 [DynamoDBMarshaller(EntityType = typeof(Container<ISet<string?>>))]
-public partial class NullableISetTests() : NullableElementAsserter<ISet<string?>, string>(Strings(), x => new HashSet<string?>(x))
+public partial class NullableStringISetTests() : NullableElementAsserter<ISet<string?>, string>(Strings(), x => new HashSet<string?>(x))
 {
     protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<ISet<string?>> element)
     {

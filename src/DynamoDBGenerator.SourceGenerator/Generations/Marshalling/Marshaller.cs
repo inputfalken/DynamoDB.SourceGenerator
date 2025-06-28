@@ -125,7 +125,7 @@ internal static partial class Marshaller
                         .CreateScope(
                             $"if ({ParamReference} is null)"
                                 .CreateScope(singleGeneric.ReturnNullOrThrow(DataMember))
-                                .Append($"return new {Constants.AWSSDK_DynamoDBv2.AttributeValue} {{ SS = new List<{(singleGeneric.T.IsSupposedToBeNull ? "string?" : "string")}>({(singleGeneric.T.IsSupposedToBeNull ? ParamReference : $"{ParamReference}.Select((y,i) => y ?? throw {ExceptionHelper.NullExceptionMethod}($\"{{{DataMember}}}[UNKNOWN]\"))")})}};")
+                                .Append($"return {(singleGeneric.T.IsSupposedToBeNull ? AttributeValueUtilityFactory.FromNullableStringSet : AttributeValueUtilityFactory.FromStringSet)}({ParamReference}, {DataMember});")
                         )
                         .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.IsNumeric
@@ -133,7 +133,7 @@ internal static partial class Marshaller
                         .CreateScope(
                             $"if ({ParamReference} is null)"
                                 .CreateScope(singleGeneric.ReturnNullOrThrow(DataMember))
-                                .Append($"return new {Constants.AWSSDK_DynamoDBv2.AttributeValue} {{ NS = new List<string>({ParamReference}.Select(y => y.ToString())) }};")
+                                .Append($"return {(singleGeneric.T.IsSupposedToBeNull ? AttributeValueUtilityFactory.FromNullableNumberSet : AttributeValueUtilityFactory.FromNumberSet)}({ParamReference}, {DataMember});")
                         )
                         .ToConversion(singleGeneric.T),
                 SingleGeneric.SupportedType.Set => throw new ArgumentException("Only string and integers are supported for sets", UncoveredConversionException(singleGeneric, nameof(CreateMethod))),
