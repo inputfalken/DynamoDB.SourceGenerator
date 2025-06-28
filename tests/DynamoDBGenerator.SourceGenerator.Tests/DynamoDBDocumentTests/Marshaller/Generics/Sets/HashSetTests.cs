@@ -6,12 +6,9 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.G
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets;
 
 [DynamoDBMarshaller(EntityType = typeof(Container<HashSet<string>>))]
-public partial class HashSetTests : NoneNullableElementAsserter<HashSet<string>, string>
+public partial class HashSetTests()
+    : NoneNullableElementAsserter<HashSet<string>, string>(Strings(), x => new HashSet<string>(x))
 {
-    public HashSetTests() : base(Strings(), x => new HashSet<string>(x))
-    {
-    }
-
     protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<HashSet<string>> element)
     {
         return ContainerMarshaller.Marshall(element);
