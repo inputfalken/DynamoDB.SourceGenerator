@@ -5,15 +5,15 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.G
 
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets;
 
-[DynamoDBMarshaller(EntityType = typeof(Container<SortedSet<string>>))]
-public partial class SortedSetTests() : NoneNullableElementAsserter<SortedSet<string>, string>(Strings(), x => new SortedSet<string>(x))
+[DynamoDBMarshaller(EntityType = typeof(Container<ISet<string?>>))]
+public partial class NullableISetTests() : NullableElementAsserter<ISet<string?>, string>(Strings(), x => new HashSet<string?>(x))
 {
-    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<SortedSet<string>> element)
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<ISet<string?>> element)
     {
         return ContainerMarshaller.Marshall(element);
     }
 
-    protected override Container<SortedSet<string>> UnmarshallImplementation(
+    protected override Container<ISet<string?>> UnmarshallImplementation(
         Dictionary<string, AttributeValue> attributeValues)
     {
         return ContainerMarshaller.Unmarshall(attributeValues);
@@ -23,6 +23,6 @@ public partial class SortedSetTests() : NoneNullableElementAsserter<SortedSet<st
     public void Unmarshall_Implementation_ShouldBeHashset()
     {
         Arguments().Should().AllSatisfy(x =>
-            ContainerMarshaller.Unmarshall(x.attributeValues).Element.Should().BeOfType<SortedSet<string>>());
+            ContainerMarshaller.Unmarshall(x.attributeValues).Element.Should().BeOfType<HashSet<string?>>());
     }
 }

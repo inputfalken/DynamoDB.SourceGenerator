@@ -6,12 +6,9 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.G
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets;
 
 [DynamoDBMarshaller(EntityType = typeof(Container<IReadOnlySet<string>>))]
-public partial class IReadOnlySetTests : NoneNullableElementAsserter<IReadOnlySet<string>, string>
+public partial class IReadOnlySetTests()
+    : NoneNullableElementAsserter<IReadOnlySet<string>, string>(Strings(), x => new SortedSet<string>(x))
 {
-    public IReadOnlySetTests() : base(Strings(), x => new SortedSet<string>(x))
-    {
-    }
-
     protected override Dictionary<string, AttributeValue> MarshallImplementation(
         Container<IReadOnlySet<string>> element)
     {

@@ -3,21 +3,19 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.A
 
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets.Asserters;
 
-public abstract class NoneNullableElementAsserter<TSet, TElement> : SetAsserter<TSet, TElement>
-    where TSet : IEnumerable<TElement> where TElement : class
+public abstract class NoneNullableElementAsserter<TSet, TElement>(
+    IEnumerable<TElement> seed,
+    Func<IEnumerable<TElement>, TSet> fn
+) : SetAsserter<TSet, TElement>(seed, fn)
+    where TSet : IEnumerable<TElement>
+    where TElement : class
 {
-    protected NoneNullableElementAsserter(IEnumerable<TElement> seed, Func<IEnumerable<TElement>, TSet> fn) : base(seed,
-        fn)
-    {
-    }
-
     protected static IEnumerable<string> Strings()
     {
         yield return "John";
         yield return "Tom";
         yield return "Michael";
     }
-
 
     [Fact]
     public void Marshall_NullElement_ShouldThrow()
