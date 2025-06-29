@@ -1,8 +1,9 @@
 using Amazon.DynamoDBv2.Model;
+using DynamoDBGenerator.Internal;
 
 namespace DynamoDBGenerator.Converters.Internal;
 
-internal sealed class StringConverter : IReferenceTypeConverter<string>
+internal sealed class StringConverter : IReferenceTypeConverter<string>, IStaticSingleton<StringConverter>
 {
     public string? Read(AttributeValue attributeValue)
     {

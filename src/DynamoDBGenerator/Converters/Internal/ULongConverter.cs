@@ -1,8 +1,9 @@
 using Amazon.DynamoDBv2.Model;
+using DynamoDBGenerator.Internal;
 
 namespace DynamoDBGenerator.Converters.Internal;
 
-internal sealed class ULongConverter : IValueTypeConverter<ulong>
+internal sealed class ULongConverter : IValueTypeConverter<ulong>, IStaticSingleton<ULongConverter>
 {
     public ulong? Read(AttributeValue attributeValue)
     {

@@ -1,8 +1,9 @@
 using Amazon.DynamoDBv2.Model;
+using DynamoDBGenerator.Internal;
 
 namespace DynamoDBGenerator.Converters.Internal;
 
-internal sealed class UIntConverter : IValueTypeConverter<uint>
+internal sealed class UIntConverter : IValueTypeConverter<uint>, IStaticSingleton<UIntConverter>
 {
     public uint? Read(AttributeValue attributeValue)
     {

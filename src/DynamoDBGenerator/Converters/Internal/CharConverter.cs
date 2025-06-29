@@ -1,8 +1,9 @@
 using Amazon.DynamoDBv2.Model;
+using DynamoDBGenerator.Internal;
 
 namespace DynamoDBGenerator.Converters.Internal;
 
-internal sealed class CharConverter : IValueTypeConverter<char>
+internal sealed class CharConverter : IValueTypeConverter<char>, IStaticSingleton<CharConverter>
 {
     public char? Read(AttributeValue attributeValue)
     {
