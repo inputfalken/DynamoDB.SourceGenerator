@@ -132,7 +132,7 @@ public static class UnMarshaller
                     .CreateScope(
                         $"if ({Value} is null || {Value}.SS is null)"
                             .CreateScope(singleGeneric.ReturnNullOrThrow(DataMember))
-                            .Append($"return new {(singleGeneric.TypeSymbol.TypeKind is TypeKind.Interface ? $"HashSet<{(singleGeneric.T.IsSupposedToBeNull ? "string?" : "string")}>" : null)}({(singleGeneric.T.IsSupposedToBeNull ? $"{Value}.SS" : $"{Value}.SS.Select((y,i) => y ?? throw {ExceptionHelper.NullExceptionMethod}($\"{{{DataMember}}}[UNKNOWN]\"))")});")
+                            .Append($"return {AttributeValueUtilityFactory.ClassName}.{(singleGeneric.T.IsSupposedToBeNull ? $"ToNullableString{typeIdentifier.TypeSymbol.Name}" : $"ToString{typeIdentifier.TypeSymbol.Name}")}({Value}.SS, {DataMember});")
                         )
                     .ToConversion(),
                 SingleGeneric.SupportedType.Set when singleGeneric.T.IsNumeric => signature

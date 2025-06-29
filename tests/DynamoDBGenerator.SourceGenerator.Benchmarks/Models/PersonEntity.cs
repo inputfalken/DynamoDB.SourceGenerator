@@ -6,6 +6,8 @@ namespace DynamoDBGenerator.SourceGenerator.Benchmarks.Models;
 [DynamoDBMarshaller(EntityType = typeof(PersonEntity))]
 public partial record PersonEntity
 {
+    public HashSet<string?>? StringSet { get; set; }
+    public HashSet<int?>? IntSet { get; set; }
     [DynamoDBHashKey]
     public string Id { get; set; } = null!;
 
@@ -16,6 +18,4 @@ public partial record PersonEntity
     public DateTime InsertedAt { get; set; }
     public DateTime? DeletedAt { get; set; }
     public Address Address { get; set; } = null!;
-    public HashSet<string> StringSet { get; set; }
-    public HashSet<int> IntSet { get; set; }
 }

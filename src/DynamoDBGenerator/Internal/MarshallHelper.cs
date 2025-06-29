@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Amazon.DynamoDBv2.Model;
-using static System.Runtime.InteropServices.CollectionsMarshal;
 
 namespace DynamoDBGenerator.Internal;
 
@@ -145,6 +144,43 @@ public static class MarshallHelper
         }
     }
 
+    private static TSet ToStringSet<TSet>(
+        List<string> numbers,
+        Func<int, TSet> factory,
+        string? dataMember
+    )
+        where TSet : ICollection<string>
+    {
+        var span = CollectionsMarshal.AsSpan(numbers);
+        var set = factory(span.Length);
+
+        foreach (var @string in span)
+        {
+            if (@string is null)
+                throw ExceptionHelper.NotNull($"{dataMember}[UNKNOWN]");
+
+            set.Add(@string);
+        }
+
+        return set;
+    }
+
+    private static TSet ToNullableStringSet<TSet>(
+        List<string?> numbers,
+        Func<int, TSet> factory,
+        string? _
+    )
+        where TSet : ICollection<string?>
+    {
+        var span = CollectionsMarshal.AsSpan(numbers);
+        var set = factory(span.Length);
+
+        foreach (var @string in span)
+            set.Add(@string);
+
+        return set;
+    }
+
     private static TSet ToNumberSet<TNumber, TSet>(
         List<string> numbers,
         Func<int, TSet> factory,
@@ -153,7 +189,7 @@ public static class MarshallHelper
         where TSet : ICollection<TNumber>
         where TNumber : struct, INumber<TNumber>
     {
-        var span = AsSpan(numbers);
+        var span = CollectionsMarshal.AsSpan(numbers);
         var set = factory(span.Length);
 
         foreach (var number in span)
@@ -166,7 +202,7 @@ public static class MarshallHelper
 
         return set;
     }
-    
+
     private static TSet ToNullableNumberSet<TNumber, TSet>(
         List<string?> numbers,
         Func<int, TSet> factory,
@@ -175,7 +211,7 @@ public static class MarshallHelper
         where TSet : ICollection<TNumber?>
         where TNumber : struct, INumber<TNumber>
     {
-        var span = AsSpan(numbers);
+        var span = CollectionsMarshal.AsSpan(numbers);
         var set = factory(span.Length);
 
         foreach (var number in span)
@@ -184,6 +220,60 @@ public static class MarshallHelper
                 set.Add(null);
             else
                 set.Add(TNumber.Parse(number, null));
+        }
+
+        return set;
+    }
+
+    public static ISet<string> ToStringISet(List<string> ss, string? dataMember)
+    {
+        return ToStringSet<HashSet<string>>(ss, i => new HashSet<string>(i), dataMember);
+    }
+
+    public static IReadOnlySet<string> ToStringIReadOnlySet(List<string> ss, string? dataMember)
+    {
+        return ToStringSet<HashSet<string>>(ss, i => new HashSet<string>(i), dataMember);
+    }
+
+    public static HashSet<string> ToStringHashSet(List<string> ss, string? dataMember)
+    {
+        return ToStringSet<HashSet<string>>(ss, i => new HashSet<string>(i), dataMember);
+    }
+    
+    public static ISet<string?> ToNullableStringISet(List<string?> ss, string? dataMember)
+    {
+        return ToNullableStringSet<HashSet<string?>>(ss, i => new HashSet<string?>(i), dataMember);
+    }
+
+    public static IReadOnlySet<string?> ToNullableStringIReadOnlySet(List<string?> ss, string? dataMember)
+    {
+        return ToNullableStringSet<HashSet<string?>>(ss, i => new HashSet<string?>(i), dataMember);
+    }
+
+    public static HashSet<string?> ToNullableStringHashSet(List<string?> ss, string? dataMember)
+    {
+        return ToNullableStringSet<HashSet<string?>>(ss, i => new HashSet<string?>(i), dataMember);
+    }
+
+    public static SortedSet<string?> ToNullableStringSortedSet(List<string?> ss, string? _)
+    {
+        var span = CollectionsMarshal.AsSpan(ss);
+        var set = new SortedSet<string?>();
+        foreach (var se in span) 
+            set.Add(se);
+
+        return set;
+    }
+    public static SortedSet<string> ToStringSortedSet(List<string> ss, string? dataMember)
+    {
+        var span = CollectionsMarshal.AsSpan(ss);
+        var set = new SortedSet<string>();
+        foreach (var se in span)
+        {
+            if (se is null)
+                throw ExceptionHelper.NotNull($"{dataMember}[UNKNOWN]");
+
+            set.Add(se);
         }
 
         return set;
@@ -201,16 +291,16 @@ public static class MarshallHelper
         return ToNumberSet<TNumber, HashSet<TNumber>>(ns, i => new HashSet<TNumber>(i), dataMember);
     }
 
-    public static HashSet<TNumber> ToNumberHashSet<TNumber>(List<string> ns, string? dataMember)
+    public static HashSet<TNumber> ToNumberHashSet<TNumber>(List<string> ss, string? dataMember)
         where TNumber : struct, INumber<TNumber>
     {
-        return ToNumberSet<TNumber, HashSet<TNumber>>(ns, i => new HashSet<TNumber>(i), dataMember);
+        return ToNumberSet<TNumber, HashSet<TNumber>>(ss, i => new HashSet<TNumber>(i), dataMember);
     }
 
     public static SortedSet<TNumber> ToNumberSortedSet<TNumber>(List<string> ns, string? dataMember)
         where TNumber : struct, INumber<TNumber>
     {
-        var span = AsSpan(ns);
+        var span = CollectionsMarshal.AsSpan(ns);
         var set = new SortedSet<TNumber>();
         foreach (var se in span)
         {
@@ -321,7 +411,7 @@ public static class MarshallHelper
         string? dataMember,
         Func<T, TArgument, string?, AttributeValue> resultSelector)
     {
-        var span = AsSpan(list);
+        var span = CollectionsMarshal.AsSpan(list);
         var attributeValues = new List<AttributeValue>(span.Length);
         for (var i = 0; i < span.Length; i++)
             attributeValues.Add(resultSelector(span[i], argument, $"{dataMember}[{i}]"));
@@ -358,7 +448,7 @@ public static class MarshallHelper
         Func<AttributeValue, TArgument, string?, TResult> resultSelector
     )
     {
-        var span = AsSpan(attributeValues);
+        var span = CollectionsMarshal.AsSpan(attributeValues);
         var elements = new List<TResult>(span.Length);
         for (var i = 0; i < span.Length; i++)
             elements.Add(resultSelector(span[i], argument, $"{dataMember}[{i}]"));
@@ -384,7 +474,7 @@ public static class MarshallHelper
         Func<AttributeValue, TArgument, string?, TResult> resultSelector
     )
     {
-        var span = AsSpan(attributeValues);
+        var span = CollectionsMarshal.AsSpan(attributeValues);
         var elements = new TResult[span.Length];
         for (var i = 0; i < span.Length; i++)
             elements[i] = resultSelector(span[i], argument, $"{dataMember}[{i}]");
