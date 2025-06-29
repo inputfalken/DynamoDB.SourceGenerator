@@ -19,6 +19,7 @@ public class MarshallBenchmark
     private readonly PersonEntity _singleElement;
     private readonly Dictionary<string, AttributeValue> _attributeValues;
 
+
     public MarshallBenchmark()
     {
         var fixture = new Fixture();

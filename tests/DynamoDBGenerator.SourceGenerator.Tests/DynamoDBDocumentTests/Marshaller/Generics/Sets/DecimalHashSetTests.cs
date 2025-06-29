@@ -5,16 +5,16 @@ using DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.G
 
 namespace DynamoDBGenerator.SourceGenerator.Tests.DynamoDBDocumentTests.Marshaller.Generics.Sets;
 
-[DynamoDBMarshaller(EntityType = typeof(Container<HashSet<string>>))]
-public partial class HashSetTests()
-    : NoneNullableElementAsserter<HashSet<string>, string>(Strings(), x => new HashSet<string>(x))
+[DynamoDBMarshaller(EntityType = typeof(Container<HashSet<decimal>>))]
+public partial class DecimalHashSetTests()
+    : SetAsserter<HashSet<decimal>, decimal>([2032m, 0.323232932m, 0.9329392m], x => new HashSet<decimal>(x))
 {
-    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<HashSet<string>> element)
+    protected override Dictionary<string, AttributeValue> MarshallImplementation(Container<HashSet<decimal>> element)
     {
         return ContainerMarshaller.Marshall(element);
     }
 
-    protected override Container<HashSet<string>> UnmarshallImplementation(
+    protected override Container<HashSet<decimal>> UnmarshallImplementation(
         Dictionary<string, AttributeValue> attributeValues)
     {
         return ContainerMarshaller.Unmarshall(attributeValues);

@@ -31,8 +31,8 @@ public abstract record TypeIdentifier
         var (annotated, original) = Representation(typeSymbol);
         UnannotatedString = original;
         AnnotatedString = annotated;
-        IsNumeric = IsNumericMethod(typeSymbol);
         CanBeNull = typeSymbol is { IsReferenceType: true } or { IsValueType: true, OriginalDefinition.SpecialType: SpecialType.System_Nullable_T };
+        IsNumeric = IsNumericMethod(typeSymbol);
     }
 
     /// <summary>
@@ -54,7 +54,12 @@ public abstract record TypeIdentifier
         return RepresentationDictionary.GetOrAdd(typeSymbol, x =>
         {
             var displayString = x.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            return RepresentationDictionary[typeSymbol] = (ToString(typeSymbol, displayString), displayString);
+
+            var unAnnotated = x.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T
+                ? displayString.Substring(0, displayString.Length - 1)
+                : displayString;
+            
+            return RepresentationDictionary[typeSymbol] = (ToString(typeSymbol, displayString), unAnnotated);
         });
 
         static string ToString(ITypeSymbol x, string displayString)
@@ -118,6 +123,9 @@ public abstract record TypeIdentifier
 
     private static bool IsNumericMethod(ITypeSymbol typeSymbol)
     {
+        if (typeSymbol.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
+            typeSymbol = ((INamedTypeSymbol)typeSymbol).TypeArguments[0];
+        
         return typeSymbol.SpecialType
             is SpecialType.System_Int16
             or SpecialType.System_Byte
@@ -130,6 +138,7 @@ public abstract record TypeIdentifier
             or SpecialType.System_Decimal
             or SpecialType.System_Double
             or SpecialType.System_Single;
+        
     }
 
     public string ReturnNullOrThrow(string dataMember)

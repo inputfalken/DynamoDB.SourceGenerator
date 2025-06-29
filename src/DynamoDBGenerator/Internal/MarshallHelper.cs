@@ -1,8 +1,9 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Numerics;
+using System.Runtime.CompilerServices;
 using Amazon.DynamoDBv2.Model;
 using static System.Runtime.InteropServices.CollectionsMarshal;
 
@@ -22,9 +23,12 @@ public static class MarshallHelper
     [return: NotNullIfNotNull(nameof(dict))]
     public static AttributeValue? ToAttributeValue(
         [NotNullIfNotNull(nameof(dict))] Dictionary<string, AttributeValue>? dict
-    ) => dict is null
-        ? null
-        : new AttributeValue { M = dict };
+    )
+    {
+        return dict is null
+            ? null
+            : new AttributeValue { M = dict };
+    }
 
     public static AttributeValue FromDictionary<T, TArgument>(
         IEnumerable<KeyValuePair<string, T>> dictionary,
@@ -45,6 +49,203 @@ public static class MarshallHelper
         return new AttributeValue { M = elements };
     }
 
+    public static AttributeValue FromNullableNumberSet<T>(IEnumerable<T?> numbers, string? _)
+        where T : struct, INumber<T>
+    {
+        if (numbers.TryGetNonEnumeratedCount(out var count) is false)
+            return new AttributeValue
+            {
+                NS = numbers.Select(number => number?.ToString()).ToList()
+            };
+
+        if (count is 0)
+            return new AttributeValue { NS = [] };
+
+        var list = new List<string?>(count);
+        list.AddRange(numbers.Select(number => number?.ToString()));
+
+        return new AttributeValue { NS = list };
+    }
+
+    public static AttributeValue FromNumberSet<T>(IEnumerable<T> numbers, string? dataMember)
+        where T : struct, INumber<T>
+    {
+        if (numbers.TryGetNonEnumeratedCount(out var count) is false)
+        {
+            var noCapacity = new List<string>();
+
+            foreach (var number in numbers)
+            {
+                var @string = number.ToString();
+                if (string.IsNullOrEmpty(@string))
+                    throw ExceptionHelper.NotNull($"{dataMember}[UNKNOWN]");
+
+                noCapacity.Add(@string);
+            }
+
+            return new AttributeValue { NS = noCapacity };
+        }
+
+        if (count is 0)
+            return new AttributeValue { NS = [] };
+
+        var list = new List<string>(count);
+
+        foreach (var number in numbers)
+        {
+            var @string = number.ToString();
+            if (string.IsNullOrEmpty(@string))
+                throw ExceptionHelper.NotNull($"{dataMember}[UNKNOWN]");
+
+            list.Add(@string);
+        }
+
+        return new AttributeValue { NS = list };
+    }
+
+    public static AttributeValue FromNullableStringSet(IEnumerable<string?> strings, string? _)
+    {
+        if (strings.TryGetNonEnumeratedCount(out var count) is false)
+            return new AttributeValue { SS = strings.ToList() };
+
+        if (count is 0)
+            return new AttributeValue { SS = [] };
+
+        var list = new List<string?>(count);
+        list.AddRange(strings);
+
+        return new AttributeValue { SS = list };
+    }
+
+    public static AttributeValue FromStringSet(IEnumerable<string> strings, string? dataMember)
+    {
+        if (strings.TryGetNonEnumeratedCount(out var count) is false)
+        {
+            var list = new List<string>();
+            foreach (var @string in strings)
+            {
+                if (@string is null)
+                    throw ExceptionHelper.NotNull($"{dataMember}[UNKNOWN]");
+                list.Add(@string);
+            }
+
+            return new AttributeValue { SS = list };
+        }
+        else
+        {
+            if (count is 0)
+                return new AttributeValue { SS = [] };
+
+            var list = new List<string>(count);
+
+            foreach (var @string in strings)
+                list.Add(@string ?? throw ExceptionHelper.NotNull($"{dataMember}[UNKNOWN]"));
+
+            return new AttributeValue { SS = list };
+        }
+    }
+
+    private static TSet ToNumberSet<TNumber, TSet>(
+        List<string> numbers,
+        Func<int, TSet> factory,
+        string? dataMember
+    )
+        where TSet : ICollection<TNumber>
+        where TNumber : struct, INumber<TNumber>
+    {
+        var span = AsSpan(numbers);
+        var set = factory(span.Length);
+
+        foreach (var number in span)
+        {
+            if (number is null)
+                throw ExceptionHelper.NotNull($"{dataMember}[UNKNOWN]");
+
+            set.Add(TNumber.Parse(number, null));
+        }
+
+        return set;
+    }
+    
+    private static TSet ToNullableNumberSet<TNumber, TSet>(
+        List<string?> numbers,
+        Func<int, TSet> factory,
+        string? _
+    )
+        where TSet : ICollection<TNumber?>
+        where TNumber : struct, INumber<TNumber>
+    {
+        var span = AsSpan(numbers);
+        var set = factory(span.Length);
+
+        foreach (var number in span)
+        {
+            if (number is null)
+                set.Add(null);
+            else
+                set.Add(TNumber.Parse(number, null));
+        }
+
+        return set;
+    }
+
+    public static ISet<TNumber> ToNumberISet<TNumber>(List<string> ns, string? dataMember)
+        where TNumber : struct, INumber<TNumber>
+    {
+        return ToNumberSet<TNumber, HashSet<TNumber>>(ns, i => new HashSet<TNumber>(i), dataMember);
+    }
+
+    public static IReadOnlySet<TNumber> ToNumberIReadOnlySet<TNumber>(List<string> ns, string? dataMember)
+        where TNumber : struct, INumber<TNumber>
+    {
+        return ToNumberSet<TNumber, HashSet<TNumber>>(ns, i => new HashSet<TNumber>(i), dataMember);
+    }
+
+    public static HashSet<TNumber> ToNumberHashSet<TNumber>(List<string> ns, string? dataMember)
+        where TNumber : struct, INumber<TNumber>
+    {
+        return ToNumberSet<TNumber, HashSet<TNumber>>(ns, i => new HashSet<TNumber>(i), dataMember);
+    }
+
+    public static SortedSet<TNumber> ToNumberSortedSet<TNumber>(List<string> ns, string? dataMember)
+        where TNumber : struct, INumber<TNumber>
+    {
+        var span = AsSpan(ns);
+        var set = new SortedSet<TNumber>();
+        foreach (var se in span)
+        {
+            if (se is null)
+                throw ExceptionHelper.NotNull($"{dataMember}[UNKNOWN]");
+
+            set.Add(TNumber.Parse(se, null));
+        }
+
+        return set;
+    }
+
+    public static ISet<TNumber?> ToNullableNumberISet<TNumber>(List<string?> ns, string? dataMember)
+        where TNumber : struct, INumber<TNumber>
+    {
+        return ToNullableNumberSet<TNumber, HashSet<TNumber?>>(ns, i => new HashSet<TNumber?>(i), dataMember);
+    }
+
+    public static IReadOnlySet<TNumber?> ToNullableNumberIReadOnlySet<TNumber>(List<string?> ns, string? dataMember)
+        where TNumber : struct, INumber<TNumber>
+    {
+        return ToNullableNumberSet<TNumber, HashSet<TNumber?>>(ns, i => new HashSet<TNumber?>(i), dataMember);
+    }
+
+    public static HashSet<TNumber?> ToNullableNumberHashSet<TNumber>(List<string?> ns, string? dataMember)
+        where TNumber : struct, INumber<TNumber>
+    {
+        return ToNullableNumberSet<TNumber, HashSet<TNumber?>>(ns, i => new HashSet<TNumber?>(i), dataMember);
+    }
+
+    public static SortedSet<TNumber?> ToNullableNumberSortedSet<TNumber>(List<string?> ns, string? _)
+        where TNumber : struct, INumber<TNumber>
+    {
+        return new SortedSet<TNumber?>(ns.Select(x => x is null ? (TNumber?)null : TNumber.Parse(x, null)));
+    }
 
     public static ILookup<string, T> ToLookup<T, TArgument>(
         Dictionary<string, AttributeValue> dictionary,
@@ -134,15 +335,20 @@ public static class MarshallHelper
         string? dataMember,
         Func<T, TArgument, string?, AttributeValue> resultSelector)
     {
-        var attributeValues = enumerable.TryGetNonEnumeratedCount(out var count)
-            ? new List<AttributeValue>(count)
-            : new List<AttributeValue>();
+        if (enumerable.TryGetNonEnumeratedCount(out var count) is false)
+            return new AttributeValue
+            {
+                L = [..enumerable.Select((element, i) => resultSelector(element, argument, $"{dataMember}[{i}]"))]
+            };
 
+        if (count == 0)
+            return new AttributeValue { L = [] };
+
+        var list = new List<AttributeValue>(count);
         foreach (var (element, i) in enumerable.Select((x, y) => (x, y)))
-            attributeValues.Add(resultSelector(element, argument, $"{dataMember}[{i}]"));
+            list.Add(resultSelector(element, argument, $"{dataMember}[{i}]"));
 
-        
-        return new AttributeValue { L = attributeValues };
+        return new AttributeValue { L = list };
     }
 
     public static List<TResult> ToList<TResult, TArgument>(
