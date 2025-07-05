@@ -57,7 +57,7 @@ jobs:
         with:
           name: Benchmark.Net Benchmark
           tool: 'benchmarkdotnet'
-          output-file-path: examples/benchmarkdotnet/BenchmarkDotNet.Artifacts/results/Sample.Benchmarks-report-full-compressed.json
+          output-file-path: tests/DynamoDBGenerator.SourceGenerator.Benchmarks/BenchmarkDotNet.Artifacts/results/Sample.Benchmarks-report-full-compressed.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
           # Show alert with commit comment on detecting possible performance regression
@@ -66,17 +66,17 @@ jobs:
           fail-on-alert: true
           alert-comment-cc-users: '@inputfalken'
 
-      - name: Store benchmark result - separate results repo
-        uses: rhysd/github-action-benchmark@v1
-        with:
-          name: Benchmark.Net Benchmark
-          tool: 'benchmarkdotnet'
-          output-file-path: examples/benchmarkdotnet/BenchmarkDotNet.Artifacts/results/Sample.Benchmarks-report-full-compressed.json
-          github-token: ${{ secrets.BENCHMARK_ACTION_BOT_TOKEN }}
-          auto-push: true
-          # Show alert with commit comment on detecting possible performance regression
-          alert-threshold: '200%'
-          comment-on-alert: true
-          fail-on-alert: true
-          alert-comment-cc-users: '@inputfalken'
-          gh-repository: 'github.com/benchmark-action/github-action-benchmark-results'
+#      - name: Store benchmark result - separate results repo
+#        uses: rhysd/github-action-benchmark@v1
+#        with:
+#          name: Benchmark.Net Benchmark
+#          tool: 'benchmarkdotnet'
+#          output-file-path: tests/DynamoDBGenerator.SourceGenerator.Benchmarks/BenchmarkDotNet.Artifacts/results/Sample.Benchmarks-report-full-compressed.json
+#          github-token: ${{ secrets.BENCHMARK_ACTION_BOT_TOKEN }}
+#          auto-push: true
+#          # Show alert with commit comment on detecting possible performance regression
+#          alert-threshold: '200%'
+#          comment-on-alert: true
+#          fail-on-alert: true
+#          alert-comment-cc-users: '@inputfalken'
+#          gh-repository: 'github.com/benchmark-action/github-action-benchmark-results'
