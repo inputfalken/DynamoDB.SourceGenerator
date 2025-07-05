@@ -15,13 +15,13 @@ public partial class StringIntDictionary() : SG_VS_AWS_Benchmarker<Container<Dic
 );
 
 [DynamoDBMarshaller(EntityType = typeof(Container<HashSet<string>>))]
-public partial class StringHashSet() : SG_VS_AWS_Benchmarker<Container<HashSet<string>>>(
+public partial class StringHashSet() : SG_BenchMarker<Container<HashSet<string>>>(
     ContainerMarshaller.Marshall,
     ContainerMarshaller.Unmarshall
 );
 
 [DynamoDBMarshaller(EntityType = typeof(Container<HashSet<int>>))]
-public partial class IntHashSet() : SG_VS_AWS_Benchmarker<Container<HashSet<int>>>(
+public partial class IntHashSet() : SG_BenchMarker<Container<HashSet<int>>>(
     ContainerMarshaller.Marshall,
     ContainerMarshaller.Unmarshall
 );
