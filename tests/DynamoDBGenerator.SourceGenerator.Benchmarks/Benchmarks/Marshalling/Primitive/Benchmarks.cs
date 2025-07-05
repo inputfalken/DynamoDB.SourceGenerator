@@ -1,64 +1,67 @@
 using System;
+using Amazon.DynamoDBv2.Model;
+using BenchmarkDotNet.Attributes;
 using DynamoDBGenerator.Attributes;
 
 namespace DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.Primitive;
 
-[DynamoDBMarshaller(EntityType = typeof(Container<System.Boolean>))]
-public partial class Bool() : SG_VS_AWS_Benchmarker<Container<System.Boolean>>(
+
+[DynamoDBMarshaller(EntityType = typeof(Container<Boolean>))]
+public partial class System_Bool() : SG_BenchMarker<Container<Boolean>>(
     ContainerMarshaller.Marshall,
     ContainerMarshaller.Unmarshall
 );
 
-[DynamoDBMarshaller(EntityType = typeof(Container<System.Char>))]
-public partial class Char() : SG_VS_AWS_Benchmarker<Container<System.Char>>(
+[DynamoDBMarshaller(EntityType = typeof(Container<Char>))]
+public partial class System_Char() : SG_BenchMarker<Container<Char>>(
     ContainerMarshaller.Marshall,
     ContainerMarshaller.Unmarshall
 );
 
-[DynamoDBMarshaller(EntityType = typeof(Container<System.Int32>))]
-public partial class Int32() : SG_VS_AWS_Benchmarker<Container<System.Int32>>(
+[DynamoDBMarshaller(EntityType = typeof(Container<Int32>))]
+public partial class System_Int32() : SG_BenchMarker<Container<Int32>>(
     ContainerMarshaller.Marshall,
     ContainerMarshaller.Unmarshall
 );
 
-[DynamoDBMarshaller(EntityType = typeof(Container<System.Int64>))]
-public partial class Int64() : SG_VS_AWS_Benchmarker<Container<System.Int64>>(
+[DynamoDBMarshaller(EntityType = typeof(Container<Int64>))]
+public partial class System_Int64() : SG_BenchMarker<Container<Int64>>(
     ContainerMarshaller.Marshall,
     ContainerMarshaller.Unmarshall
 );
 
-[DynamoDBMarshaller(EntityType = typeof(Container<System.String>))]
-public partial class String_() : SG_VS_AWS_Benchmarker<Container<System.String>>(
+[DynamoDBMarshaller(EntityType = typeof(Container<String>))]
+public partial class System_String() : SG_BenchMarker<Container<String>>(
     ContainerMarshaller.Marshall,
     ContainerMarshaller.Unmarshall
 );
 
-[DynamoDBMarshaller(EntityType = typeof(Container<System.UInt32>))]
-public partial class UInt32() : SG_VS_AWS_Benchmarker<Container<System.UInt32>>(
+[DynamoDBMarshaller(EntityType = typeof(Container<UInt32>))]
+public partial class System_UInt32() : SG_BenchMarker<Container<UInt32>>(
     ContainerMarshaller.Marshall,
     ContainerMarshaller.Unmarshall
 );
 
-[DynamoDBMarshaller(EntityType = typeof(Container<System.UInt64>))]
-public partial class UInt64() : SG_VS_AWS_Benchmarker<Container<System.UInt64>>(
+[DynamoDBMarshaller(EntityType = typeof(Container<UInt64>))]
+public partial class System_UInt64() : SG_BenchMarker<Container<UInt64>>(
     ContainerMarshaller.Marshall,
     ContainerMarshaller.Unmarshall
 );
 
-[DynamoDBMarshaller(EntityType = typeof(Container<System.Guid>))]
-public partial class Guid() : SG_VS_AWS_Benchmarker<Container<System.Guid>>(
+[DynamoDBMarshaller(EntityType = typeof(Container<Guid>))]
+public partial class System_Guid() : SG_BenchMarker<Container<Guid>>(
     ContainerMarshaller.Marshall,
     ContainerMarshaller.Unmarshall
 );
 
-[DynamoDBMarshaller(EntityType = typeof(Container<System.DayOfWeek>))]
-public partial class Test() : SG_VS_AWS_Benchmarker<Container<System.DayOfWeek>>(
+[DynamoDBMarshaller(EntityType = typeof(Container<DayOfWeek>))]
+public partial class System_Enum() : SG_BenchMarker<Container<DayOfWeek>>(
     ContainerMarshaller.Marshall,
     ContainerMarshaller.Unmarshall
 );
 
-[DynamoDBMarshaller(EntityType = typeof(Container<System.Double>))]
-public partial class Double() : SG_VS_AWS_Benchmarker<Container<System.Double>>(
+[DynamoDBMarshaller(EntityType = typeof(Container<Double>))]
+public partial class System_Double() : SG_BenchMarker<Container<Double>>(
     ContainerMarshaller.Marshall,
     ContainerMarshaller.Unmarshall
 );
