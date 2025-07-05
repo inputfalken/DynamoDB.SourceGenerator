@@ -31,7 +31,8 @@ public abstract class SG_BenchMarker<T>
     private static Fixture SetupFixture()
     {
         var fixture = new Fixture();
-
+        fixture.Customize<DateOnly>(o => o.FromFactory((DateTime dt) => DateOnly.FromDateTime(dt)));
+        fixture.Customize<TimeOnly>(o => o.FromFactory((DateTime dt) => TimeOnly.FromDateTime(dt)));
         // Allow recursive types
         fixture.Behaviors
             .OfType<ThrowingRecursionBehavior>()
