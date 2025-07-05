@@ -1,3 +1,4 @@
+using System;
 using DynamoDBGenerator.Attributes;
 
 namespace DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.Primitive;
@@ -27,7 +28,7 @@ public partial class Int64() : SG_VS_AWS_Benchmarker<Container<System.Int64>>(
 );
 
 [DynamoDBMarshaller(EntityType = typeof(Container<System.String>))]
-public partial class String() : SG_VS_AWS_Benchmarker<Container<System.String>>(
+public partial class String_() : SG_VS_AWS_Benchmarker<Container<System.String>>(
     ContainerMarshaller.Marshall,
     ContainerMarshaller.Unmarshall
 );
@@ -50,8 +51,8 @@ public partial class Guid() : SG_VS_AWS_Benchmarker<Container<System.Guid>>(
     ContainerMarshaller.Unmarshall
 );
 
-[DynamoDBMarshaller(EntityType = typeof(Container<DayOfWeek>))]
-public partial class Enum() : SG_VS_AWS_Benchmarker<Container<DayOfWeek>>(
+[DynamoDBMarshaller(EntityType = typeof(Container<System.DayOfWeek>))]
+public partial class Test() : SG_VS_AWS_Benchmarker<Container<System.DayOfWeek>>(
     ContainerMarshaller.Marshall,
     ContainerMarshaller.Unmarshall
 );
