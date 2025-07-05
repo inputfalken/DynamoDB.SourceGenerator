@@ -21,15 +21,15 @@ permissions:
   
 jobs:
   benchmark:
-    name: Run benchmarker
+    name: Run all benchmarks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 8.0.x
-      - name: Run temporal benchmarks
-        run: cd tests/DynamoDBGenerator.SourceGenerator.Benchmarks && dotnet run --configuration 'Release' -- --exporters 'JSON' --filter '*TemporalBenchmarks*' --memory --job 'Default'
+      - name: Run all benchmarks
+        run: cd tests/DynamoDBGenerator.SourceGenerator.Benchmarks && dotnet run --configuration 'Release' -- --exporters 'JSON' --filter '*' --memory --job 'Default'
 
       - name: Store temporal benchmark result
         uses: rhysd/github-action-benchmark@v1
