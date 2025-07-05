@@ -1,5 +1,4 @@
-
-name: Benchmark.Net Example
+name: Benchmarker
 # TODO use this before merging
 #on:
 #  push:
@@ -22,17 +21,17 @@ permissions:
   
 jobs:
   benchmark:
-    name: Run Benchmark.Net benchmark example
+    name: Run benchmarker
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 8.0.x
-      - name: Run benchmark
-        run: cd tests/DynamoDBGenerator.SourceGenerator.Benchmarks && dotnet run --configuration 'Release' -- --exporters 'JSON' --filter '*' --memory --job 'Default'
+      - name: Run temporal benchmarks
+        run: cd tests/DynamoDBGenerator.SourceGenerator.Benchmarks && dotnet run --configuration 'Release' -- --exporters 'JSON' --filter '*TemporalBenchmarks*' --memory --job 'Default'
 
-      - name: Store benchmark result
+      - name: Store temporal benchmark result
         uses: rhysd/github-action-benchmark@v1
         with:
           name: Benchmark.Net Benchmark
