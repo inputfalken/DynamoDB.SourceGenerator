@@ -2,9 +2,8 @@ using Amazon.DynamoDBv2.Model;
 using AutoFixture;
 using BenchmarkDotNet.Attributes;
 
-namespace DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarkers;
+namespace DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks;
 
-[ShortRunJob, MarkdownExporter, MemoryDiagnoser]
 public abstract class SG_BenchMarker<T>
 {
     private readonly Func<T, Dictionary<string, AttributeValue>> _marshaller;

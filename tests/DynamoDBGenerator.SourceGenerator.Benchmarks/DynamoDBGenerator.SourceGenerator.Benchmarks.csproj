@@ -17,4 +17,8 @@
         <ProjectReference Include="..\..\src\DynamoDBGenerator\DynamoDBGenerator.csproj"/>
         <ProjectReference Include="..\..\src\DynamoDBGenerator.SourceGenerator\DynamoDBGenerator.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Benchmarks\Marshalling\" />
+    </ItemGroup>
 </Project>

@@ -1,6 +1,6 @@
 using DynamoDBGenerator.Attributes;
 
-namespace DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarkers;
+namespace DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.Collections;
 
 [DynamoDBMarshaller(EntityType = typeof(Container<List<string>>))]
 public partial class StringList() : SG_VS_AWS_Benchmarker<Container<List<string>>>(

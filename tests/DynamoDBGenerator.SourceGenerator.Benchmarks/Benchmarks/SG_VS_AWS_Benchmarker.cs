@@ -5,7 +5,7 @@ using Amazon.DynamoDBv2.DocumentModel;
 using Amazon.DynamoDBv2.Model;
 using BenchmarkDotNet.Attributes;
 
-namespace DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarkers;
+namespace DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks;
 
 public abstract class SG_VS_AWS_Benchmarker<T>(
     Func<T, Dictionary<string, AttributeValue>> marshaller,
