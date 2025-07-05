@@ -50,7 +50,7 @@ jobs:
         with:
           dotnet-version: 8.0.x
       - name: Run benchmark
-        run: cd tests/DynamoDBGenerator.SourceGenerator.Benchmarks && dotnet run --exporters json --filter '*'
+        run: cd tests/DynamoDBGenerator.SourceGenerator.Benchmarks && dotnet run --configuration Release --exporters json --filter '*'
 
       - name: Store benchmark result
         uses: rhysd/github-action-benchmark@v1
