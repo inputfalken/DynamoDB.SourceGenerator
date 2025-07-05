@@ -34,9 +34,37 @@ jobs:
       - name: Store temporal benchmark result
         uses: rhysd/github-action-benchmark@v1
         with:
-          name: Benchmark.Net Benchmark
+          name: Temporal Type benchmark
           tool: 'benchmarkdotnet'
           output-file-path: tests/DynamoDBGenerator.SourceGenerator.Benchmarks/BenchmarkDotNet.Artifacts/results/DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks-report-full-compressed.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          # Show alert with commit comment on detecting possible performance regression
+          alert-threshold: '200%'
+          comment-on-alert: true
+          fail-on-alert: true
+          alert-comment-cc-users: '@inputfalken'
+          
+      - name: Store primitive benchmark result
+        uses: rhysd/github-action-benchmark@v1
+        with:
+          name: Primitive Type benchmark
+          tool: 'benchmarkdotnet'
+          output-file-path: tests/DynamoDBGenerator.SourceGenerator.Benchmarks/BenchmarkDotNet.Artifacts/results/DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.PrimitiveBenchmarks-report-full-compressed.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          # Show alert with commit comment on detecting possible performance regression
+          alert-threshold: '200%'
+          comment-on-alert: true
+          fail-on-alert: true
+          alert-comment-cc-users: '@inputfalken'
+          
+      - name: Store collection benchmark result
+        uses: rhysd/github-action-benchmark@v1
+        with:
+          name: Collection Type benchmark
+          tool: 'benchmarkdotnet'
+          output-file-path: tests/DynamoDBGenerator.SourceGenerator.Benchmarks/BenchmarkDotNet.Artifacts/results/DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks-report-full-compressed.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
           # Show alert with commit comment on detecting possible performance regression
