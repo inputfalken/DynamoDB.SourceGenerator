@@ -1,7 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
+﻿using BenchmarkDotNet.Running;
+using DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling;
 
-
-using BenchmarkDotNet.Running;
-using DynamoDBGenerator.SourceGenerator.Benchmarks;
-
-BenchmarkRunner.Run<MarshallBenchmark>();
+BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
