@@ -3,19 +3,19 @@ using DynamoDBGenerator.Attributes;
 
 namespace DynamoDBGenerator.SourceGenerator.Benchmarks.Models;
 
-[DynamoDBMarshaller(EntityType = typeof(Person))]
-public partial record Person
+public record Person
 {
-    public HashSet<string?>? StringSet { get; set; }
-    public HashSet<int?>? IntSet { get; set; }
     [DynamoDBHashKey]
-    public string Id { get; set; } = null!;
+    public required string Id { get; set; }
 
-    public string Firstname { get; set; } = null!;
-    public string Lastname { get; set; } = null!;
-    public DateTime BirthDate { get; set; }
-    public DateTime UpdatedAt { get; set; }
-    public DateTime InsertedAt { get; set; }
-    public DateTime? DeletedAt { get; set; }
-    public Address Address { get; set; } = null!;
+    public required List<string> Strings { get; set; }
+    public required List<int> Numbers { get; set; }
+    public required List<Person> Neighbours { get; set; }
+    public required string Firstname { get; set; }
+    public required string Lastname { get; set; }
+    public required DateTime BirthDate { get; set; }
+    public required DateTime UpdatedAt { get; set; }
+    public required DateTime InsertedAt { get; set; }
+    public required DateTime? DeletedAt { get; set; }
+    public required Address Address { get; set; }
 }
