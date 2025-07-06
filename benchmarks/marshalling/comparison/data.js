@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1751799046787,
+  "lastUpdate": 1751802094620,
   "repoUrl": "https://github.com/inputfalken/DynamoDB.SourceGenerator",
   "entries": {
     "Comparison Marshalling": [
@@ -192,6 +192,54 @@ window.BENCHMARK_DATA = {
             "value": 12136.207479623648,
             "unit": "ns",
             "range": "± 41.44170240210181"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "inputfalken@gmail.com",
+            "name": "Robert Andersson",
+            "username": "inputfalken"
+          },
+          "committer": {
+            "email": "inputfalken@gmail.com",
+            "name": "Robert Andersson",
+            "username": "inputfalken"
+          },
+          "distinct": true,
+          "id": "495d40293f71e191ac9ca1f5d903381d0ad9ecd9",
+          "message": "Update benchmark results",
+          "timestamp": "2025-07-06T13:39:24+02:00",
+          "tree_id": "60e274804e4e23455ff57caadb6abdf5b446fffa",
+          "url": "https://github.com/inputfalken/DynamoDB.SourceGenerator/commit/495d40293f71e191ac9ca1f5d903381d0ad9ecd9"
+        },
+        "date": 1751802094106,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Unmarshall_Person_DTO",
+            "value": 1674.9294705024133,
+            "unit": "ns",
+            "range": "± 6.229682923949511"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Amazon_Unmarshall_Person_DTO",
+            "value": 14057.434111531575,
+            "unit": "ns",
+            "range": "± 32.46895189673704"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Marshall_Person_DTO",
+            "value": 1476.1374559402466,
+            "unit": "ns",
+            "range": "± 5.099252503526126"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Amazon_Marshall_Person_DTO",
+            "value": 11908.194082641601,
+            "unit": "ns",
+            "range": "± 117.80155995658569"
           }
         ]
       }
