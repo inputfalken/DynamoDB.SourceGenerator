@@ -97,7 +97,7 @@ public static class Constants
             public const string FromNullableStringSet = $"{ClassName}.FromNullableStringSet";
             public const string FromNumberSet = $"{ClassName}.FromNumberSet";
             public const string FromNullableNumberSet = $"{ClassName}.FromNullableNumberSet";
-            public const string ToNullableStringSet = $"{ClassName}.ToNullableStringSet";
+            public const string GetAttributeValueOrNull = $"{ClassName}.GetAttributeValueOrNull";
         }
         public static class ExceptionHelper
         {

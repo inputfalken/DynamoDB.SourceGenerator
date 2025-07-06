@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Amazon.DynamoDBv2.Model;
 
@@ -27,6 +28,16 @@ public static class MarshallHelper
         return dict is null
             ? null
             : new AttributeValue { M = dict };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static AttributeValue? GetAttributeValueOrNull(Dictionary<string, AttributeValue> dict, string key)
+    {
+        ref readonly var attributeValue = ref CollectionsMarshal.GetValueRefOrNullRef(dict, key);
+
+        return Unsafe.IsNullRef(in attributeValue)
+            ? null
+            : attributeValue;
     }
 
     public static AttributeValue FromDictionary<T, TArgument>(
@@ -505,7 +516,7 @@ public static class MarshallHelper
         var span = CollectionsMarshal.AsSpan(attributeValues);
         if (span.Length is 0)
             return [];
-        
+
         var elements = new TResult[span.Length];
         for (var i = 0; i < span.Length; i++)
             elements[i] = resultSelector(span[i], argument, $"{dataMember}[{i}]");
