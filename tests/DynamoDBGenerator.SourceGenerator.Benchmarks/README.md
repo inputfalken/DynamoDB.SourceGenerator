@@ -15,9 +15,9 @@ Intel Core Ultra 9 185H, 1 CPU, 22 logical and 16 physical cores
 
 ```
 
-| Method                       |       Mean |     Error |    StdDev |   Gen0 |   Gen1 | Allocated |
-|------------------------------|-----------:|----------:|----------:|-------:|-------:|----------:|
-| Unmarshall_Person_DTO        |   828.4 ns |  11.89 ns |  11.12 ns | 0.0553 |      - |     696 B |
-| Marshall_Person_DTO          |   722.2 ns |  11.13 ns |   9.87 ns | 0.3052 | 0.0038 |    3840 B |
-| Amazon_Unmarshall_Person_DTO | 6,712.2 ns | 130.69 ns | 199.57 ns | 0.9155 |      - |   11610 B |
-| Amazon_Marshall_Person_DTO   | 5,984.9 ns | 118.61 ns | 181.13 ns | 0.9460 |      - |   12076 B |
+| Method                       | Mean        | Error     | StdDev      | Median      | Gen0   | Gen1   | Allocated |
+|----------------------------- |------------:|----------:|------------:|------------:|-------:|-------:|----------:|
+| Unmarshall_Person_DTO        |  1,276.3 ns |   8.46 ns |     7.50 ns |  1,276.6 ns | 0.0553 |      - |     696 B |
+| Amazon_Unmarshall_Person_DTO | 10,349.0 ns | 558.41 ns | 1,637.72 ns | 11,053.8 ns | 0.9155 |      - |   11610 B |
+| Marshall_Person_DTO          |    698.8 ns |   9.83 ns |     9.65 ns |    699.2 ns | 0.3052 | 0.0038 |    3840 B |
+| Amazon_Marshall_Person_DTO   |  5,772.4 ns |  92.02 ns |    86.08 ns |  5,759.5 ns | 0.9460 |      - |   12076 B |
