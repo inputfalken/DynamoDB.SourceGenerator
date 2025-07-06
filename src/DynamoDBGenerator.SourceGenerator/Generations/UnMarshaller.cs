@@ -50,7 +50,7 @@ public static class UnMarshaller
     private static CodeFactory CreateCode(TypeIdentifier typeIdentifier, Func<ITypeSymbol, DynamoDbDataMember[]> fn, MarshallerOptions options)
     {
         var assignments = fn(typeIdentifier.TypeSymbol)
-            .Select(x => (DDB: x, MethodCall: InvokeUnmarshallMethod(x.DataMember.TypeIdentifier, $"{Dict}.GetValueOrDefault(\"{x.AttributeName}\")", $"\"{x.DataMember.Name}\"", options), x.DataMember.Name))
+            .Select(x => (DDB: x, MethodCall: InvokeUnmarshallMethod(x.DataMember.TypeIdentifier, $"{AttributeValueUtilityFactory.GetAttributeValueOrNull}({Dict}, \"{x.AttributeName}\")", $"\"{x.DataMember.Name}\"", options), x.DataMember.Name))
             .ToArray();
 
         var blockBody =
