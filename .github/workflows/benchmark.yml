@@ -1,5 +1,4 @@
 name: Benchmarker
- TODO use this before merging
 on:
   push:
     branches:
