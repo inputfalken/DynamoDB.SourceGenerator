@@ -3,8 +3,8 @@ using DynamoDBGenerator.Attributes;
 
 namespace DynamoDBGenerator.SourceGenerator.Benchmarks.Models;
 
-[DynamoDBMarshaller(EntityType = typeof(PersonEntity))]
-public partial record PersonEntity
+[DynamoDBMarshaller(EntityType = typeof(Person))]
+public partial record Person
 {
     public HashSet<string?>? StringSet { get; set; }
     public HashSet<int?>? IntSet { get; set; }

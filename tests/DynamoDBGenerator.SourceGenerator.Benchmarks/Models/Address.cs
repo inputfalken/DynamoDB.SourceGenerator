@@ -8,5 +8,5 @@ public sealed record Address
 
     public PostalCode PostalCode { get; set; } = null!;
 
-    public List<PersonEntity> Neighbours { get; set; } = null!;
+    public List<Person> Neighbours { get; set; } = null!;
 }

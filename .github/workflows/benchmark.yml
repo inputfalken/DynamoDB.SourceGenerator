@@ -9,6 +9,28 @@ permissions:
   deployments: write
 
 jobs:
+  comparison:
+    name: Comparison Marshalling
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.0.x
+      - name: Run
+        run: dotnet run --project tests/DynamoDBGenerator.SourceGenerator.Benchmarks --configuration 'Release' -- --exporters 'JSON' --filter '*Marshalling.Comparison*' --memory --job 'Default'
+      - name: Store
+        uses: rhysd/github-action-benchmark@v1
+        with:
+          name: Comparison Marshalling
+          tool: 'benchmarkdotnet'
+          output-file-path: BenchmarkDotNet.Artifacts/results/DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks-report-full-compressed.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          benchmark-data-dir-path: 'benchmarks/marshalling/comparison'
+          comment-on-alert: false
+          fail-on-alert: false
+          alert-comment-cc-users: '@inputfalken'
   temporal:
     name: Temporal Marshalling
     runs-on: ubuntu-latest

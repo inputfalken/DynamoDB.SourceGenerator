@@ -2,9 +2,9 @@ using System.Runtime.CompilerServices;
 using Amazon.DynamoDBv2.Model;
 using AutoFixture;
 
-namespace DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling;
+namespace DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.Extensions.Types;
 
-public class DynamoDbMarshallerBenchmarkHelper<T, T2, T3, T4> 
+public class DynamoDbMarshallerBenchmarkHelper<T, T2, T3, T4>
     where T4 : IAttributeExpressionValueTracker<T2>
     where T3 : IAttributeExpressionNameTracker
 {
@@ -37,15 +37,5 @@ public class DynamoDbMarshallerBenchmarkHelper<T, T2, T3, T4>
             .ForEach(b => fixture.Behaviors.Remove(b));
         fixture.Behaviors.Add(new OmitOnRecursionBehavior());
         return fixture;
-    }
-}
-
-public static class Extensions
-{
-    public static DynamoDbMarshallerBenchmarkHelper<T, T2, T3, T4> ToBenchmarkHelper<T, T2, T3, T4>(
-        this IDynamoDBMarshaller<T, T2, T3, T4> marshaller) where T3 : IAttributeExpressionNameTracker
-        where T4 : IAttributeExpressionValueTracker<T2>
-    {
-        return new DynamoDbMarshallerBenchmarkHelper<T, T2, T3, T4>(marshaller);
     }
 }

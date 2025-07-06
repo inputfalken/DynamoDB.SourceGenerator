@@ -1,6 +1,8 @@
 using Amazon.DynamoDBv2.Model;
 using BenchmarkDotNet.Attributes;
 using DynamoDBGenerator.Attributes;
+using DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.Extensions;
+using DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.Extensions.Types;
 
 namespace DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling;
 
