@@ -12,10 +12,10 @@ public partial class Amazon
 {
     private readonly AWSComparisonBenchmarkHelper<Person, Person, PersonNames, PersonValues> _marshaller = PersonMarshaller.ToAwsComparisonHelper();
 
-    [Benchmark(Baseline = true)]
+    [Benchmark]
     public Person Unmarshall_Person_DTO() => _marshaller.Unmarshall();
 
-    [Benchmark(Baseline = true)]
+    [Benchmark]
     public Dictionary<string, AttributeValue> Marshall_Person_DTO() => _marshaller.Marshall();
 
     [Benchmark]
