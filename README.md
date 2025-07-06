@@ -34,16 +34,17 @@ The source generator will look for attributes and implement interfaces that exis
     * Simplify Attribute Expressions: Easily create complex expressions with an intuitive approach.
 * Faster performance: Utilize the low-level API that would normally be implemented manually.
 
-## [Benchmarks](tests/DynamoDBGenerator.SourceGenerator.Benchmarks): 
+## [Benchmarks](tests/DynamoDBGenerator.SourceGenerator.Benchmarks):
 
-Here's a quick summary about how this library performs with a quick example of marshalling and unmarshalling a simple DTO object.
+Here's a quick summary about how this library performs with a quick example of marshalling and unmarshalling a simple
+DTO object.
 
-| Method                       | Mean        | Error     | StdDev      | Median      | Gen0   | Gen1   | Allocated |
-|----------------------------- |------------:|----------:|------------:|------------:|-------:|-------:|----------:|
-| Unmarshall_Person_DTO        |  1,276.3 ns |   8.46 ns |     7.50 ns |  1,276.6 ns | 0.0553 |      - |     696 B |
-| Amazon_Unmarshall_Person_DTO | 10,349.0 ns | 558.41 ns | 1,637.72 ns | 11,053.8 ns | 0.9155 |      - |   11610 B |
-| Marshall_Person_DTO          |    698.8 ns |   9.83 ns |     9.65 ns |    699.2 ns | 0.3052 | 0.0038 |    3840 B |
-| Amazon_Marshall_Person_DTO   |  5,772.4 ns |  92.02 ns |    86.08 ns |  5,759.5 ns | 0.9460 |      - |   12076 B |
+| Method                       |       Mean |    Error |   StdDev |   Gen0 |   Gen1 | Allocated |
+|------------------------------|-----------:|---------:|---------:|-------:|-------:|----------:|
+| Unmarshall_Person_DTO        |   821.6 ns |  8.43 ns |  7.47 ns | 0.0553 |      - |     696 B |
+| Amazon_Unmarshall_Person_DTO | 6,639.1 ns | 79.64 ns | 74.50 ns | 0.9155 |      - |   11609 B |
+| Marshall_Person_DTO          |   689.6 ns |  4.24 ns |  3.76 ns | 0.3052 | 0.0038 |    3840 B |
+| Amazon_Marshall_Person_DTO   | 5,611.1 ns | 20.94 ns | 17.49 ns | 0.9460 |      - |   12076 B |
 
 ## Features:
 
@@ -67,7 +68,7 @@ Here's a quick summary about how this library performs with a quick example of m
 * `ValueTuple<T>` support: You don't have to declare your own types and could instead
   use [tuples](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/value-tuples) with
   custom named fields that will act as if the tuple was a type with those data members.
-* Improved performance  see [benchmark](./tests/DynamoDBGenerator.SourceGenerator.Benchmarks) project.
+* Improved performance see [benchmark](./tests/DynamoDBGenerator.SourceGenerator.Benchmarks) project.
 
 ## Default conversion
 
@@ -105,20 +106,20 @@ If you do not override the conversion behaviour the following rules will be appl
 
 ### Collection Types
 
-| Type                                 | Field | Description                                           |
-|--------------------------------------|-------|-------------------------------------------------------|
-| `ICollection<T>`                     | `L`   |                                                       |
-| `IDictonary<string, TValue>`         | `M`   | Will treat the `Dictionary` as a **Key-Value** store. |
-| `IEnumerable<T>`                     | `L`   |                                                       |
-| `IReadOnlyList<T>`                   | `L`   |                                                       |
+| Type                                  | Field | Description                                           |
+|---------------------------------------|-------|-------------------------------------------------------|
+| `ICollection<T>`                      | `L`   |                                                       |
+| `IDictonary<string, TValue>`          | `M`   | Will treat the `Dictionary` as a **Key-Value** store. |
+| `IEnumerable<T>`                      | `L`   |                                                       |
+| `IReadOnlyList<T>`                    | `L`   |                                                       |
 | `IReadonlyDictionary<string, TValue>` | `M`   | Will treat the `Dictionary` as a **Key-Value** store. |
-| `ILookup<string, TValue>`            | `M`   | Will treat the `ILookup` as a **Key-Values** store.   |
-| `ISet<int>`                          | `NS`  |                                                       |
-| `ISet<long>`                         | `NS`  |                                                       |
-| `ISet<string>`                       | `SS`  |                                                       |
-| `ISet<uint>`                         | `NS`  |                                                       |
-| `ISet<ulong>`                        | `NS`  |                                                       |
-| `T[]`                                | `L`   |                                                       |
+| `ILookup<string, TValue>`             | `M`   | Will treat the `ILookup` as a **Key-Values** store.   |
+| `ISet<int>`                           | `NS`  |                                                       |
+| `ISet<long>`                          | `NS`  |                                                       |
+| `ISet<string>`                        | `SS`  |                                                       |
+| `ISet<uint>`                          | `NS`  |                                                       |
+| `ISet<ulong>`                         | `NS`  |                                                       |
+| `T[]`                                 | `L`   |                                                       |
 
 ### Custom types
 
