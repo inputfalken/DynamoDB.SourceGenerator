@@ -33,11 +33,11 @@ public static class MarshallHelper
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static AttributeValue? GetAttributeValueOrNull(Dictionary<string, AttributeValue> dict, string key)
     {
-        ref readonly var idRef = ref CollectionsMarshal.GetValueRefOrNullRef(dict, key);
+        ref readonly var attributeValue = ref CollectionsMarshal.GetValueRefOrNullRef(dict, key);
 
-        return Unsafe.IsNullRef(in idRef)
+        return Unsafe.IsNullRef(in attributeValue)
             ? null
-            : idRef;
+            : attributeValue;
     }
 
     public static AttributeValue FromDictionary<T, TArgument>(
