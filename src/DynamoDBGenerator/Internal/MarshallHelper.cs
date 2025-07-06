@@ -35,17 +35,21 @@ public static class MarshallHelper
         string? dataMember,
         Func<T, TArgument, string?, AttributeValue> resultSelector)
     {
-        var elements = dictionary switch
+        Dictionary<string, AttributeValue> dict;
+        if (dictionary.TryGetNonEnumeratedCount(out var count))
         {
-            IReadOnlyDictionary<string, T> a => new Dictionary<string, AttributeValue>(a.Count),
-            IDictionary<string, T> a => new Dictionary<string, AttributeValue>(a.Count),
-            _ => new Dictionary<string, AttributeValue>()
-        };
+            if (count is 0)
+                return new AttributeValue { M = [] };
+
+            dict = new Dictionary<string, AttributeValue>(count);
+        }
+        else
+            dict = [];
 
         foreach (var (key, value) in dictionary)
-            elements[key] = resultSelector(value, argument, $"{dataMember}[{key}]");
+            dict[key] = resultSelector(value, argument, $"{dataMember}[{key}]");
 
-        return new AttributeValue { M = elements };
+        return new AttributeValue { M = dict };
     }
 
     public static AttributeValue FromNullableNumberSet<T>(IEnumerable<T?> numbers, string? _)
@@ -239,7 +243,7 @@ public static class MarshallHelper
     {
         return ToStringSet<HashSet<string>>(ss, i => new HashSet<string>(i), dataMember);
     }
-    
+
     public static ISet<string?> ToNullableStringISet(List<string?> ss, string? dataMember)
     {
         return ToNullableStringSet<HashSet<string?>>(ss, i => new HashSet<string?>(i), dataMember);
@@ -259,11 +263,12 @@ public static class MarshallHelper
     {
         var span = CollectionsMarshal.AsSpan(ss);
         var set = new SortedSet<string?>();
-        foreach (var se in span) 
+        foreach (var se in span)
             set.Add(se);
 
         return set;
     }
+
     public static SortedSet<string> ToStringSortedSet(List<string> ss, string? dataMember)
     {
         var span = CollectionsMarshal.AsSpan(ss);
@@ -383,6 +388,9 @@ public static class MarshallHelper
         string? dataMember,
         Func<AttributeValue, TArgument, string?, T> resultSelector)
     {
+        if (dictionary.Count is 0)
+            return [];
+
         var elements = new Dictionary<string, T>(dictionary.Count);
 
         foreach (var (key, value) in dictionary)
@@ -398,6 +406,8 @@ public static class MarshallHelper
         Func<T, TArgument, string?, AttributeValue> resultSelector)
     {
         var span = array.AsSpan();
+        if (span.Length is 0)
+            return new AttributeValue { L = [] };
         var attributeValues = new List<AttributeValue>(span.Length);
         for (var i = 0; i < span.Length; i++)
             attributeValues.Add(resultSelector(span[i], argument, $"{dataMember}[{i}]"));
@@ -412,6 +422,9 @@ public static class MarshallHelper
         Func<T, TArgument, string?, AttributeValue> resultSelector)
     {
         var span = CollectionsMarshal.AsSpan(list);
+        if (span.Length is 0)
+            return new AttributeValue { L = [] };
+
         var attributeValues = new List<AttributeValue>(span.Length);
         for (var i = 0; i < span.Length; i++)
             attributeValues.Add(resultSelector(span[i], argument, $"{dataMember}[{i}]"));
@@ -449,6 +462,9 @@ public static class MarshallHelper
     )
     {
         var span = CollectionsMarshal.AsSpan(attributeValues);
+        if (span.Length is 0)
+            return [];
+
         var elements = new List<TResult>(span.Length);
         for (var i = 0; i < span.Length; i++)
             elements.Add(resultSelector(span[i], argument, $"{dataMember}[{i}]"));
@@ -463,8 +479,20 @@ public static class MarshallHelper
         Func<AttributeValue, TArgument, string?, TResult> resultSelector
     )
     {
-        for (var i = 0; i < attributeValues.Count; i++)
-            yield return resultSelector(attributeValues[i], argument, $"{dataMember}[{i}]");
+        return attributeValues.Count is 0
+            ? []
+            : Iterator(attributeValues, argument, dataMember, resultSelector);
+
+        static IEnumerable<TResult> Iterator(
+            List<AttributeValue> list,
+            TArgument argument,
+            string? dataMember,
+            Func<AttributeValue, TArgument, string?, TResult> resultSelector
+        )
+        {
+            for (var i = 0; i < list.Count; i++)
+                yield return resultSelector(list[i], argument, $"{dataMember}[{i}]");
+        }
     }
 
     public static TResult[] ToArray<TResult, TArgument>(
@@ -475,6 +503,9 @@ public static class MarshallHelper
     )
     {
         var span = CollectionsMarshal.AsSpan(attributeValues);
+        if (span.Length is 0)
+            return [];
+        
         var elements = new TResult[span.Length];
         for (var i = 0; i < span.Length; i++)
             elements[i] = resultSelector(span[i], argument, $"{dataMember}[{i}]");
