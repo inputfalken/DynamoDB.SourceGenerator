@@ -5,10 +5,10 @@ using DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.Extens
 using DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.Extensions.Types;
 using DynamoDBGenerator.SourceGenerator.Benchmarks.Models;
 
-namespace DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.Comparison;
+namespace DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling;
 
 [DynamoDBMarshaller(EntityType = typeof(Person))]
-public partial class Amazon
+public partial class ComparisonBenchmarks
 {
     private readonly AWSComparisonBenchmarkHelper<Person, Person, PersonNames, PersonValues> _marshaller = PersonMarshaller.ToAwsComparisonHelper();
 
@@ -19,8 +19,8 @@ public partial class Amazon
     public Dictionary<string, AttributeValue> Marshall_Person_DTO() => _marshaller.Marshall();
 
     [Benchmark]
-    public Person AWS_Unmarshall_Person_DTO() => _marshaller.Unmarshall_AWS();
+    public Person Amazon_Unmarshall_Person_DTO() => _marshaller.Unmarshall_AWS();
 
     [Benchmark]
-    public Dictionary<string, AttributeValue> AWS_Marshall_Person_DTO() => _marshaller.Marshall_AWS();
+    public Dictionary<string, AttributeValue> Amazon_Marshall_Person_DTO() => _marshaller.Marshall_AWS();
 }

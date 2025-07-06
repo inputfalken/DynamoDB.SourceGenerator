@@ -24,7 +24,7 @@ jobs:
         with:
           name: Comparison Marshalling
           tool: 'benchmarkdotnet'
-          output-file-path: BenchmarkDotNet.Artifacts/results/DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks-report-full-compressed.json
+          output-file-path: BenchmarkDotNet.Artifacts/results/DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks-report-full-compressed.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
           benchmark-data-dir-path: 'benchmarks/marshalling/comparison'
