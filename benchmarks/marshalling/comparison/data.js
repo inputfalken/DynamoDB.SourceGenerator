@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752434970666,
+  "lastUpdate": 1752435390127,
   "repoUrl": "https://github.com/inputfalken/DynamoDB.SourceGenerator",
   "entries": {
     "Comparison Marshalling": [
@@ -336,6 +336,54 @@ window.BENCHMARK_DATA = {
             "value": 11607.705971854073,
             "unit": "ns",
             "range": "± 96.48426925578592"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "inputfalken@gmail.com",
+            "name": "Robert Andersson",
+            "username": "inputfalken"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5ff3c30d03c514b9b02877f63ce06c783c1e1131",
+          "message": "Potential fix for code scanning alert no. 1: Workflow does not contain permissions (#99)\n\nCo-authored-by: Copilot Autofix powered by AI <62310815+github-advanced-security[bot]@users.noreply.github.com>",
+          "timestamp": "2025-07-13T21:34:56+02:00",
+          "tree_id": "a9299bac01281ca9c29420f4b98d2d688299aea9",
+          "url": "https://github.com/inputfalken/DynamoDB.SourceGenerator/commit/5ff3c30d03c514b9b02877f63ce06c783c1e1131"
+        },
+        "date": 1752435389781,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Unmarshall_Person_DTO",
+            "value": 1544.877239227295,
+            "unit": "ns",
+            "range": "± 11.991803779713445"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Amazon_Unmarshall_Person_DTO",
+            "value": 13426.03564453125,
+            "unit": "ns",
+            "range": "± 131.87325091252922"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Marshall_Person_DTO",
+            "value": 1393.7181654612223,
+            "unit": "ns",
+            "range": "± 9.266092680822295"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Amazon_Marshall_Person_DTO",
+            "value": 11104.071925571987,
+            "unit": "ns",
+            "range": "± 67.94345646912289"
           }
         ]
       }
