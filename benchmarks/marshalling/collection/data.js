@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752435121070,
+  "lastUpdate": 1752435557078,
   "repoUrl": "https://github.com/inputfalken/DynamoDB.SourceGenerator",
   "entries": {
     "Collection Marshalling": [
@@ -1176,6 +1176,90 @@ window.BENCHMARK_DATA = {
             "value": 659.7505285399301,
             "unit": "ns",
             "range": "± 4.695641830432527"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "inputfalken@gmail.com",
+            "name": "Robert Andersson",
+            "username": "inputfalken"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5ff3c30d03c514b9b02877f63ce06c783c1e1131",
+          "message": "Potential fix for code scanning alert no. 1: Workflow does not contain permissions (#99)\n\nCo-authored-by: Copilot Autofix powered by AI <62310815+github-advanced-security[bot]@users.noreply.github.com>",
+          "timestamp": "2025-07-13T21:34:56+02:00",
+          "tree_id": "a9299bac01281ca9c29420f4b98d2d688299aea9",
+          "url": "https://github.com/inputfalken/DynamoDB.SourceGenerator/commit/5ff3c30d03c514b9b02877f63ce06c783c1e1131"
+        },
+        "date": 1752435556617,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Unmarshall_Dictionary",
+            "value": 239.05266768591744,
+            "unit": "ns",
+            "range": "± 1.2825884105201704"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Marshall_Dictionary",
+            "value": 309.2547133922577,
+            "unit": "ns",
+            "range": "± 9.102086403619124"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Unmarshall_StringHashSet",
+            "value": 102.87284843921661,
+            "unit": "ns",
+            "range": "± 0.8084353687579588"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Marshall_StringHashSet",
+            "value": 124.17084476153056,
+            "unit": "ns",
+            "range": "± 1.4138614104761333"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Unmarshall_StringList",
+            "value": 230.23854395548503,
+            "unit": "ns",
+            "range": "± 0.7688021774504636"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Marshall_StringList",
+            "value": 338.07230240503947,
+            "unit": "ns",
+            "range": "± 2.8878387809465136"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Unmarshall_IntHashSet",
+            "value": 95.54153073628744,
+            "unit": "ns",
+            "range": "± 1.1619622302080455"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Marshall_IntHashSet",
+            "value": 111.48702526489893,
+            "unit": "ns",
+            "range": "± 1.4010305357625008"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Unmarshall_KeyValuePairList",
+            "value": 325.5932490825653,
+            "unit": "ns",
+            "range": "± 0.43155518714853663"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Marshall_KeyValuePairList",
+            "value": 665.2853288650513,
+            "unit": "ns",
+            "range": "± 3.764614295979672"
           }
         ]
       }
