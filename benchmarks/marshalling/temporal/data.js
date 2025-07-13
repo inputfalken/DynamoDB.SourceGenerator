@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752435077276,
+  "lastUpdate": 1752435534157,
   "repoUrl": "https://github.com/inputfalken/DynamoDB.SourceGenerator",
   "entries": {
     "Temporal Marshalling": [
@@ -1008,6 +1008,78 @@ window.BENCHMARK_DATA = {
             "value": 110.00930612881979,
             "unit": "ns",
             "range": "± 0.8161213044548206"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "inputfalken@gmail.com",
+            "name": "Robert Andersson",
+            "username": "inputfalken"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5ff3c30d03c514b9b02877f63ce06c783c1e1131",
+          "message": "Potential fix for code scanning alert no. 1: Workflow does not contain permissions (#99)\n\nCo-authored-by: Copilot Autofix powered by AI <62310815+github-advanced-security[bot]@users.noreply.github.com>",
+          "timestamp": "2025-07-13T21:34:56+02:00",
+          "tree_id": "a9299bac01281ca9c29420f4b98d2d688299aea9",
+          "url": "https://github.com/inputfalken/DynamoDB.SourceGenerator/commit/5ff3c30d03c514b9b02877f63ce06c783c1e1131"
+        },
+        "date": 1752435533830,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_TimeOnly",
+            "value": 209.79027495934412,
+            "unit": "ns",
+            "range": "± 0.27348986332405434"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_TimeOnly",
+            "value": 88.65636253356934,
+            "unit": "ns",
+            "range": "± 0.394969681995412"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateOnly",
+            "value": 160.39479366632608,
+            "unit": "ns",
+            "range": "± 0.26519366906512853"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateOnly",
+            "value": 91.08936003446578,
+            "unit": "ns",
+            "range": "± 1.5761406224550827"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateTimeOffset",
+            "value": 283.92283487319946,
+            "unit": "ns",
+            "range": "± 0.5823129573269755"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateTimeOffset",
+            "value": 116.09022268227169,
+            "unit": "ns",
+            "range": "± 0.630739521337759"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateTime",
+            "value": 216.02078875473566,
+            "unit": "ns",
+            "range": "± 0.12996477750856625"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateTime",
+            "value": 114.91381211643633,
+            "unit": "ns",
+            "range": "± 2.8344995200764562"
           }
         ]
       }
