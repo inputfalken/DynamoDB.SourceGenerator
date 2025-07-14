@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752525173843,
+  "lastUpdate": 1752525678647,
   "repoUrl": "https://github.com/inputfalken/DynamoDB.SourceGenerator",
   "entries": {
     "Temporal Marshalling": [
@@ -1512,6 +1512,78 @@ window.BENCHMARK_DATA = {
             "value": 134.5190430720647,
             "unit": "ns",
             "range": "± 1.756982451668821"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d774a56e71466519a8a731cd89c26bc416a1c759",
+          "message": "Bump AWSSDK.DynamoDBv2 and 7 others (#100)\n\n* Bump AWSSDK.DynamoDBv2 and 7 others\n\nBumps AWSSDK.DynamoDBv2 from 4.0.1 to 4.0.2.2\nBumps BenchmarkDotNet from 0.14.0 to 0.15.2\nBumps FluentAssertions from 7.0.0 to 8.5.0\nBumps Microsoft.CodeAnalysis.Analyzers from 3.11.0 to 4.14.0\nBumps Microsoft.CodeAnalysis.CSharp from 4.10.0 to 4.14.0\nBumps Microsoft.NET.Test.Sdk from 17.14.0 to 17.14.1\nBumps xunit.runner.visualstudio from 3.1.0 to 3.1.2\nBumps xunit.v3 from 2.0.2 to 3.0.0\n\n---\nupdated-dependencies:\n- dependency-name: AWSSDK.DynamoDBv2\n  dependency-version: 4.0.2.2\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n- dependency-name: BenchmarkDotNet\n  dependency-version: 0.15.2\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n- dependency-name: FluentAssertions\n  dependency-version: 8.5.0\n  dependency-type: direct:production\n  update-type: version-update:semver-major\n- dependency-name: Microsoft.CodeAnalysis.Analyzers\n  dependency-version: 4.14.0\n  dependency-type: direct:production\n  update-type: version-update:semver-major\n- dependency-name: Microsoft.CodeAnalysis.CSharp\n  dependency-version: 4.14.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n- dependency-name: Microsoft.NET.Test.Sdk\n  dependency-version: 17.14.1\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n- dependency-name: xunit.runner.visualstudio\n  dependency-version: 3.1.2\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n- dependency-name: xunit.v3\n  dependency-version: 3.0.0\n  dependency-type: direct:production\n  update-type: version-update:semver-major\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n\n* Update DynamoDBGenerator.SourceGenerator.csproj\n\nSource generator dependencies needs to be manully adjusted. Testing without these depencencies.\n\n* Update DynamoDBGenerator.SourceGenerator.Tests.csproj\n\nAvoid payed version\n\n---------\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Robert Andersson <inputfalken@gmail.com>",
+          "timestamp": "2025-07-14T22:38:26+02:00",
+          "tree_id": "afec4c7db7dbe86333baaad69b5bdf4184dd28b9",
+          "url": "https://github.com/inputfalken/DynamoDB.SourceGenerator/commit/d774a56e71466519a8a731cd89c26bc416a1c759"
+        },
+        "date": 1752525678254,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_TimeOnly",
+            "value": 207.0328517300742,
+            "unit": "ns",
+            "range": "± 0.6589349930473485"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_TimeOnly",
+            "value": 91.59690922101339,
+            "unit": "ns",
+            "range": "± 1.0187272171369608"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateOnly",
+            "value": 163.7411057673968,
+            "unit": "ns",
+            "range": "± 0.32216778121645084"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateOnly",
+            "value": 87.46411040851048,
+            "unit": "ns",
+            "range": "± 0.5508857784583014"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateTimeOffset",
+            "value": 282.75872226861804,
+            "unit": "ns",
+            "range": "± 0.3174378342133611"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateTimeOffset",
+            "value": 111.08350159571721,
+            "unit": "ns",
+            "range": "± 0.38822006830239847"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateTime",
+            "value": 221.25748225358817,
+            "unit": "ns",
+            "range": "± 0.26809696158290497"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateTime",
+            "value": 107.93386763792772,
+            "unit": "ns",
+            "range": "± 0.5461528374915047"
           }
         ]
       }
