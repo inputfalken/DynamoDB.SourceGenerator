@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752525091656,
+  "lastUpdate": 1752525610118,
   "repoUrl": "https://github.com/inputfalken/DynamoDB.SourceGenerator",
   "entries": {
     "Comparison Marshalling": [
@@ -672,6 +672,54 @@ window.BENCHMARK_DATA = {
             "value": 11499.815702311198,
             "unit": "ns",
             "range": "± 139.73321635919396"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d774a56e71466519a8a731cd89c26bc416a1c759",
+          "message": "Bump AWSSDK.DynamoDBv2 and 7 others (#100)\n\n* Bump AWSSDK.DynamoDBv2 and 7 others\n\nBumps AWSSDK.DynamoDBv2 from 4.0.1 to 4.0.2.2\nBumps BenchmarkDotNet from 0.14.0 to 0.15.2\nBumps FluentAssertions from 7.0.0 to 8.5.0\nBumps Microsoft.CodeAnalysis.Analyzers from 3.11.0 to 4.14.0\nBumps Microsoft.CodeAnalysis.CSharp from 4.10.0 to 4.14.0\nBumps Microsoft.NET.Test.Sdk from 17.14.0 to 17.14.1\nBumps xunit.runner.visualstudio from 3.1.0 to 3.1.2\nBumps xunit.v3 from 2.0.2 to 3.0.0\n\n---\nupdated-dependencies:\n- dependency-name: AWSSDK.DynamoDBv2\n  dependency-version: 4.0.2.2\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n- dependency-name: BenchmarkDotNet\n  dependency-version: 0.15.2\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n- dependency-name: FluentAssertions\n  dependency-version: 8.5.0\n  dependency-type: direct:production\n  update-type: version-update:semver-major\n- dependency-name: Microsoft.CodeAnalysis.Analyzers\n  dependency-version: 4.14.0\n  dependency-type: direct:production\n  update-type: version-update:semver-major\n- dependency-name: Microsoft.CodeAnalysis.CSharp\n  dependency-version: 4.14.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n- dependency-name: Microsoft.NET.Test.Sdk\n  dependency-version: 17.14.1\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n- dependency-name: xunit.runner.visualstudio\n  dependency-version: 3.1.2\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n- dependency-name: xunit.v3\n  dependency-version: 3.0.0\n  dependency-type: direct:production\n  update-type: version-update:semver-major\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n\n* Update DynamoDBGenerator.SourceGenerator.csproj\n\nSource generator dependencies needs to be manully adjusted. Testing without these depencencies.\n\n* Update DynamoDBGenerator.SourceGenerator.Tests.csproj\n\nAvoid payed version\n\n---------\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Robert Andersson <inputfalken@gmail.com>",
+          "timestamp": "2025-07-14T22:38:26+02:00",
+          "tree_id": "afec4c7db7dbe86333baaad69b5bdf4184dd28b9",
+          "url": "https://github.com/inputfalken/DynamoDB.SourceGenerator/commit/d774a56e71466519a8a731cd89c26bc416a1c759"
+        },
+        "date": 1752525609140,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Unmarshall_Person_DTO",
+            "value": 1548.2272420247396,
+            "unit": "ns",
+            "range": "± 15.698867761151137"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Amazon_Unmarshall_Person_DTO",
+            "value": 13577.748349870953,
+            "unit": "ns",
+            "range": "± 108.8167079963272"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Marshall_Person_DTO",
+            "value": 1420.836091177804,
+            "unit": "ns",
+            "range": "± 13.513342453933058"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Amazon_Marshall_Person_DTO",
+            "value": 11302.868064880371,
+            "unit": "ns",
+            "range": "± 66.76661180663648"
           }
         ]
       }
