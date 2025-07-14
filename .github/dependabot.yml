@@ -6,6 +6,18 @@
 version: 2
 updates:
   - package-ecosystem: "nuget"
-    directory: "/"
+    directory: "/src/DynamoDBGenerator/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "nuget"
+    directory: "/src/DynamoDBGenerator.SourceGenerator/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "nuget"
+    directory: "/tests/DynamoDBGenerator.SourceGenerator.Tests/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "nuget"
+    directory: "/tests/DynamoDBGenerator.SourceGenerator.Benchmarks/"
     schedule:
       interval: "weekly"
