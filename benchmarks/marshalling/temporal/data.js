@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752523074088,
+  "lastUpdate": 1752523159596,
   "repoUrl": "https://github.com/inputfalken/DynamoDB.SourceGenerator",
   "entries": {
     "Temporal Marshalling": [
@@ -1224,6 +1224,78 @@ window.BENCHMARK_DATA = {
             "value": 109.55738100638756,
             "unit": "ns",
             "range": "± 0.6282791474592009"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "inputfalken@gmail.com",
+            "name": "Robert Andersson",
+            "username": "inputfalken"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "01cda5ad909f9eafa6659fafd7b4c153875e50a0",
+          "message": "Update dependabot.yml",
+          "timestamp": "2025-07-14T21:55:27+02:00",
+          "tree_id": "2b0786ea9616366ad1d06743371aa6be9495d573",
+          "url": "https://github.com/inputfalken/DynamoDB.SourceGenerator/commit/01cda5ad909f9eafa6659fafd7b4c153875e50a0"
+        },
+        "date": 1752523158685,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_TimeOnly",
+            "value": 213.29939714499884,
+            "unit": "ns",
+            "range": "± 0.3363760423938614"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_TimeOnly",
+            "value": 89.94502977813993,
+            "unit": "ns",
+            "range": "± 0.6605601150256061"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateOnly",
+            "value": 169.27702503544944,
+            "unit": "ns",
+            "range": "± 0.2683081452654139"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateOnly",
+            "value": 96.6021718904376,
+            "unit": "ns",
+            "range": "± 1.8744964312308348"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateTimeOffset",
+            "value": 282.65803013529097,
+            "unit": "ns",
+            "range": "± 0.2552320144892085"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateTimeOffset",
+            "value": 116.9064346631368,
+            "unit": "ns",
+            "range": "± 1.4265237771735484"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateTime",
+            "value": 215.9790416955948,
+            "unit": "ns",
+            "range": "± 0.18519964279227105"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateTime",
+            "value": 112.93976302146912,
+            "unit": "ns",
+            "range": "± 1.11099024186545"
           }
         ]
       }
