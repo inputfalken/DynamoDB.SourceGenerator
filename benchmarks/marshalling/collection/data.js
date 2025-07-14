@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752525175168,
+  "lastUpdate": 1752525692645,
   "repoUrl": "https://github.com/inputfalken/DynamoDB.SourceGenerator",
   "entries": {
     "Collection Marshalling": [
@@ -1764,6 +1764,90 @@ window.BENCHMARK_DATA = {
             "value": 714.6513144810995,
             "unit": "ns",
             "range": "± 3.833251707572114"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d774a56e71466519a8a731cd89c26bc416a1c759",
+          "message": "Bump AWSSDK.DynamoDBv2 and 7 others (#100)\n\n* Bump AWSSDK.DynamoDBv2 and 7 others\n\nBumps AWSSDK.DynamoDBv2 from 4.0.1 to 4.0.2.2\nBumps BenchmarkDotNet from 0.14.0 to 0.15.2\nBumps FluentAssertions from 7.0.0 to 8.5.0\nBumps Microsoft.CodeAnalysis.Analyzers from 3.11.0 to 4.14.0\nBumps Microsoft.CodeAnalysis.CSharp from 4.10.0 to 4.14.0\nBumps Microsoft.NET.Test.Sdk from 17.14.0 to 17.14.1\nBumps xunit.runner.visualstudio from 3.1.0 to 3.1.2\nBumps xunit.v3 from 2.0.2 to 3.0.0\n\n---\nupdated-dependencies:\n- dependency-name: AWSSDK.DynamoDBv2\n  dependency-version: 4.0.2.2\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n- dependency-name: BenchmarkDotNet\n  dependency-version: 0.15.2\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n- dependency-name: FluentAssertions\n  dependency-version: 8.5.0\n  dependency-type: direct:production\n  update-type: version-update:semver-major\n- dependency-name: Microsoft.CodeAnalysis.Analyzers\n  dependency-version: 4.14.0\n  dependency-type: direct:production\n  update-type: version-update:semver-major\n- dependency-name: Microsoft.CodeAnalysis.CSharp\n  dependency-version: 4.14.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n- dependency-name: Microsoft.NET.Test.Sdk\n  dependency-version: 17.14.1\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n- dependency-name: xunit.runner.visualstudio\n  dependency-version: 3.1.2\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n- dependency-name: xunit.v3\n  dependency-version: 3.0.0\n  dependency-type: direct:production\n  update-type: version-update:semver-major\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n\n* Update DynamoDBGenerator.SourceGenerator.csproj\n\nSource generator dependencies needs to be manully adjusted. Testing without these depencencies.\n\n* Update DynamoDBGenerator.SourceGenerator.Tests.csproj\n\nAvoid payed version\n\n---------\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Robert Andersson <inputfalken@gmail.com>",
+          "timestamp": "2025-07-14T22:38:26+02:00",
+          "tree_id": "afec4c7db7dbe86333baaad69b5bdf4184dd28b9",
+          "url": "https://github.com/inputfalken/DynamoDB.SourceGenerator/commit/d774a56e71466519a8a731cd89c26bc416a1c759"
+        },
+        "date": 1752525692143,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Unmarshall_Dictionary",
+            "value": 247.30845206124442,
+            "unit": "ns",
+            "range": "± 3.6208396382204397"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Marshall_Dictionary",
+            "value": 333.70987089474994,
+            "unit": "ns",
+            "range": "± 2.3941283356790874"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Unmarshall_StringHashSet",
+            "value": 99.04739298820496,
+            "unit": "ns",
+            "range": "± 0.7677756974204247"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Marshall_StringHashSet",
+            "value": 120.34242866039276,
+            "unit": "ns",
+            "range": "± 1.080016333710863"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Unmarshall_StringList",
+            "value": 226.0688843091329,
+            "unit": "ns",
+            "range": "± 0.9870409316582973"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Marshall_StringList",
+            "value": 367.40303877421786,
+            "unit": "ns",
+            "range": "± 2.7922760919643004"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Unmarshall_IntHashSet",
+            "value": 149.99011686642964,
+            "unit": "ns",
+            "range": "± 1.4171065253405677"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Marshall_IntHashSet",
+            "value": 110.7583381652832,
+            "unit": "ns",
+            "range": "± 1.9905651486008817"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Unmarshall_KeyValuePairList",
+            "value": 321.20638966560364,
+            "unit": "ns",
+            "range": "± 1.1109207281971971"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Marshall_KeyValuePairList",
+            "value": 665.0096385819571,
+            "unit": "ns",
+            "range": "± 7.638070188617207"
           }
         ]
       }
