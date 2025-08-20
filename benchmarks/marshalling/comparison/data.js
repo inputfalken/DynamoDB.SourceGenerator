@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754427490447,
+  "lastUpdate": 1755725080959,
   "repoUrl": "https://github.com/inputfalken/DynamoDB.SourceGenerator",
   "entries": {
     "Comparison Marshalling": [
@@ -816,6 +816,54 @@ window.BENCHMARK_DATA = {
             "value": 12134.540575154622,
             "unit": "ns",
             "range": "± 126.20812883337764"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "00c067cad1899e429122654d78157dc5d3cc9686",
+          "message": "Bump xunit.v3 from 3.0.0 to 3.0.1 (#118)\n\n---\nupdated-dependencies:\n- dependency-name: xunit.v3\n  dependency-version: 3.0.1\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2025-08-20T23:22:57+02:00",
+          "tree_id": "9e996d7c8c7cdb98dcb1c2d6ba4d90bdec140e31",
+          "url": "https://github.com/inputfalken/DynamoDB.SourceGenerator/commit/00c067cad1899e429122654d78157dc5d3cc9686"
+        },
+        "date": 1755725080462,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Unmarshall_Person_DTO",
+            "value": 1609.5579020636421,
+            "unit": "ns",
+            "range": "± 13.69583460426093"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Amazon_Unmarshall_Person_DTO",
+            "value": 14883.937784830729,
+            "unit": "ns",
+            "range": "± 201.05842446113684"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Marshall_Person_DTO",
+            "value": 1469.5333395004272,
+            "unit": "ns",
+            "range": "± 9.513688458490961"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Amazon_Marshall_Person_DTO",
+            "value": 12351.6474802653,
+            "unit": "ns",
+            "range": "± 165.80272137880243"
           }
         ]
       }
