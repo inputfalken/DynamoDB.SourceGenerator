@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755725080959,
+  "lastUpdate": 1755725178746,
   "repoUrl": "https://github.com/inputfalken/DynamoDB.SourceGenerator",
   "entries": {
     "Comparison Marshalling": [
@@ -864,6 +864,54 @@ window.BENCHMARK_DATA = {
             "value": 12351.6474802653,
             "unit": "ns",
             "range": "± 165.80272137880243"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fe931f7d7b7cd25d9017f3b81420266fa1e8dd49",
+          "message": "Bump xunit.runner.visualstudio from 3.1.2 to 3.1.4 (#117)\n\n---\nupdated-dependencies:\n- dependency-name: xunit.runner.visualstudio\n  dependency-version: 3.1.4\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Robert Andersson <inputfalken@gmail.com>",
+          "timestamp": "2025-08-20T23:24:28+02:00",
+          "tree_id": "a75caed3f9676667f8142a1f85f147a48e351bc8",
+          "url": "https://github.com/inputfalken/DynamoDB.SourceGenerator/commit/fe931f7d7b7cd25d9017f3b81420266fa1e8dd49"
+        },
+        "date": 1755725178345,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Unmarshall_Person_DTO",
+            "value": 1516.1580273946126,
+            "unit": "ns",
+            "range": "± 5.5037358425517855"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Amazon_Unmarshall_Person_DTO",
+            "value": 13841.66987101237,
+            "unit": "ns",
+            "range": "± 102.9627187300996"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Marshall_Person_DTO",
+            "value": 1443.6430653163366,
+            "unit": "ns",
+            "range": "± 13.647566373899258"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Amazon_Marshall_Person_DTO",
+            "value": 11697.575228009906,
+            "unit": "ns",
+            "range": "± 81.10957340775342"
           }
         ]
       }
