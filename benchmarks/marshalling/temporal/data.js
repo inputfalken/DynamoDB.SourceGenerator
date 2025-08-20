@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755725147690,
+  "lastUpdate": 1755725238580,
   "repoUrl": "https://github.com/inputfalken/DynamoDB.SourceGenerator",
   "entries": {
     "Temporal Marshalling": [
@@ -1800,6 +1800,78 @@ window.BENCHMARK_DATA = {
             "value": 110.6109881571361,
             "unit": "ns",
             "range": "± 3.219618818913979"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fe931f7d7b7cd25d9017f3b81420266fa1e8dd49",
+          "message": "Bump xunit.runner.visualstudio from 3.1.2 to 3.1.4 (#117)\n\n---\nupdated-dependencies:\n- dependency-name: xunit.runner.visualstudio\n  dependency-version: 3.1.4\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Robert Andersson <inputfalken@gmail.com>",
+          "timestamp": "2025-08-20T23:24:28+02:00",
+          "tree_id": "a75caed3f9676667f8142a1f85f147a48e351bc8",
+          "url": "https://github.com/inputfalken/DynamoDB.SourceGenerator/commit/fe931f7d7b7cd25d9017f3b81420266fa1e8dd49"
+        },
+        "date": 1755725238194,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_TimeOnly",
+            "value": 211.31776300271352,
+            "unit": "ns",
+            "range": "± 2.2740486451171265"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_TimeOnly",
+            "value": 90.7127662386213,
+            "unit": "ns",
+            "range": "± 1.4887386800051432"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateOnly",
+            "value": 162.99038888726915,
+            "unit": "ns",
+            "range": "± 0.567584026108302"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateOnly",
+            "value": 87.10534157202794,
+            "unit": "ns",
+            "range": "± 0.8015219932460762"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateTimeOffset",
+            "value": 277.7613067626953,
+            "unit": "ns",
+            "range": "± 0.3314838791052942"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateTimeOffset",
+            "value": 115.73863526185353,
+            "unit": "ns",
+            "range": "± 1.6546688774575122"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateTime",
+            "value": 217.0016726255417,
+            "unit": "ns",
+            "range": "± 0.5584357996294594"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateTime",
+            "value": 112.61888212817055,
+            "unit": "ns",
+            "range": "± 1.197821905396289"
           }
         ]
       }
