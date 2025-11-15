@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1762468382386,
+  "lastUpdate": 1763202796327,
   "repoUrl": "https://github.com/inputfalken/DynamoDB.SourceGenerator",
   "entries": {
     "Temporal Marshalling": [
@@ -3024,6 +3024,78 @@ window.BENCHMARK_DATA = {
             "value": 111.06151510136468,
             "unit": "ns",
             "range": "± 1.1094019450296848"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "dbc864c41e38c296ed90fbbc259dd9213d99e35b",
+          "message": "Bump BenchmarkDotNet from 0.15.5 to 0.15.6 (#138)\n\n---\nupdated-dependencies:\n- dependency-name: BenchmarkDotNet\n  dependency-version: 0.15.6\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2025-11-15T11:29:30+01:00",
+          "tree_id": "35d3d8417081c666c1be9c0c092451b6479113be",
+          "url": "https://github.com/inputfalken/DynamoDB.SourceGenerator/commit/dbc864c41e38c296ed90fbbc259dd9213d99e35b"
+        },
+        "date": 1763202795416,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_TimeOnly",
+            "value": 210.57504250208538,
+            "unit": "ns",
+            "range": "± 0.2515598182219047"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_TimeOnly",
+            "value": 111.42290810346603,
+            "unit": "ns",
+            "range": "± 1.213612463530346"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateOnly",
+            "value": 163.99189480713434,
+            "unit": "ns",
+            "range": "± 0.20367520042611884"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateOnly",
+            "value": 83.49409379164378,
+            "unit": "ns",
+            "range": "± 0.4084333959756235"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateTimeOffset",
+            "value": 277.8218027995183,
+            "unit": "ns",
+            "range": "± 0.17529101070647962"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateTimeOffset",
+            "value": 113.9105052777699,
+            "unit": "ns",
+            "range": "± 1.1509546159678121"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateTime",
+            "value": 215.84542288099016,
+            "unit": "ns",
+            "range": "± 0.22364541523200002"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateTime",
+            "value": 109.98494609764644,
+            "unit": "ns",
+            "range": "± 0.4766662655870256"
           }
         ]
       }
