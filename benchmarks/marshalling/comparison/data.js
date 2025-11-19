@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1763398107961,
+  "lastUpdate": 1763577556756,
   "repoUrl": "https://github.com/inputfalken/DynamoDB.SourceGenerator",
   "entries": {
     "Comparison Marshalling": [
@@ -1872,6 +1872,54 @@ window.BENCHMARK_DATA = {
             "value": 10198.751637776693,
             "unit": "ns",
             "range": "± 171.88834505233234"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0d61ce390d70f860decb831e48baeba90a9a27b0",
+          "message": "Bump Microsoft.CodeAnalysis.CSharp from 4.11.0 to 4.14.0 (#130)\n\n---\nupdated-dependencies:\n- dependency-name: Microsoft.CodeAnalysis.CSharp\n  dependency-version: 4.14.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Robert Andersson <inputfalken@gmail.com>",
+          "timestamp": "2025-11-19T19:37:15+01:00",
+          "tree_id": "b2418fad53be6cbc14088bc8a8c65067c50601a2",
+          "url": "https://github.com/inputfalken/DynamoDB.SourceGenerator/commit/0d61ce390d70f860decb831e48baeba90a9a27b0"
+        },
+        "date": 1763577556152,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Unmarshall_Person_DTO",
+            "value": 1438.7043639591761,
+            "unit": "ns",
+            "range": "± 5.971727203022434"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Amazon_Unmarshall_Person_DTO",
+            "value": 11974.826245117187,
+            "unit": "ns",
+            "range": "± 57.46275938244395"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Marshall_Person_DTO",
+            "value": 1168.8616456349691,
+            "unit": "ns",
+            "range": "± 16.85209172993632"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Amazon_Marshall_Person_DTO",
+            "value": 10443.724770100911,
+            "unit": "ns",
+            "range": "± 99.59273142953106"
           }
         ]
       }
