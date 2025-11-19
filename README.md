@@ -39,12 +39,12 @@ The source generator will look for attributes and implement interfaces that exis
 Here's a quick summary about how this library performs with a quick example of marshalling and unmarshalling a simple
 DTO object.
 
-| Method                       |       Mean |     Error |    StdDev |   Gen0 |   Gen1 | Allocated |
-|------------------------------|-----------:|----------:|----------:|-------:|-------:|----------:|
-| Unmarshall_Person_DTO        |   681.6 ns |   6.95 ns |   6.50 ns | 0.0553 |      - |     696 B |
-| Amazon_Unmarshall_Person_DTO | 6,131.7 ns |  42.92 ns |  38.05 ns | 0.9155 |      - |   11610 B |
-| Marshall_Person_DTO          |   694.6 ns |  13.15 ns |  12.30 ns | 0.3052 | 0.0038 |    3840 B |
-| Amazon_Marshall_Person_DTO   | 5,824.9 ns | 116.27 ns | 264.80 ns | 0.9460 |      - |   12076 B |
+| Method                       | Mean       | Error    | StdDev    | Gen0   | Gen1   | Allocated |
+|----------------------------- |-----------:|---------:|----------:|-------:|-------:|----------:|
+| Unmarshall_Person_DTO        |   655.8 ns |  7.40 ns |   6.92 ns | 0.0553 |      - |     696 B |
+| Amazon_Unmarshall_Person_DTO | 4,929.2 ns | 97.26 ns | 129.83 ns | 0.7935 | 0.0076 |   10041 B |
+| Marshall_Person_DTO          |   548.0 ns |  5.46 ns |   5.11 ns | 0.3052 | 0.0038 |    3840 B |
+| Amazon_Marshall_Person_DTO   | 4,396.5 ns | 23.98 ns |  22.43 ns | 0.9460 |      - |   12084 B |
 
 ## Features:
 
