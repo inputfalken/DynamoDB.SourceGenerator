@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1764794603581,
+  "lastUpdate": 1765219657693,
   "repoUrl": "https://github.com/inputfalken/DynamoDB.SourceGenerator",
   "entries": {
     "Primitive Marshalling": [
@@ -7488,6 +7488,150 @@ window.BENCHMARK_DATA = {
             "value": 114.03215708902904,
             "unit": "ns",
             "range": "± 1.9532451963625574"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0e06c6a3f110d1272f37377e21f98e30bdfb0aa3",
+          "message": "Bump AWSSDK.DynamoDBv2 from 4.0.10.1 to 4.0.10.2 (#145)\n\n---\nupdated-dependencies:\n- dependency-name: AWSSDK.DynamoDBv2\n  dependency-version: 4.0.10.2\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2025-12-08T19:37:58+01:00",
+          "tree_id": "5c1e110629c4af80c6dac1cc98726a3380e5cfc3",
+          "url": "https://github.com/inputfalken/DynamoDB.SourceGenerator/commit/0e06c6a3f110d1272f37377e21f98e30bdfb0aa3"
+        },
+        "date": 1765219657132,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.PrimitiveBenchmarks.Unmarshall_Bool",
+            "value": 14.733480008691549,
+            "unit": "ns",
+            "range": "± 0.6401496733997453"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.PrimitiveBenchmarks.Marshall_Bool",
+            "value": 33.93041999340058,
+            "unit": "ns",
+            "range": "± 0.6648798319917522"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.PrimitiveBenchmarks.Unmarshall_Char",
+            "value": 15.087124029695987,
+            "unit": "ns",
+            "range": "± 2.3922143527799355"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.PrimitiveBenchmarks.Marshall_Char",
+            "value": 54.1597293982139,
+            "unit": "ns",
+            "range": "± 0.35575187908629075"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.PrimitiveBenchmarks.Unmarshall_Int32",
+            "value": 18.942166274785997,
+            "unit": "ns",
+            "range": "± 0.20379507384343887"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.PrimitiveBenchmarks.Marshall_Int",
+            "value": 52.88449910708836,
+            "unit": "ns",
+            "range": "± 1.4818691923019431"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.PrimitiveBenchmarks.Unmarshall_Int64",
+            "value": 18.449929330746333,
+            "unit": "ns",
+            "range": "± 0.21551636094917373"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.PrimitiveBenchmarks.Marshall_Int64",
+            "value": 53.705855496724446,
+            "unit": "ns",
+            "range": "± 0.7196934467481256"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.PrimitiveBenchmarks.Unmarshall_String",
+            "value": 10.86514471868674,
+            "unit": "ns",
+            "range": "± 0.20532896142708945"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.PrimitiveBenchmarks.Marshall_String",
+            "value": 49.964745342731476,
+            "unit": "ns",
+            "range": "± 0.3174977482824556"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.PrimitiveBenchmarks.Unmarshall_UInt32",
+            "value": 18.78764045238495,
+            "unit": "ns",
+            "range": "± 0.0738148808285399"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.PrimitiveBenchmarks.Marshall_UInt32",
+            "value": 52.30337603177343,
+            "unit": "ns",
+            "range": "± 0.5061394191100876"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.PrimitiveBenchmarks.Unmarshall_UInt64",
+            "value": 19.501175722250572,
+            "unit": "ns",
+            "range": "± 0.10046307457971826"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.PrimitiveBenchmarks.Marshall_Uint64",
+            "value": 52.093882565314956,
+            "unit": "ns",
+            "range": "± 0.3896168423592677"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.PrimitiveBenchmarks.Unmarshall_Guid",
+            "value": 40.93894762992859,
+            "unit": "ns",
+            "range": "± 0.10594891393811924"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.PrimitiveBenchmarks.Marshall_Guid",
+            "value": 61.16742614337376,
+            "unit": "ns",
+            "range": "± 1.071517773313205"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.PrimitiveBenchmarks.Unmarshall_Enum",
+            "value": 16.57330521941185,
+            "unit": "ns",
+            "range": "± 0.05216912501010138"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.PrimitiveBenchmarks.Marshall_Enum",
+            "value": 51.81238274063383,
+            "unit": "ns",
+            "range": "± 0.5787782741764678"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.PrimitiveBenchmarks.Unmarshall_Double",
+            "value": 49.72369706630707,
+            "unit": "ns",
+            "range": "± 0.1511696616081469"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.PrimitiveBenchmarks.Marshall_Double",
+            "value": 117.17156566892352,
+            "unit": "ns",
+            "range": "± 0.907446758503462"
           }
         ]
       }
