@@ -1,12 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <NuGetAudit>false</NuGetAudit>
+    </PropertyGroup>
+    <PropertyGroup>
+      <TargetFrameworks>net8.0</TargetFrameworks>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(NETCoreSdkVersion)' >= '10.0.0'">
+      <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
