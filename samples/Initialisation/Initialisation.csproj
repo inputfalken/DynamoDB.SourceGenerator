@@ -6,7 +6,7 @@
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
     </PropertyGroup>
-    
+
     <PropertyGroup>
       <TargetFrameworks>net8.0</TargetFrameworks>
     </PropertyGroup>
