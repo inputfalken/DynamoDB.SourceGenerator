@@ -25,4 +25,9 @@
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all" Condition="'$(TargetFramework)' == 'net8.0'" />
     </ItemGroup>
 
+    <ItemGroup>
+        <!-- Is required in order to pack the analyzer correctly with NuGet -->
+        <None Include="$(OutputPath)\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
+    </ItemGroup>
+
 </Project>
