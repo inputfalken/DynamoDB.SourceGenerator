@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1768256786267,
+  "lastUpdate": 1768932099215,
   "repoUrl": "https://github.com/inputfalken/DynamoDB.SourceGenerator",
   "entries": {
     "Temporal Marshalling": [
@@ -4104,6 +4104,78 @@ window.BENCHMARK_DATA = {
             "value": 79.4761090795199,
             "unit": "ns",
             "range": "± 0.6416608527514222"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d11d79360ab749248da0be405b4445330b2a857b",
+          "message": "Bump xunit.v3 from 3.2.1 to 3.2.2 (#152)\n\n---\nupdated-dependencies:\n- dependency-name: xunit.v3\n  dependency-version: 3.2.2\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-01-20T18:58:11+01:00",
+          "tree_id": "46f0c5d8efafc035394bf2f41fe3543406babf76",
+          "url": "https://github.com/inputfalken/DynamoDB.SourceGenerator/commit/d11d79360ab749248da0be405b4445330b2a857b"
+        },
+        "date": 1768932098874,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_TimeOnly",
+            "value": 192.85049765450614,
+            "unit": "ns",
+            "range": "± 0.38810581774024483"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_TimeOnly",
+            "value": 65.08172140518825,
+            "unit": "ns",
+            "range": "± 0.34883973696883197"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateOnly",
+            "value": 134.6920473575592,
+            "unit": "ns",
+            "range": "± 0.35128738844379725"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateOnly",
+            "value": 62.89775328636169,
+            "unit": "ns",
+            "range": "± 0.30787719738883995"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateTimeOffset",
+            "value": 237.04134684342606,
+            "unit": "ns",
+            "range": "± 0.5035546075194431"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateTimeOffset",
+            "value": 75.75491734061923,
+            "unit": "ns",
+            "range": "± 0.18093362900932708"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateTime",
+            "value": 177.84911769628525,
+            "unit": "ns",
+            "range": "± 0.15321767803069597"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateTime",
+            "value": 73.19120899041494,
+            "unit": "ns",
+            "range": "± 0.2845602783417371"
           }
         ]
       }
