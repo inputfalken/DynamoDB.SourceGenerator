@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770631226584,
+  "lastUpdate": 1772143104401,
   "repoUrl": "https://github.com/inputfalken/DynamoDB.SourceGenerator",
   "entries": {
     "Temporal Marshalling": [
@@ -4392,6 +4392,78 @@ window.BENCHMARK_DATA = {
             "value": 81.6797829407912,
             "unit": "ns",
             "range": "± 0.7936162939231228"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f81c10588869561783cc8cf73f3bbac9473e4dd1",
+          "message": "Bump AWSSDK.DynamoDBv2 from 4.0.14 to 4.0.14.1 (#156)\n\n---\nupdated-dependencies:\n- dependency-name: AWSSDK.DynamoDBv2\n  dependency-version: 4.0.14.1\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-02-26T22:55:02+01:00",
+          "tree_id": "12c801ee41a03ea637c86e6f02f1458eed322d35",
+          "url": "https://github.com/inputfalken/DynamoDB.SourceGenerator/commit/f81c10588869561783cc8cf73f3bbac9473e4dd1"
+        },
+        "date": 1772143104058,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_TimeOnly",
+            "value": 197.2785237935873,
+            "unit": "ns",
+            "range": "± 0.5620681033104289"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_TimeOnly",
+            "value": 66.30887067715327,
+            "unit": "ns",
+            "range": "± 0.7607823531814115"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateOnly",
+            "value": 144.79597898629996,
+            "unit": "ns",
+            "range": "± 0.14520548099521347"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateOnly",
+            "value": 64.25951000054677,
+            "unit": "ns",
+            "range": "± 1.3706514526733427"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateTimeOffset",
+            "value": 281.61796312332154,
+            "unit": "ns",
+            "range": "± 0.4141868904975994"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateTimeOffset",
+            "value": 81.8723115126292,
+            "unit": "ns",
+            "range": "± 1.1032091914949183"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateTime",
+            "value": 216.84241588910422,
+            "unit": "ns",
+            "range": "± 0.41751475354164164"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateTime",
+            "value": 78.83360076867618,
+            "unit": "ns",
+            "range": "± 0.38703682469468476"
           }
         ]
       }
