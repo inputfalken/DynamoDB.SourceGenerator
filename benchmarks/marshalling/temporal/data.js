@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773776177966,
+  "lastUpdate": 1773776325086,
   "repoUrl": "https://github.com/inputfalken/DynamoDB.SourceGenerator",
   "entries": {
     "Temporal Marshalling": [
@@ -4680,6 +4680,78 @@ window.BENCHMARK_DATA = {
             "value": 83.85396713256836,
             "unit": "ns",
             "range": "± 1.9361923558693694"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "eae8876ad5a9ff623e0007cf1e0be237ff731ce2",
+          "message": "Bump Microsoft.CodeAnalysis.CSharp from 5.0.0 to 5.3.0 (#160)\n\n---\nupdated-dependencies:\n- dependency-name: Microsoft.CodeAnalysis.CSharp\n  dependency-version: 5.3.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Robert Andersson <inputfalken@gmail.com>",
+          "timestamp": "2026-03-17T20:35:24+01:00",
+          "tree_id": "d08c03cb97d0ea4828e995bca64eaa2ad2348db6",
+          "url": "https://github.com/inputfalken/DynamoDB.SourceGenerator/commit/eae8876ad5a9ff623e0007cf1e0be237ff731ce2"
+        },
+        "date": 1773776324455,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_TimeOnly",
+            "value": 204.96836210214175,
+            "unit": "ns",
+            "range": "± 0.2720905318693004"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_TimeOnly",
+            "value": 66.74072742064794,
+            "unit": "ns",
+            "range": "± 0.5566738896262478"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateOnly",
+            "value": 141.32815702144916,
+            "unit": "ns",
+            "range": "± 0.16388897525329396"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateOnly",
+            "value": 68.23561625480652,
+            "unit": "ns",
+            "range": "± 0.6816093792984277"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateTimeOffset",
+            "value": 239.35816958972387,
+            "unit": "ns",
+            "range": "± 0.7024909045917659"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateTimeOffset",
+            "value": 77.98352023271414,
+            "unit": "ns",
+            "range": "± 1.1854758938382315"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Unmarshall_DateTime",
+            "value": 177.4189326579754,
+            "unit": "ns",
+            "range": "± 0.5722137196836553"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.TemporalBenchmarks.Marshall_DateTime",
+            "value": 74.92846978562218,
+            "unit": "ns",
+            "range": "± 0.5875853431541518"
           }
         ]
       }
