@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780344603256,
+  "lastUpdate": 1781031784537,
   "repoUrl": "https://github.com/inputfalken/DynamoDB.SourceGenerator",
   "entries": {
     "Comparison Marshalling": [
@@ -3360,6 +3360,54 @@ window.BENCHMARK_DATA = {
             "value": 8708.158574785504,
             "unit": "ns",
             "range": "± 19.96811786570412"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ff994bc67c2fc5959bd04c4641cd9aacf0477289",
+          "message": "Bump AWSSDK.DynamoDBv2 from 4.0.18.6 to 4.0.20 (#175)\n\n---\nupdated-dependencies:\n- dependency-name: AWSSDK.DynamoDBv2\n  dependency-version: 4.0.20\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-06-09T21:00:57+02:00",
+          "tree_id": "c94b6bbc5a19a7c8e76f568b23fcd94a0118efbb",
+          "url": "https://github.com/inputfalken/DynamoDB.SourceGenerator/commit/ff994bc67c2fc5959bd04c4641cd9aacf0477289"
+        },
+        "date": 1781031783318,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Unmarshall_Person_DTO",
+            "value": 1558.0811740557353,
+            "unit": "ns",
+            "range": "± 1.5033430619307113"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Amazon_Unmarshall_Person_DTO",
+            "value": 11543.272860717774,
+            "unit": "ns",
+            "range": "± 30.163412191867092"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Marshall_Person_DTO",
+            "value": 1058.4675273895264,
+            "unit": "ns",
+            "range": "± 3.2419966721281135"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Amazon_Marshall_Person_DTO",
+            "value": 9611.506729125977,
+            "unit": "ns",
+            "range": "± 21.87310285871166"
           }
         ]
       }
