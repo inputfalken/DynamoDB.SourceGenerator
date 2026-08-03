@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785268980952,
+  "lastUpdate": 1785800495036,
   "repoUrl": "https://github.com/inputfalken/DynamoDB.SourceGenerator",
   "entries": {
     "Comparison Marshalling": [
@@ -3840,6 +3840,54 @@ window.BENCHMARK_DATA = {
             "value": 10408.598730904716,
             "unit": "ns",
             "range": "± 139.87435756248288"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6d35d415a394e4058b66f3768968c271b2c5284a",
+          "message": "Bump AutoFixture from 5.0.0-preview0012 to 5.0.0-rc.1 (#187)\n\n---\nupdated-dependencies:\n- dependency-name: AutoFixture\n  dependency-version: 5.0.0-rc.1\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-08-04T01:39:31+02:00",
+          "tree_id": "b02269141b44dc01ced857b6aacd72988237ef69",
+          "url": "https://github.com/inputfalken/DynamoDB.SourceGenerator/commit/6d35d415a394e4058b66f3768968c271b2c5284a"
+        },
+        "date": 1785800493734,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Unmarshall_Person_DTO",
+            "value": 1437.1176400865827,
+            "unit": "ns",
+            "range": "± 3.035135560560634"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Amazon_Unmarshall_Person_DTO",
+            "value": 11718.871865844727,
+            "unit": "ns",
+            "range": "± 84.18016590436027"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Marshall_Person_DTO",
+            "value": 1127.120215733846,
+            "unit": "ns",
+            "range": "± 16.207473772835634"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Amazon_Marshall_Person_DTO",
+            "value": 10013.805205208915,
+            "unit": "ns",
+            "range": "± 75.65362918436382"
           }
         ]
       }
