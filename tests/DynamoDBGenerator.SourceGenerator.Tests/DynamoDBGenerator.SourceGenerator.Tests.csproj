@@ -10,7 +10,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AutoFixture" Version="5.0.0-preview0012" />
+        <PackageReference Include="AutoFixture" Version="5.0.0-rc.1" />
         <PackageReference Include="FluentAssertions" Version="7.0.0"/>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
         <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
