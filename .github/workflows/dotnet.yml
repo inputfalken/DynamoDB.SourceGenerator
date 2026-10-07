@@ -40,7 +40,7 @@ jobs:
     - name: Build
       run: dotnet build --configuration Release --no-restore /p:Version=$VERSION
     - name: Test
-      run: dotnet run --project tests/DynamoDBGenerator.SourceGenerator.Tests/DynamoDBGenerator.SourceGenerator.Tests.csproj --configuration Release --framework net10.0 --no-build
+      run: dotnet test --configuration Release --no-build --framework net8.0
     - name: pack nuget packages
       run: dotnet pack --configuration Release --output nupkgs --no-restore --no-build /p:PackageVersion=$VERSION
     - name: upload nuget package
