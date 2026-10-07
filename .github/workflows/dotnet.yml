@@ -40,7 +40,7 @@ jobs:
     - name: Build
       run: dotnet build --configuration Release --no-restore --verbosity normal /p:Version=$VERSION
     - name: Test
-      run: dotnet test --configuration Release --no-build --verbosity normal
+      run: dotnet test --configuration Release --no-build --verbosity normal --logger "console;verbosity=normal"
     - name: pack nuget packages
       run: dotnet pack --configuration Release --output nupkgs --no-restore --no-build --verbosity normal /p:PackageVersion=$VERSION
     - name: upload nuget package
