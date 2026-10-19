@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791394275051,
+  "lastUpdate": 1792431316680,
   "repoUrl": "https://github.com/inputfalken/DynamoDB.SourceGenerator",
   "entries": {
     "Comparison Marshalling": [
@@ -4608,6 +4608,54 @@ window.BENCHMARK_DATA = {
             "value": 6883.656647273472,
             "unit": "ns",
             "range": "± 17.72811834305928"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2b8935d4f33179ce81c864a6931b6db5fb2736c5",
+          "message": "Bump Microsoft.NET.Test.Sdk from 18.10.1 to 18.11.0 (#208)\n\n---\nupdated-dependencies:\n- dependency-name: Microsoft.NET.Test.Sdk\n  dependency-version: 18.11.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-10-19T19:33:21+02:00",
+          "tree_id": "ceaec5869c241db7a1a04c0eb07282731ad7e6eb",
+          "url": "https://github.com/inputfalken/DynamoDB.SourceGenerator/commit/2b8935d4f33179ce81c864a6931b6db5fb2736c5"
+        },
+        "date": 1792431315806,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Unmarshall_Person_DTO",
+            "value": 1173.5848015149434,
+            "unit": "ns",
+            "range": "± 1.6976430480065963"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Amazon_Unmarshall_Person_DTO",
+            "value": 10323.441108703613,
+            "unit": "ns",
+            "range": "± 29.115384190371554"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Marshall_Person_DTO",
+            "value": 1095.4725036621094,
+            "unit": "ns",
+            "range": "± 5.613101905649159"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.ComparisonBenchmarks.Amazon_Marshall_Person_DTO",
+            "value": 8793.805247715542,
+            "unit": "ns",
+            "range": "± 75.19334868136964"
           }
         ]
       }
