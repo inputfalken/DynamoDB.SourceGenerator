@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794510909710,
+  "lastUpdate": 1794950035645,
   "repoUrl": "https://github.com/inputfalken/DynamoDB.SourceGenerator",
   "entries": {
     "Collection Marshalling": [
@@ -9156,6 +9156,90 @@ window.BENCHMARK_DATA = {
             "value": 637.0303735097249,
             "unit": "ns",
             "range": "± 18.607457814919872"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3fc708671eb4cf959843f0d65f145311491267dc",
+          "message": "Bump Microsoft.NET.Test.Sdk from 18.11.0 to 18.12.0 (#215)\n\n---\nupdated-dependencies:\n- dependency-name: Microsoft.NET.Test.Sdk\n  dependency-version: 18.12.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-11-17T22:08:28+01:00",
+          "tree_id": "3eb444a712df4998e1ca8dbe665ea027b3dc79d4",
+          "url": "https://github.com/inputfalken/DynamoDB.SourceGenerator/commit/3fc708671eb4cf959843f0d65f145311491267dc"
+        },
+        "date": 1794950034511,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Unmarshall_Dictionary",
+            "value": 159.73577309399843,
+            "unit": "ns",
+            "range": "± 5.000785341919707"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Marshall_Dictionary",
+            "value": 227.65628468990326,
+            "unit": "ns",
+            "range": "± 8.882782223249446"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Unmarshall_StringHashSet",
+            "value": 69.94539953867594,
+            "unit": "ns",
+            "range": "± 0.8605528204329995"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Marshall_StringHashSet",
+            "value": 72.47565631469091,
+            "unit": "ns",
+            "range": "± 1.3960802191810613"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Unmarshall_StringList",
+            "value": 118.310045393308,
+            "unit": "ns",
+            "range": "± 1.2856068164463017"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Marshall_StringList",
+            "value": 212.90724039872487,
+            "unit": "ns",
+            "range": "± 3.7225007931479754"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Unmarshall_IntHashSet",
+            "value": 62.08484806617101,
+            "unit": "ns",
+            "range": "± 0.6282084318728891"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Marshall_IntHashSet",
+            "value": 73.7578106655015,
+            "unit": "ns",
+            "range": "± 2.5358464208954477"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Unmarshall_KeyValuePairList",
+            "value": 170.25553642000472,
+            "unit": "ns",
+            "range": "± 0.446150289136114"
+          },
+          {
+            "name": "DynamoDBGenerator.SourceGenerator.Benchmarks.Benchmarks.Marshalling.CollectionBenchmarks.Marshall_KeyValuePairList",
+            "value": 455.7517288702506,
+            "unit": "ns",
+            "range": "± 12.729641513774999"
           }
         ]
       }
